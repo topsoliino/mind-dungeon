@@ -102,3 +102,8 @@ button.bad { background:#643730!important; }
 #modal input[type="color"]::-webkit-color-swatch-wrapper { padding:0; }
 #modal input[type="color"]::-webkit-color-swatch { border:1px solid #8b6b4b; }
 #modal input[type="color"]::-moz-color-swatch { border:1px solid #8b6b4b; }
+.trophy-row { display:flex;align-items:center;justify-content:flex-start;gap:12px; }
+.trophy-row .item-glyph { width:48px;height:48px;flex:none; }
+.trophy-row.earned { border-color:var(--gold); }
+#mobileInteract { max-width:100px;padding:8px; }
+#right { max-width:calc(100vw - 24px); }
