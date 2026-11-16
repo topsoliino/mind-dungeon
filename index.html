@@ -54,7 +54,22 @@ function weaponDamage(w=weaponById(save.equipment.weapon)){let n=w.base;for(cons
 function xpRequired(){return 60+save.level*38+save.level*save.level*5}
 function grantXP(n){save.xp+=n;while(save.xp>=xpRequired()){save.xp-=xpRequired();save.level++;save.pendingLevels++;player.hp=Math.min(maxHP(),player.hp+22);tell('LEVEL '+save.level+' – Attribut wählen!')}persist()}
 function levelMenu(){if(!save.pendingLevels)return;show('<span class="pill">Levelaufstieg</span><h2>Wähle ein Attribut</h2><p>Noch '+save.pendingLevels+' Attributpunkt(e). Jeder Aufstieg gewährt genau einen Punkt.</p><div class="choices">'+Object.entries(ATTRS).map(([k,[name,desc]])=>'<button data-stat="'+k+'"><b>'+name+' · '+save.attributes[k]+'</b><br><small>'+desc+'</small></button>').join('')+'</div><button id="later">Später</button>','level');document.querySelectorAll('[data-stat]').forEach(b=>b.onclick=()=>{const k=b.dataset.stat;save.attributes[k]++;save.pendingLevels--;player.max=maxHP();player.hp=Math.min(player.max,player.hp+(k==='vigor'?3:0));player.stamina=Math.min(maxStamina(),player.stamina);persist();if(save.pendingLevels)levelMenu();else close()});$('#later').onclick=close}
-async function refreshCatalog(){try{const response=await fetch('catalog/items.json',{cache:'no-cache'});if(!response.ok)throw Error('Katalog nicht erreichbar');const catalog=await response.json();if(!Array.isArray(catalog.weapons)||!Array.isArray(catalog.rings)||!catalog.weapons.length)throw Error('Ungültiger Katalog');WEAPONS=catalog.weapons;RINGS=catalog.rings;window.__mindCatalogSource='catalog/items.json'}catch(err){console.warn('Lokaler Ersatzkatalog aktiv:',err.message);window.__mindCatalogSource='eingebauter Ersatzkatalog'}}
+async function refreshCatalog(){
+ try{
+  const cfg=await (await fetch('supabase/public-config.json',{cache:'no-cache'})).json();
+  if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(cfg.url))throw Error('Supabase-URL ungültig');
+  const response=await fetch(cfg.url+'/rest/v1/item_catalog?select=*&enabled=eq.true',{headers:{apikey:cfg.publishableKey},signal:AbortSignal.timeout(3500)});
+  if(!response.ok)throw Error('Supabase-Katalog nicht bereit: '+response.status);
+  const rows=await response.json();
+  const weapons=rows.filter(x=>x.kind==='weapon').map(x=>({id:x.id,name:x.name_de,desc:x.description_de,base:x.base_damage,reach:x.reach,speed:Number(x.attack_seconds),stamina:x.stamina_cost,scale:x.scaling||{}}));
+  const rings=rows.filter(x=>x.kind==='ring').map(x=>({id:x.id,name:x.name_de,desc:x.description_de,bonus:x.effect?.bonus}));
+  if(!weapons.length||!rings.length)throw Error('Supabase-Katalog ist noch leer');
+  WEAPONS=weapons;RINGS=rings;window.__mindCatalogSource='Supabase';
+ }catch(err){
+  console.warn('Supabase noch nicht verfügbar, lade lokalen Katalog:',err.message);
+  try{const response=await fetch('catalog/items.json',{cache:'no-cache'});if(!response.ok)throw Error('Lokaler Katalog nicht erreichbar');const catalog=await response.json();if(!Array.isArray(catalog.weapons)||!Array.isArray(catalog.rings)||!catalog.weapons.length)throw Error('Ungültiger Katalog');WEAPONS=catalog.weapons;RINGS=catalog.rings;window.__mindCatalogSource='catalog/items.json'}catch(e){console.warn('Ersatzkatalog aktiv:',e.message);window.__mindCatalogSource='eingebauter Ersatzkatalog'}
+ }
+}
 function itemIcon(item){if(item.kind==='ring')return '◉';const w=weaponById(item.id);return w.speed<.28?'🗡️':w.base>=27?'⚒️':w.scale.intelligence?'✦':w.scale.faith?'☀':'⚔️'}
 function itemTitle(item){return item.kind==='weapon'?weaponById(item.id).name:ringById(item.id)?.name||'Unbekannter Ring'}
 function itemDetails(item){const w=item.kind==='weapon'?weaponById(item.id):ringById(item.id);if(!w)return '';return item.kind==='weapon'?'<b>'+qEsc(w.name)+'</b><p>'+qEsc(w.desc)+'</p><p>Schaden: '+weaponDamage(w)+' · Reichweite: '+w.reach+' · Angriffsdauer: '+w.speed+' s · Ausdauerverbrauch: '+w.stamina+'</p><p>Attributskalierung: '+Object.entries(w.scale).map(([k,v])=>ATTRS[k][0].split(' (')[0]+' '+(v>=1?'S':v>=.75?'A':v>=.45?'B':'C')).join(', ')+'</p>':'<b>'+qEsc(w.name)+'</b><p>'+qEsc(w.desc)+'</p>'}
