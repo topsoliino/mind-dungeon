@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "weapons": [
+    {
+      "id": "rust",
+      "name": "Rostige Klinge",
+      "base": 17,
+      "reach": 88,
+      "speed": 0.34,
+      "stamina": 18,
+      "scale": {
+        "strength": 0.35,
+        "dexterity": 0.2
+      },
+      "desc": "Ein zuverlässiges altes Schwert."
+    },
+    {
+      "id": "rapier",
+      "name": "Präzisionsrapier",
+      "base": 14,
+      "reach": 105,
+      "speed": 0.21,
+      "stamina": 12,
+      "scale": {
+        "dexterity": 0.95,
+        "luck": 0.12
+      },
+      "desc": "Schnelle Stiche und präzise Konter."
+    },
+    {
+      "id": "hammer",
+      "name": "Gedankenhammer",
+      "base": 27,
+      "reach": 78,
+      "speed": 0.55,
+      "stamina": 29,
+      "scale": {
+        "strength": 1.1,
+        "vitality": 0.12
+      },
+      "desc": "Langsam, aber wuchtig."
+    },
+    {
+      "id": "staff",
+      "name": "Neuronenstab",
+      "base": 18,
+      "reach": 118,
+      "speed": 0.39,
+      "stamina": 21,
+      "scale": {
+        "intelligence": 1.05,
+        "attunement": 0.3
+      },
+      "desc": "Arkane Energie in einem Stab gebündelt."
+    },
+    {
+      "id": "blade",
+      "name": "Klinge des Mitgefühls",
+      "base": 19,
+      "reach": 100,
+      "speed": 0.31,
+      "stamina": 18,
+      "scale": {
+        "faith": 0.9,
+        "dexterity": 0.2
+      },
+      "desc": "Geweihte Klinge für achtsame Krieger."
+    },
+    {
+      "id": "dagger",
+      "name": "Schattenmesser",
+      "base": 11,
+      "reach": 67,
+      "speed": 0.16,
+      "stamina": 9,
+      "scale": {
+        "dexterity": 0.75,
+        "luck": 0.75
+      },
+      "desc": "Rasante Treffer mit hohem Krit-Potenzial."
+    },
+    {
+      "id": "greatsword",
+      "name": "Expositionsgroßschwert",
+      "base": 35,
+      "reach": 113,
+      "speed": 0.66,
+      "stamina": 36,
+      "scale": {
+        "strength": 1.25,
+        "endurance": 0.18
+      },
+      "desc": "Hoher Schaden und großer Schwungradius."
+    }
+  ],
+  "rings": [
+    {
+      "id": "hunter",
+      "name": "Ring des Jägers",
+      "desc": "+18 % Schaden mit schnellen Waffen.",
+      "bonus": "fast"
+    },
+    {
+      "id": "bulwark",
+      "name": "Ring des Bollwerks",
+      "desc": "12 % weniger erlittenen Schaden.",
+      "bonus": "guard"
+    },
+    {
+      "id": "scholar",
+      "name": "Ring des Gelehrten",
+      "desc": "+22 % Schaden mit Intelligenz-Waffen.",
+      "bonus": "arcane"
+    },
+    {
+      "id": "faith",
+      "name": "Ring der Zuversicht",
+      "desc": "Nach jedem Treffer 3 Lebenspunkte heilen (maximal).",
+      "bonus": "heal"
+    },
+    {
+      "id": "luck",
+      "name": "Ring der Entdeckung",
+      "desc": "Bessere Beutechancen.",
+      "bonus": "loot"
+    },
+    {
+      "id": "dodge",
+      "name": "Ring des Ausweichens",
+      "desc": "Ausweichen kostet weniger Ausdauer.",
+      "bonus": "dodge"
+    }
+  ]
+}
