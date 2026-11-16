@@ -21,9 +21,9 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=5"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud"><div class="panel" id="stats"><b>✦ MIND DUNGEON</b> <small>SHADOWBOUND v0.8</small><div class="meter-label">LEBEN <span id="hpnum"></span></div><div id="health"><div id="healthfill"></div></div><div class="meter-label">AUSDAUER <span id="stnum"></span></div><div class="meter" id="stamina"><div id="staminafill"></div></div><div class="meter-label">ERFAHRUNG <span id="xpnum"></span></div><div class="meter" id="experience"><div id="xpfill"></div></div><small id="statline"></small></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="notice"></div><div id="dungeonPrompt" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="help" class="panel">WASD: Bewegen · Maus: Zielen & Angriff · F: Tastatur-Zielen · Leertaste: Angriff · Shift: Ausweichen · E: Interaktion · I: Inventar · C: Ausrüstung · L: Leveln · Q: Journal</div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=5"></script><script src="beta/dungeon-art.js?v=5"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=6"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud"><div class="panel" id="stats"><b>✦ MIND DUNGEON</b> <small>SHADOWBOUND v0.8</small><div class="meter-label">LEBEN <span id="hpnum"></span></div><div id="health"><div id="healthfill"></div></div><div class="meter-label">AUSDAUER <span id="stnum"></span></div><div class="meter" id="stamina"><div id="staminafill"></div></div><div class="meter-label">ERFAHRUNG <span id="xpnum"></span></div><div class="meter" id="experience"><div id="xpfill"></div></div><small id="statline"></small></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="notice"></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="help" class="panel">WASD: Bewegen · Maus: Zielen & Angriff · F: Tastatur-Zielen · Leertaste: Angriff · Shift: Ausweichen · E: Interaktion · I: Inventar · C: Ausrüstung · L: Leveln · Q: Journal</div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=6"></script><script src="beta/dungeon-items.js?v=6"></script><script src="beta/dungeon-art.js?v=6"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
-const art=window.DungeonArt,run=window.DungeonRun;
+const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems;
 const KEY='mind-dungeon-shadowbound-beta-v08',RESUME_KEY=KEY+'-resume',TILE=48,{W,H,LAST_DEPTH,DEFAULT_PACK}=run,TAU=Math.PI*2;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 const canvas=document.querySelector('#game'),displayContext=canvas.getContext('2d',{alpha:false});
@@ -45,6 +45,7 @@ if(save.floorVersion!==1){
  const seed=Number.isInteger(save.dungeonSeed)?save.dungeonSeed:run.freshSeed();
  Object.assign(save,{...run.freshRun(seed),solved:save.solved||{},questionReview:save.questionReview||{},questionCount:save.questionCount||0});
 }
+save.souls??=[];save.shopSold??=[];save.searched??=[];save.trials??={};save.ambushes??=[];
 let questions=packLibrary.get(save.activePack)?.questions||[];
 async function loadQuestions(){
  try{
@@ -91,12 +92,26 @@ const ATTRS={vigor:['Vitalität (Vigor)','Maximale Lebenspunkte'],attunement:['Z
 let WEAPONS=[{id:'rust',name:'Rostige Klinge',base:17,reach:88,speed:.34,stamina:18,scale:{strength:.35,dexterity:.2},desc:'Ein zuverlässiges altes Schwert.'},{id:'rapier',name:'Präzisionsrapier',base:14,reach:105,speed:.21,stamina:12,scale:{dexterity:.95,luck:.12},desc:'Schnelle Stiche und präzise Konter.'},{id:'hammer',name:'Gedankenhammer',base:27,reach:78,speed:.55,stamina:29,scale:{strength:1.1,vitality:.12},desc:'Langsam, aber wuchtig.'},{id:'staff',name:'Neuronenstab',base:18,reach:118,speed:.39,stamina:21,scale:{intelligence:1.05,attunement:.3},desc:'Arkane Energie in einem Stab gebündelt.'},{id:'blade',name:'Klinge des Mitgefühls',base:19,reach:100,speed:.31,stamina:18,scale:{faith:.9,dexterity:.2},desc:'Geweihte Klinge für achtsame Krieger.'},{id:'dagger',name:'Schattenmesser',base:11,reach:67,speed:.16,stamina:9,scale:{dexterity:.75,luck:.75},desc:'Rasante Treffer mit hohem Krit-Potenzial.'},{id:'greatsword',name:'Expositionsgroßschwert',base:35,reach:113,speed:.66,stamina:36,scale:{strength:1.25,endurance:.18},desc:'Hoher Schaden und großer Schwungradius.'}];
 let RINGS=[{id:'hunter',name:'Ring des Jägers',desc:'+18 % Schaden mit schnellen Waffen.',bonus:'fast'},{id:'bulwark',name:'Ring des Bollwerks',desc:'12 % weniger erlittenen Schaden.',bonus:'guard'},{id:'scholar',name:'Ring des Gelehrten',desc:'+22 % Schaden mit Intelligenz-Waffen.',bonus:'arcane'},{id:'faith',name:'Ring der Zuversicht',desc:'Nach jedem Treffer 3 Lebenspunkte heilen (maximal).',bonus:'heal'},{id:'luck',name:'Ring der Entdeckung',desc:'Bessere Beutechancen.',bonus:'loot'},{id:'dodge',name:'Ring des Ausweichens',desc:'Ausweichen kostet weniger Ausdauer.',bonus:'dodge'}];
 save.level=save.level||1;save.attributes=save.attributes||Object.fromEntries(Object.keys(ATTRS).map(k=>[k,10]));save.inventory=save.inventory||[{kind:'weapon',id:'rust'}];save.equipment=save.equipment||{weapon:'rust',rings:[null,null]};save.pendingLevels=save.pendingLevels||0;save.enemyTier=save.enemyTier||1;save.playtime=save.playtime||0;
-const weaponById=id=>WEAPONS.find(w=>w.id===id)||WEAPONS[0],ringById=id=>RINGS.find(r=>r.id===id);
+const weaponById=id=>WEAPONS.find(w=>w.id===id)||WEAPONS[0];
+const ringById=id=>id===items.merchantRing.id?items.merchantRing:RINGS.find(r=>r.id===id);
+function equippedWeapon(){return {kind:'weapon',id:save.equipment.weapon,rarity:save.equipment.weaponRarity||'common'};}
+function equippedRing(slot){return {kind:'ring',id:save.equipment.rings[slot],rarity:save.equipment.ringRarities?.[slot]||'common'};}
+function equippedArmor(slot){return {kind:'armor',id:save.equipment.armor?.[slot],rarity:save.equipment.armorRarities?.[slot]||'common'};}
+function gearItems(){return [equippedWeapon(),equippedRing(0),equippedRing(1),...Object.keys(ARMOR_PARTS).map(equippedArmor)].filter(it=>it.id);}
+function isEquipped(it){return gearItems().some(g=>items.key(it)===items.key(g));}
+function pickedRarity(w){return w.id===save.equipment.weapon?items.rank(equippedWeapon()):'common';}
 const hasRing=id=>save.equipment.rings.includes(id);
 function maxHP(){return 70+save.attributes.vigor*3}
 function maxStamina(){return 70+save.attributes.endurance*3}
 player.max=maxHP();player.hp=Math.min(player.max,player.hp);player.stamina=maxStamina();player.focus=60+save.attributes.attunement*4;
-function weaponDamage(w=weaponById(save.equipment.weapon)){let n=w.base;for(const [a,c] of Object.entries(w.scale))n+=Math.max(0,save.attributes[a]-8)*c;return Math.round(n*(hasRing('hunter')&&w.speed<.3?1.18:1)*(hasRing('scholar')&&w.scale.intelligence?1.22:1))}
+function weaponDamage(w=weaponById(save.equipment.weapon),rank=pickedRarity(w)){
+ let amount=w.base*items.rarity[rank].power;
+ for(const [attribute,factor] of Object.entries(w.scale))amount+=Math.max(0,save.attributes[attribute]-8)*factor;
+ const fast=hasRing('hunter')&&w.speed<.3?1.18:1;
+ const arcane=hasRing('scholar')&&w.scale.intelligence?1.22:1;
+ const mythicRings=[0,1].filter(slot=>equippedRing(slot).id&&items.rank(equippedRing(slot))==='mythic').length;
+ return Math.round(amount*fast*arcane*(1+.20*mythicRings));
+}
 function xpRequired(){return 60+save.level*38+save.level*save.level*5}
 function grantXP(n){save.xp+=n;while(save.xp>=xpRequired()){save.xp-=xpRequired();save.level++;save.pendingLevels++;player.hp=Math.min(maxHP(),player.hp+22);tell('LEVEL '+save.level+' – Attribut wählen!')}persist()}
 function levelMenu(){if(!save.pendingLevels)return;show('<span class="pill">Levelaufstieg</span><h2>Wähle ein Attribut</h2><p>Noch '+save.pendingLevels+' Attributpunkt(e). Jeder Aufstieg gewährt genau einen Punkt.</p><div class="choices">'+Object.entries(ATTRS).map(([k,[name,desc]])=>'<button data-stat="'+k+'"><b>'+name+' · '+save.attributes[k]+'</b><br><small>'+desc+'</small></button>').join('')+'</div><button id="later">Später</button>','level');document.querySelectorAll('[data-stat]').forEach(b=>b.onclick=()=>{const k=b.dataset.stat;save.attributes[k]++;save.pendingLevels--;player.max=maxHP();player.hp=Math.min(player.max,player.hp+(k==='vigor'?3:0));player.stamina=Math.min(maxStamina(),player.stamina);persist();if(save.pendingLevels)levelMenu();else close()});$('#later').onclick=close}
@@ -125,10 +140,12 @@ const ARMOR_SETS=[
  {id:'shadow',name:'Schatten',color:'#5c4d7f',def:8}
 ];
 const ARMOR_PARTS={helmet:['Helm',1],chest:['Harnisch',3],legs:['Hose',2],boots:['Stiefel',1]};
-const ARMOR_ITEMS=ARMOR_SETS.flatMap(set=>Object.entries(ARMOR_PARTS).map(([slot,[label,mult]])=>({id:set.id+'-'+slot,kind:'armor',slot,name:set.name+'-'+label,color:set.color,defense:set.def*mult,desc:'Rüstung: '+set.def*mult+' Verteidigung'})));
+const ARMOR_ITEMS=ARMOR_SETS.flatMap(set=>Object.entries(ARMOR_PARTS).map(([slot,[label,mult]])=>({id:set.id+'-'+slot,kind:'armor',slot,set:set.id,weight:mult,name:set.name+'-'+label,color:set.color,defense:set.def*mult,desc:'Rüstung: '+set.def*mult+' Verteidigung'})));
 function armorById(id){return ARMOR_ITEMS.find(a=>a.id===id)}
-function armorDefense(){return Object.values(save.equipment.armor||{}).reduce((n,id)=>n+(armorById(id)?.defense||0),0)}
-const ringColors={hunter:'#a86762',bulwark:'#9a9f84',scholar:'#91a3bf',faith:'#cda863',luck:'#7c9e74',dodge:'#93c0ba'};
+function armorDefense(){
+ return Object.keys(ARMOR_PARTS).map(equippedArmor).reduce((sum,it)=>sum+(armorById(it.id)?.defense||0)*items.rarity[items.rank(it)].power,0);
+}
+const ringColors={merchant:'#deb46e',hunter:'#a86762',bulwark:'#9a9f84',scholar:'#91a3bf',faith:'#cda863',luck:'#7c9e74',dodge:'#93c0ba'};
 function iconImage(type,id,color){return '<img src="'+art.url(type,id,color)+'" width="64" height="64" alt="">';}
 function itemIcon(item){
  if(item.kind==='armor'){const a=armorById(item.id);return iconImage('armor',a?.slot,a?.color);}
@@ -137,47 +154,174 @@ function itemIcon(item){
 }
 function itemTitle(item){return item.kind==='armor'?(armorById(item.id)?.name||'Rüstung'):item.kind==='weapon'?weaponById(item.id).name:ringById(item.id)?.name||'Unbekannter Ring'}
 function ringEffectText(id){
- const effects={bulwark:'Eingehender Schaden wird um 12 % reduziert.',dodge:'Ausweichen kostet 17 statt 25 Ausdauer.',faith:'Jeder erfolgreiche Waffentreffer heilt 3 Lebenspunkte.',luck:'Erhöht Glück um den im Ring angegebenen Bonuswert.',strength:'Erhöht Stärke um den im Ring angegebenen Bonuswert.',wisdom:'Erhöht Intelligenz um den im Ring angegebenen Bonuswert.'};
- const ring=ringById(id);return effects[id]||(ring?.bonus?'Attributbonus: '+JSON.stringify(ring.bonus):'Für diesen Ring ist noch kein numerischer Effekt hinterlegt.')
+ const effects={hunter:'Schnelle Waffen verursachen 18 % mehr Schaden.',
+  scholar:'Waffen mit Intelligenz-Skalierung verursachen 22 % mehr Schaden.',
+  bulwark:'12 % weniger eingehender Schaden.',dodge:'Ausweichen kostet 17 statt 25 Ausdauer.',
+  faith:'Heilt 3 LP pro Treffer.',luck:'Erhöht den Erlös beim Händler von 40 % auf 55 % des Grundwerts.',
+  merchant:items.merchantRing.desc};
+ return effects[id]||ringById(id)?.desc||'';
 }
-function itemDetails(item){if(item.kind==='armor'){const a=armorById(item.id);return a?'<b>'+qEsc(a.name)+'</b><p>Slot: '+qEsc(ARMOR_PARTS[a.slot][0])+'</p><p>Verteidigung: +'+a.defense+' (reduziert eingehenden Schaden)</p>':''}const w=item.kind==='weapon'?weaponById(item.id):ringById(item.id);if(!w)return '';return item.kind==='weapon'?'<b>'+qEsc(w.name)+'</b><p>'+qEsc(w.desc)+'</p><p>Schaden: '+weaponDamage(w)+' · Reichweite: '+w.reach+' · Angriffsdauer: '+w.speed+' s · Ausdauerverbrauch: '+w.stamina+'</p><p>Attributskalierung: '+Object.entries(w.scale).map(([k,v])=>ATTRS[k][0].split(' (')[0]+' '+(v>=1?'S':v>=.75?'A':v>=.45?'B':'C')).join(', ')+'</p>':'<b>'+qEsc(w.name)+'</b><p>'+qEsc(ringEffectText(item.id))+'</p>'}
-function rpgGrid(){const slots=Array.from({length:30},(_,i)=>{const it=save.inventory[i];if(!it)return '<div class="rpg-cell" aria-label="Leerer Inventarplatz"></div>';const active=it.kind==='armor'?save.equipment.armor?.[armorById(it.id)?.slot]===it.id:it.kind==='weapon'?save.equipment.weapon===it.id:save.equipment.rings.includes(it.id);return '<button class="rpg-cell'+(active?' equipped':'')+'" data-item="'+i+'" title="'+qEsc(itemTitle(it))+'" aria-label="'+qEsc(itemTitle(it))+'"><span class="item-glyph">'+itemIcon(it)+'</span>'+(active?'<span class="count">E</span>':'')+'</button>'});return slots.join('')}
-function rpgStats(){return '<h3>Charakter · Stufe '+save.level+'</h3><p>Lebenspunkte: '+Math.round(player.hp)+' / '+maxHP()+'<br>Ausdauer: '+Math.round(player.stamina)+' / '+maxStamina()+'<br>Waffenschaden: '+weaponDamage()+'</p><h3>Attribute</h3><div style="display:grid;grid-template-columns:1fr auto;gap:5px;font-size:12px">'+Object.entries(ATTRS).map(([k,v])=>'<span>'+qEsc(v[0])+'</span><b>'+save.attributes[k]+'</b>').join('')+'</div>'}
-function rpgInspect(it){return '<div class="rpg-inspect">'+(it?itemDetails(it):'<h3>Gegenstand auswählen</h3><p>Bewege den Mauszeiger über einen Gegenstand, um seine Werte und Eigenschaften zu sehen. Klicke, um ihn auszurüsten.</p>')+'</div>'}
-function bindInspect(selector,lookup){document.querySelectorAll(selector).forEach(b=>{const it=lookup(b);const inspect=()=>{$('#rpgInspect').innerHTML=rpgInspect(it)};b.addEventListener('mouseenter',inspect);b.addEventListener('focus',inspect)})}
+function statToken(type,text,label=items.damage[type].label){
+ const d=items.damage[type];return '<span class="stat-token" style="--type:'+d.color+'" title="'+qEsc(label)+'">'+d.icon+' '+qEsc(text)+'<span class="visually-hidden"> '+qEsc(label)+'</span></span>';
+}
+function itemDetails(it){
+ if(!it)return '<p class="muted">Wähle einen Gegenstand.</p>';
+ const rank=items.rank(it),rarity=items.rarity[rank],mythic=rank==='mythic';
+ const header='<div class="item-detail-title">'+itemTile(it)+'<div><h3>'+qEsc(itemTitle(it))+'</h3><small style="color:'+rarity.color+'">'+rarity.label+' · '+qEsc(it.source||'Ausrüstung')+'</small></div></div>';
+ if(it.kind==='weapon'){
+  const w=weaponById(it.id),profile=items.weapon(it.id),total=weaponDamage(w,rank);
+  const types=Object.entries(profile.split).map(([type,share])=>statToken(type,Math.round(total*share))).join('');
+  const status=profile.status?statToken(profile.status,profile.status==='poison'?'3 Ticks':'8 % LP'):'';
+  return header+'<div class="item-stats">'+types+status+'</div><p>Reichweite '+w.reach+' · '+w.speed+' s · '+Math.round(w.stamina*(mythic?1.25:1))+' Ausdauer</p>'+
+   (mythic?'<p class="item-malus">Mythisch · +25 % Ausdauerkosten</p>':'');
+ }
+ if(it.kind==='armor'){
+  const piece=armorById(it.id);
+  if(!piece)return header;
+  const mods=items.affinity(piece,rank);
+  return header+'<p>'+qEsc(ARMOR_PARTS[piece.slot][0])+' · '+Math.round(piece.defense*rarity.power)+' Schutz</p>'+
+   '<div class="item-stats">'+Object.entries(mods).map(([type,v])=>statToken(type,(v>0?'+':'')+Math.round(v*100)+' %',items.damage[type].label+(v>0?' · Resistenz':' · Anfälligkeit'))).join('')+'</div>'+
+   (mythic?'<p class="item-malus">Mythisch · +12 % erlittener Blitzschaden</p>':'');
+ }
+ const mythicText=mythic?'<p class="item-malus">Mythisch · +20 % Waffenschaden, +12 % erlittener Dunkelschaden</p>':'';
+ return header+'<p>'+qEsc(ringEffectText(it.id))+'</p>'+mythicText;
+}
+function itemTile(it){
+ return '<span class="item-glyph" style="--rarity:'+items.rarity[items.rank(it)].color+'">'+itemIcon(it)+'</span>';
+}
 function equipInventoryItem(it){
- if(!it)return;
- if(it.kind==='armor'){const a=armorById(it.id);if(!a)return;save.equipment.armor??={};save.equipment.armor[a.slot]=a.id}
- else if(it.kind==='weapon'){save.equipment.weapon=it.id}
- else if(it.kind==='ring'){
-  if(save.equipment.rings.includes(it.id)){tell('Dieser Ring ist bereits ausgerüstet');return}
-  const slot=save.equipment.rings.findIndex(r=>!r);
-  if(slot<0){tell('Beide Ringplätze sind belegt – lege zuerst einen Ring ab');return}
-  save.equipment.rings[slot]=it.id
- }else{tell('Dieser Gegenstand kann nicht ausgerüstet werden');return}
- persist();inventoryMenu();tell('Ausgerüstet: '+itemTitle(it))
+ if(it.kind==='weapon'){
+  save.equipment.weapon=it.id;save.equipment.weaponRarity=items.rank(it);
+ }else if(it.kind==='armor'){
+  const piece=armorById(it.id);if(!piece)return;
+  (save.equipment.armor??={})[piece.slot]=it.id;(save.equipment.armorRarities??={})[piece.slot]=items.rank(it);
+ }else if(it.kind==='ring'){
+  let slot=save.equipment.rings.indexOf(it.id);
+  if(slot<0)slot=save.equipment.rings.findIndex(r=>!r);
+  if(slot<0){tell('Beide Ringplätze sind belegt · Lege zuerst einen Ring ab');return;}
+  save.equipment.rings[slot]=it.id;(save.equipment.ringRarities??=[])[slot]=items.rank(it);
+ }
+ persist();tell('Ausgerüstet · '+itemTitle(it));
 }
-function inventoryMenu(){
- show('<div class="rpg-shell"><section class="rpg-left"><div class="rpg-head"><h2>✦ Inventar</h2><small>'+save.inventory.length+' / 30 Plätze</small></div><div class="rpg-grid">'+rpgGrid()+'</div><p class="rpg-note">Gegenstand anklicken, dann rechts ausdrücklich ausrüsten.</p><div class="actions"><button id="toGear">Ausrüstung</button><button id="closeInv">Schließen</button></div></section><aside class="rpg-right"><div id="rpgInspect">'+rpgInspect(null)+'</div><button class="primary" id="md-equip-selected" disabled>Ausgewählten Gegenstand ausrüsten</button><hr>'+rpgStats()+'</aside></div>','inventory');
- document.querySelectorAll('[data-item]').forEach(b=>{
-  const select=()=>{const it=save.inventory[Number(b.dataset.item)];document.querySelectorAll('[data-item]').forEach(el=>el.style.outline='');b.style.outline='2px solid #ffe3a0';$('#rpgInspect').innerHTML=rpgInspect(it);const button=$('#md-equip-selected');button.disabled=false;button.onclick=()=>equipInventoryItem(it)};
-  b.onclick=select;b.onmouseenter=()=>{$('#rpgInspect').innerHTML=rpgInspect(save.inventory[Number(b.dataset.item)])};
+const bagFilters={all:'Alle',...items.kinds};
+function inventoryMenu(filter='all',page=0,selected){
+ const list=save.inventory.map((it,index)=>({it,index})).filter(({it})=>filter==='all'||filter===it.kind);
+ const size=innerHeight<430?6:innerWidth<650||innerHeight<540?12:18;
+ const pages=Math.max(1,Math.ceil(list.length/size));
+ page=Math.min(page,pages-1);
+ const entries=list.slice(page*size,(page+1)*size);
+ const selection=entries.find(row=>row.index===selected)||entries[0];
+ show('<div class="rpg-shell ledger"><section class="rpg-left"><div class="rpg-head"><h2>Inventar</h2><small>'+save.inventory.length+'/30</small></div>'+
+  '<div class="ledger-tabs">'+Object.entries(bagFilters).map(([id,label])=>'<button data-filter="'+id+'" aria-pressed="'+(filter===id)+'">'+label+'</button>').join('')+'</div>'+
+  '<div class="rpg-grid">'+entries.map(({it,index})=>'<button class="rpg-cell'+(isEquipped(it)?' equipped':'')+'" data-item="'+index+'" aria-pressed="'+(selection?.index===index)+'" title="'+qEsc(itemTitle(it))+'" aria-label="'+qEsc(itemTitle(it))+'">'+itemTile(it)+(isEquipped(it)?'<span class="count">E</span>':'')+'</button>').join('')+'</div>'+
+  '<div class="ledger-actions">'+(pages>1?'<button id="bagPrev" '+(page===0?'disabled':'')+' aria-label="Vorherige Seite">‹</button><small>'+(page+1)+'/'+pages+'</small><button id="bagNext" '+(page+1>=pages?'disabled':'')+' aria-label="Nächste Seite">›</button>':'')+
+  '<button id="toGear">Ausrüstung</button><button id="closeInv">Schließen</button></div></section>'+
+  '<aside class="rpg-right"><div id="rpgInspect"></div><button class="primary" id="md-equip-selected">Ausrüsten</button></aside></div>','inventory');
+ const inspect=it=>{
+  $('#rpgInspect').innerHTML=itemDetails(it);
+  $('#md-equip-selected').disabled=!it||isEquipped(it);
+  $('#md-equip-selected').onclick=()=>{equipInventoryItem(it);inventoryMenu(filter,page,save.inventory.indexOf(it));};
+ };
+ inspect(selection?.it);
+ document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>inventoryMenu(b.dataset.filter));
+ document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-item]').forEach(other=>other.setAttribute('aria-pressed',String(other===b)));
+  inspect(save.inventory[Number(b.dataset.item)]);
  });
- $('#closeInv').onclick=close;$('#toGear').onclick=equipmentMenu
+ mdButton('bagPrev',()=>inventoryMenu(filter,page-1));mdButton('bagNext',()=>inventoryMenu(filter,page+1));
+ mdButton('closeInv',close);mdButton('toGear',()=>equipmentMenu());
 }
-function equipmentMenu(){const w=weaponById(save.equipment.weapon);const slots=[{label:'Waffenhand',item:{kind:'weapon',id:w.id}},{label:'Ringplatz I',item:save.equipment.rings[0]?{kind:'ring',id:save.equipment.rings[0]}:null},{label:'Ringplatz II',item:save.equipment.rings[1]?{kind:'ring',id:save.equipment.rings[1]}:null},...Object.entries(ARMOR_PARTS).map(([slot,[label]])=>({label,item:save.equipment.armor?.[slot]?{kind:'armor',id:save.equipment.armor[slot]}:null,armorSlot:slot}))];show('<div class="rpg-shell"><section class="rpg-left"><div class="rpg-head"><h2>⚔ Ausrüstung</h2><small>Aktive Gegenstände</small></div><div class="rpg-equip">'+slots.map((slot,i)=>'<button data-slot="'+i+'"><small>'+slot.label+'</small><span class="item-glyph">'+(slot.item?itemIcon(slot.item):'＋')+'</span><span style="font-size:11px">'+qEsc(slot.item?itemTitle(slot.item):'Leer')+'</span></button>').join('')+'</div><div class="actions"><button id="toInventory">Inventar öffnen</button><button id="closeEq">Schließen</button></div><p class="rpg-note">Über einen Ausrüstungsplatz fahren: Gegenstandswerte anzeigen. Ring anklicken: ablegen. Rüstung anklicken: ablegen.</p></section><aside class="rpg-right"><div id="rpgInspect">'+rpgInspect({kind:'weapon',id:w.id})+'</div><hr>'+rpgStats()+'</aside></div>','equipment');bindInspect('[data-slot]',b=>slots[+b.dataset.slot].item);document.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const i=+b.dataset.slot,it=slots[i].item;$('#rpgInspect').innerHTML=rpgInspect(it)+(i>0&&i<3&&it?'<button id="unequipRing">Ring ablegen</button>':i>2&&it?'<button id="unequipArmor">Rüstung ablegen</button>':'');const ua=$('#unequipArmor');if(ua)ua.onclick=()=>{delete save.equipment.armor[slots[i].armorSlot];persist();equipmentMenu()};const u=$('#unequipRing');if(u)u.onclick=()=>{save.equipment.rings[i-1]=null;persist();equipmentMenu()}});$('#toInventory').onclick=inventoryMenu;$('#closeEq').onclick=close}
-function lootItem(boss=false){const luck=save.attributes.luck,ring=hasRing('loot')?1.35:1;if(Math.random()<.4){const options=ARMOR_ITEMS.filter(a=>!save.inventory.some(it=>it.kind==='armor'&&it.id===a.id));if(options.length){const a=options[Math.floor(Math.random()*options.length)];save.inventory.push({kind:'armor',id:a.id});tell('Rüstung gefunden: '+a.name);persist();return}}const chooseRing=boss||Math.random()<(.24+luck*.004)*ring;const list=chooseRing?RINGS:WEAPONS;const options=list.filter(w=>!save.inventory.some(it=>it.id===w.id));if(!options.length){save.gold+=35;tell('Beute: +35 Gold');return}const chosen=options[Math.floor(Math.random()*options.length)];save.inventory.push({kind:chooseRing?'ring':'weapon',id:chosen.id});tell('Beute gefunden: '+chosen.name);persist()}
+function equipmentMenu(selected=0){
+ const slots=[
+  {label:'Waffe',it:equippedWeapon()},
+  ...[0,1].map(index=>({label:'Ring '+(index+1),it:equippedRing(index),remove:()=>{
+   save.equipment.rings[index]=null;if(save.equipment.ringRarities)delete save.equipment.ringRarities[index];
+  }})),
+  ...Object.keys(ARMOR_PARTS).map(slot=>({label:ARMOR_PARTS[slot][0],it:equippedArmor(slot),remove:()=>{
+   delete save.equipment.armor[slot];if(save.equipment.armorRarities)delete save.equipment.armorRarities[slot];
+  }}))
+ ];
+ const active=slots[selected];
+ show('<div class="rpg-shell ledger"><section class="rpg-left"><div class="rpg-head"><h2>Ausrüstung</h2><small>Stufe '+save.level+'</small></div>'+
+  '<div class="gear-grid">'+slots.map(({label,it},index)=>'<button data-slot="'+index+'" aria-pressed="'+(index===selected)+'">'+(it.id?itemTile(it):'<span class="empty-slot">◇</span>')+'<small>'+label+'</small></button>').join('')+'</div>'+
+  '<div class="ledger-actions"><button id="toInventory">Inventar</button><button id="closeEq">Schließen</button></div></section>'+
+  '<aside class="rpg-right">'+itemDetails(active.it.id?active.it:null)+(active.it.id&&active.remove?'<button id="removeGear">Ablegen</button>':'')+'</aside></div>','equipment');
+ document.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>equipmentMenu(Number(b.dataset.slot)));
+ mdButton('removeGear',()=>{active.remove();persist();equipmentMenu(selected);});
+ mdButton('toInventory',()=>inventoryMenu());mdButton('closeEq',close);
+}
+function itemPools(){
+ return {
+  weapon:WEAPONS.map(w=>({kind:'weapon',id:w.id})),
+  ring:[...RINGS,items.merchantRing].filter((r,i,all)=>all.findIndex(x=>x.id===r.id)===i).map(r=>({kind:'ring',id:r.id})),
+  armor:ARMOR_ITEMS.map(a=>({kind:'armor',id:a.id}))
+ };
+}
+function lootChoice(rank,source){
+ const pools=itemPools();
+ const list=pools[Object.keys(pools)[Math.floor(Math.random()*3)]];
+ const candidates=list.filter(it=>!save.inventory.some(other=>items.key(other)===items.key({...it,rarity:rank})));
+ const pool=candidates.length?candidates:list;
+ return {...pool[Math.floor(Math.random()*pool.length)],rarity:rank,source};
+}
+function dropSoul(pos,it){
+ const x=pos.x,y=pos.y;
+ save.souls.push({x,y,item:it,phase:Math.random()*TAU});
+ burst(x,y,items.rarity[items.rank(it)].color,13);
+}
+function claimSoul(index){
+ if(save.inventory.length>=30){tell('Inventar voll');return;}
+ const orb=save.souls[index];if(!orb)return;
+ save.inventory.push(orb.item);save.souls.splice(index,1);persist();
+ tell('Aufgehoben · '+itemTitle(orb.item));
+}
 const rand=(a,b)=>a+Math.random()*(b-a);let enemies=[],particles=[],slashes=[],webShots=[],webPatches=[];const dust=[];let moveClock=0;
 
 const furnishingSeed=save.dungeonSeed;
 const merchantRandom=run.random(furnishingSeed^0x7157be6a);
 const merchantZone=zones[1+Math.floor(merchantRandom()*4)];
 const merchant={x:(merchantZone.x+1.5)*TILE,y:(merchantZone.y+2.5)*TILE};
-function merchantMenu(){
- const goods=[{kind:'weapon',id:'rapier',price:65},{kind:'weapon',id:'hammer',price:80},{kind:'weapon',id:'greatsword',price:110},{kind:'ring',id:'bulwark',price:95},{kind:'ring',id:'dodge',price:90},{kind:'ring',id:'faith',price:120}].filter(it=>(it.kind==='weapon'?WEAPONS:RINGS).some(x=>x.id===it.id));
- show('<h2>Der verborgene Händler</h2><p>Dein Gold: <b>'+save.gold+'</b> 🪙</p><p>Die Waren wechseln nicht während dieses Besuchs.</p>'+goods.map((it,i)=>'<div class="md-slot"><span>'+qEsc(itemTitle(it))+' · '+it.price+' Gold</span><button data-buy="'+i+'">Kaufen</button></div>').join('')+'<div class="md-actions"><button id="md-shop-back">Verlassen</button></div>','merchant');
- document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const it=goods[Number(b.dataset.buy)];if(save.gold<it.price){tell('Nicht genug Gold');return}if(save.inventory.length>=30){tell('Inventar voll');return}if(save.inventory.some(x=>x.id===it.id&&x.kind===it.kind)){tell('Diesen Gegenstand besitzt du bereits');return}save.gold-=it.price;save.inventory.push({kind:it.kind,id:it.id});persist();merchantMenu();tell('Gekauft: '+itemTitle(it))});
- $('#md-shop-back').onclick=close;
+function merchantMenu(mode='buy',page=0,selected=0){
+ const size=innerHeight<430?4:innerWidth<650||innerHeight<540?6:12;
+ const offers=items.shop(save.dungeonSeed,save.floor,itemPools()).slice(0,hasRing('merchant')?6:3);
+ const stock=mode==='buy'?offers:save.inventory;
+ const pages=Math.max(1,Math.ceil(stock.length/size));
+ page=Math.min(page,pages-1);
+ const visible=stock.slice(page*size,(page+1)*size);
+ selected=Math.min(selected,visible.length-1);
+ const it=visible[selected];
+ const sold=it&&save.shopSold.includes(it.stock);
+ const buying=mode==='buy',equipped=it&&isEquipped(it);
+ const amount=it&&(buying?it.price:Math.max(1,Math.floor(items.price(it,1)*(hasRing('luck')?0.55:0.4))));
+ const disabled=!it||(buying?(sold||save.gold<amount||save.inventory.length>=30):equipped);
+ const subtitle=buying?offers.length+' Angebote':' '+stock.length+' Gegenstände';
+ show('<div class="rpg-shell ledger"><section class="rpg-left"><div class="rpg-head"><h2>Händler</h2><small>◈ '+save.gold+' Gold</small></div>'+
+  '<div class="ledger-tabs"><button id="shopBuy" aria-pressed="'+buying+'">Kaufen</button><button id="shopSell" aria-pressed="'+!buying+'">Verkaufen</button><small>'+subtitle+'</small></div>'+
+  '<div class="shop-grid">'+visible.map((row,i)=>{
+   const gone=buying&&save.shopSold.includes(row.stock);
+   return '<button class="shop-item" data-stock="'+i+'" aria-pressed="'+(i===selected)+'">'+itemTile(row)+'<span>'+qEsc(itemTitle(row))+'<small>'+
+    (buying?(gone?'Verkauft':'◈ '+row.price):(isEquipped(row)?'Ausgerüstet':'◈ '+Math.max(1,Math.floor(items.price(row,1)*(hasRing('luck')?0.55:0.4)))))+
+    '</small></span></button>';
+  }).join('')+'</div><div class="ledger-actions">'+(pages>1?'<button id="shopPrev" '+(page===0?'disabled':'')+' aria-label="Vorherige Seite">‹</button><small>'+(page+1)+'/'+pages+'</small><button id="shopNext" '+(page+1>=pages?'disabled':'')+' aria-label="Nächste Seite">›</button>':'')+
+  '<button id="md-shop-back">Verlassen</button></div></section><aside class="rpg-right">'+itemDetails(it)+
+  (it?'<button class="primary" id="shopConfirm" '+(disabled?'disabled':'')+'>'+(buying?'Kaufen':'Verkaufen')+' · '+amount+' Gold</button>':'')+
+  (!buying&&equipped?'<p class="muted">Zum Verkaufen zuerst ablegen.</p>':'')+'</aside></div>','merchant');
+ document.querySelectorAll('[data-stock]').forEach(b=>b.onclick=()=>merchantMenu(mode,page,Number(b.dataset.stock)));
+ mdButton('shopBuy',()=>merchantMenu());mdButton('shopSell',()=>merchantMenu('sell'));
+ mdButton('shopPrev',()=>merchantMenu(mode,page-1));mdButton('shopNext',()=>merchantMenu(mode,page+1));mdButton('md-shop-back',close);
+ mdButton('shopConfirm',()=>{
+  if(disabled)return;
+  if(buying){
+   if(save.shopSold.includes(it.stock)||save.gold<amount||save.inventory.length>=30)return;
+   const {kind,id,rarity,source}=it;
+   save.inventory.push({kind,id,rarity,source});save.gold-=amount;save.shopSold.push(it.stock);
+  }else{
+   const index=page*size+selected;
+   if(save.inventory[index]!==it||isEquipped(it))return;
+   save.inventory.splice(index,1);save.gold+=amount;
+  }
+  persist();merchantMenu(mode,page,selected);
+ });
 }
 function dungeonMapMenu(){
 
@@ -187,6 +331,8 @@ const shrines=zones.map((z,i)=>({x:(z.x+.5)*TILE,y:(z.y+.5)*TILE,i}));
 const chests=[[10.5,7.5],[23.5,4.5],[38.5,9.5],[22.5,25.5],[37.5,25.5]].map(([x,y],i)=>({
  x:(x+zones[i].offsetX)*TILE,y:(y+zones[i].offsetY)*TILE
 }));
+const trialStart=1+Math.floor(run.random(save.dungeonSeed^0x71927a33)()*3);
+const trialIndex=save.trialIndex??=[trialStart,1+trialStart%3,1+(trialStart+1)%3].find(i=>!save.opened.includes(i))??trialStart;
 const mapPickup={x:(9.5+zones[0].offsetX)*TILE,y:(4.5+zones[0].offsetY)*TILE};
 const roomRandom=run.random(furnishingSeed^0x7d3a912e);
 // Room edges hold storage and lighting. Sets are placed as groups so seats
@@ -236,6 +382,17 @@ for(const [zone,plan] of roomPlans.entries()){
  }
 }
 if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y))Object.assign(player,spawn);
+const cabinets=furniture.filter(p=>p.type==='cabinet'||p.type==='bookcase').map((p,id)=>({...p,id,
+ gold:run.random(save.dungeonSeed^(0x111723+id*2246822519))()<.44?9+save.floor*3+id%5:0
+}));
+function searchCabinet(index){
+ if(save.searched.includes(index))return;
+ const cabinet=cabinets[index];if(!cabinet)return;
+ save.searched.push(index);
+ if(cabinet.gold){save.gold+=cabinet.gold;burst(cabinet.x,cabinet.y,'#dfb969',12);}
+ tell(cabinet.gold?'Schrank durchsucht · +'+cabinet.gold+' Gold':'Der Schrank ist leer');
+ persist();
+}
 const defeated=new Set(save.defeated);
 const explored=new Set(save.explored);
 const nearbyRegions=[[0,-1],[1,0],[0,1],[-1,0],[-1,-1],[1,-1],[1,1],[-1,1]];
@@ -266,6 +423,76 @@ for(const room of rooms){
   for(let i=positions.length-1;i>=0;i--)if(Math.hypot(positions[i].x-pos.x,positions[i].y-pos.y)<43)positions.splice(i,1);
  }
 }
+function spawnAmbush(ambush){
+ ambush.positions.forEach((p,i)=>{
+  const id='ambush-'+ambush.index+'-'+i;
+  if(defeated.has(id))return;
+  const max=25+save.floor*9;
+  enemies.push({...p,id,roomId:ambush.index,type:p.type,hp:max,max,size:.93,phase:i,hit:0,attack:1.4+i*.45,windup:0,move:0,angle:0,tier:save.floor});
+ });
+}
+for(const ambush of save.ambushes)spawnAmbush(ambush);
+let trial=null;
+function offerTrial(index){
+ if(save.trials[index]||!questions.length){tell('Keine Prüfung verfügbar');return;}
+ const target=Math.min(3,questions.length);
+ show('<h2>Versiegelte Prüftruhe</h2><p>Beantworte '+target+' Fragen in 60 Sekunden richtig. Bei einem Fehlschlag löst die Truhe einen Hinterhalt aus.</p><div class="actions"><button class="primary" id="beginTrial">Prüfung starten</button><button id="leaveTrial">Später</button></div>','trial-offer');
+ mdButton('leaveTrial',close);
+ mdButton('beginTrial',()=>beginTrial(index,target));
+}
+function beginTrial(index,target){
+ if(trial||save.trials[index]||!questions.length)return;
+ trial={index,target,correct:0,deadline:Date.now()+60000,queue:run.shuffle([...questions],Math.random),timer:null,lastAnswer:null};
+ // A reload or closed tab cannot turn the wager back into an unused chest.
+ save.trials[index]='started';persist();
+ trial.timer=setInterval(()=>{
+  if(!trial)return;
+  const timer=$('#trial-timer');
+  const remaining=Math.max(0,Math.ceil((trial.deadline-Date.now())/1000));
+  if(timer)timer.textContent=remaining+' s';
+  if(Date.now()>=trial.deadline)finishTrial(false);
+ },150);
+ nextTrialQuestion();
+}
+function nextTrialQuestion(){
+ if(!trial)return;
+ if(Date.now()>=trial.deadline||!trial.queue.length){finishTrial(false);return;}
+ quiz(trial.index,'trial',null,trial.queue.shift());
+}
+function makeAmbush(index){
+ const chest=chests[index],positions=[];
+ for(let radius=80;radius<=160&&positions.length<3;radius+=40){
+  for(let j=0;j<12&&positions.length<3;j++){
+   const a=j*TAU/12;
+   const x=chest.x+Math.cos(a)*radius,y=chest.y+Math.sin(a)*radius;
+   if(regionAt(x,y)===index&&valid(x,y,18,true)&&positions.every(p=>Math.hypot(x-p.x,y-p.y)>44)){
+    positions.push({x,y,type:(index+j+positions.length)%5});
+   }
+  }
+ }
+ const ambush={index,positions};save.ambushes.push(ambush);spawnAmbush(ambush);
+ if(enemies.length)save.portal=null;
+}
+function finishTrial(passed,restoring=false){
+ const index=trial?.index??trialIndex;
+ if(!trial&&!restoring)return;
+ if(trial)clearInterval(trial.timer);
+ trial=null;pending=null;
+ save.trials[index]=passed?'won':'lost';
+ if(passed){
+  const position=chests[index];
+  const source='Prüftruhe · Tiefe '+save.floor;
+  const hasMerchantRing=save.inventory.some(it=>it.id==='merchant')||save.souls.some(p=>p.item.id==='merchant');
+  const prize=hasMerchantRing?lootChoice(save.floor>=3?'mythic':'rare',source):
+   {id:'merchant',kind:'ring',rarity:'rare',source};
+  dropSoul(position,prize);
+  dropSoul({x:position.x+17,y:position.y},lootChoice(save.floor>=3?'legendary':'rare',source));
+ }else makeAmbush(index);
+ persist();
+ if(!restoring){
+  close();tell(passed?'Prüftruhe geöffnet · Zwei Seelenbälle':'Prüfung gescheitert · Hinterhalt!');
+ }
+}
 const keys={};let mouse={x:0,y:0},aimMode='keyboard';let near=null;const $=q=>document.querySelector(q);
 function resize(){dpr=Math.min(devicePixelRatio||1,1.25);cw=innerWidth;ch=innerHeight;canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);scene.width=canvas.width;scene.height=canvas.height;displayContext.imageSmoothingEnabled=false}window.addEventListener('resize',resize);resize();
 const SAVE_SCHEMA=1;let saveBusy=false;let mdConfig=null,mdSession=null,mdClasses=[],mdSlot=Number(localStorage.getItem('mind-beta-slot')||1);
@@ -280,7 +507,43 @@ async function mdAuth(action,email,password){if(!mdConfig)mdConfig=MD_PUBLIC_CON
 async function syncSave(){if(!mdSession||saveBusy)return;saveBusy=true;try{await mdRest('character_saves?on_conflict=user_id,slot',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:mdSession.user.id,slot:mdSlot,data:{...save,hp:player.hp,x:player.x,y:player.y,playtime:save.playtime},updated_at:new Date().toISOString()})})}catch(err){console.warn('Cloud-Speichern fehlgeschlagen:',err.message);throw err}finally{saveBusy=false}}
 let mdNavigatingToNewCharacter=false;function persist(){if(mdNavigatingToNewCharacter)return;save.hp=player.hp;save.x=player.x;save.y=player.y;try{localStorage.setItem(KEY,JSON.stringify(save))}catch(err){console.warn('Lokaler Spielstand konnte nicht gespeichert werden',err)}}setInterval(()=>{persist()},12000);
 function tell(t){$('#notice').textContent=t;$('#notice').style.opacity=1;noticeUntil=performance.now()+2100}
-function show(content,type='menu'){paused=true;modalType=type;$('#dungeonPrompt').hidden=true;$('#mobileInteract').hidden=true;$('#modal').innerHTML=content;$('#modalWrap').style.display='flex'}function close(){paused=false;modalType='';$('#modalWrap').style.display='none';for(const k in keys)keys[k]=false}
+function show(content,type='menu'){
+ const panel=$('#modal');
+ const focused=document.activeElement;
+ const previous=focused?.closest?.('#modal')&&focused;
+ const selector=previous?.id?'#'+CSS.escape(previous.id):null;
+ paused=true;modalType=type;
+ $('#dungeonPrompt').hidden=true;$('#soulPreview').hidden=true;$('#mobileInteract').hidden=true;
+ panel.innerHTML=content;$('#modalWrap').style.display='flex';
+ if(type==='quiz'){panel.querySelector('.choice')?.focus();return;}
+ const replacement=selector&&panel.querySelector(selector);
+ (replacement&&!replacement.disabled?replacement:panel.querySelector('button[aria-pressed="true"]:not(:disabled),button:not(:disabled)'))?.focus();
+}
+function close(){
+ paused=false;modalType='';$('#modalWrap').style.display='none';
+ for(const k in keys)keys[k]=false;
+}
+function navModal(e){
+ if(e.code==='Escape'){
+  e.preventDefault();if(trial)finishTrial(false);else close();
+  return;
+ }
+ if(!['KeyW','KeyS','ArrowUp','ArrowDown','Enter','NumpadEnter'].includes(e.code))return;
+ const panel=$('#modal'),focused=document.activeElement;
+ if(focused?.matches?.('input,textarea,select,[contenteditable]'))return;
+ if(e.code==='Enter'||e.code==='NumpadEnter'){
+  if(e.repeat){e.preventDefault();return;}
+  if(focused?.matches?.('button:not(:disabled)'))return;
+  const first=panel.querySelector('button:not(:disabled)');
+  if(first){e.preventDefault();first.focus();first.click();}
+  return;
+ }
+ const controls=[...panel.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled)')];
+ if(!controls.length)return;
+ e.preventDefault();
+ const index=controls.indexOf(focused),direction=['KeyW','ArrowUp'].includes(e.code)?-1:1;
+ controls[index<0?(direction<0?controls.length-1:0):(index+direction+controls.length)%controls.length].focus();
+}
 function qEsc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const themes=[{floor:'#183a36',edge:'#3c8375',glow:'#83edc5',detail:'#67bdac'},{floor:'#303048',edge:'#9e78ce',glow:'#e3b6ff',detail:'#7561b5'},{floor:'#382c38',edge:'#a65d82',glow:'#ff8fb8',detail:'#a96583'},{floor:'#443528',edge:'#ba8b4f',glow:'#ffc57b',detail:'#c99d63'},{floor:'#22374a',edge:'#6098c3',glow:'#8bd7ff',detail:'#7aa9c7'}];
 function tileZone(x,y){
@@ -316,12 +579,31 @@ function gateQuiz(g){
  if(!questions.length){tell('Fragenpaket ist nicht verfügbar');return;}
  quiz(g.from,'gate',g.id);
 }
-function quiz(z,reason,gateId=null){let q=selectQuestion(zones[z].topic,gateId);if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return}pending={q,z,reason,gateId};show(`<span class="pill">✦ ${qEsc(zones[z].name)} · ${qEsc(q.topic)} · Schwierigkeit ${q.difficulty||1}</span><h2>${qEsc(q.prompt)}</h2><div class="choices">${q.type==='free-text'?`<label for="freeAnswer">Deine Antwort</label><input id="freeAnswer" autocomplete="off" placeholder="Antwort eingeben" style="width:100%;padding:13px;border-radius:8px;background:#11182b;color:white;border:1px solid #8b78a7"><button class="primary" id="submitFree">Antwort prüfen</button>`:q.choices.map((c,i)=>`<button class="choice" data-choice="${i}">${String.fromCharCode(65+i)}. ${qEsc(c)}</button>`).join('')}</div><div id="feedback"></div><p class="muted">Nach einer richtigen Antwort kannst du die Wiederholung auf 🔴 5 Fragen, 🟡 10 Fragen oder 🟢 nie setzen.</p><p class="muted">Quelle: ${qEsc(q.source?.document||'Fragenpaket')}, Folie ${qEsc(q.source?.page||'–')}</p><div class="actions"><button id="leave">Später beantworten</button></div>`,'quiz');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(+b.dataset.choice));if(q.type==='free-text'){const input=$('#freeAnswer');$('#submitFree').onclick=()=>answerText(input.value);input.onkeydown=e=>{if(e.key==='Enter')answerText(input.value)}}$('#leave').onclick=close}
+function quiz(z,reason,gateId=null,question=null){const q=question||selectQuestion(zones[z].topic,gateId);if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return}pending={q,z,reason,gateId};show(`<span class="pill">✦ ${qEsc(zones[z].name)} · ${qEsc(q.topic)} · Schwierigkeit ${q.difficulty||1}</span>${reason==='trial'?'<span class="pill">Prüftruhe · '+trial.correct+'/'+trial.target+' richtig · <b id="trial-timer">'+Math.max(0,Math.ceil((trial.deadline-Date.now())/1000))+' s</b></span>'+(trial.lastAnswer===null?'':'<span class="pill trial-result">'+(trial.lastAnswer?'Richtig':'Falsch')+'</span>'):''}<h2>${qEsc(q.prompt)}</h2><div class="choices">${q.type==='free-text'?`<label for="freeAnswer">Deine Antwort</label><input id="freeAnswer" autocomplete="off" placeholder="Antwort eingeben" class="answer-field"><button class="primary" id="submitFree">Antwort prüfen</button>`:q.choices.map((c,i)=>`<button class="choice" data-choice="${i}">${String.fromCharCode(65+i)}. ${qEsc(c)}</button>`).join('')}</div><div id="feedback"></div>${reason==='trial'?'':'<p class="muted">Nach einer richtigen Antwort kannst du die Wiederholung auf 🔴 5 Fragen, 🟡 10 Fragen oder 🟢 nie setzen.</p>'}<p class="muted">Quelle: ${qEsc(q.source?.document||'Fragenpaket')}, Folie ${qEsc(q.source?.page||'–')}</p><div class="actions"><button id="leave">${reason==='trial'?'Prüfung abbrechen':'Später beantworten'}</button></div>`,'quiz');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(+b.dataset.choice));if(q.type==='free-text'){const input=$('#freeAnswer');$('#submitFree').onclick=()=>answerText(input.value);input.focus();input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(!e.repeat)answerText(input.value);}}}$('#leave').onclick=reason==='trial'?()=>finishTrial(false):close}
 function normalizeAnswer(v){return String(v).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
 function editDistance(a,b){const prev=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let last=prev[0];prev[0]=i;for(let j=1;j<=b.length;j++){const tmp=prev[j];prev[j]=Math.min(prev[j]+1,prev[j-1]+1,last+(a[i-1]===b[j-1]?0:1));last=tmp}}return prev[b.length]}
-function answerText(raw){if(!pending||pending.q.type!=='free-text')return;const input=normalizeAnswer(raw);if(input.length<3){tell('Bitte eine Antwort eingeben');return}const ok=pending.q.answers.some(a=>{const target=normalizeAnswer(a),limit=target.length>=22?3:target.length>=10?2:target.length>=6?1:0;return input===target||Math.abs(input.length-target.length)<=limit&&editDistance(input,target)<=limit});answer(ok?1:0)}
-function answer(i){if(!pending||pending.answered)return;pending.answered=true;const {q,z,reason,gateId}=pending;document.querySelectorAll('.choice').forEach(b=>{b.disabled=true;if(+b.dataset.choice===q.correctIndex)b.classList.add('good');else if(+b.dataset.choice===i)b.classList.add('bad')});if(q.type==='free-text'){const el=$('#freeAnswer');if(el)el.disabled=true;const b=$('#submitFree');if(b)b.disabled=true}const ok=q.type==='free-text'?i===1:i===q.correctIndex;save.questionCount=(save.questionCount||0)+1;if(!ok&&save.questionReview[q.id]?.color!=='green'){(save.questionReview||={})[q.id]={color:'red',due:save.questionCount+5}}if(ok){save.solved[q.id]=(save.solved[q.id]||0)+1;grantXP((save.solved[q.id]||0)>1?5:15+(q.difficulty||1)*5);save.gold+=8;if(reason==='gate'&&gateId){(save.gateQuestions[gateId]||=[]).push(q.id);save.gateProgress[gateId]=(save.gateProgress[gateId]||0)+1;if(save.gateProgress[gateId]>=sealTarget()){save.gates[gateId]=true;const g=gates.find(g=>g.id===gateId);burst((g.x+.5)*TILE,(g.y+.5)*TILE,g.color,45);tell('Wissenstor geöffnet!')}}if(reason==='enemy'){for(const e of enemies)if(e.roomId===z&&Math.hypot(e.x-player.x,e.y-player.y)<220){e.hp-=45;showDamage(e.x,e.y,45,'enemy');burst(e.x,e.y,'#d6a2ff',18)}}else{player.hp=Math.min(maxHP(),player.hp+18);burst(player.x,player.y,'#8df2d2',24)}}else{player.hp=Math.max(1,player.hp-8);shake=8}persist();$('#feedback').innerHTML=`${reason==='gate'&&gateId?`<p class="pill">Siegelprüfung: ${Math.min(sealTarget(),save.gateProgress[gateId]||0)}/${sealTarget()} richtig</p>`:''}<p style="color:${ok?'#9becc8':'#ff9aaf'}"><b>${ok?'✓ Richtig! +Wissen, +Gold':'✕ Nicht ganz. −8 HP'}</b></p><p>${qEsc(q.explanation)}</p>${ok?'<h3>Wiederholung festlegen</h3><p class="muted">Wähle eine Ampelfarbe, bevor du fortfährst.</p><div class="actions"><button data-review="red">🔴 Rot · 5 Fragen</button><button data-review="yellow">🟡 Gelb · 10 Fragen</button><button data-review="green">🟢 Grün · nie wieder</button></div>':''}<button class="primary" id="continue">Weiter ins Dungeon →</button>`;document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{const color=b.dataset.review;pending.reviewed=true;save.questionReview[q.id]={color,due:color==='green'?Number.MAX_SAFE_INTEGER:save.questionCount+(color==='red'?5:10)};persist();document.querySelectorAll('[data-review]').forEach(el=>{el.disabled=true;el.style.opacity=el===b?'1':'.4'})});$('#continue').onclick=()=>{if(ok&&!pending?.reviewed){tell('Bitte zuerst Rot, Gelb oder Grün auswählen');return}pending=null;close();if(reason==='gate'&&gateId&&!save.gates[gateId]&&ok){gateQuiz(gates.find(g=>g.id===gateId));return}if(player.hp<=1)tell('Deine Energie ist erschöpft – finde einen Lernschrein!')}}
-function journal(){const count=questions.filter(q=>save.solved[q.id]>0).length;show(`<span class="pill">Lernjournal</span><h2>Dein Wissenskompendium</h2><p>📜 ${count} von ${questions.length} Fragen mindestens einmal richtig · ⚔ ${save.kills} Gegner besiegt · ✦ ${save.xp} XP</p><p>Aktiver Fragenpool · ${qEsc(packTitle())}</p><div class="actions"><button class="primary" id="upload">Fragenpakete</button><button id="toInv">Inventar</button><button id="toEquip">Ausrüstung</button><button id="toLevel">Leveln</button><button id="export">Spielstand exportieren</button><button id="back">Zurück zum Spiel</button></div><p class="muted">Speicherstand bleibt lokal in diesem Browser und unter dieser Datei-URL gespeichert. Bei neuem Dateinamen kann der Browser den Speicher isolieren; exportiere den Stand vor einem Versionswechsel.</p>`,'journal');$('#upload').onclick=packMenu;$('#toInv').onclick=inventoryMenu;$('#toEquip').onclick=equipmentMenu;$('#toLevel').onclick=levelMenu;$('#export').onclick=()=>{persist();download('mind-dungeon-save.json',JSON.stringify(save,null,2))};$('#back').onclick=close}
+function answerText(raw){if(!pending||pending.q.type!=='free-text')return;const input=normalizeAnswer(raw);if(!input){tell('Bitte eine Antwort eingeben');return}const ok=pending.q.answers.some(a=>{const target=normalizeAnswer(a),limit=target.length>=22?3:target.length>=10?2:target.length>=6?1:0;return input===target||Math.abs(input.length-target.length)<=limit&&editDistance(input,target)<=limit});answer(ok?1:0)}
+function answer(i){
+ if(!pending||pending.answered)return;
+ if(pending.reason==='trial'){answerTrial(i);return;}
+pending.answered=true;const {q,z,reason,gateId}=pending;document.querySelectorAll('.choice').forEach(b=>{b.disabled=true;if(+b.dataset.choice===q.correctIndex)b.classList.add('good');else if(+b.dataset.choice===i)b.classList.add('bad')});if(q.type==='free-text'){const el=$('#freeAnswer');if(el)el.disabled=true;const b=$('#submitFree');if(b)b.disabled=true}const ok=q.type==='free-text'?i===1:i===q.correctIndex;save.questionCount=(save.questionCount||0)+1;if(!ok&&save.questionReview[q.id]?.color!=='green'){(save.questionReview||={})[q.id]={color:'red',due:save.questionCount+5}}if(ok){save.solved[q.id]=(save.solved[q.id]||0)+1;grantXP((save.solved[q.id]||0)>1?5:15+(q.difficulty||1)*5);if(reason==='gate'&&gateId){(save.gateQuestions[gateId]||=[]).push(q.id);save.gateProgress[gateId]=(save.gateProgress[gateId]||0)+1;if(save.gateProgress[gateId]>=sealTarget()){save.gates[gateId]=true;const g=gates.find(g=>g.id===gateId);burst((g.x+.5)*TILE,(g.y+.5)*TILE,g.color,45);tell('Wissenstor geöffnet!')}}if(reason==='enemy'){for(const e of enemies)if(e.roomId===z&&Math.hypot(e.x-player.x,e.y-player.y)<220){e.hp-=45;showDamage(e.x,e.y,45,'magic');burst(e.x,e.y,'#d6a2ff',18)}}else{player.hp=Math.min(maxHP(),player.hp+18);burst(player.x,player.y,'#8df2d2',24)}}else{player.hp=Math.max(1,player.hp-8);shake=8}persist();$('#feedback').innerHTML=`${reason==='gate'&&gateId?`<p class="pill">Siegelprüfung: ${Math.min(sealTarget(),save.gateProgress[gateId]||0)}/${sealTarget()} richtig</p>`:''}<p style="color:${ok?'#9becc8':'#ff9aaf'}"><b>${ok?'✓ Richtig! +Erfahrung':'✕ Nicht ganz. −8 HP'}</b></p><p>${qEsc(q.explanation)}</p>${ok?'<h3>Wiederholung festlegen</h3><p class="muted">Wähle eine Ampelfarbe, bevor du fortfährst.</p><div class="actions"><button data-review="red">🔴 Rot · 5 Fragen</button><button data-review="yellow">🟡 Gelb · 10 Fragen</button><button data-review="green">🟢 Grün · nie wieder</button></div>':''}<button class="primary" id="continue">Weiter ins Dungeon →</button>`;document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{const color=b.dataset.review;pending.reviewed=true;save.questionReview[q.id]={color,due:color==='green'?Number.MAX_SAFE_INTEGER:save.questionCount+(color==='red'?5:10)};persist();document.querySelectorAll('[data-review]').forEach(el=>{el.disabled=true;el.style.opacity=el===b?'1':'.4'});$('#continue').focus();});$('#continue').onclick=()=>{if(ok&&!pending?.reviewed){tell('Bitte zuerst Rot, Gelb oder Grün auswählen');return}pending=null;close();if(reason==='gate'&&gateId&&!save.gates[gateId]&&ok){gateQuiz(gates.find(g=>g.id===gateId));return}if(player.hp<=1)tell('Deine Energie ist erschöpft – finde einen Lernschrein!')};
+ (ok?document.querySelector('[data-review]'):$('#continue'))?.focus();
+}
+function answerTrial(choice){
+ if(!trial||Date.now()>=trial.deadline){finishTrial(false);return;}
+ const {q}=pending;
+ const correct=q.type==='free-text'?choice===1:choice===q.correctIndex;
+ trial.lastAnswer=correct;save.questionCount++;
+ if(correct){
+  save.solved[q.id]=(save.solved[q.id]||0)+1;
+  grantXP(save.solved[q.id]>1?5:15+q.difficulty*5);
+  trial.correct++;
+ }
+ if(trial.correct>=trial.target){finishTrial(true);return;}
+ if(trial.queue.length<trial.target-trial.correct){finishTrial(false);return;}
+ persist();nextTrialQuestion();
+}
+function journal(){const count=questions.filter(q=>save.solved[q.id]>0).length;show(`<span class="pill">Lernjournal</span><h2>Dein Wissenskompendium</h2><p>📜 ${count} von ${questions.length} Fragen mindestens einmal richtig · ⚔ ${save.kills} Gegner besiegt · ✦ ${save.xp} XP</p><p>Aktiver Fragenpool · ${qEsc(packTitle())}</p><div class="actions"><button class="primary" id="upload">Fragenpakete</button><button id="toInv">Inventar</button><button id="toEquip">Ausrüstung</button><button id="toLevel">Leveln</button><button id="export">Spielstand exportieren</button><button id="back">Zurück zum Spiel</button></div><p class="muted">Speicherstand bleibt lokal in diesem Browser und unter dieser Datei-URL gespeichert. Bei neuem Dateinamen kann der Browser den Speicher isolieren; exportiere den Stand vor einem Versionswechsel.</p>`,'journal');$('#upload').onclick=packMenu;$('#toInv').onclick=()=>inventoryMenu();$('#toEquip').onclick=()=>equipmentMenu();$('#toLevel').onclick=levelMenu;$('#export').onclick=()=>{persist();download('mind-dungeon-save.json',JSON.stringify(save,null,2))};$('#back').onclick=close}
 function download(name,body){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 $('#import').onchange=async e=>{
  const input=e.target,file=input.files?.[0];
@@ -340,30 +622,87 @@ $('#import').onchange=async e=>{
 };
 function startMenu(){mdTitle()}
 function burst(x,y,c,n){if(particles.length>450)particles.splice(0,particles.length-350);for(let i=0;i<n;i++){let a=rand(0,TAU),v=rand(30,150);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.3,.85),max:.85,c,r:rand(1.5,4)})}}
-function strike(){if(paused||player.attack>0)return;const w=weaponById(save.equipment.weapon);if(player.stamina<w.stamina){tell('Zu wenig Ausdauer');return}player.stamina-=w.stamina;player.attack=w.speed;let ang=player.dir;slashes.push({x:player.x,y:player.y,ang,life:.22});burst(player.x+Math.cos(ang)*28,player.y+Math.sin(ang)*28,'#e9c1ff',6);let hit=false;for(const e of enemies){const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx);if(d<w.reach+(e.size-1)*10&&Math.cos(a-ang)>.25&&!gateLineBlocked(player.x,player.y,e.x,e.y)){let dmg=weaponDamage(w);if(Math.random()<.04+save.attributes.luck*.003)dmg=Math.round(dmg*1.65);e.hp-=dmg;e.hit=.2;moveEnemy(e,Math.cos(a)*9,Math.sin(a)*9);burst(e.x,e.y,'#ff8caf',10);hit=true;if(hasRing('faith'))player.hp=Math.min(maxHP(),player.hp+3)}}if(hit)shake=4}
-function interact(){if(paused)return;if(near?.kind==='portal'){enterPortal();return;}if(near?.kind==='merchant'){merchantMenu();return}if(near?.kind==='map'){save.merchantMapFound=true;persist();dungeonMapMenu();return}if(near?.kind==='gate'){gateQuiz(gates[near.i]);return}if(near?.kind==='shrine')quiz(near.i,'shrine');else if(near?.kind==='chest'){const k=near.i;if(!save.opened.includes(k)){save.opened.push(k);save.gold+=20;player.hp=Math.min(maxHP(),player.hp+12);lootItem(false);burst(chests[k].x,chests[k].y,'#ffd27d',35);tell('Truhe geöffnet: Beute, +20 Gold');persist()}}else{tell('Hier gibt es nichts zu untersuchen')}}
-window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,[contenteditable]'))return;if(paused&&e.code!=='Escape')return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();keys[e.code]=true;if(e.repeat)return;if(e.code==='Escape'){if(paused)close();else mdTitle();return}if(e.code==='Space')strike();if(e.code==='KeyE')interact();if(e.code==='KeyQ')journal();if(e.code==='KeyI')inventoryMenu();if(e.code==='KeyC')equipmentMenu();if(e.code==='KeyL')levelMenu();if(e.code==='KeyF')aimMode='keyboard';if(e.code==='KeyP'){mdTitle()}});window.addEventListener('keyup',e=>keys[e.code]=false);window.addEventListener('blur',()=>{for(let k in keys)keys[k]=false});window.addEventListener('pointermove',e=>{if(e.target.closest?.('#modalWrap'))return;mouse.x=e.clientX;mouse.y=e.clientY;aimMode='mouse';const rect=document.querySelector('#phaser-host').getBoundingClientRect();const px=phaserActive?window.__mindPhaserCameraX??(cam.x):cam.x;const py=phaserActive?window.__mindPhaserCameraY??(cam.y):cam.y;player.dir=Math.atan2(py+mouse.y-rect.top-player.y,px+mouse.x-rect.left-player.x)});window.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){aimMode='mouse';strike()}});document.querySelectorAll('[data-key]').forEach(b=>{let key=b.dataset.key;b.onpointerdown=e=>{e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId)};b.onpointerup=b.onpointercancel=()=>keys[key]=false});$('#mobileInteract').onclick=interact;$('#attack').onpointerdown=e=>{e.preventDefault();strike()};
+function strike(){
+ if(paused||player.attack>0)return;
+ const w=weaponById(save.equipment.weapon),rank=pickedRarity(w);
+ const cost=Math.round(w.stamina*(rank==='mythic'?1.25:1));
+ if(player.stamina<cost){tell('Zu wenig Ausdauer');return;}
+ player.stamina-=cost;player.attack=w.speed;
+ const ang=player.dir,profile=items.weapon(w.id),color=items.damage[Object.keys(profile.split)[0]].color;
+ slashes.push({x:player.x,y:player.y,ang,life:.22,color});
+ burst(player.x+Math.cos(ang)*28,player.y+Math.sin(ang)*28,color,6);
+ for(const e of enemies){
+  const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
+  if(e.hp<=0||d>=w.reach+(e.size-1)*10||Math.cos(a-ang)<=.25||gateLineBlocked(player.x,player.y,e.x,e.y))continue;
+  const critical=Math.random()<.04+save.attributes.luck*.003;
+  const amount=weaponDamage(w,rank)*(critical?1.65:1);
+  const hit=items.hit(amount,profile.split,items.foes[e.type]);
+  hurtEnemy(e,hit);
+  if(profile.status==='bleed'&&e.hp>0&&(e.bleedCooldown||0)<=0){
+   e.bleedCooldown=3;
+   hurtEnemy(e,items.hit(e.max*.08,{bleed:1},items.foes[e.type]));
+  }
+  if(profile.status==='poison'&&e.hp>0&&!e.poison){
+   if(items.foes[e.type].poison===1)showDamage(e.x,e.y-13,0,'poison');
+   else e.poison={untilTick:.72,ticks:3};
+  }
+  if(hit.total>0){moveEnemy(e,Math.cos(a)*9,Math.sin(a)*9);shake=4;if(hasRing('faith'))player.hp=Math.min(maxHP(),player.hp+3);}
+ }
+}
+function hurtEnemy(e,hit){
+ if(hit.total>0){
+  e.hp-=hit.total;e.hit=.2;items.rememberDamage(e,hit);
+  burst(e.x,e.y,items.damage[hit.type].color,7);
+ }
+ showDamage(e.x,e.y,hit.total,hit.type,false);
+}
+function tickPoison(e,dt){
+ e.bleedCooldown=Math.max(0,(e.bleedCooldown||0)-dt);
+ if(!e.poison)return;
+ e.poison.untilTick-=dt;
+ if(e.poison.untilTick>0)return;
+ const status=e.poison;
+ const amount=Math.max(3,e.max*.035);
+ if(e===player)takeDamage(amount,{poison:1},true);
+ else hurtEnemy(e,items.hit(amount,{poison:1},items.foes[e.type]));
+ if(e.poison!==status)return;
+ status.untilTick+=.72;if(--status.ticks===0)e.poison=null;
+}
+function interact(){if(paused)return;
+if(near?.kind==='soul'){claimSoul(near.i);return;}
+if(near?.kind==='cabinet'){searchCabinet(near.i);return;}
+if(near?.kind==='trial'){offerTrial(near.i);return;}
+if(near?.kind==='portal'){enterPortal();return;}if(near?.kind==='merchant'){merchantMenu();return}if(near?.kind==='map'){save.merchantMapFound=true;persist();dungeonMapMenu();return}if(near?.kind==='gate'){gateQuiz(gates[near.i]);return}if(near?.kind==='shrine')quiz(near.i,'shrine');else if(near?.kind==='chest'){const k=near.i;if(!save.opened.includes(k)){save.opened.push(k);const gold=22+Math.floor(run.random(save.dungeonSeed^(k*10631+31))()*15)+save.floor*4;
+save.gold+=gold;player.hp=Math.min(maxHP(),player.hp+12);
+burst(chests[k].x,chests[k].y,'#ffd27d',35);tell('Truhe geöffnet · +'+gold+' Gold');persist()}}else{tell('Hier gibt es nichts zu untersuchen')}}
+window.addEventListener('keydown',e=>{if(paused){navModal(e);return;}if(e.target.closest('input,textarea,select,[contenteditable]'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();keys[e.code]=true;if(e.repeat)return;if(e.code==='Escape'){if(paused)close();else mdTitle();return}if(e.code==='Space')strike();if(e.code==='KeyE')interact();if(e.code==='KeyQ')journal();if(e.code==='KeyI')inventoryMenu();if(e.code==='KeyC')equipmentMenu();if(e.code==='KeyL')levelMenu();if(e.code==='KeyF')aimMode='keyboard';if(e.code==='KeyP'){mdTitle()}});window.addEventListener('keyup',e=>keys[e.code]=false);window.addEventListener('blur',()=>{for(let k in keys)keys[k]=false});window.addEventListener('pointermove',e=>{if(e.target.closest?.('#modalWrap'))return;mouse.x=e.clientX;mouse.y=e.clientY;aimMode='mouse';const rect=document.querySelector('#phaser-host').getBoundingClientRect();const px=phaserActive?window.__mindPhaserCameraX??(cam.x):cam.x;const py=phaserActive?window.__mindPhaserCameraY??(cam.y):cam.y;player.dir=Math.atan2(py+mouse.y-rect.top-player.y,px+mouse.x-rect.left-player.x)});window.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){aimMode='mouse';strike()}});document.querySelectorAll('[data-key]').forEach(b=>{let key=b.dataset.key;b.onpointerdown=e=>{e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId)};b.onpointerup=b.onpointercancel=()=>keys[key]=false});$('#mobileInteract').onclick=interact;$('#attack').onpointerdown=e=>{e.preventDefault();strike()};
 function update(dt){if(aimMode==='mouse'){const mx=(phaserActive?(window.__mindPhaserCameraX??cam.x):cam.x)+mouse.x;const my=(phaserActive?(window.__mindPhaserCameraY??cam.y):cam.y)+mouse.y;player.dir=Math.atan2(my-player.y,mx-player.x)}frame+=dt;save.playtime+=dt;player.stamina=Math.min(maxStamina(),player.stamina+dt*(18+save.attributes.endurance*.7));player.dash=Math.max(0,player.dash-dt);player.dashCooldown=Math.max(0,player.dashCooldown-dt);player.attack=Math.max(0,player.attack-dt);player.inv=Math.max(0,player.inv-dt);player.webSlow=Math.max(0,(player.webSlow||0)-dt);shake=Math.max(0,shake-dt*18);let dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dy=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);let l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;if((keys.ShiftLeft||keys.ShiftRight)&&player.dashCooldown<=0&&(dx||dy)&&player.stamina>=(hasRing('dodge')?17:25)){player.dash=.22;player.dashCooldown=.85;player.stamina-=hasRing('dodge')?17:25;player.dashX=dx;player.dashY=dy;player.inv=Math.max(player.inv,.22);burst(player.x,player.y,'#ae94f8',12)}if(player.dash>0){dx=player.dashX;dy=player.dashY}if(dx||dy){moveClock+=dt; if(moveClock>.09){moveClock=0;dust.push({x:player.x+rand(-7,7),y:player.y+14,life:.5})}player.walk+=dt*(player.dash>0?23:12);if(aimMode==='keyboard')player.dir=Math.atan2(dy,dx);const speed=player.speed*((player.webSlow>0||onWeb())?0.53:1)*(player.dash>0?3.1:1);let nx=player.x+dx*speed*dt,ny=player.y+dy*speed*dt;if(valid(nx,player.y))player.x=nx;if(valid(player.x,ny))player.y=ny}
  const region=regionAt(player.x,player.y);
  if(region>=0&&!explored.has(region)){explored.add(region);save.explored=[...explored];}
  updateWebs(dt);
- for(const e of enemies)if(e.hp>0)updateEnemy(e,dt);
+ tickPoison(player,dt);
+ for(const e of enemies)if(e.hp>0){tickPoison(e,dt);if(e.hp>0)updateEnemy(e,dt);}
  const dead=enemies.filter(e=>e.hp<=0);
  if(dead.length){
   enemies=enemies.filter(e=>e.hp>0);
   dead.forEach(e=>defeated.add(e.id));
   save.defeated=[...defeated];
   for(const e of dead){
-   save.kills++;grantXP(15+save.floor*4+(e.boss?25:0));save.gold+=4+save.floor*3;
-   if(e.boss)lootItem(true);
+   save.kills++;
+   const rarity=items.enemyRarity(Math.random(),save.floor);
+   if(rarity)dropSoul(e,lootChoice(rarity,'Gegner · Tiefe '+save.floor));
   }
   if(enemies.length)tell(dead.length+' Gegner besiegt');
   else awakenPortal(dead[dead.length-1]);
   persist();
  }
 for(const d of dust)d.life-=dt;while(dust.length&&dust[0].life<=0)dust.shift();for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}particles=particles.filter(p=>p.life>0);slashes.forEach(z=>z.life-=dt);slashes=slashes.filter(z=>z.life>0);
-near=null;let best=95;for(const [kind,loc] of [['merchant',merchant],['map',mapPickup]]){if(kind==='map'&&save.merchantMapFound)continue;const d=Math.hypot(loc.x-player.x,loc.y-player.y);if(d<best&&reachableInteraction(loc)){best=d;near={kind}}}gates.forEach((g,i)=>{if(save.gates[g.id])return;const d=Math.hypot((g.x+.5)*TILE-player.x,(g.y+.5)*TILE-player.y);if(d<best&&(regionAt(player.x,player.y)===corridors[i].id||reachableInteraction(gateApproach(g)))){best=d;near={kind:'gate',i}}});shrines.forEach(z=>{let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:'shrine',i:z.i}}});chests.forEach((z,i)=>{if(save.opened.includes(i))return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:'chest',i}}});if(save.portal&&Math.hypot(save.portal.x-player.x,save.portal.y-player.y)<65&&reachableInteraction(save.portal))near={kind:'portal'};$('#healthfill').style.width=(100*player.hp/maxHP())+'%';$('#staminafill').style.width=(100*player.stamina/maxStamina())+'%';$('#xpfill').style.width=(100*save.xp/xpRequired())+'%';$('#hpnum').textContent=Math.ceil(player.hp)+'/'+maxHP();$('#stnum').textContent=Math.ceil(player.stamina)+'/'+maxStamina();$('#xpnum').textContent=save.xp+'/'+xpRequired();$('#statline').textContent=`♥ ${Math.ceil(player.hp)}/${maxHP()} · ⚡ ${Math.ceil(player.stamina)}/${maxStamina()} · Lv ${save.level} (${save.xp}/${xpRequired()} XP) · ◈ ${save.gold} Gold`;$('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+zones[area()].name;$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${enemies.length} Gegner auf dieser Ebene${player.webSlow>0||onWeb()?' · Verlangsamt':''}`;if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
-const prompt=$('#dungeonPrompt');const hint=near&&({portal:save.floor===LAST_DEPTH?'Lauf abschließen':'Portal zur nächsten Tiefe',gate:'Siegel prüfen',shrine:'Wissen prüfen',chest:'Truhe öffnen',merchant:'Mit dem Händler sprechen',map:'Händlerkarte aufnehmen'})[near.kind];
+near=null;let best=95;for(const [kind,loc] of [['merchant',merchant],['map',mapPickup]]){if(kind==='map'&&save.merchantMapFound)continue;const d=Math.hypot(loc.x-player.x,loc.y-player.y);if(d<best&&reachableInteraction(loc)){best=d;near={kind}}}gates.forEach((g,i)=>{if(save.gates[g.id])return;const d=Math.hypot((g.x+.5)*TILE-player.x,(g.y+.5)*TILE-player.y);if(d<best&&(regionAt(player.x,player.y)===corridors[i].id||reachableInteraction(gateApproach(g)))){best=d;near={kind:'gate',i}}});shrines.forEach(z=>{let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:'shrine',i:z.i}}});chests.forEach((z,i)=>{const challenge=i===trialIndex&&!save.opened.includes(i);if(save.opened.includes(i)||challenge&&save.trials[i])return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:challenge?'trial':'chest',i}}});cabinets.forEach((p,i)=>{if(save.searched.includes(i))return;
+ const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,72)&&reachableInteraction(p)){best=d;near={kind:'cabinet',i};}
+});
+save.souls.forEach((p,i)=>{const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,62)&&reachableInteraction(p)){best=d;near={kind:'soul',i};}});
+if(save.portal&&near?.kind!=='soul'&&Math.hypot(save.portal.x-player.x,save.portal.y-player.y)<65&&reachableInteraction(save.portal))near={kind:'portal'};$('#healthfill').style.setProperty('--hurt',items.damage[player.dominant]?.color||'#c77462');$('#healthfill').style.width=(100*player.hp/maxHP())+'%';$('#staminafill').style.width=(100*player.stamina/maxStamina())+'%';$('#xpfill').style.width=(100*save.xp/xpRequired())+'%';$('#hpnum').textContent=Math.ceil(player.hp)+'/'+maxHP();$('#stnum').textContent=Math.ceil(player.stamina)+'/'+maxStamina();$('#xpnum').textContent=save.xp+'/'+xpRequired();$('#statline').textContent=`♥ ${Math.ceil(player.hp)}/${maxHP()} · ⚡ ${Math.ceil(player.stamina)}/${maxStamina()} · Lv ${save.level} (${save.xp}/${xpRequired()} XP) · ◈ ${save.gold} Gold`;$('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+zones[area()].name;$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${enemies.length} Gegner auf dieser Ebene${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}`;if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
+const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=near&&({soul:'Seelenball aufnehmen',cabinet:'Schrank durchsuchen',trial:'Prüftruhe untersuchen',portal:save.floor===LAST_DEPTH?'Lauf abschließen':'Portal zur nächsten Tiefe',gate:'Siegel prüfen',shrine:'Wissen prüfen',chest:'Truhe öffnen',merchant:'Mit dem Händler sprechen',map:'Händlerkarte aufnehmen'})[near.kind];
 prompt.hidden=!hint||paused;$('#mobileInteract').hidden=!hint||paused;if(hint&&prompt.dataset.hint!==hint){prompt.dataset.hint=hint;prompt.textContent=(matchMedia('(pointer:coarse)').matches?'':'[ E ] ')+hint;}
 }
 function gateApproach(g){
@@ -388,7 +727,7 @@ function updateEnemy(e,dt){
  if(d>355)return;
  const clear=!gateLineBlocked(e.x,e.y,player.x,player.y);
  const touch=12+15*e.size;
- if(clear&&d<touch)takeDamage(7+save.floor*2+(e.boss?5:0));
+ if(clear&&d<touch)takeDamage(7+save.floor*2+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.windup>0){
   e.windup=Math.max(0,e.windup-dt);
   if(e.windup>0)return;
@@ -396,7 +735,10 @@ function updateEnemy(e,dt){
   else if(clear){
    const difference=Math.atan2(Math.sin(angle-e.angle),Math.cos(angle-e.angle));
    const hit=e.move===1?d<125&&Math.abs(difference)<.48:d<75*e.size;
-   if(hit)takeDamage(13+save.floor*4+(e.boss?7:0));
+   if(hit&&takeDamage(13+save.floor*4+(e.boss?7:0),items.foeAttack[e.type])&&player.inv<1){
+    if(e.type===2&&!player.poison)player.poison={untilTick:.72,ticks:3};
+    if(e.type===3&&player.bleedCooldown<=0){player.bleedCooldown=3;takeDamage(maxHP()*.06,{bleed:1},true);}
+   }
   }
   e.attack=(e.boss?2.1:2.7)-(save.floor-1)*.14;
   return;
@@ -427,27 +769,50 @@ function updateWebs(dt){
   const hit=player.inv<=0&&Math.hypot(x-player.x,y-player.y)<16;
   if(blocked||hit||p.life<=0){
    if(!blocked||valid(p.x,p.y,3))webPatches.push({x:blocked?p.x:x,y:blocked?p.y:y,radius:29,life:7});
-   if(hit){player.webSlow=2.4;takeDamage(3+save.floor);}
+   if(hit){player.webSlow=2.4;takeDamage(3+save.floor,{dark:1});}
    return false;
   }
   p.x=x;p.y=y;return true;
  });
 }
-function showDamage(x,y,value,kind){const node=document.createElement('div');node.className='damage-number';node.style.color=kind==='hero'?'#ff6b89':'#ffe0a0';node.textContent=(kind==='hero'?'−':'')+Math.round(value);node.style.left=Math.round(x-cam.x)+'px';node.style.top=Math.round(y-cam.y-26)+'px';document.body.append(node);setTimeout(()=>node.remove(),850);}
-function takeDamage(amount){
- if(player.inv>0)return;
- const reduction=Math.min(.65,Math.min(.25,(save.attributes.vitality-10)*.008)+(hasRing('bulwark')?.12:0)+armorDefense()*.008);
- const damage=Math.max(1,Math.round(amount*(1-reduction)));
- player.hp=Math.max(0,player.hp-damage);player.inv=.75;shake=9;
- showDamage(player.x,player.y,damage,'hero');burst(player.x,player.y,'#ff6d99',12);
+function showDamage(x,y,value,type,hero=false){
+ const node=document.createElement('div');node.className='damage-number';
+ node.style.color=items.damage[type]?.color||items.damage.physical.color;
+ node.textContent=value>0?(hero?'−':'')+value:'Immun';
+ node.style.left=Math.round(x-cam.x+rand(-9,9))+'px';node.style.top=Math.round(y-cam.y-26)+'px';
+ document.body.append(node);setTimeout(()=>node.remove(),850);
+}
+function gearResistance(){
+ const protection={};
+ for(const it of gearItems()){
+  if(it.kind==='armor'){
+   for(const [type,value] of Object.entries(items.affinity(armorById(it.id),items.rank(it))))protection[type]=(protection[type]||0)+value;
+   if(items.rank(it)==='mythic')protection.lightning=(protection.lightning||0)-.12;
+  }
+  if(it.kind==='ring'&&items.rank(it)==='mythic')protection.dark=(protection.dark||0)-.12;
+ }
+ return protection;
+}
+function takeDamage(amount,split={physical:1},status=false){
+ if(player.inv>0&&!status)return false;
+ const reduction=Math.min(.65,Math.min(.25,(save.attributes.vitality-10)*.008)+(hasRing('bulwark')?.12:0)+armorDefense()*.006);
+ const hit=items.hit(amount*(1-reduction),split,gearResistance());
+ if(!hit.total)return false;
+ items.rememberDamage(player,hit);
+ player.hp=Math.max(0,player.hp-hit.total);if(!status)player.inv=.75;shake=9;
+ showDamage(player.x,player.y,hit.total,hit.type,true);burst(player.x,player.y,items.damage[hit.type].color,12);
  if(player.hp<=0){
-  Object.assign(player,spawn,{hp:maxHP(),stamina:maxStamina(),webSlow:0,dash:0,inv:2});
+  Object.assign(player,spawn,{hp:maxHP(),stamina:maxStamina(),webSlow:0,dash:0,inv:2,damageTypes:{},dominant:null,poison:null,bleedCooldown:0});
   webShots=[];webPatches=[];tell('Besiegt! Zurück am Eingang.');
  }
+ return true;
 }
 function awakenPortal(lastEnemy){
  const {x,y}=lastEnemy;
- save.portal=valid(x,y)?{x,y}:{...shrines[lastEnemy.roomId]};
+ const offsets=[[60,0],[-60,0],[0,60],[0,-60]];
+ const options=offsets.map(([dx,dy])=>({x:x+dx,y:y+dy}));
+ save.portal=options.find(p=>regionAt(p.x,p.y)===regionAt(x,y)&&valid(p.x,p.y)&&!gateLineBlocked(x,y,p.x,p.y))
+  ||{...shrines[lastEnemy.roomId]};
  burst(save.portal.x,save.portal.y,'#a4cdea',34);
  if(save.floor===LAST_DEPTH){
   if(!save.trophies.some(t=>t.packId===save.activePack)){
@@ -462,6 +827,26 @@ function enterPortal(){
  if(save.floor===LAST_DEPTH){trophyMenu(true);return;}
  const seed=run.differentLayoutSeed(save.dungeonSeed,rooms,gates);
  writeAndReload({...save,...run.floorState(seed,save.floor+1),hp:maxHP()},true);
+}
+function updateSoulPreview(){
+ const preview=$('#soulPreview');
+ const orb=save.souls.filter(p=>Math.hypot(p.x-player.x,p.y-player.y)<102&&reachableInteraction(p))
+  .sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];
+ preview.hidden=!orb;
+ if(!orb)return;
+ const key=items.key(orb.item);
+ if(preview.dataset.key===key)return;
+ preview.dataset.key=key;
+ const rarity=items.rarity[items.rank(orb.item)];
+ preview.innerHTML=itemTile(orb.item)+'<span><b>'+qEsc(itemTitle(orb.item))+'</b><br><small style="color:'+rarity.color+'">'+rarity.label+' · '+qEsc(orb.item.source)+'</small></span>';
+}
+function damageColor(type){return Number('0x'+(items.damage[type]?.color||'#c87e64').slice(1));}
+function drawSouls(draw){
+ for(const {x,y,item,phase} of save.souls){
+  if(!regionVisibleAt(x,y))continue;
+  const bob=Math.sin(frame*3+phase),top=y-11+bob*4;
+  draw(x,y,top,items.rarity[items.rank(item)].color,bob);
+ }
 }
 function draw(){let w=scene.width,h=scene.height;s.setTransform(1,0,0,1,0,0);s.clearRect(0,0,w,h);s.fillStyle='#101212';s.fillRect(0,0,w,h);cam.x=Math.max(0,Math.min(player.x-cw/2,W*TILE-cw));cam.y=Math.max(0,Math.min(player.y-ch/2,H*TILE-ch));s.setTransform(dpr,0,0,dpr,(-cam.x+rand(-shake,shake))*dpr,(-cam.y+rand(-shake,shake))*dpr);
 s.imageSmoothingEnabled=false;
@@ -488,7 +873,13 @@ for(const entry of layers){
  if(Math.abs(entry.x-player.x)>cw/2+130||Math.abs(entry.y-player.y)>ch/2+130)continue;
  if(entry.draw)entry.draw();else drawWorldImage(s,entry);
 }
-for(const z of slashes){s.strokeStyle=`rgba(239,198,255,${z.life/.22})`;s.lineWidth=7;s.beginPath();s.arc(z.x,z.y,63,z.ang-.75,z.ang+.75);s.stroke()}
+drawSouls((x,y,top,color,bob)=>{
+ s.globalAlpha=.26;s.fillStyle=color;s.fillRect(x-11,top-8,22,16);
+ s.globalAlpha=1;s.fillRect(x-6,top-4,12,8);s.fillRect(x-4,top-7,8,14);
+ s.fillStyle='#fff1d8';s.fillRect(x-2,top-3,4,4);s.fillRect(x+9,top-12+bob*5,2,2);
+});
+for(const z of slashes){s.strokeStyle=z.color;s.globalAlpha=Math.min(1,z.life/.22);s.lineWidth=7;s.beginPath();s.arc(z.x,z.y,63,z.ang-.75,z.ang+.75);s.stroke()}
+s.globalAlpha=1;
 for(const d of dust){s.globalAlpha=d.life*.43;s.fillStyle='#9c896a';s.fillRect(Math.round(d.x),Math.round(d.y),3,2);}
 for(const p of particles){s.globalAlpha=Math.min(1,p.life/.5);s.fillStyle=p.c;s.beginPath();s.arc(p.x,p.y,p.r,0,TAU);s.fill()}s.globalAlpha=1;
 if(player.dash>0){s.strokeStyle='#d8bd82';s.lineWidth=2;s.beginPath();s.arc(player.x,player.y,25,0,TAU);s.stroke()}
@@ -512,7 +903,7 @@ const scenery=[
  portalPosition,
  ...furniture.map(p=>({...p,key:p.type+'-'+p.zone,bitmap:art.furniture(p.type,p.zone),ox:64,oy:56,ground:p.type==='carpet'||p.type==='web',visible:always})),
  ...gates.map((g,i)=>({x:(g.x+.5)*TILE,y:(g.y+.5)*TILE,key:'gate-'+i,bitmap:art.gate(g.vertical,g.color),visible:()=>!save.gates[g.id]})),
- ...chests.map((p,i)=>({...p,key:'chest',bitmap:art.icon('chest'),alternate:art.icon('chest','open'),changed:()=>save.opened.includes(i),visible:always})),
+ ...chests.map((p,i)=>({...p,key:i===trialIndex?'trial-chest':'chest',bitmap:art.icon('chest',i===trialIndex?'trial':''),alternate:art.icon('chest','open'),changed:()=>save.opened.includes(i)||Boolean(save.trials[i]),visible:always})),
  ...shrines.map(p=>({...p,key:'shrine-'+p.i,bitmap:art.icon('shrine','',themes[p.i].glow),visible:always})),
  {...merchant,key:'merchant',bitmap:art.icon('merchant'),visible:always},
  {...mapPickup,key:'map',bitmap:art.icon('map'),visible:()=>!save.merchantMapFound}
@@ -589,7 +980,7 @@ function drawCanvasFoe(e){
  s.save();s.globalAlpha=e.hit>0?.7:1;
  s.drawImage(foes[e.type][foeFrame(e)],Math.round(e.x-size/2),Math.round(e.y-size*.67+lift),size,size);
  s.restore();
- if(e.hp<e.max){s.fillStyle='#211517';s.fillRect(e.x-16,e.y-size*.63,32,3);s.fillStyle='#c87e64';s.fillRect(e.x-16,e.y-size*.63,32*e.hp/e.max,3);}
+ if(e.hp<e.max){s.fillStyle='#211517';s.fillRect(e.x-16,e.y-size*.63,32,3);s.fillStyle=items.damage[e.dominant]?.color||'#c87e64';s.fillRect(e.x-16,e.y-size*.63,32*e.hp/e.max,3);}
 }
 function startPhaser(){if(!window.Phaser)return false;try{
 class DungeonScene extends Phaser.Scene{
@@ -651,7 +1042,7 @@ class DungeonScene extends Phaser.Scene{
    for(const d of dust){this.fx.fillStyle(0x9c896a,d.life*.43);this.fx.fillRect(Math.round(d.x),Math.round(d.y),3,2);}
    for(const e of enemies){
     if(!regionVisibleAt(e.x,e.y))continue;
-    if(e.hp<e.max){const y=e.y-44*e.size;this.fx.fillStyle(0x211517);this.fx.fillRect(e.x-16,y,32,3);this.fx.fillStyle(0xc87e64);this.fx.fillRect(e.x-16,y,32*e.hp/e.max,3);}
+    if(e.hp<e.max){const y=e.y-44*e.size;this.fx.fillStyle(0x211517);this.fx.fillRect(e.x-16,y,32,3);this.fx.fillStyle(damageColor(e.dominant));this.fx.fillRect(e.x-16,y,32*e.hp/e.max,3);}
     if(e.windup<=0)continue;
     this.fx.lineStyle(3,e.move===3?0xdcd3bd:e.move===1?0xff536e:0xffbb67,.65+.25*Math.sin(frame*14));
     if(e.move===3)this.fx.lineBetween(e.x,e.y,e.x+Math.cos(e.angle)*88,e.y+Math.sin(e.angle)*88);
@@ -659,7 +1050,13 @@ class DungeonScene extends Phaser.Scene{
     else this.fx.strokeCircle(e.x,e.y,75*e.size);
    }
    for(const p of particles){this.fx.fillStyle(Number('0x'+p.c.replace('#',''))||0xffffff,Math.max(0,Math.min(1,p.life/.5)));this.fx.fillCircle(p.x,p.y,p.r);}
-   for(const slash of slashes){this.fx.lineStyle(5,0xf5d6ff,Math.min(1,slash.life/.22));this.fx.beginPath();this.fx.arc(slash.x,slash.y,63,slash.ang-.75,slash.ang+.75);this.fx.strokePath();}
+   drawSouls((x,y,top,color,bob)=>{
+    const tint=Number('0x'+color.slice(1));
+    this.fx.fillStyle(tint,.26);this.fx.fillRect(x-11,top-8,22,16);
+    this.fx.fillStyle(tint);this.fx.fillRect(x-6,top-4,12,8);this.fx.fillRect(x-4,top-7,8,14);
+    this.fx.fillStyle(0xfff1d8);this.fx.fillRect(x-2,top-3,4,4);this.fx.fillRect(x+9,top-12+bob*5,2,2);
+   });
+   for(const slash of slashes){this.fx.lineStyle(5,Number('0x'+slash.color.slice(1)),Math.min(1,slash.life/.22));this.fx.beginPath();this.fx.arc(slash.x,slash.y,63,slash.ang-.75,slash.ang+.75);this.fx.strokePath();}
    if(this.fogRevision!==explored.size){
     this.fogRevision=explored.size;this.fog.clear().fillStyle(0x101212);
     drawFog((x,y,w,h)=>this.fog.fillRect(x,y,w,h));
@@ -706,7 +1103,7 @@ function switchPack(packId,restart=false){
  persist();
  const archived=archiveRuns();
  const stored=archived.find(r=>r.packId===packId)?.state;
- const state=(!restart&&stored)||run.freshRun(run.freshSeed());
+ const state=!restart&&stored?{...run.freshRun(stored.dungeonSeed),...stored}:run.freshRun(run.freshSeed());
  writeAndReload({...save,...state,hp:maxHP(),activePack:packId,runs:archived.filter(r=>r.packId!==packId)},!state.completed);
 }
 function packMenu(status=''){
@@ -796,6 +1193,7 @@ const resume=sessionStorage.getItem(RESUME_KEY)==='1';
 sessionStorage.removeItem(RESUME_KEY);
 refreshCatalog();
 loadQuestions();
+if(save.trials[trialIndex]==='started')finishTrial(false,true);
 if(resume)close();else mdTitle();
 mdInit().then(async()=>{
  const confirmation=await mdHandleEmailConfirmation();
