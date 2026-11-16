@@ -24,8 +24,8 @@ window.DungeonItems = (() => {
   chicken:{name:'Hühnchen',heal:34}
  };
  const requirements={
-  rapier:{dexterity:12},hammer:{strength:14,vitality:12},staff:{intelligence:13},
-  blade:{faith:13},dagger:{dexterity:11,luck:10},greatsword:{strength:15,endurance:13}
+  rapier:{dexterity:11},hammer:{strength:12},staff:{intelligence:11},
+  blade:{faith:11},dagger:{dexterity:11},greatsword:{strength:13,endurance:11}
  };
  const kinds={weapon:'Waffen',ring:'Ringe',armor:'Rüstung'};
  const merchantRing={id:'merchant',name:'Händlerring',desc:'Ausgerüstet zeigt der Händler je eine zusätzliche Waffe, einen Ring und ein Rüstungsteil.',bonus:'merchant'};
@@ -87,7 +87,8 @@ window.DungeonItems = (() => {
   {poison:1,dark:.30,fire:-.40},
   {poison:1,frost:-.25},
   {bleed:1,poison:1,magic:.20,lightning:-.40},
-  {poison:1,dark:.30,fire:-.40}
+  {poison:1,dark:.30,fire:-.40},
+  {physical:.12,fire:-.25,bleed:-.1},{physical:.06,frost:-.22,bleed:-.1}
  ];
  const foeAttack=[
   {physical:1},{physical:.35,fire:.65},{physical:.75,dark:.25},

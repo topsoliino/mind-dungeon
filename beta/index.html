@@ -21,11 +21,13 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=12"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="notice"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=12"></script><script src="beta/dungeon-items.js?v=12"></script><script src="beta/dungeon-brewing.js?v=12"></script><script src="beta/dungeon-enemies.js?v=12"></script><script src="beta/dungeon-effects-art.js?v=12"></script><script src="beta/dungeon-art.js?v=12"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=13"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=13"></script><script src="beta/dungeon-expedition.js?v=13"></script><script src="beta/dungeon-items.js?v=13"></script><script src="beta/dungeon-brewing.js?v=13"></script><script src="beta/dungeon-enemies.js?v=13"></script><script src="beta/dungeon-effects-art.js?v=13"></script><script src="beta/dungeon-art.js?v=13"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
-const {PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW}=enemyRules;
-const KEY='mind-dungeon-shadowbound-beta-v08',RESUME_KEY=KEY+'-resume',TILE=48,{W,LAST_DEPTH,DEFAULT_PACK}=run,TAU=Math.PI*2;
+const expedition=window.DungeonExpedition;
+const {PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS}=enemyRules;
+const isLion=e=>e.type===LION||e.type===LIONESS;
+const KEY='mind-dungeon-shadowbound-beta-v08',RESUME_KEY=KEY+'-resume',TILE=48,{LAST_DEPTH,DEFAULT_PACK}=run,TAU=Math.PI*2;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 const canvas=document.querySelector('#game'),displayContext=canvas.getContext('2d',{alpha:false});
 const scene=document.createElement('canvas'),s=scene.getContext('2d',{alpha:false});
@@ -54,6 +56,9 @@ if(save.floorVersion!==1){
 }
 save.souls??=[];save.shopSold??=[];save.searched??=[];save.trials??={};save.ambushes??=[];
 save.serpents??=[];save.altarUses??={};save.altarQuestions??={};save.depthSeeds??={};save.depthSeeds[save.floor]=save.dungeonSeed;save.layoutRevision??=1;save.variedRooms??=false;save.brewIngredients??=[];save.activeBrew??=null;save.brewEffects??=[];
+save.bones??=0;save.rubies??=0;save.boneClaims??={};save.rubyClaims??={};save.mythicSold??=[];save.templeAttempts??={};
+save.templeRunSeed??=save.depthSeeds[1]??save.dungeonSeed;
+save.templeDepth??=run.templeDepth(save.templeRunSeed,Math.min(LAST_DEPTH,save.floor+(save.layoutRevision<6?1:0)));
 let brewBonus=brewing.bonuses(save.activeBrew);
 let questions=[],lessonRooms=[];
 function usePack(pack){
@@ -74,11 +79,16 @@ async function loadQuestions(){
   if(save.activePack===DEFAULT_PACK)usePack(pack);
  }catch(e){console.error('Standard-Fragenpaket konnte nicht geladen werden',e);if(!questions.length)tell('Standard-Fragenpaket konnte nicht geladen werden');}
 }
-const {rooms,corridors,map,regions,gates,annexes,terrain,rest}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision);
-const H=map.length;
+const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth);
+const H=map.length,W=map[0].length;
 const annexByRegion=new Map(annexes.map(a=>[a.id,a]));
-const annexPassages=new Map(annexes.map(a=>[a.passage.id,a.passage]));
+const annexPassages=new Map([...annexes.map(a=>a.passage),...paths].map(path=>[path.id,path]));
 const court=annexes.find(a=>a.key==='court');
+const cemetery=annexes.find(a=>a.key==='cemetery');
+const templeRooms=annexes.filter(a=>a.key.startsWith('temple-'));
+const bonePiles=cemetery?[[4,3],[9,6],[13,9]].map(([x,y],i)=>({x:(cemetery.x+x+.5)*TILE,y:(cemetery.y+y+.5)*TILE,id:save.floor+'-'+i})):[];
+const templeHall=templeRooms.find(room=>room.key==='temple-shrines');
+const templeShrines=templeHall?[3,7,11].map((x,id)=>({id,x:(templeHall.x+x+.5)*TILE,y:(templeHall.y+5.5)*TILE})):[];
 const labRoom=annexes.find(a=>a.key==='brewery');
 const lab={x:(labRoom.cx+.5)*TILE,y:(labRoom.y+2.5)*TILE};
 const pointIn=(room,dx,dy)=>({x:(room.cx+.5+dx)*TILE,y:(room.cy+.5+dy)*TILE});
@@ -154,11 +164,18 @@ const FURNITURE={
  'round-table':{w:53,h:38,solid:true},'banquet-long':{w:122,h:38,solid:true},fence:{w:62,h:12,solid:true},'fence-end':{w:62,h:12,solid:true},
  'weapon-rack':{w:57,h:23,solid:true},'armor-rack':{w:41,h:26,solid:true},
  display:{w:58,h:30,solid:true},dresser:{w:58,h:27,solid:true},statue:{w:45,h:27,solid:true},
- bench:{w:55,h:22,solid:true},campfire:{w:47,h:34,solid:true,light:210},well:{w:72,h:43,solid:true,light:156}
+ grave:{w:45,h:29,solid:true},'jungle-shrine':{w:45,h:28,solid:true,light:92},rubble:{w:47,h:23,solid:true},basket:{w:32,h:20,solid:true},bush:{w:36,h:23},vines:{w:22,h:12},bench:{w:55,h:22,solid:true},campfire:{w:47,h:34,solid:true,light:210},well:{w:72,h:43,solid:true,light:156}
 };
 const furniture=[];
-function furnitureBlocked(x,y,r=12){return furniture.some(p=>p.solid&&Math.abs(x-p.x)<p.w/2+r&&Math.abs(y-p.y)<p.h/2+r)}
-function valid(x,y,r=12,ignoreSeals=false){return !wall(x-r,y-r)&&!wall(x+r,y-r)&&!wall(x-r,y+r)&&!wall(x+r,y+r)&&(ignoreSeals||!gateBlocked(x-r,y-r)&&!gateBlocked(x+r,y-r)&&!gateBlocked(x-r,y+r)&&!gateBlocked(x+r,y+r))&&!furnitureBlocked(x,y,r)}
+const reducedDepth=new Set(['cabinet','bookcase','dresser','display','weapon-rack','armor-rack','statue']);
+function furnitureBlocked(x,y,rx=12,ry=rx){
+ return furniture.some(p=>{
+  if(!p.solid)return false;
+  const inset=reducedDepth.has(p.type)?Math.min(7,p.h*.24):0;
+  return Math.abs(x-p.x)<p.w/2+rx&&Math.abs(y-p.y-inset)<p.h/2-inset+ry;
+ });
+}
+function valid(x,y,r=12,ignoreSeals=false,feet=false){return !wall(x-r,y-r)&&!wall(x+r,y-r)&&!wall(x-r,y+r)&&!wall(x+r,y+r)&&(ignoreSeals||!gateBlocked(x-r,y-r)&&!gateBlocked(x+r,y-r)&&!gateBlocked(x-r,y+r)&&!gateBlocked(x+r,y+r))&&!furnitureBlocked(x,y,feet?9:r,feet?6:r)}
 const HERO_RADIUS=14;
 const player={dash:0,dashCooldown:0,dashX:0,dashY:0,x:save.x??spawn.x,y:save.y??spawn.y,hp:Math.max(1,save.hp),max:100,speed:178,dir:0,attack:0,inv:0,walk:0};
 const ATTRS={vigor:['Vitalität (Vigor)','Maximale Lebenspunkte'],attunement:['Zauberei (Attunement)','Fokusenergie für besondere Angriffe'],endurance:['Kondition (Endurance)','Ausdauer für Angriffe und Ausweichen'],vitality:['Belastung (Vitality)','Rüstung und Schadensreduktion'],strength:['Stärke (Strength)','Schwere Waffen'],dexterity:['Geschicklichkeit (Dexterity)','Schnelle Waffen'],intelligence:['Intelligenz (Intelligence)','Arkane Waffen'],faith:['Glaube (Faith)','Geweihte Waffen'],luck:['Glück (Luck)','Beute und kritische Treffer']};
@@ -333,21 +350,12 @@ function useQuickSlot(){
  if(isEquipped(it)){tell('Bereits ausgerüstet · '+itemTitle(it));return;}
  equipInventoryItem(it);
 }
-function quickSelect(it,returnTo){
- if(!it)return;
- show('<h2 class="md-title">Zur Schnellauswahl</h2><p>'+qEsc(itemTitle(it))+'</p><div class="quick-choose">'+
-  save.quickSlots.map((_,i)=>{
-   const current=slotItem(i);
-   return '<button data-quick="'+i+'">'+(i+1)+' · '+(current?qEsc(itemTitle(current)):'Leer')+'</button>';
-  }).join('')+'</div><div class="actions">'+(save.quickSlots.includes(items.key(it))?'<button id="quick-remove">Aus den Schnellplätzen entfernen</button>':'')+
-  '<button id="quick-back">Zum Inventar</button></div>','quick');
- document.querySelectorAll('[data-quick]').forEach(button=>button.onclick=()=>{
-  const index=Number(button.dataset.quick),key=items.key(it);
-  save.quickSlots=save.quickSlots.map(previous=>previous===key?null:previous);
-  save.quickSlots[index]=key;save.quickActive=index;persist();returnTo();
- });
- mdButton('quick-remove',()=>{save.quickSlots=save.quickSlots.map(key=>key===items.key(it)?null:key);persist();returnTo();});
- mdButton('quick-back',returnTo);
+function quickSelect(it){
+ if(!it||!save.inventory.includes(it))return;
+ save.quickSlots=expedition.firstSlot(save.quickSlots,items.key(it));
+ save.quickActive=0;
+ persist();
+ tell(itemTitle(it)+' · Auf Schnellplatz 1');
 }
 let quickBarSignature='';
 function updateQuickBar(){
@@ -413,7 +421,7 @@ function inventoryMenu(filter='all',page=0,selected){
  const inspect=it=>{
   $('#rpgInspect').innerHTML=inventoryInspection(it);
   const shortcut=$('#md-quick-selected');shortcut.disabled=!it;
-  shortcut.onclick=()=>quickSelect(it,()=>inventoryMenu(filter,page,save.inventory.indexOf(it)));
+  shortcut.onclick=()=>quickSelect(it);
   const button=$('#md-equip-selected'),food=it?.kind==='food';
   button.textContent=food?'Essen':'Ausrüsten';
   button.disabled=!it||(food?player.hp>=maxHP():isEquipped(it)||it.kind==='weapon'&&unmetRequirements(it.id).length>0);
@@ -488,40 +496,56 @@ const enemyDepth=enemyRules.depthFactor(save.floor);
 const foeResistances=items.foes.map(profile=>enemyRules.resistances(profile,save.floor));
 const merchantRandom=run.random(furnishingSeed^0x7157be6a);
 const merchantRoomId=1+Math.floor(merchantRandom()*4),merchantZone=zones[merchantRoomId];
-function merchantMenu(mode='buy',page=0,selected=0){
+function walletLine(){
+ return Object.entries(expedition.currency).map(([key,{icon,label}])=>
+  '<span class="coin coin-'+key+'">'+icon+' '+save[key]+' '+label+'</span>').join('');
+}
+let walletKey='';
+function updateWallet(){
+ const key=[save.gold,save.bones,save.rubies].join('/');
+ if(key===walletKey)return;
+ $('#wallet').innerHTML=walletLine();walletKey=key;
+}
+function merchantMenu(mode='gold',page=0,selected=0){
  const size=innerHeight<430?4:innerWidth<650||innerHeight<540?6:12;
- const offers=items.shop(save.dungeonSeed,save.floor,itemPools()).slice(0,hasRing('merchant')?6:3);
- const stock=mode==='buy'?offers:save.inventory;
+ const pools=itemPools(),offers=expedition.stock(pools,save.templeRunSeed,save.floor,run.shuffle,run.random);
+ if(save.floor>=4){
+  if(!save.mythicStock){save.mythicStock=offers.rubies;persist();}
+  offers.rubies=save.mythicStock;
+ }
+ offers.gold=items.shop(save.dungeonSeed,save.floor,pools).slice(0,hasRing('merchant')?6:3);
+ const buying=mode!=='sell',stock=buying?offers[mode]:save.inventory;
+ const soldList=mode==='rubies'?save.mythicSold:save.shopSold;
  const pages=Math.max(1,Math.ceil(stock.length/size));
  page=Math.min(page,pages-1);
  const visible=stock.slice(page*size,(page+1)*size);
  selected=Math.min(selected,visible.length-1);
- const it=visible[selected];
- const sold=it&&save.shopSold.includes(it.stock);
- const buying=mode==='buy',equipped=it&&isEquipped(it);
- const amount=it&&(buying?it.price:Math.max(1,Math.floor(items.price(it,1)*(hasRing('luck')?0.55:0.4))));
- const disabled=!it||(buying?(sold||save.gold<amount||save.inventory.length>=30):equipped);
- const subtitle=buying?offers.length+' Angebote':' '+stock.length+' Gegenstände';
- show('<div class="rpg-shell ledger"><section class="rpg-left"><div class="rpg-head"><h2>Händler</h2><small>◈ '+save.gold+' Gold</small></div>'+
-  '<div class="ledger-tabs"><button id="shopBuy" aria-pressed="'+buying+'">Kaufen</button><button id="shopSell" aria-pressed="'+!buying+'">Verkaufen</button><small>'+subtitle+'</small></div>'+
+ const it=visible[selected],sold=it&&soldList.includes(it.stock),equipped=it&&isEquipped(it);
+ const salePrice=row=>Math.max(1,Math.floor(items.price(row,1)*(hasRing('luck')?.55:.4)));
+ const amount=it&&(buying?it.price:salePrice(it)),currency=buying?mode:'gold',unit=expedition.currency[currency];
+ const disabled=!it||(buying?(sold||save[currency]<amount||save.inventory.length>=30):equipped);
+ const modes=[['gold','Kaufen'],...(save.floor>=3?[['bones','Knochen']]:[]),...(save.floor>=4?[['rubies','Mythisch']]:[]),['sell','Verkaufen']];
+ show('<div class="rpg-shell ledger"><section class="rpg-left"><div class="rpg-head"><h2>Händler</h2><small class="wallet-shop">'+walletLine()+'</small></div>'+
+  '<div class="ledger-tabs">'+modes.map(([id,label])=>'<button data-shop-mode="'+id+'" aria-pressed="'+(mode===id)+'">'+label+'</button>').join('')+
+  '<small>'+stock.length+(buying?' Angebote':' Gegenstände')+'</small></div>'+
   '<div class="shop-grid">'+visible.map((row,i)=>{
-   const gone=buying&&save.shopSold.includes(row.stock);
+   const gone=buying&&soldList.includes(row.stock);
    return '<button class="shop-item" data-stock="'+i+'" aria-pressed="'+(i===selected)+'">'+itemTile(row)+'<span>'+qEsc(itemTitle(row))+'<small>'+
-    (buying?(gone?'Verkauft':'◈ '+row.price):(isEquipped(row)?'Ausgerüstet':'◈ '+Math.max(1,Math.floor(items.price(row,1)*(hasRing('luck')?0.55:0.4)))))+
+    (buying?(gone?'Verkauft':unit.icon+' '+row.price):(isEquipped(row)?'Ausgerüstet':'◈ '+salePrice(row)))+
     '</small></span></button>';
   }).join('')+'</div><div class="ledger-actions">'+(pages>1?'<button id="shopPrev" '+(page===0?'disabled':'')+' aria-label="Vorherige Seite">‹</button><small>'+(page+1)+'/'+pages+'</small><button id="shopNext" '+(page+1>=pages?'disabled':'')+' aria-label="Nächste Seite">›</button>':'')+
   '<button id="md-shop-back">Verlassen</button></div></section><aside class="rpg-right">'+itemDetails(it)+
-  (it?'<button class="primary" id="shopConfirm" '+(disabled?'disabled':'')+'>'+(buying?'Kaufen':'Verkaufen')+' · '+amount+' Gold</button>':'')+
+  (it?'<button class="primary" id="shopConfirm" '+(disabled?'disabled':'')+'>'+(buying?'Kaufen':'Verkaufen')+' · '+amount+' '+(mode==='rubies'&&amount===1?'Rubin':unit.label)+'</button>':'')+
   (!buying&&equipped?'<p class="muted">Zum Verkaufen zuerst ablegen.</p>':'')+'</aside></div>','merchant');
  document.querySelectorAll('[data-stock]').forEach(b=>b.onclick=()=>merchantMenu(mode,page,Number(b.dataset.stock)));
- mdButton('shopBuy',()=>merchantMenu());mdButton('shopSell',()=>merchantMenu('sell'));
+ document.querySelectorAll('[data-shop-mode]').forEach(b=>b.onclick=()=>merchantMenu(b.dataset.shopMode));
  mdButton('shopPrev',()=>merchantMenu(mode,page-1));mdButton('shopNext',()=>merchantMenu(mode,page+1));mdButton('md-shop-back',close);
  mdButton('shopConfirm',()=>{
   if(disabled)return;
   if(buying){
-   if(save.shopSold.includes(it.stock)||save.gold<amount||save.inventory.length>=30)return;
+   if(soldList.includes(it.stock)||save[currency]<amount||save.inventory.length>=30)return;
    const {kind,id,rarity,source}=it;
-   save.inventory.push({kind,id,rarity,source});save.gold-=amount;save.shopSold.push(it.stock);
+   save.inventory.push({kind,id,rarity,source});save[currency]-=amount;soldList.push(it.stock);
   }else{
    const index=page*size+selected;
    if(save.inventory[index]!==it||isEquipped(it))return;
@@ -563,7 +587,7 @@ const roomPlans=[
  {fixed:[['crystal',28.9,18.6],['crystal',32.3,18.4],['crystal',39.9,19.6],['crystal',40,24.2],['sarcophagus',31.85,26.25],['torch',29.2,24.9]],
   sets:[{at:[[37.9,20.15],[38.3,19.7]], pieces:[['sarcophagus',0,0],['crystal',1.25,-.5],['candle',-1.1,.1]]}]}
 ];
-const entrances=[...corridors,...(save.variedRooms?annexPassages.values():[])].flatMap(c=>!c.vertical
+const entrances=[...corridors,...(save.variedRooms?new Set([...annexPassages.values(),...paths]):[])].flatMap(c=>!c.vertical
  ? [{x:(c.x+c.w/2)*TILE,y:c.y*TILE},{x:(c.x+c.w/2)*TILE,y:(c.y+c.h)*TILE}]
  : [{x:c.x*TILE,y:(c.y+c.h/2)*TILE},{x:(c.x+c.w)*TILE,y:(c.y+c.h/2)*TILE}]);
 const merchantRoom=rooms[merchantRoomId];
@@ -592,7 +616,7 @@ for(const room of run.shuffle(rooms.slice(1),mapRandom)){
  }
 }
 const mapPickup=mapSites[Math.floor(mapRandom()*mapSites.length)]||pointIn(rooms[1],0,0);
-const landmarks=[...shrines,...chests,merchant,mapPickup,spawn,...(restCat?[restCat,wellUse,wellArrival]:[]),...(save.layoutRevision>=2?[market]:[])];
+const landmarks=[...shrines,...chests,merchant,mapPickup,spawn,...bonePiles,...templeShrines,...(restCat?[restCat,wellUse,wellArrival]:[]),...(save.layoutRevision>=2?[market]:[])];
 if(save.layoutRevision>=2)furniture.push({type:'market',...market,zone:merchantRoomId,...FURNITURE.market});
 function placeRoomSet(pieces,ax,ay,zone){
  const group=[];
@@ -701,11 +725,18 @@ if(save.layoutRevision>=4){
   }
  }
 }
+Object.assign(annexDecor,{
+ cemetery:[['tree',2,2],['tree',14,2],['tree',13.8,10.7],['tree',2.2,10.7],['grave',4,3],['grave',6,3],['grave',8,3],['grave',10,3],['grave',12,3],['grave',4,9],['grave',6,9],['grave',8,9],['grave',10,9],['grave',12,9],['grass',4,4],['grass',11,8],['grass',2.3,8]],
+ 'temple-entry':[['vines',2,1],['vines',8,1],['basket',2,2],['bush',2,3],['bush',8.9,9],['rubble',2.5,8.5],['rubble',8.9,8.5],['torch',3,2.3]],
+ 'temple-court':[['vines',2.4,1.2],['vines',9.3,1.25],['vines',6,1.4],['rubble',10,4],['rubble',4,10.8],['basket',10.4,8.5],['bush',2,10.5],['bush',9.85,9],['torch',2.5,2.4]],
+ 'temple-shrines':[['vines',2.8,1.2],['vines',6.8,1.2],['vines',10.8,1.2],['basket',2.4,8],['basket',11.9,8],['bush',1.8,3.5],['bush',12,3],['rubble',12,9.5],['torch',5,6],['torch',9,6]]
+});
+for(const shrine of templeShrines)furniture.push({...shrine,type:'jungle-shrine',zone:6,...FURNITURE['jungle-shrine']});
 for(const annex of annexes){
- for(const [type,x,y] of [...annexDecor[annex.key],...annexAccents[annex.key]])furnishRoom(type,annex,annex.x+x,annex.y+y,annex.theme);
+ for(const [type,x,y] of [...(annexDecor[annex.key]||[]),...(annexAccents[annex.key]||[])])furnishRoom(type,annex,annex.x+x,annex.y+y,annex.theme);
 }
 
-if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y,HERO_RADIUS))Object.assign(player,spawn);
+if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y,HERO_RADIUS,false,true))Object.assign(player,spawn);
 const cabinets=furniture.filter(p=>p.type==='cabinet'||p.type==='bookcase').map((p,id)=>({...p,id,
  gold:run.random(save.dungeonSeed^(0x111723+id*2246822519))()<.44?9+save.floor*3+id%5:0
 }));
@@ -727,7 +758,7 @@ function reachableSpawnTiles(){
   const id=y*cols+x;
   if(seen[id])return;
   seen[id]=1;
-  if(valid(x*step,y*step,HERO_RADIUS,true)){seen[id]=2;frontier.push(id);}
+  if(valid(x*step,y*step,HERO_RADIUS,true,true)){seen[id]=2;frontier.push(id);}
  };
  enqueue(Math.round(spawn.x/step),Math.round(spawn.y/step));
  for(let i=0;i<frontier.length;i++){
@@ -802,6 +833,25 @@ function breakPriest(priest){
   save.serpents.push(spawn);addSerpent(spawn);
  }
 }
+function stockTempleEnemies(){
+ for(const room of templeRooms){
+  const entrance=room.key==='temple-entry',courtRoom=room.key==='temple-court';
+  const picks=entrance?[[2,4,SNAKE],[5,9,SNAKE],[8,3,LIONESS]]:courtRoom?
+   [[4,3,LION],[8,6,LIONESS],[10,9,LION],[5,9,SNAKE],[9,3,SNAKE]]:
+   [[3,3,SNAKE],[7,3,SNAKE],[10,3,SNAKE],[8,8,LIONESS]];
+  for(const [i,[dx,dy,type]] of picks.entries()){
+   const id='temple-'+room.id+'-'+i;if(defeated.has(id))continue;
+   const candidates=[[dx,dy],[dx,dy+1],[dx+1,dy],[dx-1,dy],[dx,dy-1],[dx+1,dy+1],[dx-1,dy-1]];
+   const pos=candidates.map(([x,y])=>({x:(room.x+x+.5)*TILE,y:(room.y+y+.5)*TILE})).find(p=>
+    regionAt(p.x,p.y)===room.id&&canReachSpawn(p.x,p.y)&&valid(p.x,p.y,type===SNAKE?8:18,true)&&
+    enemies.every(e=>Math.hypot(e.x-p.x,e.y-p.y)>40));
+   if(!pos)continue;
+   const max=enemyRules.health(type,false,save.floor);
+   enemies.push({...pos,id,type,roomId:0,size:type===SNAKE?.58:type===LION?1.19:1.06,hp:max,max,phase:i,attack:1.4+i*.3,hit:0,angle:0,windup:0});
+  }
+ }
+}
+stockTempleEnemies();
 let trial=null;
 function offerTrial(index){
  if(save.trials[index]||!questions.length){tell('Keine Prüfung verfügbar');return;}
@@ -884,7 +934,7 @@ let mdNavigatingToNewCharacter=false;function persist(){if(mdNavigatingToNewChar
 }setInterval(()=>{persist()},12000);
 function tell(t){$('#notice').textContent=t;$('#notice').style.opacity=1;noticeUntil=performance.now()+2100}
 function show(content,type='menu'){
- $('#hud').hidden=true;$('#xpHud').hidden=true;$('#quickBar').hidden=true;
+ $('#hud').hidden=true;$('#xpHud').hidden=true;$('#quickBar').hidden=true;$('#wallet').hidden=true;
  const panel=$('#modal');
  const focused=document.activeElement;
  const previous=focused?.closest?.('#modal')&&focused;
@@ -898,7 +948,7 @@ function show(content,type='menu'){
 }
 function close(){
  paused=false;modalType='';pending=null;$('#modalWrap').style.display='none';
- $('#hud').hidden=false;$('#xpHud').hidden=false;updateQuickBar();
+ $('#hud').hidden=false;$('#xpHud').hidden=false;$('#wallet').hidden=false;updateWallet();updateQuickBar();
  if(queuedAltar!==null){
   altarBursts.push({...shrines[queuedAltar],life:1.12});queuedAltar=null;
   tell('Altar vollendet · Wissen bewahrt');
@@ -921,7 +971,14 @@ function navModal(e){
  if(focused?.matches?.('input,textarea,select,[contenteditable]'))return;
  if(e.code==='Enter'||e.code==='NumpadEnter'){
   if(e.repeat){e.preventDefault();return;}
-  if(focused?.matches?.('button:not(:disabled)'))return;
+  if(focused?.matches?.('button:not(:disabled)')){
+   e.preventDefault();focused.click();
+   if(modalType==='inventory'&&focused.matches('[data-item]')){
+    const equip=$('#md-equip-selected'),quick=$('#md-quick-selected');
+    (equip.disabled?quick:equip).focus();
+   }
+   return;
+  }
   const first=panel.querySelector('button:not(:disabled)');
   if(first){e.preventDefault();first.focus();first.click();}
   return;
@@ -936,8 +993,8 @@ function qEsc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const themes=[{floor:'#183a36',edge:'#3c8375',glow:'#83edc5',detail:'#67bdac'},{floor:'#303048',edge:'#9e78ce',glow:'#e3b6ff',detail:'#7561b5'},{floor:'#382c38',edge:'#a65d82',glow:'#ff8fb8',detail:'#a96583'},{floor:'#443528',edge:'#ba8b4f',glow:'#ffc57b',detail:'#c99d63'},{floor:'#22374a',edge:'#6098c3',glow:'#8bd7ff',detail:'#7aa9c7'}];
 function tileZone(x,y){
  const region=regions[y]?.[x]??-1;
- if(region>=0)return annexByRegion.get(region)?.theme??annexPassages.get(region)?.from??
-  (region<rooms.length?region:corridors[region-rooms.length].from);
+ if(region>=0)return annexByRegion.get(region)?.theme??annexPassages.get(region)?.theme??annexPassages.get(region)?.from??
+  (region<rooms.length?region:corridors[region-rooms.length]?.from??0);
  let zone=0,best=Infinity;
  for(const room of rooms){
   const dx=Math.max(room.x-x,x-(room.x+room.w-1),0),dy=Math.max(room.y-y,y-(room.y+room.h-1),0),d=dx*dx+dy*dy;
@@ -1039,13 +1096,14 @@ function questionFigure(q){
   '<figcaption>'+qEsc(q.image.caption||q.source.document+', Folie '+q.source.page)+'</figcaption></figure>';
 }
 function quiz(z,reason,gateId=null,question=null){
- if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;const q=question||selectQuestion(z,gateId,reason==='shrine'?z:null);if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return}pending={q,z,reason,gateId};show(`<span class="pill">✦ ${qEsc(packLibrary.get(save.activePack)?.categories.find(group=>group.id===q.categoryId)?.title||roomTitle(z))} · ${qEsc(q.topic)} · Schwierigkeit ${q.difficulty||1}</span>${reason==='trial'?'<span class="pill">Prüftruhe · '+trial.correct+'/'+trial.target+' richtig · <b id="trial-timer">'+Math.max(0,Math.ceil((trial.deadline-Date.now())/1000))+' s</b></span>'+(trial.lastAnswer===null?'':'<span class="pill trial-result">'+(trial.lastAnswer?'Richtig':'Falsch')+'</span>'):''}<h2>${qEsc(q.prompt)}</h2>${questionFigure(q)}<div class="choices">${q.type==='free-text'?`<label for="freeAnswer">Deine Antwort</label><input id="freeAnswer" autocomplete="off" placeholder="Antwort eingeben" class="answer-field"><button class="primary" id="submitFree">Antwort prüfen</button>`:q.choices.map((c,i)=>`<button class="choice" data-choice="${i}">${String.fromCharCode(65+i)}. ${qEsc(c)}</button>`).join('')}</div><div id="feedback"></div>${reason==='trial'?'':'<p class="muted">Nach einer richtigen Antwort kannst du die Wiederholung auf 🔴 5 Fragen, 🟡 10 Fragen oder 🟢 nie setzen.</p>'}<p class="muted">Quelle: ${qEsc(q.source?.document||'Fragenpaket')}, Folie ${qEsc(q.source?.page||'–')}</p><div class="actions"><button id="leave">${reason==='trial'?'Prüfung abbrechen':reason==='brew'?'Zur Brauerei':reason==='study'?'Zu den Bildkarten':'Später beantworten'}</button></div>`,'quiz');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(+b.dataset.choice));if(q.type==='free-text'){const input=$('#freeAnswer');$('#submitFree').onclick=()=>answerText(input.value);input.focus();input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(!e.repeat)answerText(input.value);}}}$('#leave').onclick=reason==='trial'?()=>finishTrial(false):reason==='brew'?()=>finishIngredient(false):reason==='study'?imageCards:close}
+ if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;const q=question||selectQuestion(z,gateId,reason==='shrine'?z:null);if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return}pending={q,z,reason,gateId};show(`<span class="pill">✦ ${qEsc(packLibrary.get(save.activePack)?.categories.find(group=>group.id===q.categoryId)?.title||roomTitle(z))} · ${qEsc(q.topic)} · Schwierigkeit ${q.difficulty||1}</span>${reason==='trial'?'<span class="pill">Prüftruhe · '+trial.correct+'/'+trial.target+' richtig · <b id="trial-timer">'+Math.max(0,Math.ceil((trial.deadline-Date.now())/1000))+' s</b></span>'+(trial.lastAnswer===null?'':'<span class="pill trial-result">'+(trial.lastAnswer?'Richtig':'Falsch')+'</span>'):''}<h2>${qEsc(q.prompt)}</h2>${questionFigure(q)}<div class="choices">${q.type==='free-text'?`<label for="freeAnswer">Deine Antwort</label><input id="freeAnswer" autocomplete="off" placeholder="Antwort eingeben" class="answer-field"><button class="primary" id="submitFree">Antwort prüfen</button>`:q.choices.map((c,i)=>`<button class="choice" data-choice="${i}">${String.fromCharCode(65+i)}. ${qEsc(c)}</button>`).join('')}</div><div id="feedback"></div>${reason==='trial'||reason==='temple'?'':'<p class="muted">Nach einer richtigen Antwort kannst du die Wiederholung auf 🔴 5 Fragen, 🟡 10 Fragen oder 🟢 nie setzen.</p>'}<p class="muted">Quelle: ${qEsc(q.source?.document||'Fragenpaket')}, Folie ${qEsc(q.source?.page||'–')}</p><div class="actions"><button id="leave">${reason==='trial'?'Prüfung abbrechen':reason==='brew'?'Zur Brauerei':reason==='study'?'Zu den Bildkarten':'Später beantworten'}</button></div>`,'quiz');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(+b.dataset.choice));if(q.type==='free-text'){const input=$('#freeAnswer');$('#submitFree').onclick=()=>answerText(input.value);input.focus();input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(!e.repeat)answerText(input.value);}}}$('#leave').onclick=reason==='trial'?()=>finishTrial(false):reason==='brew'?()=>finishIngredient(false):reason==='study'?imageCards:close}
 function normalizeAnswer(v){return String(v).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
 function editDistance(a,b){const prev=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let last=prev[0];prev[0]=i;for(let j=1;j<=b.length;j++){const tmp=prev[j];prev[j]=Math.min(prev[j]+1,prev[j-1]+1,last+(a[i-1]===b[j-1]?0:1));last=tmp}}return prev[b.length]}
 function answerText(raw){if(!pending||pending.q.type!=='free-text')return;const input=normalizeAnswer(raw);if(!input){tell('Bitte eine Antwort eingeben');return}const ok=pending.q.answers.some(a=>{const target=normalizeAnswer(a),limit=target.length>=22?3:target.length>=10?2:target.length>=6?1:0;return input===target||Math.abs(input.length-target.length)<=limit&&editDistance(input,target)<=limit});answer(ok?1:0)}
 function answer(i){
  if(!pending||pending.answered)return;
  if(pending.reason==='trial'){answerTrial(i);return;}
+ if(pending.reason==='temple'){answerTemple(i);return;}
  if(pending.reason==='brew'){
   pending.answered=true;
   const {q}=pending,ok=q.type==='free-text'?i===1:i===q.correctIndex;
@@ -1070,6 +1128,54 @@ pending.answered=true;const {q,z,reason,gateId}=pending;
   if(save.altarUses[z]===2)queuedAltar=z;
  }document.querySelectorAll('.choice').forEach(b=>{b.disabled=true;if(+b.dataset.choice===q.correctIndex)b.classList.add('good');else if(+b.dataset.choice===i)b.classList.add('bad')});if(q.type==='free-text'){const el=$('#freeAnswer');if(el)el.disabled=true;const b=$('#submitFree');if(b)b.disabled=true}const ok=q.type==='free-text'?i===1:i===q.correctIndex;save.questionCount=(save.questionCount||0)+1;if(!ok&&save.questionReview[q.id]?.color!=='green'){(save.questionReview||={})[q.id]={color:'red',due:save.questionCount+5}}if(ok){save.solved[q.id]=(save.solved[q.id]||0)+1;grantXP((save.solved[q.id]||0)>1?5:15+(q.difficulty||1)*5);if(reason==='gate'&&gateId){(save.gateQuestions[gateId]||=[]).push(q.id);save.gateProgress[gateId]=(save.gateProgress[gateId]||0)+1;if(save.gateProgress[gateId]>=sealTarget()){save.gates[gateId]=true;const g=gates.find(g=>g.id===gateId);burst((g.x+.5)*TILE,(g.y+.5)*TILE,g.color,45);tell('Wissenstor geöffnet!')}}if(reason==='enemy'){for(const e of enemies)if(e.roomId===z&&Math.hypot(e.x-player.x,e.y-player.y)<220){e.hp-=45;showDamage(e.x,e.y,45,'magic');burst(e.x,e.y,'#d6a2ff',18)}}else if(reason!=='study'){player.hp=Math.min(maxHP(),player.hp+18);burst(player.x,player.y,'#8df2d2',24)}}else if(reason!=='study'){player.hp=Math.max(1,player.hp-8);shake=8}persist();$('#feedback').innerHTML=`${reason==='gate'&&gateId?`<p class="pill">Siegelprüfung: ${Math.min(sealTarget(),save.gateProgress[gateId]||0)}/${sealTarget()} richtig</p>`:''}<p style="color:${ok?'#9becc8':'#ff9aaf'}"><b>${ok?'✓ Richtig! +Erfahrung':(reason==='study'?'✕ Nicht ganz.':'✕ Nicht ganz. −8 HP')}</b></p><p>${qEsc(q.explanation)}</p>${ok?'<h3>Wiederholung festlegen</h3><p class="muted">Wähle eine Ampelfarbe, bevor du fortfährst.</p><div class="actions"><button data-review="red">🔴 Rot · 5 Fragen</button><button data-review="yellow">🟡 Gelb · 10 Fragen</button><button data-review="green">🟢 Grün · nie wieder</button></div>':''}<button class="primary" id="continue">${reason==='study'?'Zu den Bildkarten':'Weiter ins Dungeon →'}</button>`;document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{const color=b.dataset.review;pending.reviewed=true;save.questionReview[q.id]={color,due:color==='green'?Number.MAX_SAFE_INTEGER:save.questionCount+(color==='red'?5:10)};persist();document.querySelectorAll('[data-review]').forEach(el=>{el.disabled=true;el.style.opacity=el===b?'1':'.4'});$('#continue').focus();});$('#continue').onclick=()=>{if(ok&&!pending?.reviewed){tell('Bitte zuerst Rot, Gelb oder Grün auswählen');return}pending=null;if(reason==='study'){imageCards();return}close();if(reason==='gate'&&gateId&&!save.gates[gateId]&&ok){gateQuiz(gates.find(g=>g.id===gateId));return}if(player.hp<=1)tell('Deine Energie ist erschöpft – finde einen Lernschrein!')};
  (ok?document.querySelector('[data-review]'):$('#continue'))?.focus();
+}
+function collectBones(index){
+ const pile=bonePiles[index];
+ if(!pile||save.boneClaims[pile.id])return;
+ save.boneClaims[pile.id]=true;save.bones++;
+ burst(pile.x,pile.y,'#e8d9b2',14);persist();
+ tell('+1 Knochen');
+}
+function templeQuiz(index){
+ if(save.rubyClaims[index]||save.templeAttempts[index]?.failed)return;
+ const state=save.templeAttempts[index]??={correct:0,seen:[]};
+ const matching=questions.filter(q=>q.difficulty===3);
+ if(matching.length<2){tell('Dieser Schrein braucht zwei Lernkarten mit Schwierigkeit 3.');return;}
+ const enough=matching.filter(q=>!state.seen.includes(q.id));
+ const seenElsewhere=new Set(Object.values(save.templeAttempts).flatMap(attempt=>attempt.seen));
+ const fresh=enough.filter(q=>!seenElsewhere.has(q.id));
+ const pool=fresh.length?fresh:enough;
+ if(!pool.length)return;
+ const question=pool[Math.floor(Math.random()*pool.length)];
+ quiz(area(),'temple',index,question);
+}
+function answerTemple(choice){
+ const {q,gateId:index}=pending,state=save.templeAttempts[index];
+ pending.answered=true;
+ const ok=q.type==='free-text'?choice===1:choice===q.correctIndex;
+ state.seen.push(q.id);save.questionCount++;
+ let reward=false;
+ if(ok){
+  state.correct++;
+  if(state.correct===2&&!save.rubyClaims[index]){
+   save.rubyClaims[index]=true;save.rubies++;reward=true;
+  }
+  save.solved[q.id]=(save.solved[q.id]||0)+1;
+  grantXP(save.solved[q.id]>1?5:15+q.difficulty*5);
+ }else{
+  state.failed=true;
+  if(save.questionReview[q.id]?.color!=='green')save.questionReview[q.id]={color:'red',due:save.questionCount+5};
+ }
+ persist();
+ document.querySelectorAll('.choice').forEach(b=>{b.disabled=true;if(Number(b.dataset.choice)===q.correctIndex)b.classList.add('good');});
+ if(q.type==='free-text'){$('#freeAnswer').disabled=true;$('#submitFree').disabled=true;}
+ const status=reward?'Zwei richtige Antworten · +1 Rubin':ok?'Eine von zwei Antworten richtig':'Der Schrein bleibt bis zum nächsten Tod geschlossen.';
+ $('#feedback').innerHTML='<p class="pill">'+status+'</p><p>'+qEsc(q.explanation)+'</p><button id="templeNext" class="primary">'+
+  (ok&&!reward?'Zweite Frage':'Schrein verlassen')+'</button>';
+ mdButton('templeNext',ok&&!reward?()=>templeQuiz(index):()=>{
+  close();if(reward){const shrine=templeShrines[index];burst(shrine.x,shrine.y,'#ff7a85',23);tell('+1 Rubin');}
+ });
+ $('#leave').hidden=true;$('#templeNext').focus();
 }
 function answerTrial(choice){
  if(!trial||Date.now()>=trial.deadline){finishTrial(false);return;}
@@ -1203,6 +1309,8 @@ function tickPoison(e,dt){
  status.untilTick+=.72;if(--status.ticks===0)e.poison=null;
 }
 function interact(){if(paused)return;
+if(near?.kind==='bones'){collectBones(near.i);return;}
+if(near?.kind==='temple'){templeQuiz(near.i);return;}
 if(near?.kind==='well'){wellMenu();return;}
 if(near?.kind==='cat'&&restCat&&Math.hypot(restCat.x-player.x,restCat.y-player.y)<71){petCat();return;}
 if(near?.kind==='brewery'){breweryMenu();return;}
@@ -1250,6 +1358,7 @@ function update(dt){
  if(region>=0&&!explored.has(region)){explored.add(region);save.explored=[...explored];}
  updateBrew(dt);
  updateWebs(dt);
+ updatePlates(dt);
  updateBolts(dt);
  if(mdNavigatingToNewCharacter)return;
  altarBursts=altarBursts.filter(effect=>(effect.life-=dt)>0);
@@ -1277,16 +1386,26 @@ function update(dt){
 for(const d of dust)d.life-=dt;while(dust.length&&dust[0].life<=0)dust.shift();for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}particles=particles.filter(p=>p.life>0);slashes.forEach(z=>z.life-=dt);slashes=slashes.filter(z=>z.life>0);
 near=null;let best=95;
 if(regionAt(player.x,player.y)===labRoom.id&&Math.hypot(lab.x-player.x,lab.y-player.y)<88){near={kind:'brewery'};best=88;}
-for(const [kind,loc] of [['merchant',merchant],['map',mapPickup],...(restCat?[['cat',restCat],['well',wellUse]]:[])]){if(kind==='map'&&save.merchantMapFound)continue;const d=Math.hypot(loc.x-player.x,loc.y-player.y);if(d<best&&reachableInteraction(loc)){best=d;near={kind}}}gates.forEach((g,i)=>{if(save.gates[g.id])return;const d=Math.hypot((g.x+.5)*TILE-player.x,(g.y+.5)*TILE-player.y);if(d<best&&(regionAt(player.x,player.y)===g.corridorId||reachableInteraction(gateApproach(g)))){best=d;near={kind:'gate',i}}});shrines.forEach(z=>{if((save.altarUses[z.i]||0)>=2)return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:'shrine',i:z.i}}});chests.forEach((z,i)=>{const challenge=i===trialIndex&&!save.opened.includes(i);if(save.opened.includes(i)||challenge&&save.trials[i])return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:challenge?'trial':'chest',i}}});cabinets.forEach((p,i)=>{if(save.searched.includes(i))return;
+for(const [kind,loc] of [['merchant',merchant],['map',mapPickup],...(restCat?[['cat',restCat],['well',wellUse]]:[])]){if(kind==='map'&&save.merchantMapFound)continue;const d=Math.hypot(loc.x-player.x,loc.y-player.y);if(d<best&&reachableInteraction(loc)){best=d;near={kind}}}gates.forEach((g,i)=>{if(save.gates[g.id])return;const d=Math.hypot((g.x+.5)*TILE-player.x,(g.y+.5)*TILE-player.y);if(d<best&&(regionAt(player.x,player.y)===g.corridorId||reachableInteraction(gateApproach(g)))){best=d;near={kind:'gate',i}}});shrines.forEach(z=>{if((save.altarUses[z.i]||0)>=2)return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:'shrine',i:z.i}}});chests.forEach((z,i)=>{const challenge=i===trialIndex&&!save.opened.includes(i);if(save.opened.includes(i)||challenge&&save.trials[i])return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:challenge?'trial':'chest',i}}});bonePiles.forEach((p,i)=>{
+ if(save.boneClaims[p.id])return;
+ const d=Math.hypot(p.x-player.x,p.y-player.y);
+ if(d<Math.min(best,65)&&reachableInteraction(p)){near={kind:'bones',i};best=d;}
+});
+templeShrines.forEach((p,i)=>{
+ if(save.rubyClaims[i]||save.templeAttempts[i]?.failed)return;
+ const d=Math.hypot(p.x-player.x,p.y-player.y);
+ if(d<Math.min(best,82)&&reachableInteraction(p)){near={kind:'temple',i};best=d;}
+});
+cabinets.forEach((p,i)=>{if(save.searched.includes(i))return;
  const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,72)&&reachableInteraction(p)){best=d;near={kind:'cabinet',i};}
 });
 save.souls.forEach((p,i)=>{const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,62)&&reachableInteraction(p)){best=d;near={kind:'soul',i};}});
 if(save.portal&&near?.kind!=='soul'&&Math.hypot(save.portal.x-player.x,save.portal.y-player.y)<65&&reachableInteraction(save.portal))near={kind:'portal'};$('#healthfill').style.setProperty('--hurt',items.damage[player.dominant]?.color||'#c77462');$('#healthfill').style.width=(100*player.hp/maxHP())+'%';$('#staminafill').style.width=(100*player.stamina/maxStamina())+'%';$('#xpfill').style.width=(100*save.xp/xpRequired())+'%';$('#health').setAttribute('aria-valuenow',Math.ceil(player.hp));$('#health').setAttribute('aria-valuemax',maxHP());
 $('#stamina').hidden=combatTime<=0;
 $('#stamina').setAttribute('aria-valuenow',Math.ceil(player.stamina));$('#stamina').setAttribute('aria-valuemax',maxStamina());
-$('#xpnum').textContent=save.xp+'/'+xpRequired()+' XP';$('#statline').textContent='Stufe '+save.level+' · '+save.gold+' Gold';
-$('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+(annexByRegion.get(region)?.name||roomTitle(area()));$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${enemies.length} Gegner auf dieser Ebene${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}`;if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
-const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=near&&({brewery:'Am Labortisch brauen',soul:'Seelenball aufnehmen',cabinet:'Schrank durchsuchen',trial:'Prüftruhe untersuchen',portal:save.floor===LAST_DEPTH?'Lauf abschließen':'Portal zur nächsten Tiefe',gate:'Siegel prüfen',shrine:'Wissen prüfen · '+(near?.kind==='shrine'?2-(save.altarUses[near.i]||0):2)+' übrig',chest:'Truhe öffnen',merchant:'Händlerstand öffnen',cat:'Katze streicheln',well:'Magischer Brunnen',map:'Händlerkarte aufnehmen'})[near.kind];
+$('#xpnum').textContent=save.xp+'/'+xpRequired()+' XP';$('#statline').textContent='Stufe '+save.level;updateWallet();
+$('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+(annexByRegion.get(region)?.name||(annexPassages.get(region)?.theme===6?'Tempel · Verbindung':roomTitle(area())));$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${enemies.length} Gegner auf dieser Ebene${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}`;if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
+const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=near&&({brewery:'Am Labortisch brauen',soul:'Seelenball aufnehmen',cabinet:'Schrank durchsuchen',trial:'Prüftruhe untersuchen',portal:save.floor===LAST_DEPTH?'Lauf abschließen':'Portal zur nächsten Tiefe',gate:'Siegel prüfen',shrine:'Wissen prüfen · '+(near?.kind==='shrine'?2-(save.altarUses[near.i]||0):2)+' übrig',chest:'Truhe öffnen',merchant:'Händlerstand öffnen',cat:'Katze streicheln',well:'Magischer Brunnen',bones:'Knochen aufheben',temple:'Dschungelschrein · Schwierigkeit 3',map:'Händlerkarte aufnehmen'})[near.kind];
 prompt.hidden=!hint||paused;$('#mobileInteract').hidden=!hint||paused;if(hint&&prompt.dataset.hint!==hint){prompt.dataset.hint=hint;prompt.textContent=(matchMedia('(pointer:coarse)').matches?'':'[ E ] ')+hint;}
 }
 function gateApproach(g){
@@ -1316,7 +1435,7 @@ function clearsActor(actor,x,y,other){
 }
 function moveActor(actor,dx,dy){
  const hero=actor===player,radius=actorRadius(actor);
- const traversable=(x,y)=>valid(x,y,radius)&&
+ const traversable=(x,y)=>valid(x,y,radius,false,hero)&&
   (hero?enemies.every(e=>e.hp<=0||clearsActor(actor,x,y,e)):
    !inRest(x,y)&&clearsActor(actor,x,y,player));
  const count=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
@@ -1328,6 +1447,7 @@ function moveActor(actor,dx,dy){
 }
 function moveEnemy(e,dx,dy){moveActor(e,dx,dy);}
 function updateEnemy(e,dt){
+ if(isLion(e)){updateLion(e,dt);return;}
  const spec=enemyRules.attacks[e.type];
  if(e.emerge>0){e.emerge=Math.max(0,e.emerge-dt);return;}
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
@@ -1439,11 +1559,11 @@ function chaseSerpent(e,dt,speed,blocked){
  const stride=Math.min(speed*dt,Math.hypot(target.x-e.x,target.y-e.y));
  moveEnemy(e,Math.cos(angle)*stride,Math.sin(angle)*stride);
 }
-function serpentStep(e,target){
+function serpentStep(e,target,limit=420){
  const start=Math.floor(e.y/TILE)*W+Math.floor(e.x/TILE);
  const goal=Math.floor(target.y/TILE)*W+Math.floor(target.x/TILE);
  const frontier=[start],steps=new Map([[start,start]]);
- for(let i=0;i<frontier.length&&i<420;i++){
+ for(let i=0;i<frontier.length&&i<limit;i++){
   const id=frontier[i];
   if(id===goal){
    if(id===start)return target;
@@ -1470,6 +1590,95 @@ function updateEnemyHazards(dt){
  }
  enemyHazards=enemyHazards.filter(h=>h.life>0);
 }
+const pressurePlates=templeRooms.flatMap(room=>{
+ const marks=room.key==='temple-entry'?[[5,4],[7,8]]:room.key==='temple-shrines'?[[6,2],[10,8]]:[[5,5],[8,9]];
+ return marks.map(([x,y])=>{
+  const pos={x:(room.x+x+.5)*TILE,y:(room.y+y+.5)*TILE};
+  const sites=[.65,room.w-.65,x-1.3,x+1.6];
+  if(Math.floor(pos.y/TILE)%2===1)[sites[0],sites[1]]=[sites[1],sites[0]];
+  const x0=sites.map(t=>(room.x+t)*TILE).find(px=>{
+   if(gateLineBlocked(px,pos.y,pos.x,pos.y))return false;
+   const steps=Math.ceil(Math.abs(px-pos.x)/6);
+   return Array.from({length:steps+1},(_,i)=>i).every(i=>
+    !furnitureBlocked(px+(pos.x-px)*i/Math.max(1,steps),pos.y,2));
+  });
+  const origin={x:x0,y:pos.y};
+  return {...pos,origin,angle:x0<pos.x?0:Math.PI,pressed:false,timer:0,cooldown:0};
+ }).filter(p=>Number.isFinite(p.origin.x)&&valid(p.x,p.y,5,true));
+});
+function updatePlates(dt){
+ for(const p of pressurePlates){
+  const pressed=Math.abs(p.x-player.x)<17&&Math.abs(p.y-player.y)<17;
+  p.cooldown=Math.max(0,p.cooldown-dt);
+  if(pressed&&!p.pressed&&!p.cooldown){
+   p.timer=.27;p.cooldown=1.7;
+   burst(p.x,p.y,'#d9b788',7);
+  }
+  p.pressed=pressed;
+  if(p.timer<=0)continue;
+  p.timer-=dt;
+  if(p.timer>0)continue;
+  bolts.push({...p.origin,angle:p.angle,speed:430,life:1.9,type:'trap'});
+ }
+}
+function updateLion(e,dt){
+ const spec=enemyRules.attacks[e.type];
+ e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
+ if(inRest(player.x,player.y)){e.lionMove=null;e.aggro=0;e.called=0;return;}
+ const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
+ const clear=d<=enemyRules.eyeRange(e.type,false,cw,ch,angle)&&!gateLineBlocked(e.x,e.y,player.x,player.y);
+ e.called=Math.max(0,(e.called||0)-dt);
+ e.aggro=clear?1.4:Math.max(e.called,(e.aggro||0)-dt);
+ const move=e.lionMove;
+ if(move){
+  move.age+=dt;
+  if(move.age<move.windup)return;
+  const t=move.age-move.windup;
+  if(move.kind==='leap'&&t<.35){
+   moveEnemy(e,Math.cos(move.angle)*270*dt,Math.sin(move.angle)*270*dt);
+   if(!move.landed&&nearActor(e,player,11)&&takeDamage(e.type===LION?16:13,{physical:1}))move.landed=true;
+  }else if(move.kind==='rake'&&t<.48){
+   if(t>=move.next){
+    move.next+=.15;
+    if(nearActor(e,player,18)&&!gateLineBlocked(e.x,e.y,player.x,player.y)&&takeDamage(5,{physical:1},true))
+     burst(player.x,player.y,'#e2b279',5);
+   }
+  }else if(move.kind==='roar'&&!move.called){
+   move.called=true;e.roarCooldown=8;
+   const ally=nearestLion(e);
+   if(ally){ally.called=9;ally.aggro=9;}
+   burst(e.x,e.y,'#e2b472',23);
+  }
+  if(t>=move.duration){e.lionMove=null;e.attack=spec.recovery+.55;}
+  return;
+ }
+ e.roarCooldown=Math.max(0,(e.roarCooldown||0)-dt);
+ if(e.attack<=0&&clear&&d<spec.range){
+  const kind=d<75&&Math.random()<.62?'rake':!e.roarCooldown&&nearestLion(e)&&Math.random()<.4?'roar':'leap';
+  e.angle=angle;
+  e.lionMove={kind,age:0,angle,windup:kind==='roar'?.65:spec.windup,duration:kind==='roar'?.42:kind==='rake'?.48:.35,next:0};
+  return;
+ }
+ if(nearActor(e,player,3))return;
+ if(clear){e.angle=angle;e.moving=true;moveEnemy(e,Math.cos(angle)*spec.speed*dt,Math.sin(angle)*spec.speed*dt);}
+ else if(e.aggro>0){
+  e.routeDelay=(e.routeDelay||0)-dt;
+  if(e.routeDelay<=0||e.route&&Math.hypot(e.x-e.route.x,e.y-e.route.y)<8){
+   e.route=serpentStep(e,player,2000);e.routeDelay=.31;
+  }
+  if(e.route){const a=Math.atan2(e.route.y-e.y,e.route.x-e.x);e.angle=a;e.moving=true;
+   const stride=Math.min(spec.speed*dt,Math.hypot(e.route.x-e.x,e.route.y-e.y));moveEnemy(e,Math.cos(a)*stride,Math.sin(a)*stride);}
+ }
+}
+function nearestLion(e){
+ let best=null,distance=Infinity;
+ for(const other of enemies){
+  if(other===e||other.hp<=0||!isLion(other))continue;
+  const gap=Math.hypot(other.x-e.x,other.y-e.y);
+  if(gap<distance){best=other;distance=gap;}
+ }
+ return best;
+}
 function fireBolt(e,type){
  const speed=type==='bow'?330:445;
  bolts.push({x:e.x,y:e.y,angle:e.angle,speed,life:1.23,type});
@@ -1484,8 +1693,8 @@ function updateBolts(dt){
    if(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||furnitureBlocked(x,y,2))return false;
    p.x=x;p.y=y;
    if(player.dash<=0&&Math.hypot(p.x-player.x,p.y-player.y)<13){
-    const damage=p.type==='bow'?11:16;
-    takeDamage(damage,p.type==='bow'?{physical:1}:{physical:.75,dark:.25});
+    const damage=p.type==='trap'?10:p.type==='bow'?11:16;
+    takeDamage(damage,p.type==='crossbow'?{physical:.75,dark:.25}:{physical:1});
     return false;
    }
   }
@@ -1654,6 +1863,46 @@ function stockSpecialRooms(){
  if(court)dropSoul(pointIn(court,0,0),lootChoice(rewards(),'Hof','armor',rng));
  save.stockedRooms=true;persist();
 }
+const waterTiles=expedition.waterTiles(terrain,regions);
+function drawWater(drawLine){
+ for(const {x,y,type,id,vertical} of waterTiles){
+  if(!explored.has(id))continue;
+  if(Math.abs((x+.5)*TILE-player.x)>cw/2+TILE||Math.abs((y+.5)*TILE-player.y)>ch/2+TILE)continue;
+  const falls=type==='waterfall',clear=type!=='river';
+  for(let i=0;i<(falls?9:5);i++){
+   const across=4+(i*13+x*7+y*11)%(TILE-7);
+   const phase=(frame*(falls?83:clear?28:18)+(i*23+x*11+y*3))%TILE;
+   const length=falls?14:6+(i*3)%9;
+   const blend=(.32+(i%3)*.065)*(falls?1.5:1);
+   if(vertical)drawLine(x*TILE+across,y*TILE+phase,x*TILE+across+(falls?0:1),y*TILE+Math.min(TILE-1,phase+length),falls?'#d5f4dd':clear?'#96dfc7':'#74acb5',blend);
+   else drawLine(x*TILE+phase,y*TILE+across,x*TILE+Math.min(TILE-1,phase+length),y*TILE+across,'#74acb5',blend);
+  }
+  if(falls)for(let i=0;i<5;i++){
+   const drift=(i*11+frame*21)%TILE;
+   drawLine(x*TILE+drift,y*TILE+39+i%3*2,x*TILE+Math.min(TILE-1,drift+5),y*TILE+40+i%3*2,'#b9e3ce',.55);
+  }
+ }
+}
+function drawTempleAttacks(drawLine){
+ for(const e of enemies){
+  const move=e.lionMove;
+  if(!move||move.age<move.windup||!regionVisibleAt(e.x,e.y))continue;
+  const t=(move.age-move.windup)/move.duration;
+  const x=e.x,y=e.y-10;
+  if(move.kind==='roar'){
+   for(let i=0;i<18;i++){
+    const a=i*TAU/18,r=27+t*105;
+    drawLine(x+Math.cos(a)*r,y+Math.sin(a)*r*.6,x+Math.cos(a+.22)*r,y+Math.sin(a+.22)*r*.6,'#e8bf80',.8*(1-t));
+   }
+  }else{
+   const angle=move.angle,reach=move.kind==='leap'?22:38;
+   for(let i=-1;i<=1;i++){
+    const lead=angle+i*.27,flare=(move.age*16+i*.15)%1;
+    drawLine(x+Math.cos(lead)*(reach-13),y+Math.sin(lead)*(reach-13),x+Math.cos(lead+.18)*reach,y+Math.sin(lead+.18)*reach,'#ffe0a4',.75*(1-flare));
+   }
+  }
+ }
+}
 function drawWeather(drawLine){
  if(!court?.rain||!explored.has(court.id))return;
  const w=court.w*TILE,h=court.h*TILE;
@@ -1761,7 +2010,9 @@ for(const d of dust){s.globalAlpha=d.life*.43;s.fillStyle='#9c896a';s.fillRect(M
 for(const p of particles){s.globalAlpha=Math.min(1,p.life/.5);s.fillStyle=p.c;s.beginPath();s.arc(p.x,p.y,p.r,0,TAU);s.fill()}s.globalAlpha=1;
 if(player.dash>0){s.strokeStyle='#d8bd82';s.lineWidth=2;s.beginPath();s.arc(player.x,player.y,25,0,TAU);s.stroke()}
 drawCombatEffects(drawCanvasEffect,false);
+drawWater(drawLine);
 drawWeather(drawLine);
+drawTempleAttacks(drawLine);
 drawFireAtmosphere((x,y,w,h,color,alpha)=>{s.globalAlpha=alpha;s.fillStyle=color;s.fillRect(Math.round(x),Math.round(y),w,h);});
 s.globalAlpha=1;
 drawFog((x,y,w,h,alpha)=>{s.globalAlpha=alpha;s.fillStyle='#101212';s.fillRect(x,y,w,h);});s.globalAlpha=1;
@@ -1816,8 +2067,12 @@ const partitions=terrain.flatMap((row,y)=>row.flatMap((tile,x)=>{
 const animatedFire=new Map();
 function furnishingScenery(p){
  const key=p.type+'-'+p.zone,bitmap=art.furniture(p.type,p.zone);
- const entry={...p,key,bitmap,scale:({market:1.9,'banquet-long':1.45,statue:1.5})[p.type],ox:64,
+ const entry={...p,key,bitmap,scale:({market:1.9,'banquet-long':1.45,statue:1.5,'weapon-rack':1.23,'armor-rack':1.20})[p.type],ox:64,
   oy:p.type==='market'?68:p.type==='statue'?83:56,ground:p.type==='carpet'||p.type==='web',visible:always};
+ if(p.type==='jungle-shrine'){
+  entry.alternate=art.furniture('jungle-shrine-spent',p.zone);
+  entry.changed=()=>Boolean(save.rubyClaims[p.id]||save.templeAttempts[p.id]?.failed);
+ }
  if(p.type==='torch'||p.type==='campfire'){
   if(!animatedFire.has(key))animatedFire.set(key,Array.from({length:8},(_,pose)=>art.furniture(p.type,p.zone,pose)));
   entry.frames=animatedFire.get(key);
@@ -1832,15 +2087,19 @@ const catScenery=restCat&&{
  flip(){return restCat.flip;},visible:always
 };
 if(catScenery)catScenery.bitmap=catScenery.frames[0];
+const animatedMerchant=Array.from({length:8},(_,i)=>art.icon('bat-merchant',String(i)));
 const scenery=[
  ...partitions,
  portalPosition,
  ...furniture.map(furnishingScenery),
+ ...(save.layoutRevision>=2?[{x:market.x,y:market.y-39,key:'market-back',bitmap:art.furniture('market-back',merchantRoomId),scale:1.9,ox:64,oy:53,visible:always}]:[]),
+ ...pressurePlates.map(p=>({...p,key:'pressure-plate',bitmap:art.icon('plate'),alternate:art.icon('plate','down'),changed:()=>p.pressed||p.timer>0,visible:always,ground:true})),
+ ...bonePiles.map(p=>({...p,key:'bone-pile',bitmap:art.icon('bone-pile'),scale:.83,visible:()=>!save.boneClaims[p.id]})),
  ...gates.map((g,i)=>({x:(g.x+.5)*TILE,y:(g.y+.5)*TILE,key:'gate-'+i,bitmap:art.gate(g.vertical,g.color),visible:()=>!save.gates[g.id]})),
  ...chests.map((p,i)=>({...p,key:i===trialIndex?'trial-chest':'chest',bitmap:art.icon('chest',i===trialIndex?'trial':''),alternate:art.icon('chest','open'),changed:()=>save.opened.includes(i)||Boolean(save.trials[i]),visible:always})),
  ...shrines.map(p=>({...p,key:'shrine-'+p.i,bitmap:art.icon('shrine','',themes[p.i].glow),visible:()=>!(save.altarUses[p.i]>=2)||queuedAltar===p.i||altarBursts.some(effect=>effect.i===p.i&&effect.life>.91)})),
  {x:save.layoutRevision>=2?market.x:merchant.x,y:save.layoutRevision>=2?market.y-20:merchant.y,
- key:'bat-merchant',bitmap:art.icon('bat-merchant'),scale:2.15,visible:always},
+ key:'bat-merchant',bitmap:animatedMerchant[0],frames:animatedMerchant,pose:()=>Math.floor(frame*4.1)%8,scale:1.91,visible:always},
  ...(catScenery?[catScenery]:[]),
  {...mapPickup,key:'map',bitmap:art.icon('map'),visible:()=>!save.merchantMapFound}
 ];
@@ -1899,7 +2158,8 @@ function mountPortrait(container,appearance,weaponId,armor){
  g.drawImage(art.actor('hero',{...appearance,armor}),-5,0);
  g.drawImage(weaponBitmap(weaponId),35,8,34,48);
 }
-const foes=enemyRules.attacks.map((spec,zone)=>Array.from({length:16},(_,frame)=>art.actor('foe',{zone,frame})));
+const foes=enemyRules.attacks.map((spec,zone)=>Array.from({length:16},(_,frame)=>
+ zone===LION||zone===LIONESS?art.icon('lion',(zone===LION?'mane':'plain')+'-'+frame):art.actor('foe',{zone,frame})));
 const heroBitmaps=[0,1,2].map(frame=>art.actor('hero',{...save.character,frame,armor:equippedArmorColors()}));
 let heroArmorKey=JSON.stringify(save.equipment.armor);
 function refreshHeroArt(textures){
@@ -1913,16 +2173,28 @@ function refreshHeroArt(textures){
  }
 }
 function heroFrame(){return player.attack>0?0:Math.sin(player.walk)>.25?1:Math.sin(player.walk)<-.25?2:0;}
-function foeFrame(e){return enemyRules.spriteFrame(e);}
-function foeLift(e){return Math.round(Math.sin(e.phase*4)*2-(e.windup>0?Math.min(4,7*e.windup):0));}
+function foeFrame(e){
+ if(!isLion(e))return enemyRules.spriteFrame(e);
+ const move=e.lionMove;if(!move)return Math.floor(e.phase*(e.moving?12:3))%4;
+ if(move.age<move.windup)return 4+Math.min(3,Math.floor(4*move.age/move.windup));
+ const t=(move.age-move.windup)/move.duration;
+ return (move.kind==='leap'?8:12)+Math.min(3,Math.floor(t*4));
+}
+function foeLift(e){const move=e.lionMove;
+ if(move?.kind==='leap'&&move.age>=move.windup)return -Math.round(25*Math.sin(Math.PI*Math.min(1,(move.age-move.windup)/move.duration)));
+ return Math.round(Math.sin(e.phase*4)*2-(e.windup>0?Math.min(4,7*e.windup):0));}
 const gripHeights={dagger:46,hammer:47,staff:46};
 function weaponPose(){
  const w=usableWeapon(),id=weaponArtId(w.id);
- const swing=player.attack>0?(1-Math.min(1,player.attack/w.speed))*1.1-.55:0;
- const angle=player.dir+swing,dx=Math.cos(angle),dy=Math.sin(angle);
- const side=dx<0?-1:1;
- return {id,x:player.x+side*(17+Math.abs(dx)*9),y:player.y-12+dy*12,
-  angle:angle+Math.PI/2,grip:(gripHeights[id]??50)/64,depth:player.y+(dy<-.28?-.5:.5)};
+ const dx=Math.cos(player.dir),dy=Math.sin(player.dir);
+ if(Math.abs(dx)>.23)player.weaponSide=Math.sign(dx);
+ const side=player.weaponSide||1,behind=dy<-.38;
+ const swing=player.attack>0?(1-Math.min(1,player.attack/w.speed))*.8-.4:0;
+ // Socket coordinates on the 64px actor sprite: palm centers at (20,41) and (45,40).
+ const palmX=side<0?20:45,palmY=side<0?41:40;
+ const socketScale=74/64;
+ return {id,x:player.x+(palmX-32)*socketScale,y:player.y+palmY*socketScale-48,
+  angle:player.dir+swing+Math.PI/2,grip:(gripHeights[id]??50)/64,depth:player.y+(behind?-.5:.5)};
 }
 function heroAlpha(){return (player.inv>0||player.dash>0)&&Math.sin(frame*25)>0?.6:1;}
 function drawCanvasHero(){
@@ -1942,7 +2214,7 @@ function drawCanvasFoe(e){
  s.save();s.globalAlpha=e.hit>0?.7:e.emerge>0?.5:1;
  s.translate(Math.round(e.x),Math.round(e.y+lift));
  if(e.type===SNAKE)s.rotate(e.angle);
- if((e.type===ARCHER||e.type===CROSSBOW)&&Math.cos(e.angle)<0)s.scale(-1,1);
+ if((e.type===ARCHER||e.type===CROSSBOW||isLion(e))&&Math.cos(e.angle)<0)s.scale(-1,1);
  s.drawImage(foes[e.type][foeFrame(e)],-size/2,-size*.67,size,size);
  s.restore();
  if(e.hp<e.max){s.fillStyle='#211517';s.fillRect(e.x-16,e.y-size*.63,32,3);s.fillStyle=items.damage[e.dominant]?.color||'#c87e64';s.fillRect(e.x-16,e.y-size*.63,32*e.hp/e.max,3);}
@@ -1951,8 +2223,15 @@ function startPhaser(){if(!window.Phaser)return false;try{
 class DungeonScene extends Phaser.Scene{
   constructor(){super('Dungeon')}
   create(){
-   this.textures.addCanvas('dungeon-ground',dungeonGround);
-   this.add.image(0,0,'dungeon-ground').setOrigin(0).setScale(PIXEL_SCALE).setDepth(0);
+   const size=2048;
+   for(let y=0;y<dungeonGround.height;y+=size)for(let x=0;x<dungeonGround.width;x+=size){
+    const chunk=document.createElement('canvas');
+    chunk.width=Math.min(size,dungeonGround.width-x);chunk.height=Math.min(size,dungeonGround.height-y);
+    chunk.getContext('2d').drawImage(dungeonGround,x,y,chunk.width,chunk.height,0,0,chunk.width,chunk.height);
+    const key='dungeon-ground-'+x+'-'+y;
+    this.textures.addCanvas(key,chunk);
+    this.add.image(x*PIXEL_SCALE,y*PIXEL_SCALE,key).setOrigin(0).setScale(PIXEL_SCALE).setDepth(0);
+   }
    this.scenery=scenery.map(o=>{
     if(!this.textures.exists(o.key))this.textures.addCanvas(o.key,o.bitmap);
     o.frames?.forEach((bitmap,i)=>{const key=o.key+'-frame-'+i;if(!this.textures.exists(key))this.textures.addCanvas(key,bitmap);});
@@ -1999,7 +2278,7 @@ class DungeonScene extends Phaser.Scene{
     if(!e||!regionVisibleAt(e.x,e.y)){sprite.setVisible(false);continue;}
     const size=70*e.size, lift=foeLift(e);
     sprite.setVisible(true).setTexture('foe-'+e.type+'-'+foeFrame(e)).setDisplaySize(size,size)
-     .setPosition(e.x,e.y+lift).setDepth(e.y).setRotation(e.type===SNAKE?e.angle:0).setFlipX((e.type===ARCHER||e.type===CROSSBOW)&&Math.cos(e.angle)<0).setAlpha(e.emerge>0?.5:1).setTint(e.hit>0?0xffb49a:0xffffff);
+     .setPosition(e.x,e.y+lift).setDepth(e.y).setRotation(e.type===SNAKE?e.angle:0).setFlipX((e.type===ARCHER||e.type===CROSSBOW||isLion(e))&&Math.cos(e.angle)<0).setAlpha(e.emerge>0?.5:1).setTint(e.hit>0?0xffb49a:0xffffff);
    }
    for(const [i,o] of scenery.entries()){
     this.scenery[i].setVisible(o.visible()&&regionVisibleAt(o.x,o.y));
@@ -2017,7 +2296,9 @@ class DungeonScene extends Phaser.Scene{
    for(let i=webIndex;i<this.webSprites.length;i++)this.webSprites[i].setVisible(false);
    for(const d of dust){this.fx.fillStyle(0x9c896a,d.life*.43);this.fx.fillRect(Math.round(d.x),Math.round(d.y),3,2);}
    const drawLine=(x,y,ex,ey,color,alpha)=>this.fx.lineStyle(2,Number('0x'+color.slice(1)),alpha).lineBetween(x,y,ex,ey);
+   drawWater(drawLine);
    drawWeather(drawLine);
+   drawTempleAttacks(drawLine);
    drawFireAtmosphere((x,y,w,h,color,alpha)=>{
     this.fx.fillStyle(Number('0x'+color.slice(1)),alpha).fillRect(Math.round(x),Math.round(y),w,h);
    });
@@ -2093,7 +2374,7 @@ function switchPack(packId,restart=false){
  const archived=archiveRuns();
  const stored=archived.find(r=>r.packId===packId)?.state;
  const state=!restart&&stored
-  ? {...run.freshRun(stored.dungeonSeed),...stored,variedRooms:stored.variedRooms??false,layoutRevision:stored.layoutRevision??1}
+  ? {...run.freshRun(stored.dungeonSeed),...stored,templeDepth:stored.templeDepth??run.templeDepth(stored.dungeonSeed,Math.min(LAST_DEPTH,stored.floor+1)),variedRooms:stored.variedRooms??false,layoutRevision:stored.layoutRevision??1}
   : run.freshRun(run.freshSeed());
  writeAndReload({...save,...state,hp:maxHP(),activePack:packId,runs:archived.filter(r=>r.packId!==packId)},!state.completed);
 }

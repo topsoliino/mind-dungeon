@@ -258,3 +258,12 @@ button.bad { background:#643730!important; }
  .item-comparison .item-detail-title h3 { font-size:13px; }
  .item-comparison .stat-token,.item-comparison .scale-grade { font-size:10px;padding:2px 3px; }
 }
+
+#modal .ledger .wallet-shop,#wallet:not([hidden]) { display:flex;gap:7px;align-items:center;flex-wrap:wrap; }
+#wallet { position:fixed;z-index:7;top:14px;left:12px;padding:6px 9px;pointer-events:none;font-size:12px; }
+#wallet[hidden] { display:none; }
+.coin { white-space:nowrap; }
+.coin-gold { color:#e6bd77; }
+.coin-bones { color:#e1d7bd; }
+.coin-rubies { color:#ff94a0; }
+@media(max-width:760px){#wallet{top:61px;max-width:124px;gap:3px!important;padding:5px 8px;}}

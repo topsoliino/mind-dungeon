@@ -9,7 +9,9 @@ window.DungeonEnemies = (() => {
   {id:'grab',range:100,windup:.64,recovery:.50,color:'#b7a270',speed:46},
   {id:'bite',range:45,windup:.26,recovery:.36,color:'#d0b179',speed:117},
   {id:'bow',range:285,windup:.64,recovery:.54,color:'#e9d5a5',speed:48},
-  {id:'crossbow',range:315,windup:.86,recovery:.73,color:'#beac7d',speed:40}
+  {id:'crossbow',range:315,windup:.86,recovery:.73,color:'#beac7d',speed:40},
+  {id:'lion',range:160,windup:.55,recovery:.68,color:'#e9be7a',speed:110},
+  {id:'lioness',range:170,windup:.43,recovery:.57,color:'#efd496',speed:123}
  ];
  const depthFactor=depth=>1.5**Math.max(0,depth-1);
  const profiles=[
@@ -21,7 +23,8 @@ window.DungeonEnemies = (() => {
   {hp:135,balance:54,sight:.25}, // Zombie
   {hp:60,balance:24,sight:.34}, // Schlange
   {hp:90,balance:39,sight:.75}, // Bogen
-  {hp:120,balance:46,sight:.68} // Armbrust
+  {hp:120,balance:46,sight:.68}, // Armbrust
+  {hp:140,balance:60,sight:.58}, {hp:112,balance:47,sight:.60}
  ];
  function health(type,boss,depth){
   return Math.round((profiles[type].hp+50*Math.max(0,depth-1))*(boss?1.5:1));
@@ -55,6 +58,6 @@ window.DungeonEnemies = (() => {
   if(e.recover>0)return 12+Math.min(3,Math.floor((1-e.recover/a.recovery)*4));
   return Math.floor(e.phase*(e.moving?11:3))%4;
  }
- const PRIEST=1,ZOMBIE=5,SNAKE=6,ARCHER=7,CROSSBOW=8;
- return {attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW};
+ const PRIEST=1,ZOMBIE=5,SNAKE=6,ARCHER=7,CROSSBOW=8,LION=9,LIONESS=10;
+ return {attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS};
 })();

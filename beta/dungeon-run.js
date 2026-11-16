@@ -25,7 +25,17 @@ window.DungeonRun = (() => {
  }
  function nextSeed(seed){return (Math.imul(seed,1664525)+1013904223)>>>0;}
  function freshSeed(){return crypto.getRandomValues(new Uint32Array(1))[0];}
- function generate(seed,varied=true,revision=5){
+ function templeDepth(seed,first=1){
+  let mixed=Math.imul(seed^0xa376e291,0x45d9f3b);
+  mixed=Math.imul(mixed^(mixed>>>16),0x45d9f3b);
+  return first+((mixed^(mixed>>>16))>>>0)%(LAST_DEPTH-first+1);
+ }
+ function cemeteryRoll(seed){
+  let mixed=Math.imul(seed^0x1274dab9,0x45d9f3b);
+  mixed=Math.imul(mixed^(mixed>>>16),0x45d9f3b);
+  return ((mixed^(mixed>>>16))>>>0)/4294967296<.4;
+ }
+ function generate(seed,varied=true,revision=5,depth=1,templeAt=0){
   const rng=random(seed);
   const cells=Array.from({length:6},(_,i)=>({col:i%3,row:i/3|0}));
   const adjacent=(a,b)=>Math.abs(a.col-b.col)+Math.abs(a.row-b.row)===1;
@@ -50,11 +60,13 @@ window.DungeonRun = (() => {
     room.x=centerX-(room.w>>1);room.y=centerY-(room.h>>1);
    }
   }
-  const height=hasRest?H:52;
-  const map=Array.from({length:height},()=>Array(W).fill(1));
-  const terrain=Array.from({length:height},()=>Array(W).fill(null));
+  const cemetery=revision>=6&&cemeteryRoll(seed);
+  const temple=revision>=6&&depth===templeAt;
+  const width=temple?92:cemetery?79:W,height=hasRest?H:52;
+  const map=Array.from({length:height},()=>Array(width).fill(1));
+  const terrain=Array.from({length:height},()=>Array(width).fill(null));
   const style=random(seed^0x9a19ac27);
-  const regions=Array.from({length:height},()=>Array(W).fill(-1));
+  const regions=Array.from({length:height},()=>Array(width).fill(-1));
   const carve=({x,y,w,h},id)=>{
    for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++){map[j][i]=0;regions[j][i]=id;}
   };
@@ -141,7 +153,39 @@ window.DungeonRun = (() => {
    rest={name:'Ruheraum',key:'rest',id:REST_ID,x:cx-(w>>1),y,w,h,cx,cy:y+4,theme:3,passage};
    carve(rest,rest.id);carve(passage,passage.id);annexes.push(rest);
   }
-  return {rooms,corridors,map,regions,gates,annexes,terrain,rest};
+  const paths=[];
+  if(cemetery||temple){
+   const parent=rooms.filter(room=>room.cx===45).sort((a,b)=>a.cy-b.cy)[0];
+   const entry={id:24,from:parent.i,x:parent.x+parent.w,y:parent.cy-1,w:60-parent.x-parent.w,h:3,vertical:true};
+   const top=Math.min(parent.cy,temple?19:53);
+   const bottom=Math.max(parent.cy,cemetery?53:19);
+   const trunk={id:24,from:parent.i,x:57,y:top-1,w:3,h:bottom-top+3,vertical:false};
+   carve(entry,24);carve(trunk,24);paths.push(entry,trunk);
+   const passage=(id,x,y,w,h,vertical,theme)=>{
+    const path={id,x,y,w,h,vertical,from:parent.i,theme};carve(path,id);paths.push(path);return path;
+   };
+   const annex=(id,key,name,x,y,w,h,theme,path)=>{
+    const room={id,key,name,x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2),theme,passage:path};
+    carve(room,id);annexes.push(room);return room;
+   };
+   if(cemetery){
+    const path=passage(18,60,52,1,3,true,5);
+    annex(17,'cemetery','Friedhof',61,47,16,13,5,path);
+   }
+   if(temple){
+    const entrance=passage(25,60,18,1,3,true,6);
+    annex(19,'temple-entry','Tempel · Vorhof',61,13,11,12,6,entrance);
+    const bridge=passage(20,72,18,5,3,true,6);
+    annex(21,'temple-court','Tempel · Löwenhof',77,12,13,13,6,bridge);
+    const passageSouth=passage(22,65,25,3,5,false,6);
+    annex(23,'temple-shrines','Tempel · Schreinhalle',61,30,14,12,6,passageSouth);
+    for(let y=12;y<=27;y++)for(let x=72;x<77;x++){
+     if(!map[y][x])terrain[y][x]='bridge-x';
+     else{terrain[y][x]=y===12?'waterfall':'clear-river';regions[y][x]=bridge.id;}
+    }
+   }
+  }
+  return {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths};
 
  }
  function differentLayoutSeed(seed,rooms,gates){
@@ -243,14 +287,14 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:5,wellOffer:null,brewIngredients:[],activeBrew:null,brewEffects:[]};
+   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:6,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
-  return {...floorState(seed,1),solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};
+  return {...floorState(seed,1),templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};
  }
  const runFields=[...Object.keys(freshRun(0))];
  function snapshot(save){
   return Object.fromEntries(runFields.map(key=>[key,save[key]]));
  }
- return {LAST_DEPTH,DEFAULT_PACK,W,H,generate,random,shuffle,freshSeed,nextSeed,differentLayoutSeed,validatePack,roomTopics,floorState,freshRun,snapshot};
+ return {LAST_DEPTH,DEFAULT_PACK,templeDepth,cemeteryRoll,W,H,generate,random,shuffle,freshSeed,nextSeed,differentLayoutSeed,validatePack,roomTopics,floorState,freshRun,snapshot};
 })();
