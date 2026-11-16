@@ -1,4 +1,4 @@
-# Mind Dungeon: Shadowbound v0.6
+# Mind Dungeon: Shadowbound v0.7
 
 Browserbasiertes Top-down-Lern-RPG mit KVT-III-Fragen zu Konfrontationsverfahren.
 
@@ -62,3 +62,13 @@ Der Spielstand bleibt im Browser-LocalStorage. Vor größeren Änderungen im Ler
 
 - Vorlesungsskript `04_KVT_3_SKRIPT.pdf` (KVT III – Konfrontationsverfahren); Seitenangaben stehen bei jeder Frage.
 - Attribute orientieren sich an Dark Souls III, die konkreten Kampfwerte sind eigenständig für Mind Dungeon balanciert.
+
+## Grafik und Performance (v0.7)
+
+Primärer Renderer: Phaser 3 (WebGL), geladen über jsDelivr. Die Dungeonkarte wird einmalig als Textur aufgebaut; Figuren, Gegner und Effekte werden als separate Grafikobjekte aktualisiert. Wenn Phaser nicht geladen werden kann, wird der bisherige Canvas-Renderer als Ersatz verwendet. **F3** zeigt den Renderer und die aktuelle FPS-Schätzung an.
+
+Die Phaser-Integration ist eine erste Migration: Spiellogik, Inventar und Wissensprüfungen sind weiterhin im vorhandenen Spielcode enthalten. Die Grafik ist bewusst reduziert, um die Rendering-Last zu verringern.
+
+## Spielstände und Backend
+
+Lokale Spielstände bleiben kompatibel und werden weiterhin im Browser gespeichert. Unter `backend/` liegt eine Node.js-Spielstand-API mit tokenpflichtigen Endpunkten. **Sie ist nicht auf GitHub Pages aktiv und darf erst nach Einrichtung einer sicheren Nutzeranmeldung mit dem Frontend verbunden werden.** Datenbank und Benutzerkonten folgen später.
