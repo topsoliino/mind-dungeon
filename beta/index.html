@@ -21,15 +21,21 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=9"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud"><div class="panel" id="stats"><b>✦ MIND DUNGEON</b> <small>SHADOWBOUND v0.8</small><div class="meter-label">LEBEN <span id="hpnum"></span></div><div id="health"><div id="healthfill"></div></div><div class="meter-label">AUSDAUER <span id="stnum"></span></div><div class="meter" id="stamina"><div id="staminafill"></div></div><div class="meter-label">ERFAHRUNG <span id="xpnum"></span></div><div class="meter" id="experience"><div id="xpfill"></div></div><small id="statline"></small></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="notice"></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="help" class="panel">WASD: Bewegen · Maus: Zielen & Angriff · F: Tastatur-Zielen · Leertaste: Angriff · Shift: Ausweichen · E: Interaktion · I: Inventar · C: Ausrüstung · L: Leveln · Q: Journal</div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=9"></script><script src="beta/dungeon-items.js?v=9"></script><script src="beta/dungeon-brewing.js?v=9"></script><script src="beta/dungeon-enemies.js?v=9"></script><script src="beta/dungeon-effects-art.js?v=9"></script><script src="beta/dungeon-art.js?v=9"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=10"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="notice"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=10"></script><script src="beta/dungeon-items.js?v=10"></script><script src="beta/dungeon-brewing.js?v=10"></script><script src="beta/dungeon-enemies.js?v=10"></script><script src="beta/dungeon-effects-art.js?v=10"></script><script src="beta/dungeon-art.js?v=10"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const {PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW}=enemyRules;
-const KEY='mind-dungeon-shadowbound-beta-v08',RESUME_KEY=KEY+'-resume',TILE=48,{W,H,LAST_DEPTH,DEFAULT_PACK}=run,TAU=Math.PI*2;
+const KEY='mind-dungeon-shadowbound-beta-v08',RESUME_KEY=KEY+'-resume',TILE=48,{W,LAST_DEPTH,DEFAULT_PACK}=run,TAU=Math.PI*2;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 const canvas=document.querySelector('#game'),displayContext=canvas.getContext('2d',{alpha:false});
 const scene=document.createElement('canvas'),s=scene.getContext('2d',{alpha:false});
 let cw=0,ch=0,dpr=1,frame=0,last=0,paused=true,modalType='',noticeUntil=0,shake=0,cam={x:0,y:0};
+const settingsKey=KEY+'-settings';
+const settings={shake:true,damageNumbers:true};
+try{
+ const saved=JSON.parse(localStorage.getItem(settingsKey)||'{}');
+ for(const key of Object.keys(settings))if(typeof saved?.[key]==='boolean')settings[key]=saved[key];
+}catch{}
 const raw=localStorage.getItem(KEY);
 let save={hp:100,xp:0,gold:0,kills:0,packs:[]};
 try{if(raw)Object.assign(save,JSON.parse(raw));}catch(e){console.warn('Spielstand ist ungültig',e);}
@@ -49,7 +55,15 @@ if(save.floorVersion!==1){
 save.souls??=[];save.shopSold??=[];save.searched??=[];save.trials??={};save.ambushes??=[];
 save.serpents??=[];save.altarUses??={};save.altarQuestions??={};save.depthSeeds??={};save.depthSeeds[save.floor]=save.dungeonSeed;save.layoutRevision??=1;save.variedRooms??=false;save.brewIngredients??=[];save.activeBrew??=null;save.brewEffects??=[];
 let brewBonus=brewing.bonuses(save.activeBrew);
-let questions=packLibrary.get(save.activePack)?.questions||[];
+let questions=[],lessonRooms=[];
+function usePack(pack){
+ questions=pack?.questions||[];
+ lessonRooms=run.roomTopics(pack,save.floor);
+}
+function roomTitle(index){
+ return lessonRooms[index]?.map(group=>group.activeSubcategory.title).join(' / ')||'Kammer '+(index+1);
+}
+usePack(packLibrary.get(save.activePack));
 async function loadQuestions(){
  try{
   const response=await fetch('./questions/kvt3.json',{cache:'no-cache'});
@@ -57,17 +71,11 @@ async function loadQuestions(){
   const pack=run.validatePack(await response.json());
   if(pack.packId!==DEFAULT_PACK)throw Error('Unerwartete Paket-ID');
   packLibrary.set(pack.packId,pack);
-  if(save.activePack===DEFAULT_PACK)questions=pack.questions;
+  if(save.activePack===DEFAULT_PACK)usePack(pack);
  }catch(e){console.error('Standard-Fragenpaket konnte nicht geladen werden',e);if(!questions.length)tell('Standard-Fragenpaket konnte nicht geladen werden');}
 }
-const regionThemes=[
- {name:'Konditionierungskammer',topic:'Konditionierung'},
- {name:'Expositionslabyrinth',topic:'Grundlagen'},
- {name:'Spinnenkrypta',topic:'Angststörungen'},
- {name:'Kammer der Zwangsrituale',topic:'Zwang'},
- {name:'Echo der Vergangenheit',topic:'PTBS'}
-];
-const {rooms,corridors,map,regions,gates,annexes,terrain}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision);
+const {rooms,corridors,map,regions,gates,annexes,terrain,rest}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision);
+const H=map.length;
 const annexByRegion=new Map(annexes.map(a=>[a.id,a]));
 const annexPassages=new Map(annexes.map(a=>[a.passage.id,a.passage]));
 const court=annexes.find(a=>a.key==='court');
@@ -77,9 +85,12 @@ const pointIn=(room,dx,dy)=>({x:(room.cx+.5+dx)*TILE,y:(room.cy+.5+dy)*TILE});
 function inRain(x,y){return Boolean(court?.rain&&regionAt(x,y)===court.id);}
 const zones=rooms.map((room,i)=>{
  const [oldX,oldY]=legacyRooms[i],shrine=[[2,3],[1,3],[2,3],[1,6],[3,6]][i];
- return {...regionThemes[i],x:room.x+shrine[0],y:room.y+shrine[1],offsetX:room.x-oldX,offsetY:room.y-oldY};
+ return {x:room.x+shrine[0],y:room.y+shrine[1],offsetX:room.x-oldX,offsetY:room.y-oldY};
 });
-const spawn={x:(zones[0].x+1.5)*TILE,y:(zones[0].y+1.5)*TILE};
+const spawn=rest?pointIn(rest,0,1.75):{x:(zones[0].x+1.5)*TILE,y:(zones[0].y+1.5)*TILE};
+const restCat=rest&&pointIn(rest,2.65,.4);
+const inRest=(x,y)=>Boolean(rest&&regionAt(x,y)===rest.id);
+let catHeartUntil=0;
 function regionAt(x,y){return regions[Math.floor(y/TILE)]?.[Math.floor(x/TILE)]??-1;}
 function gateLineBlocked(x1,y1,x2,y2){const n=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/12));for(let i=0;i<=n;i++){const t=i/n,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(gateBlocked(x,y)||wall(x,y))return true}return false}
 function gateBlocked(x,y){return gates.some(g=>!save.gates[g.id]&&(g.vertical?Math.abs(x/TILE-(g.x+.5))<.52&&Math.abs(y/TILE-(g.y+.5))<2.1:Math.abs(y/TILE-(g.y+.5))<.52&&Math.abs(x/TILE-(g.x+.5))<2.1))}
@@ -94,7 +105,11 @@ const FURNITURE={
  roots:{w:33,h:24,solid:true}, crystal:{w:36,h:26,solid:true,light:115},
  lectern:{w:34,h:22,solid:true}, web:{w:34,h:33},lab:{w:68,h:36,solid:true,light:140},
  tree:{w:31,h:29,solid:true},grass:{w:27,h:20},provisions:{w:61,h:30,solid:true},
- alchemy:{w:61,h:30,solid:true},banquet:{w:67,h:31,solid:true},market:{w:87,h:42,solid:true}
+ alchemy:{w:61,h:30,solid:true},banquet:{w:67,h:31,solid:true},market:{w:151,h:59,solid:true},
+ 'round-table':{w:53,h:38,solid:true},'banquet-long':{w:122,h:38,solid:true},fence:{w:72,h:12,solid:true},
+ 'weapon-rack':{w:57,h:23,solid:true},'armor-rack':{w:41,h:26,solid:true},
+ display:{w:58,h:30,solid:true},dresser:{w:58,h:27,solid:true},statue:{w:45,h:27,solid:true},
+ bench:{w:55,h:22,solid:true},campfire:{w:47,h:34,solid:true,light:210}
 };
 const furniture=[];
 function furnitureBlocked(x,y,r=12){return furniture.some(p=>p.solid&&Math.abs(x-p.x)<p.w/2+r&&Math.abs(y-p.y)<p.h/2+r)}
@@ -136,17 +151,21 @@ function xpRequired(){return 60+save.level*38+save.level*save.level*5}
 function grantXP(n){save.xp+=n;while(save.xp>=xpRequired()){save.xp-=xpRequired();save.level++;save.pendingLevels++;player.hp=Math.min(maxHP(),player.hp+22);tell('LEVEL '+save.level+' – Attribut wählen!')}persist()}
 const attributeIcons={vigor:'♥',attunement:'✧',endurance:'ϟ',vitality:'⬡',strength:'⚒',dexterity:'➶',intelligence:'✦',faith:'☀',luck:'◇'};
 function attributeName(key){return ATTRS[key][0].split(' (')[0];}
+function attributeCards(attributes,weapon,editable=false){
+ const scaling=new Map(items.weaponScaling(weapon,attributes).map(entry=>[entry.attribute,entry]));
+ return '<div class="ritual-grid">'+Object.entries(ATTRS).map(([key,[,desc]])=>{
+  const current=attributes[key],gain=scaling.get(key);
+  const start=editable?'<button data-stat="'+key+'">':'<div class="ritual-attribute">';
+  return start+'<span class="ritual-icon" aria-hidden="true">'+attributeIcons[key]+'</span><span><b>'+qEsc(attributeName(key))+'</b><small>'+qEsc(desc)+'</small>'+
+   (gain?'<small class="ritual-gain">'+gain.grade+' · +'+gain.bonus+' Schaden'+(editable?' (+'+gain.points+' je Punkt)':'')+'</small>':'')+
+   '</span><span class="ritual-value">'+current+(editable?' <span>→</span> '+(current+1):'')+'</span>'+(editable?'</button>':'</div>');
+ }).join('')+'</div>';
+}
 function levelMenu(selected){
  if(!save.pendingLevels)return;
  const w=weaponById(save.equipment.weapon);
- const scaling=Object.fromEntries(items.weaponScaling(w,save.attributes).map(entry=>[entry.attribute,entry]));
  show('<section class="level-ritual"><div class="ritual-header"><div class="ritual-emblem" aria-hidden="true">✦</div><div><span class="md-kicker">Chronik des Wanderers</span><h2 class="md-title">Stufe '+save.level+'</h2><p>'+save.pendingLevels+' freie Attributpunkte</p></div></div>'+
-  '<div class="ritual-grid">'+Object.entries(ATTRS).map(([key,[name,desc]])=>{
-   const current=save.attributes[key],gain=scaling[key];
-   return '<button data-stat="'+key+'"><span class="ritual-icon" aria-hidden="true">'+attributeIcons[key]+'</span><span><b>'+qEsc(attributeName(key))+'</b><small>'+qEsc(desc)+'</small>'+
-    (gain?'<small class="ritual-gain">+'+gain.points+' Schaden · '+gain.grade+'</small>':'')+
-    '</span><span class="ritual-value">'+current+' <span>→</span> '+(current+1)+'</span></button>';
-  }).join('')+'</div><div class="actions"><button id="later">Später</button></div></section>','level');
+  attributeCards(save.attributes,w,true)+'<div class="actions"><button id="later">Später</button></div></section>','level');
  document.querySelectorAll('[data-stat]').forEach(b=>b.onclick=()=>{
   if(!save.pendingLevels)return;
   const key=b.dataset.stat;
@@ -404,7 +423,7 @@ function merchantMenu(mode='buy',page=0,selected=0){
 }
 function dungeonMapMenu(){
 
- show('<h2>Händlerkarte</h2><p>Der Händler hält sich in folgender Kammer auf:</p><h3>'+qEsc(merchantZone.name)+'</h3><p class="muted">Erkunde die verbundenen Kammern und suche nach dem Händler-Symbol.</p><button id="md-map-close">Schließen</button>','map');$('#md-map-close').onclick=close
+ show('<h2>Händlerkarte</h2><p>Der Händler hält sich in folgender Kammer auf:</p><h3>'+qEsc(roomTitle(merchantRoomId))+'</h3><p class="muted">Erkunde die verbundenen Kammern und suche nach dem Händler-Symbol.</p><button id="md-map-close">Schließen</button>','map');$('#md-map-close').onclick=close
 }
 function accessiblePoint(x,y,radius=14){
  if(valid(x,y,radius,true))return {x,y};
@@ -420,7 +439,6 @@ const chests=[[10.5,7.5],[23.5,4.5],[38.5,9.5],[22.5,25.5],[37.5,25.5]].map(([x,
  accessiblePoint((x+zones[i].offsetX)*TILE,(y+zones[i].offsetY)*TILE));
 const trialStart=1+Math.floor(run.random(save.dungeonSeed^0x71927a33)()*3);
 const trialIndex=save.trialIndex??=[trialStart,1+trialStart%3,1+(trialStart+1)%3].find(i=>!save.opened.includes(i))??trialStart;
-const mapPickup={x:(9.5+zones[0].offsetX)*TILE,y:(4.5+zones[0].offsetY)*TILE};
 const roomRandom=run.random(furnishingSeed^0x7d3a912e);
 // Room edges hold storage and lighting. Sets are placed as groups so seats
 // follow their table and decorations never replace a clear path or landmark.
@@ -440,20 +458,33 @@ const entrances=[...corridors,...(save.variedRooms?annexPassages.values():[])].f
  ? [{x:(c.x+c.w/2)*TILE,y:c.y*TILE},{x:(c.x+c.w/2)*TILE,y:(c.y+c.h)*TILE}]
  : [{x:c.x*TILE,y:(c.y+c.h/2)*TILE},{x:(c.x+c.w)*TILE,y:(c.y+c.h/2)*TILE}]);
 const merchantRoom=rooms[merchantRoomId];
-const marketSites=[2.5,merchantRoom.w-2.5,merchantRoom.w/2].map(dx=>({
- x:(merchantRoom.x+dx)*TILE,y:(merchantRoom.y+1.65)*TILE
-}));
-for(const y of [merchantRoom.y+merchantRoom.h-1.65,merchantRoom.y+2.5]){
- for(const dx of [2.25,merchantRoom.w-2.25,merchantRoom.w/2]){
-  marketSites.push({x:(merchantRoom.x+dx)*TILE,y:y*TILE});
+const shopObstacles=[...entrances,...shrines,...chests];
+const marketSites=[];
+for(const dy of [2.8,3.35,4,merchantRoom.h-2.65,merchantRoom.h-3.4]){
+ for(const dx of [2.55,merchantRoom.w-2.55,3.25,merchantRoom.w-3.25,merchantRoom.w/2]){
+  const p={x:(merchantRoom.x+dx)*TILE,y:(merchantRoom.y+dy)*TILE};
+  if(![[-81,-35],[81,-35],[-81,35],[81,35]].every(([x,y])=>!wall(p.x+x,p.y+y)))continue;
+  if(!valid(p.x,p.y+53,14,true))continue;
+  const clearance=Math.min(...shopObstacles.map(o=>Math.min(Math.hypot(p.x-o.x,p.y-o.y),Math.hypot(p.x-o.x,p.y+53-o.y))));
+  marketSites.push({...p,clearance});
  }
 }
-const market=marketSites.find(p=>valid(p.x,p.y,47,true)&&valid(p.x,p.y+38,14,true)&&
- [...entrances,...shrines,...chests].every(o=>Math.hypot(p.x-o.x,p.y-o.y)>73))
+const market=marketSites.find(p=>p.clearance>115)||marketSites.sort((a,b)=>b.clearance-a.clearance)[0]
  ||accessiblePoint((merchantRoom.x+merchantRoom.w-2.5)*TILE,(merchantRoom.y+merchantRoom.h-2.8)*TILE,36);
-const merchant=save.layoutRevision>=2?{x:market.x,y:market.y+38}:
+const merchant=save.layoutRevision>=2?{x:market.x,y:market.y+53}:
  {x:(merchantZone.x+1.5)*TILE,y:(merchantZone.y+2.5)*TILE};
-const landmarks=[...shrines,...chests,merchant,mapPickup,spawn,...(save.layoutRevision>=2?[market]:[])];
+const mapRandom=run.random(furnishingSeed^Math.imul(save.floor,0xa34fc319));
+const mapSites=[];
+for(const room of run.shuffle(rooms.slice(1),mapRandom)){
+ for(let y=room.y+1;y<room.y+room.h-1;y++)for(let x=room.x+1;x<room.x+room.w-1;x++){
+  const p={x:(x+.5)*TILE,y:(y+.5)*TILE};
+  const byShop=room.i===merchantRoomId&&Math.abs(p.x-market.x)<111&&Math.abs(p.y-market.y)<73;
+  if(!byShop&&valid(p.x,p.y,16,true)&&[...shopObstacles,merchant].every(o=>Math.hypot(p.x-o.x,p.y-o.y)>95))mapSites.push(p);
+ }
+}
+const mapPickup=mapSites[Math.floor(mapRandom()*mapSites.length)]||pointIn(rooms[1],0,0);
+const landmarks=[...shrines,...chests,merchant,mapPickup,spawn,...(restCat?[restCat]:[]),...(save.layoutRevision>=2?[market]:[])];
+if(save.layoutRevision>=2)furniture.push({type:'market',...market,zone:merchantRoomId,...FURNITURE.market});
 function placeRoomSet(pieces,ax,ay,zone){
  const group=[];
  for(const [type,dx,dy] of pieces){
@@ -471,8 +502,23 @@ function placeRoomSet(pieces,ax,ay,zone){
  furniture.push(...group);
  return true;
 }
+const roomAccents=[
+ [['round-table','dresser'],['display','armor-rack']],
+ [['banquet-long','fence'],['weapon-rack','armor-rack']],
+ [['statue','display'],['fence','dresser']],
+ [['display','round-table'],['dresser','weapon-rack']],
+ [['armor-rack','statue'],['banquet-long','fence']]
+];
 for(const [zone,plan] of roomPlans.entries()){
  const {offsetX,offsetY}=zones[zone];
+ const room=rooms[zone];
+ if(save.layoutRevision>=3)for(const types of roomAccents[zone]){
+  const anchors=run.shuffle([[.23,.27],[.77,.26],[.24,.74],[.76,.74],[.23,.47],[.76,.49],[.5,.27],[.5,.75]],roomRandom);
+  for(const type of types){
+   const placed=anchors.findIndex(([x,y])=>placeRoomSet([[type,0,0]],room.x+room.w*x,room.y+room.h*y,zone));
+   if(placed>=0)anchors.splice(placed,1);
+  }
+ }
  for(const [type,x,y] of plan.fixed)placeRoomSet([[type,0,0]],x+offsetX,y+offsetY,zone);
  for(const {at,pieces} of plan.sets){
   const choices=run.shuffle([...at],roomRandom);
@@ -482,20 +528,27 @@ for(const [zone,plan] of roomPlans.entries()){
   for(const [x,y] of choices)if(placeRoomSet(pieces,x+offsetX,y+offsetY,zone))break;
  }
 }
-if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y))Object.assign(player,spawn);
 furniture.push({type:'lab',...lab,zone:1,...FURNITURE.lab});
-if(save.layoutRevision>=2)furniture.push({type:'market',...market,zone:merchantRoomId,...FURNITURE.market});
 const annexDecor={
+ rest:[],
  pantry:[['provisions',1.05,1.35],['provisions',5.9,1.35],['banquet',5.45,3.1],['barrel',1.05,3.15],['barrel',1.85,3.1],['torch',.65,4.7]],
  brewery:[['alchemy',1.3,1.55],['alchemy',7.6,1.55],['alchemy',1.3,4.5],['lab',7.65,4.9],['carpet',4.5,4.7],
   ['barrel',.85,5.55],['torch',.6,2.6],['torch',8.45,2.6],['candle',6.2,4.1]],
  court:[['tree',2.2,2.05],['tree',10.8,2.05],['tree',2.35,6.12],['tree',10.65,6.18],['grass',3.3,4.4],
   ['grass',1.7,3.35],['grass',9.3,3.5],['grass',11.25,4.65],['grass',5,6.8],['grass',8,6.8],['grass',5.2,1.7]]
 };
+if(rest){
+ const decor=[['campfire',0,0],['bench',-1.65,.2],['bench',1.65,.2],['statue',0,-2.7],['torch',-3,-2.5],['torch',3,-2.5],
+  ['round-table',-3.55,1.42],['dresser',3.8,1.6],['armor-rack',-3.65,-.65]];
+ for(const [type,dx,dy] of decor)furniture.push({type,...pointIn(rest,dx,dy),zone:rest.theme,...FURNITURE[type]});
+}
+const annexAccents={pantry:[['dresser',1.3,4.5],['round-table',5.4,4.35]],brewery:[['display',7.6,3.19],['dresser',1.55,3.1]],
+ court:[['fence',3.8,1.6],['fence',9,1.6],['statue',10.2,4.5]],rest:[]};
 for(const annex of annexes){
- for(const [type,x,y] of annexDecor[annex.key])placeRoomSet([[type,0,0]],annex.x+x,annex.y+y,annex.theme);
+ for(const [type,x,y] of [...annexDecor[annex.key],...annexAccents[annex.key]])placeRoomSet([[type,0,0]],annex.x+x,annex.y+y,annex.theme);
 }
 
+if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y))Object.assign(player,spawn);
 const cabinets=furniture.filter(p=>p.type==='cabinet'||p.type==='bookcase').map((p,id)=>({...p,id,
  gold:run.random(save.dungeonSeed^(0x111723+id*2246822519))()<.44?9+save.floor*3+id%5:0
 }));
@@ -644,6 +697,7 @@ async function syncSave(){if(!mdSession||saveBusy)return;saveBusy=true;try{await
 let mdNavigatingToNewCharacter=false;function persist(){if(mdNavigatingToNewCharacter)return;save.hp=player.hp;save.x=player.x;save.y=player.y;try{localStorage.setItem(KEY,JSON.stringify(save))}catch(err){console.warn('Lokaler Spielstand konnte nicht gespeichert werden',err)}}setInterval(()=>{persist()},12000);
 function tell(t){$('#notice').textContent=t;$('#notice').style.opacity=1;noticeUntil=performance.now()+2100}
 function show(content,type='menu'){
+ $('#hud').hidden=true;$('#xpHud').hidden=true;
  const panel=$('#modal');
  const focused=document.activeElement;
  const previous=focused?.closest?.('#modal')&&focused;
@@ -656,15 +710,23 @@ function show(content,type='menu'){
  (replacement&&!replacement.disabled?replacement:panel.querySelector('button[aria-pressed="true"]:not(:disabled),button:not(:disabled)'))?.focus();
 }
 function close(){
- paused=false;modalType='';$('#modalWrap').style.display='none';
+ paused=false;modalType='';pending=null;$('#modalWrap').style.display='none';
+ $('#hud').hidden=false;$('#xpHud').hidden=false;
+ if(queuedAltar!==null){
+  altarBursts.push({...shrines[queuedAltar],life:1.12});queuedAltar=null;
+  tell('Altar vollendet · Wissen bewahrt');
+ }
  for(const k in keys)keys[k]=false;
 }
 function navModal(e){
+ if(e.code==='KeyP'&&['title','settings'].includes(modalType)){
+  e.preventDefault();if(!e.repeat){if(modalType==='settings')mdTitle();else close();}return;
+ }
  if((e.code==='KeyI'&&modalType==='inventory')||(e.code==='KeyC'&&modalType==='equipment')){
   e.preventDefault();if(!e.repeat)close();return;
  }
  if(e.code==='Escape'){
-  e.preventDefault();if(trial)finishTrial(false);else if(brewQuestion)finishIngredient(brewQuestion.answered===true);else close();
+  e.preventDefault();if(modalType==='settings')mdTitle();else if(trial)finishTrial(false);else if(pending?.reason==='study')imageCards();else if(brewQuestion)finishIngredient(brewQuestion.answered===true);else close();
   return;
  }
  if(!['KeyW','KeyS','ArrowUp','ArrowDown','Enter','NumpadEnter'].includes(e.code))return;
@@ -697,26 +759,36 @@ function tileZone(x,y){
  return zone;
 }
 function area(){return tileZone(Math.floor(player.x/TILE),Math.floor(player.y/TILE));}
-function selectQuestion(topic,gateId,altarIndex=null){
- const thematic={Konditionierung:['Mowrer','Angstkreislauf'],Grundlagen:['Grundlagen','Methodenmatrix','Leitlinien'],Angststörungen:['Expositionsplanung','Angstkreislauf'],Zwang:['Zwang'],PTBS:['PTBS','IRRT']};
+function selectQuestion(zone,gateId,altarIndex=null){
  const altarSeen=altarIndex==null?[]:save.altarQuestions[altarIndex]||[];
- const excluded=gateId?save.gateQuestions[gateId]||[]:questions.length>altarSeen.length?altarSeen:[];
- const eligible=q=>!excluded.includes(q.id)&&(!save.questionReview[q.id]||save.questionReview[q.id].due<=save.questionCount);
- const thematicTopics=thematic[topic]||[topic];
- let pool=questions.filter(q=>thematicTopics.includes(q.topic)&&eligible(q));
- if(!pool.length)pool=questions.filter(eligible);
- // A mandatory seal needs a question even when the review queue is empty.
- if(!pool.length&&gateId)pool=questions.filter(q=>!excluded.includes(q.id));
- if(!pool.length&&gateId)pool=questions.slice();
+ const exclusions=gateId?save.gateQuestions[gateId]||[]:altarSeen;
+ const due=q=>(save.questionReview[q.id]?.due??-1)<=save.questionCount;
+ const local=(lessonRooms[zone]||[]).flatMap(group=>group.questions);
+ const candidates=local.length?local:questions;
+ const fresh=q=>!exclusions.includes(q.id);
+ let pool=candidates.filter(q=>fresh(q)&&due(q));
+ if(gateId&&!pool.length)pool=questions.filter(q=>fresh(q)&&due(q));
+ if(gateId&&!pool.length)pool=questions.filter(fresh);
+ if(gateId&&!pool.length)pool=questions.slice();
+ // Very small imported rooms can still use their altar twice.
+ if(!pool.length&&altarIndex!=null&&candidates.length<=altarSeen.length)
+  pool=candidates.filter(due);
  if(!pool.length)return null;
+ const picture=altarIndex!=null&&pool.find(q=>q.image&&!save.solved[q.id]&&!save.questionReview[q.id]);
+ if(picture)return picture;
  pool.sort((a,b)=>(save.solved[a.id]||0)-(save.solved[b.id]||0)
      ||(save.questionReview[a.id]?.due??-1)-(save.questionReview[b.id]?.due??-1));
  return pool[Math.floor(Math.random()*Math.min(3,pool.length))];
 }
 const sealTarget=()=>Math.min(2,questions.length);
-let pending=null,brewQuestion=null;
+let pending=null,brewQuestion=null,queuedAltar=null;
 function availableIngredients(){
- return brewing.ingredients(questions,save.activePack===DEFAULT_PACK,zones.map(z=>z.name));
+ const pack=packLibrary.get(save.activePack);
+ const groups=pack?.categories.flatMap(category=>category.subcategories.map(sub=>({...sub,category:category.id})))||[];
+ return groups.flatMap((group,i)=>{
+  const pool=questions.filter(q=>q.categoryId===group.category&&q.subcategoryId===group.id);
+  return pool.length?[{id:group.category+'/'+group.id,name:group.title,effect:i%brewing.effects.length,questions:pool}]:[];
+ });
 }
 function breweryMenu(page=0){
  const all=availableIngredients(),perPage=5;
@@ -774,8 +846,13 @@ function gateQuiz(g){
  if(!questions.length){tell('Fragenpaket ist nicht verfügbar');return;}
  quiz(g.from,'gate',g.id);
 }
+function questionFigure(q){
+ if(!q.image)return '';
+ return '<figure class="lecture-figure"><img src="'+qEsc(q.image.src)+'" alt="'+qEsc(q.image.alt)+'">'+
+  '<figcaption>'+qEsc(q.image.caption||q.source.document+', Folie '+q.source.page)+'</figcaption></figure>';
+}
 function quiz(z,reason,gateId=null,question=null){
- if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;const q=question||selectQuestion(zones[z].topic,gateId,reason==='shrine'?z:null);if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return}pending={q,z,reason,gateId};show(`<span class="pill">✦ ${qEsc(zones[z].name)} · ${qEsc(q.topic)} · Schwierigkeit ${q.difficulty||1}</span>${reason==='trial'?'<span class="pill">Prüftruhe · '+trial.correct+'/'+trial.target+' richtig · <b id="trial-timer">'+Math.max(0,Math.ceil((trial.deadline-Date.now())/1000))+' s</b></span>'+(trial.lastAnswer===null?'':'<span class="pill trial-result">'+(trial.lastAnswer?'Richtig':'Falsch')+'</span>'):''}<h2>${qEsc(q.prompt)}</h2><div class="choices">${q.type==='free-text'?`<label for="freeAnswer">Deine Antwort</label><input id="freeAnswer" autocomplete="off" placeholder="Antwort eingeben" class="answer-field"><button class="primary" id="submitFree">Antwort prüfen</button>`:q.choices.map((c,i)=>`<button class="choice" data-choice="${i}">${String.fromCharCode(65+i)}. ${qEsc(c)}</button>`).join('')}</div><div id="feedback"></div>${reason==='trial'?'':'<p class="muted">Nach einer richtigen Antwort kannst du die Wiederholung auf 🔴 5 Fragen, 🟡 10 Fragen oder 🟢 nie setzen.</p>'}<p class="muted">Quelle: ${qEsc(q.source?.document||'Fragenpaket')}, Folie ${qEsc(q.source?.page||'–')}</p><div class="actions"><button id="leave">${reason==='trial'?'Prüfung abbrechen':reason==='brew'?'Zur Brauerei':'Später beantworten'}</button></div>`,'quiz');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(+b.dataset.choice));if(q.type==='free-text'){const input=$('#freeAnswer');$('#submitFree').onclick=()=>answerText(input.value);input.focus();input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(!e.repeat)answerText(input.value);}}}$('#leave').onclick=reason==='trial'?()=>finishTrial(false):reason==='brew'?()=>finishIngredient(false):close}
+ if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;const q=question||selectQuestion(z,gateId,reason==='shrine'?z:null);if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return}pending={q,z,reason,gateId};show(`<span class="pill">✦ ${qEsc(packLibrary.get(save.activePack)?.categories.find(group=>group.id===q.categoryId)?.title||roomTitle(z))} · ${qEsc(q.topic)} · Schwierigkeit ${q.difficulty||1}</span>${reason==='trial'?'<span class="pill">Prüftruhe · '+trial.correct+'/'+trial.target+' richtig · <b id="trial-timer">'+Math.max(0,Math.ceil((trial.deadline-Date.now())/1000))+' s</b></span>'+(trial.lastAnswer===null?'':'<span class="pill trial-result">'+(trial.lastAnswer?'Richtig':'Falsch')+'</span>'):''}<h2>${qEsc(q.prompt)}</h2>${questionFigure(q)}<div class="choices">${q.type==='free-text'?`<label for="freeAnswer">Deine Antwort</label><input id="freeAnswer" autocomplete="off" placeholder="Antwort eingeben" class="answer-field"><button class="primary" id="submitFree">Antwort prüfen</button>`:q.choices.map((c,i)=>`<button class="choice" data-choice="${i}">${String.fromCharCode(65+i)}. ${qEsc(c)}</button>`).join('')}</div><div id="feedback"></div>${reason==='trial'?'':'<p class="muted">Nach einer richtigen Antwort kannst du die Wiederholung auf 🔴 5 Fragen, 🟡 10 Fragen oder 🟢 nie setzen.</p>'}<p class="muted">Quelle: ${qEsc(q.source?.document||'Fragenpaket')}, Folie ${qEsc(q.source?.page||'–')}</p><div class="actions"><button id="leave">${reason==='trial'?'Prüfung abbrechen':reason==='brew'?'Zur Brauerei':reason==='study'?'Zu den Bildkarten':'Später beantworten'}</button></div>`,'quiz');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(+b.dataset.choice));if(q.type==='free-text'){const input=$('#freeAnswer');$('#submitFree').onclick=()=>answerText(input.value);input.focus();input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(!e.repeat)answerText(input.value);}}}$('#leave').onclick=reason==='trial'?()=>finishTrial(false):reason==='brew'?()=>finishIngredient(false):reason==='study'?imageCards:close}
 function normalizeAnswer(v){return String(v).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
 function editDistance(a,b){const prev=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let last=prev[0];prev[0]=i;for(let j=1;j<=b.length;j++){const tmp=prev[j];prev[j]=Math.min(prev[j]+1,prev[j-1]+1,last+(a[i-1]===b[j-1]?0:1));last=tmp}}return prev[b.length]}
 function answerText(raw){if(!pending||pending.q.type!=='free-text')return;const input=normalizeAnswer(raw);if(!input){tell('Bitte eine Antwort eingeben');return}const ok=pending.q.answers.some(a=>{const target=normalizeAnswer(a),limit=target.length>=22?3:target.length>=10?2:target.length>=6?1:0;return input===target||Math.abs(input.length-target.length)<=limit&&editDistance(input,target)<=limit});answer(ok?1:0)}
@@ -803,11 +880,8 @@ pending.answered=true;const {q,z,reason,gateId}=pending;
  if(reason==='shrine'){
   (save.altarQuestions[z]??=[]).push(q.id);
   save.altarUses[z]=(save.altarUses[z]||0)+1;
-  if(save.altarUses[z]===2){
-   altarBursts.push({...shrines[z],life:1.12});
-   tell('Altar vollendet · Wissen bewahrt');
-  }
- }document.querySelectorAll('.choice').forEach(b=>{b.disabled=true;if(+b.dataset.choice===q.correctIndex)b.classList.add('good');else if(+b.dataset.choice===i)b.classList.add('bad')});if(q.type==='free-text'){const el=$('#freeAnswer');if(el)el.disabled=true;const b=$('#submitFree');if(b)b.disabled=true}const ok=q.type==='free-text'?i===1:i===q.correctIndex;save.questionCount=(save.questionCount||0)+1;if(!ok&&save.questionReview[q.id]?.color!=='green'){(save.questionReview||={})[q.id]={color:'red',due:save.questionCount+5}}if(ok){save.solved[q.id]=(save.solved[q.id]||0)+1;grantXP((save.solved[q.id]||0)>1?5:15+(q.difficulty||1)*5);if(reason==='gate'&&gateId){(save.gateQuestions[gateId]||=[]).push(q.id);save.gateProgress[gateId]=(save.gateProgress[gateId]||0)+1;if(save.gateProgress[gateId]>=sealTarget()){save.gates[gateId]=true;const g=gates.find(g=>g.id===gateId);burst((g.x+.5)*TILE,(g.y+.5)*TILE,g.color,45);tell('Wissenstor geöffnet!')}}if(reason==='enemy'){for(const e of enemies)if(e.roomId===z&&Math.hypot(e.x-player.x,e.y-player.y)<220){e.hp-=45;showDamage(e.x,e.y,45,'magic');burst(e.x,e.y,'#d6a2ff',18)}}else{player.hp=Math.min(maxHP(),player.hp+18);burst(player.x,player.y,'#8df2d2',24)}}else{player.hp=Math.max(1,player.hp-8);shake=8}persist();$('#feedback').innerHTML=`${reason==='gate'&&gateId?`<p class="pill">Siegelprüfung: ${Math.min(sealTarget(),save.gateProgress[gateId]||0)}/${sealTarget()} richtig</p>`:''}<p style="color:${ok?'#9becc8':'#ff9aaf'}"><b>${ok?'✓ Richtig! +Erfahrung':'✕ Nicht ganz. −8 HP'}</b></p><p>${qEsc(q.explanation)}</p>${ok?'<h3>Wiederholung festlegen</h3><p class="muted">Wähle eine Ampelfarbe, bevor du fortfährst.</p><div class="actions"><button data-review="red">🔴 Rot · 5 Fragen</button><button data-review="yellow">🟡 Gelb · 10 Fragen</button><button data-review="green">🟢 Grün · nie wieder</button></div>':''}<button class="primary" id="continue">Weiter ins Dungeon →</button>`;document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{const color=b.dataset.review;pending.reviewed=true;save.questionReview[q.id]={color,due:color==='green'?Number.MAX_SAFE_INTEGER:save.questionCount+(color==='red'?5:10)};persist();document.querySelectorAll('[data-review]').forEach(el=>{el.disabled=true;el.style.opacity=el===b?'1':'.4'});$('#continue').focus();});$('#continue').onclick=()=>{if(ok&&!pending?.reviewed){tell('Bitte zuerst Rot, Gelb oder Grün auswählen');return}pending=null;close();if(reason==='gate'&&gateId&&!save.gates[gateId]&&ok){gateQuiz(gates.find(g=>g.id===gateId));return}if(player.hp<=1)tell('Deine Energie ist erschöpft – finde einen Lernschrein!')};
+  if(save.altarUses[z]===2)queuedAltar=z;
+ }document.querySelectorAll('.choice').forEach(b=>{b.disabled=true;if(+b.dataset.choice===q.correctIndex)b.classList.add('good');else if(+b.dataset.choice===i)b.classList.add('bad')});if(q.type==='free-text'){const el=$('#freeAnswer');if(el)el.disabled=true;const b=$('#submitFree');if(b)b.disabled=true}const ok=q.type==='free-text'?i===1:i===q.correctIndex;save.questionCount=(save.questionCount||0)+1;if(!ok&&save.questionReview[q.id]?.color!=='green'){(save.questionReview||={})[q.id]={color:'red',due:save.questionCount+5}}if(ok){save.solved[q.id]=(save.solved[q.id]||0)+1;grantXP((save.solved[q.id]||0)>1?5:15+(q.difficulty||1)*5);if(reason==='gate'&&gateId){(save.gateQuestions[gateId]||=[]).push(q.id);save.gateProgress[gateId]=(save.gateProgress[gateId]||0)+1;if(save.gateProgress[gateId]>=sealTarget()){save.gates[gateId]=true;const g=gates.find(g=>g.id===gateId);burst((g.x+.5)*TILE,(g.y+.5)*TILE,g.color,45);tell('Wissenstor geöffnet!')}}if(reason==='enemy'){for(const e of enemies)if(e.roomId===z&&Math.hypot(e.x-player.x,e.y-player.y)<220){e.hp-=45;showDamage(e.x,e.y,45,'magic');burst(e.x,e.y,'#d6a2ff',18)}}else if(reason!=='study'){player.hp=Math.min(maxHP(),player.hp+18);burst(player.x,player.y,'#8df2d2',24)}}else if(reason!=='study'){player.hp=Math.max(1,player.hp-8);shake=8}persist();$('#feedback').innerHTML=`${reason==='gate'&&gateId?`<p class="pill">Siegelprüfung: ${Math.min(sealTarget(),save.gateProgress[gateId]||0)}/${sealTarget()} richtig</p>`:''}<p style="color:${ok?'#9becc8':'#ff9aaf'}"><b>${ok?'✓ Richtig! +Erfahrung':(reason==='study'?'✕ Nicht ganz.':'✕ Nicht ganz. −8 HP')}</b></p><p>${qEsc(q.explanation)}</p>${ok?'<h3>Wiederholung festlegen</h3><p class="muted">Wähle eine Ampelfarbe, bevor du fortfährst.</p><div class="actions"><button data-review="red">🔴 Rot · 5 Fragen</button><button data-review="yellow">🟡 Gelb · 10 Fragen</button><button data-review="green">🟢 Grün · nie wieder</button></div>':''}<button class="primary" id="continue">${reason==='study'?'Zu den Bildkarten':'Weiter ins Dungeon →'}</button>`;document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{const color=b.dataset.review;pending.reviewed=true;save.questionReview[q.id]={color,due:color==='green'?Number.MAX_SAFE_INTEGER:save.questionCount+(color==='red'?5:10)};persist();document.querySelectorAll('[data-review]').forEach(el=>{el.disabled=true;el.style.opacity=el===b?'1':'.4'});$('#continue').focus();});$('#continue').onclick=()=>{if(ok&&!pending?.reviewed){tell('Bitte zuerst Rot, Gelb oder Grün auswählen');return}pending=null;if(reason==='study'){imageCards();return}close();if(reason==='gate'&&gateId&&!save.gates[gateId]&&ok){gateQuiz(gates.find(g=>g.id===gateId));return}if(player.hp<=1)tell('Deine Energie ist erschöpft – finde einen Lernschrein!')};
  (ok?document.querySelector('[data-review]'):$('#continue'))?.focus();
 }
 function answerTrial(choice){
@@ -824,7 +898,17 @@ function answerTrial(choice){
  if(trial.queue.length<trial.target-trial.correct){finishTrial(false);return;}
  persist();nextTrialQuestion();
 }
-function journal(){const count=questions.filter(q=>save.solved[q.id]>0).length;show(`<span class="pill">Lernjournal</span><h2>Dein Wissenskompendium</h2><p>📜 ${count} von ${questions.length} Fragen mindestens einmal richtig · ⚔ ${save.kills} Gegner besiegt · ✦ ${save.xp} XP</p><p>Aktiver Fragenpool · ${qEsc(packTitle())}</p><div class="actions"><button class="primary" id="upload">Fragenpakete</button><button id="toInv">Inventar</button><button id="toEquip">Ausrüstung</button><button id="toLevel">Leveln</button><button id="export">Spielstand exportieren</button><button id="back">Zurück zum Spiel</button></div><p class="muted">Speicherstand bleibt lokal in diesem Browser und unter dieser Datei-URL gespeichert. Bei neuem Dateinamen kann der Browser den Speicher isolieren; exportiere den Stand vor einem Versionswechsel.</p>`,'journal');$('#upload').onclick=packMenu;$('#toInv').onclick=()=>inventoryMenu();$('#toEquip').onclick=()=>equipmentMenu();$('#toLevel').onclick=levelMenu;$('#export').onclick=()=>{persist();download('mind-dungeon-save.json',JSON.stringify(save,null,2))};$('#back').onclick=close}
+function imageCards(){
+ pending=null;
+ const cards=questions.filter(q=>q.image);
+ show('<h2 class="md-title">Bildkarten</h2><div class="image-card-list">'+cards.map((q,i)=>
+  '<button data-image-card="'+i+'"><b>'+qEsc(q.topic)+'</b><small>Folie '+qEsc(q.source.page)+(save.solved[q.id]?' · Geübt':'')+'</small></button>'
+ ).join('')+'</div>'+(cards.length?'':'<p>Dieses Fragenpaket enthält keine Bildkarten.</p>')+
+ '<div class="actions"><button id="image-back">Zum Lernjournal</button></div>','image-cards');
+ document.querySelectorAll('[data-image-card]').forEach(b=>b.onclick=()=>quiz(area(),'study',null,cards[Number(b.dataset.imageCard)]));
+ mdButton('image-back',journal);
+}
+function journal(){const count=questions.filter(q=>save.solved[q.id]>0).length;show(`<span class="pill">Lernjournal</span><h2>Dein Wissenskompendium</h2><p>📜 ${count} von ${questions.length} Fragen mindestens einmal richtig · ⚔ ${save.kills} Gegner besiegt · ✦ ${save.xp} XP</p><p>Aktiver Fragenpool · ${qEsc(packTitle())}</p><div class="actions"><button class="primary" id="upload">Fragenpakete</button><button id="toImages">Bildkarten</button><button id="toInv">Inventar</button><button id="toEquip">Ausrüstung</button><button id="toLevel">Leveln</button><button id="export">Spielstand exportieren</button><button id="back">Zurück zum Spiel</button></div><p class="muted">Speicherstand bleibt lokal in diesem Browser und unter dieser Datei-URL gespeichert. Bei neuem Dateinamen kann der Browser den Speicher isolieren; exportiere den Stand vor einem Versionswechsel.</p>`,'journal');$('#upload').onclick=packMenu;$('#toImages').onclick=imageCards;$('#toInv').onclick=()=>inventoryMenu();$('#toEquip').onclick=()=>equipmentMenu();$('#toLevel').onclick=levelMenu;$('#export').onclick=()=>{persist();download('mind-dungeon-save.json',JSON.stringify(save,null,2))};$('#back').onclick=close}
 function download(name,body){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 $('#import').onchange=async e=>{
  const input=e.target,file=input.files?.[0];
@@ -833,9 +917,11 @@ $('#import').onchange=async e=>{
   if(file.size>2_000_000)throw Error('Das Fragenpaket darf bis zu 2 MB groß sein.');
   const pack=run.validatePack(JSON.parse(await file.text()));
   if(pack.packId===DEFAULT_PACK)throw Error('Diese Paket-ID gehört zum eingebauten Fragenpool.');
-  packLibrary.set(pack.packId,pack);
-  save.packs=[...packLibrary.values()].filter(p=>p.packId!==DEFAULT_PACK);
-  if(save.activePack===pack.packId)questions=pack.questions;
+  const packs=[...save.packs.filter(p=>p.packId!==pack.packId),pack];
+  try{localStorage.setItem(KEY,JSON.stringify({...save,packs,hp:player.hp,x:player.x,y:player.y}));}
+  catch{throw Error('Der Browserspeicher ist voll. Verkleinere die Bilder im Fragenpaket.');}
+  packLibrary.set(pack.packId,pack);save.packs=packs;
+  if(save.activePack===pack.packId)usePack(pack);
   persist();
   packMenu(pack.title+' · '+pack.questions.length+' Fragen importiert.');
  }catch(err){packMenu('Importfehler · '+err.message);}
@@ -900,6 +986,7 @@ function tickPoison(e,dt){
  status.untilTick+=.72;if(--status.ticks===0)e.poison=null;
 }
 function interact(){if(paused)return;
+if(near?.kind==='cat'){catHeartUntil=performance.now()+1400;return;}
 if(near?.kind==='brewery'){breweryMenu();return;}
 if(near?.kind==='soul'){claimSoul(near.i);return;}
 if(near?.kind==='cabinet'){searchCabinet(near.i);return;}
@@ -940,12 +1027,15 @@ function update(dt){if(mdNavigatingToNewCharacter)return;if(aimMode==='mouse'){c
 for(const d of dust)d.life-=dt;while(dust.length&&dust[0].life<=0)dust.shift();for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}particles=particles.filter(p=>p.life>0);slashes.forEach(z=>z.life-=dt);slashes=slashes.filter(z=>z.life>0);
 near=null;let best=95;
 if(regionAt(player.x,player.y)===labRoom.id&&Math.hypot(lab.x-player.x,lab.y-player.y)<88){near={kind:'brewery'};best=88;}
-for(const [kind,loc] of [['merchant',merchant],['map',mapPickup]]){if(kind==='map'&&save.merchantMapFound)continue;const d=Math.hypot(loc.x-player.x,loc.y-player.y);if(d<best&&reachableInteraction(loc)){best=d;near={kind}}}gates.forEach((g,i)=>{if(save.gates[g.id])return;const d=Math.hypot((g.x+.5)*TILE-player.x,(g.y+.5)*TILE-player.y);if(d<best&&(regionAt(player.x,player.y)===g.corridorId||reachableInteraction(gateApproach(g)))){best=d;near={kind:'gate',i}}});shrines.forEach(z=>{if((save.altarUses[z.i]||0)>=2)return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:'shrine',i:z.i}}});chests.forEach((z,i)=>{const challenge=i===trialIndex&&!save.opened.includes(i);if(save.opened.includes(i)||challenge&&save.trials[i])return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:challenge?'trial':'chest',i}}});cabinets.forEach((p,i)=>{if(save.searched.includes(i))return;
+for(const [kind,loc] of [['merchant',merchant],['map',mapPickup],...(restCat?[['cat',restCat]]:[])]){if(kind==='map'&&save.merchantMapFound)continue;const d=Math.hypot(loc.x-player.x,loc.y-player.y);if(d<best&&reachableInteraction(loc)){best=d;near={kind}}}gates.forEach((g,i)=>{if(save.gates[g.id])return;const d=Math.hypot((g.x+.5)*TILE-player.x,(g.y+.5)*TILE-player.y);if(d<best&&(regionAt(player.x,player.y)===g.corridorId||reachableInteraction(gateApproach(g)))){best=d;near={kind:'gate',i}}});shrines.forEach(z=>{if((save.altarUses[z.i]||0)>=2)return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:'shrine',i:z.i}}});chests.forEach((z,i)=>{const challenge=i===trialIndex&&!save.opened.includes(i);if(save.opened.includes(i)||challenge&&save.trials[i])return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:challenge?'trial':'chest',i}}});cabinets.forEach((p,i)=>{if(save.searched.includes(i))return;
  const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,72)&&reachableInteraction(p)){best=d;near={kind:'cabinet',i};}
 });
 save.souls.forEach((p,i)=>{const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,62)&&reachableInteraction(p)){best=d;near={kind:'soul',i};}});
-if(save.portal&&near?.kind!=='soul'&&Math.hypot(save.portal.x-player.x,save.portal.y-player.y)<65&&reachableInteraction(save.portal))near={kind:'portal'};$('#healthfill').style.setProperty('--hurt',items.damage[player.dominant]?.color||'#c77462');$('#healthfill').style.width=(100*player.hp/maxHP())+'%';$('#staminafill').style.width=(100*player.stamina/maxStamina())+'%';$('#xpfill').style.width=(100*save.xp/xpRequired())+'%';$('#hpnum').textContent=Math.ceil(player.hp)+'/'+maxHP();$('#stnum').textContent=Math.ceil(player.stamina)+'/'+maxStamina();$('#xpnum').textContent=save.xp+'/'+xpRequired();$('#statline').textContent=`♥ ${Math.ceil(player.hp)}/${maxHP()} · ⚡ ${Math.ceil(player.stamina)}/${maxStamina()} · Lv ${save.level} (${save.xp}/${xpRequired()} XP) · ◈ ${save.gold} Gold`;$('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+(annexByRegion.get(region)?.name||zones[area()].name);$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${enemies.length} Gegner auf dieser Ebene${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}`;if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
-const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=near&&({brewery:'Am Labortisch brauen',soul:'Seelenball aufnehmen',cabinet:'Schrank durchsuchen',trial:'Prüftruhe untersuchen',portal:save.floor===LAST_DEPTH?'Lauf abschließen':'Portal zur nächsten Tiefe',gate:'Siegel prüfen',shrine:'Wissen prüfen · '+(near?.kind==='shrine'?2-(save.altarUses[near.i]||0):2)+' übrig',chest:'Truhe öffnen',merchant:'Mit dem Händler sprechen',map:'Händlerkarte aufnehmen'})[near.kind];
+if(save.portal&&near?.kind!=='soul'&&Math.hypot(save.portal.x-player.x,save.portal.y-player.y)<65&&reachableInteraction(save.portal))near={kind:'portal'};$('#healthfill').style.setProperty('--hurt',items.damage[player.dominant]?.color||'#c77462');$('#healthfill').style.width=(100*player.hp/maxHP())+'%';$('#staminafill').style.width=(100*player.stamina/maxStamina())+'%';$('#xpfill').style.width=(100*save.xp/xpRequired())+'%';$('#health').setAttribute('aria-valuenow',Math.ceil(player.hp));$('#health').setAttribute('aria-valuemax',maxHP());
+$('#stamina').setAttribute('aria-valuenow',Math.ceil(player.stamina));$('#stamina').setAttribute('aria-valuemax',maxStamina());
+$('#xpnum').textContent=save.xp+'/'+xpRequired()+' XP';$('#statline').textContent='Stufe '+save.level+' · '+save.gold+' Gold';
+$('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+(annexByRegion.get(region)?.name||roomTitle(area()));$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${enemies.length} Gegner auf dieser Ebene${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}`;if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
+const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=near&&({brewery:'Am Labortisch brauen',soul:'Seelenball aufnehmen',cabinet:'Schrank durchsuchen',trial:'Prüftruhe untersuchen',portal:save.floor===LAST_DEPTH?'Lauf abschließen':'Portal zur nächsten Tiefe',gate:'Siegel prüfen',shrine:'Wissen prüfen · '+(near?.kind==='shrine'?2-(save.altarUses[near.i]||0):2)+' übrig',chest:'Truhe öffnen',merchant:'Händlerstand öffnen',cat:'Katze streicheln',map:'Händlerkarte aufnehmen'})[near.kind];
 prompt.hidden=!hint||paused;$('#mobileInteract').hidden=!hint||paused;if(hint&&prompt.dataset.hint!==hint){prompt.dataset.hint=hint;prompt.textContent=(matchMedia('(pointer:coarse)').matches?'':'[ E ] ')+hint;}
 }
 function gateApproach(g){
@@ -956,18 +1046,20 @@ function reachableInteraction(target){
  return !gateLineBlocked(player.x,player.y,target.x,target.y);
 }
 function onWeb(){
+ if(inRest(player.x,player.y))return false;
  return furniture.some(p=>p.type==='web'&&Math.abs(p.x-player.x)<p.w/2+9&&Math.abs(p.y-player.y)<p.h/2+9)
   || webPatches.some(p=>Math.hypot(p.x-player.x,p.y-player.y)<p.radius);
 }
 function moveEnemy(e,dx,dy){
  const radius=e.type===SNAKE?8:e.boss?18:14;
- if(valid(e.x+dx,e.y,radius))e.x+=dx;
- if(valid(e.x,e.y+dy,radius))e.y+=dy;
+ if(!inRest(e.x+dx,e.y)&&valid(e.x+dx,e.y,radius))e.x+=dx;
+ if(!inRest(e.x,e.y+dy)&&valid(e.x,e.y+dy,radius))e.y+=dy;
 }
 function updateEnemy(e,dt){
  const spec=enemyRules.attacks[e.type];
  if(e.emerge>0){e.emerge=Math.max(0,e.emerge-dt);return;}
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
+ if(inRest(player.x,player.y)){e.windup=0;e.runAttack=0;e.track=0;return;}
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
  const clear=d<380&&!gateLineBlocked(e.x,e.y,player.x,player.y);
  const touch=12+15*e.size;
@@ -1114,7 +1206,7 @@ function updateBolts(dt){
   const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/5));
   for(let i=0;i<steps;i++){
    const x=p.x+dx/steps,y=p.y+dy/steps;
-   if(wall(x,y)||gateBlocked(x,y)||furnitureBlocked(x,y,2))return false;
+   if(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||furnitureBlocked(x,y,2))return false;
    p.x=x;p.y=y;
    if(player.dash<=0&&Math.hypot(p.x-player.x,p.y-player.y)<13){
     const damage=(p.type==='bow'?8:13)+save.floor*3;
@@ -1135,6 +1227,7 @@ function updateWebs(dt){
  webShots=webShots.filter(p=>{
   p.life-=dt;
   const x=p.x+p.vx*dt,y=p.y+p.vy*dt;
+  if(inRest(x,y))return false;
   const blocked=gateLineBlocked(p.x,p.y,x,y)||furnitureBlocked(x,y,2);
   const hit=player.dash<=0&&player.inv<=0&&Math.hypot(x-player.x,y-player.y)<16;
   if(blocked||hit||p.life<=0){
@@ -1146,6 +1239,7 @@ function updateWebs(dt){
  });
 }
 function showDamage(x,y,value,type,hero=false){
+ if(!settings.damageNumbers)return;
  const node=document.createElement('div');node.className='damage-number';
  node.style.color=items.damage[type]?.color||items.damage.physical.color;
  node.textContent=value>0?(hero?'−':'')+value:'Immun';
@@ -1164,7 +1258,7 @@ function gearResistance(){
  return protection;
 }
 function takeDamage(amount,split={physical:1},status=false){
- if(player.dash>0||player.inv>0&&!status||mdNavigatingToNewCharacter)return false;
+ if(inRest(player.x,player.y)||player.dash>0||player.inv>0&&!status||mdNavigatingToNewCharacter)return false;
  const reduction=Math.min(.65,Math.min(.25,(save.attributes.vitality-10)*.008)+(hasRing('bulwark')?.12:0)+armorDefense()*.006);
  const damage=weatherSplit(amount*(1-reduction)*brewBonus.guard,split,player.x,player.y);
  const hit=items.hit(damage.amount,damage.split,gearResistance());
@@ -1298,7 +1392,22 @@ function drawCanvasEffect(type,pose,x,y,width,height,angle,alpha){
  s.save();s.translate(Math.round(x),Math.round(y));s.rotate(angle);s.globalAlpha=alpha;
  s.drawImage(effectArt.frames[type][pose],-width/2,-height/2,width,height);s.restore();
 }
-function draw(){let w=scene.width,h=scene.height;s.setTransform(1,0,0,1,0,0);s.clearRect(0,0,w,h);s.fillStyle='#101212';s.fillRect(0,0,w,h);cam.x=Math.max(0,Math.min(player.x-cw/2,W*TILE-cw));cam.y=Math.max(0,Math.min(player.y-ch/2,H*TILE-ch));s.setTransform(dpr,0,0,dpr,(-cam.x+rand(-shake,shake))*dpr,(-cam.y+rand(-shake,shake))*dpr);
+function positionWorldHUD(scrollX,scrollY){
+ const hud=$('#hud');
+ hud.style.left=Math.round(player.x-scrollX)+'px';
+ hud.style.top=Math.round(player.y-scrollY-54)+'px';
+ const heart=$('#catHeart');
+ const remaining=catHeartUntil-performance.now();
+ heart.hidden=!(restCat&&remaining>0&&inRest(player.x,player.y)&&!paused);
+ if(!heart.hidden){
+  heart.style.left=Math.round(restCat.x-scrollX)+'px';
+  heart.style.top=Math.round(restCat.y-scrollY-25-(1-remaining/1400)*27)+'px';
+  heart.style.opacity=Math.min(1,remaining/360);
+ }
+}
+function draw(){let w=scene.width,h=scene.height;s.setTransform(1,0,0,1,0,0);s.clearRect(0,0,w,h);s.fillStyle='#101212';s.fillRect(0,0,w,h);cam.x=Math.max(0,Math.min(player.x-cw/2,W*TILE-cw));cam.y=Math.max(0,Math.min(player.y-ch/2,H*TILE-ch));const quake=settings.shake?shake:0,offsetX=rand(-quake,quake),offsetY=rand(-quake,quake);
+positionWorldHUD(cam.x-offsetX,cam.y-offsetY);
+s.setTransform(dpr,0,0,dpr,(-cam.x+offsetX)*dpr,(-cam.y+offsetY)*dpr);
 s.imageSmoothingEnabled=false;
 s.drawImage(dungeonGround,0,0,W*TILE,H*TILE);
 for(const o of scenery)if(o.ground&&o.visible())drawWorldImage(s,o);
@@ -1344,14 +1453,22 @@ const webGroundBitmap=art.icon('floor-web');
 const soulFrames=Object.fromEntries(Object.entries(items.rarity).map(([key,r])=>[key,
  Array.from({length:6},(_,i)=>art.icon('soul',String(i),r.color))
 ]));
+const partitions=terrain.flatMap((row,y)=>row.flatMap((tile,x)=>{
+ if(tile!=='partition')return [];
+ const zone=tileZone(x,y),ends=(row[x-1]==='partition'?0:1)|(row[x+1]==='partition'?0:2);
+ return [{x:(x+.5)*TILE,y:(y+.5)*TILE,key:'partition-'+zone+'-'+ends,
+  bitmap:art.partition(zone,ends),visible:always}];
+}));
 const scenery=[
+ ...partitions,
  portalPosition,
- ...furniture.map(p=>({...p,key:p.type+'-'+p.zone,bitmap:art.furniture(p.type,p.zone),ox:64,oy:56,ground:p.type==='carpet'||p.type==='web',visible:always})),
+ ...furniture.map(p=>({...p,key:p.type+'-'+p.zone,bitmap:art.furniture(p.type,p.zone),scale:({market:1.9,'banquet-long':1.45,statue:1.4})[p.type],ox:64,oy:p.type==='market'?68:56,ground:p.type==='carpet'||p.type==='web',visible:always})),
  ...gates.map((g,i)=>({x:(g.x+.5)*TILE,y:(g.y+.5)*TILE,key:'gate-'+i,bitmap:art.gate(g.vertical,g.color),visible:()=>!save.gates[g.id]})),
  ...chests.map((p,i)=>({...p,key:i===trialIndex?'trial-chest':'chest',bitmap:art.icon('chest',i===trialIndex?'trial':''),alternate:art.icon('chest','open'),changed:()=>save.opened.includes(i)||Boolean(save.trials[i]),visible:always})),
- ...shrines.map(p=>({...p,key:'shrine-'+p.i,bitmap:art.icon('shrine','',themes[p.i].glow),visible:()=>!(save.altarUses[p.i]>=2)||altarBursts.some(effect=>effect.i===p.i&&effect.life>.91)})),
- {x:save.layoutRevision>=2?market.x:merchant.x,y:save.layoutRevision>=2?market.y-11:merchant.y,
- key:'bat-merchant',bitmap:art.icon('bat-merchant'),scale:1.85,visible:always},
+ ...shrines.map(p=>({...p,key:'shrine-'+p.i,bitmap:art.icon('shrine','',themes[p.i].glow),visible:()=>!(save.altarUses[p.i]>=2)||queuedAltar===p.i||altarBursts.some(effect=>effect.i===p.i&&effect.life>.91)})),
+ {x:save.layoutRevision>=2?market.x:merchant.x,y:save.layoutRevision>=2?market.y-20:merchant.y,
+ key:'bat-merchant',bitmap:art.icon('bat-merchant'),scale:2.15,visible:always},
+ ...(restCat?[{...restCat,key:'rest-cat',bitmap:art.icon('rest-cat'),visible:always}]:[]),
  {...mapPickup,key:'map',bitmap:art.icon('map'),visible:()=>!save.merchantMapFound}
 ];
 function drawFog(fill){
@@ -1470,7 +1587,11 @@ class DungeonScene extends Phaser.Scene{
    const pos=weaponPosition();
    this.weapon.setTexture('weapon-'+weaponArtId(save.equipment.weapon))
     .setPosition(pos.x,pos.y).setRotation(weaponAngle()).setDepth(player.y+.5);
-   window.__mindPhaserCameraX=this.cameras.main.scrollX;window.__mindPhaserCameraY=this.cameras.main.scrollY;
+   const quake=settings.shake?shake:0;
+   this.cameras.main.x=rand(-quake,quake);this.cameras.main.y=rand(-quake,quake);
+   window.__mindPhaserCameraX=this.cameras.main.scrollX-this.cameras.main.x;
+   window.__mindPhaserCameraY=this.cameras.main.scrollY-this.cameras.main.y;
+   positionWorldHUD(window.__mindPhaserCameraX,window.__mindPhaserCameraY);
    while(this.foes.length<enemies.length)this.foes.push(this.add.image(0,0,'foe-0-0').setOrigin(.5,.67));
    for(const [i,sprite] of this.foes.entries()){
     const e=enemies[i];
@@ -1600,28 +1721,59 @@ function trophyMenu(victory=false){
  mdButton('md-back',mdTitle);
  mdButton('md-restart',()=>switchPack(save.activePack,true));
 }
+const controlRows=[
+ ['Bewegen','W A S D / Pfeiltasten'],['Zielen','Maus / F für Tastatur-Zielen'],['Angreifen','Linksklick / Leertaste'],['Ausweichen','Umschalt + Richtung'],
+ ['Interagieren','E'],['Inventar / Ausrüstung','I / C'],['Leveln / Lernjournal','L / Q'],
+ ['Antworten und Menüs','W / S und Enter'],['Hauptmenü / Zurück','P / Esc']
+];
+function mdSettings(){
+ show('<h2 class="md-title">Einstellungen</h2><section class="md-card settings-card"><h3>Spielanzeige</h3>'+
+  '<label><input type="checkbox" id="setting-shake" '+(settings.shake?'checked':'')+'> Bildschirmerschütterung</label>'+
+  '<label><input type="checkbox" id="setting-damage" '+(settings.damageNumbers?'checked':'')+'> Schadenszahlen</label></section>'+
+  '<section class="md-card settings-card"><h3>Steuerung</h3><dl>'+controlRows.map(([label,key])=>
+   '<div><dt>'+label+'</dt><dd><kbd>'+key+'</kbd></dd></div>').join('')+'</dl></section>'+
+  '<div class="actions"><button id="md-back">Hauptmenü</button></div>','settings');
+ for(const [id,key] of [['setting-shake','shake'],['setting-damage','damageNumbers']])$('#'+id).onchange=e=>{
+  settings[key]=e.target.checked;
+  try{localStorage.setItem(settingsKey,JSON.stringify(settings));}catch{tell('Einstellungen konnten nur für diese Sitzung übernommen werden');}
+ };
+ mdButton('md-back',mdTitle);
+}
 function mdTitle(){
-const hero=save.character;show('<div class="md-theme"><div class="md-kicker">Ein Vermächtnis aus Schatten und Wissen</div><h1 class="md-title">MIND DUNGEON</h1><p class="md-subtitle">SHADOWBOUND</p><div class="md-hero"><div class="md-portrait" id="md-title-portrait"></div><div><b>'+mdEscape(hero?.name||'Unbenannter Wanderer')+'</b><p class="md-status">'+mdEscape(hero?.className||'Noch keine Klasse')+' · Stufe '+save.level+'<br>Spielzeit: '+mdDuration(save.playtime)+'</p></div></div><div class="md-actions"><button class="primary" id="md-continue">▶ Fortsetzen</button><button id="md-create">Neuer Charakter</button><button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-saves">Spielstände</button><button id="md-login">Konto / Cloud</button></div><p class="md-status">WASD bewegen · Leertaste angreifen · I Inventar · C Ausrüstung · P Spielmenü</p></div>','title');
+const hero=save.character;show('<div class="md-theme"><div class="md-kicker">Ein Vermächtnis aus Schatten und Wissen</div><h1 class="md-title">MIND DUNGEON</h1><p class="md-subtitle">SHADOWBOUND</p><div class="md-hero"><div class="md-portrait" id="md-title-portrait"></div><div><b>'+mdEscape(hero?.name||'Unbenannter Wanderer')+'</b><p class="md-status">'+mdEscape(hero?.className||'Noch keine Klasse')+' · Stufe '+save.level+'<br>Spielzeit: '+mdDuration(save.playtime)+'</p></div></div><div class="md-actions"><button class="primary" id="md-continue">▶ Fortsetzen</button><button id="md-create">Neuer Charakter</button><button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-saves">Spielstände</button><button id="md-settings">Einstellungen</button><button id="md-login">Konto / Cloud</button></div></div>','title');
 mountPortrait($('#md-title-portrait'),hero,save.equipment.weapon,equippedArmorColors());
 mdButton('md-continue',()=>{if(save.completed){trophyMenu(true);return;}close();if(save.pendingLevels)setTimeout(levelMenu,300)});
-mdButton('md-create',mdCreator);mdButton('md-packs',()=>packMenu());mdButton('md-trophies',()=>trophyMenu());mdButton('md-saves',mdSaves);mdButton('md-login',mdAccount);
+mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-packs',()=>packMenu());mdButton('md-trophies',()=>trophyMenu());mdButton('md-saves',mdSaves);mdButton('md-login',mdAccount);
+}
+const classKits={guardian:'knight',duelist:'wanderer',scholar:'scholar',pilgrim:'hunter'};
+function classAttributes(c){return {...Object.fromEntries(Object.keys(ATTRS).map(key=>[key,10])),...c.attributes};}
+function classArmor(c){
+ const kit=classKits[c.id];
+ return kit?Object.fromEntries(Object.keys(ARMOR_PARTS).map(slot=>[slot,kit+'-'+slot])):{};
 }
 function mdCreator(){
 const classes=mdClasses.length?mdClasses:MD_FALLBACK_CLASSES;
-show('<div class="md-kicker">Ein neues Vermächtnis</div><h2 class="md-title">Charakter erschaffen</h2><label class="md-field">Name<input id="md-name" maxlength="24" placeholder="Name deines Helden" value="Wanderer"></label><div class="md-layout"><div><label class="md-field">Gewandfarbe<input type="color" id="md-color" value="#7652a9"></label><label class="md-field">Hautfarbe<input type="color" id="md-skin" value="#d4a785"></label><label class="md-field">Haarfarbe<input type="color" id="md-hair" value="#392b4e"></label></div><div class="md-card"><div class="md-kicker">Vorschau</div><div id="md-preview" class="md-portrait" style="margin:10px auto"></div></div></div><h3>Startklasse</h3><div class="md-layout">'+classes.map((c,i)=>'<button class="md-card md-class '+(!i?'active':'')+'" data-md-class="'+i+'"><h3>'+iconImage('weapon',weaponArtId(c.weapon_id)).replace('<img ','<img class="class-glyph" ')+mdEscape(c.name_de)+'</h3><p>'+mdEscape(c.description_de)+'</p><small>'+mdEscape(weaponById(c.weapon_id).name)+' · '+mdEscape(ringById(c.starting_item_id)?.name||'Startgegenstand')+'</small></button>').join('')+'</div><div id="md-class-stats" class="md-card"></div><p class="md-warning">Ein neuer Charakter ersetzt den aktuellen lokalen Spielstand. Bestehende Cloud-Spielstände bleiben erhalten, bis du einen Slot überschreibst.</p><div class="md-actions"><button class="primary" id="md-begin">Charakter erstellen</button><button id="md-back">Zurück</button></div>','creator');
-let selected=0;function drawClass(){const c=classes[selected];document.querySelectorAll('[data-md-class]').forEach((b,i)=>b.classList.toggle('active',i===selected));document.getElementById('md-class-stats').innerHTML='<b>'+mdEscape(c.name_de)+'</b><p class="md-status">'+Object.entries(c.attributes||{}).map(([k,v])=>mdEscape(ATTRS[k]?.[0]||k)+': '+v).join(' · ')+'</p>'}
+show('<div class="md-kicker">Ein neues Vermächtnis</div><h2 class="md-title">Charakter erschaffen</h2><label class="md-field">Name<input id="md-name" maxlength="24" placeholder="Name deines Helden" value="Wanderer"></label><div class="md-layout"><div><label class="md-field">Geschlecht<select id="md-gender"><option value="male">Männlich</option><option value="female">Weiblich</option></select></label><label class="md-field">Gewandfarbe<input type="color" id="md-color" value="#7652a9"></label><label class="md-field">Hautfarbe<input type="color" id="md-skin" value="#d4a785"></label><label class="md-field">Haarfarbe<input type="color" id="md-hair" value="#392b4e"></label></div><div class="md-card"><div class="md-kicker">Vorschau</div><div id="md-preview" class="md-portrait" style="margin:10px auto"></div></div></div><h3>Startklasse</h3><div class="md-layout">'+classes.map((c,i)=>'<button class="md-card md-class '+(!i?'active':'')+'" data-md-class="'+i+'"><h3>'+iconImage('weapon',weaponArtId(c.weapon_id)).replace('<img ','<img class="class-glyph" ')+mdEscape(c.name_de)+'</h3><p>'+mdEscape(c.description_de)+'</p><small>'+mdEscape(weaponById(c.weapon_id).name)+' · '+mdEscape(ringById(c.starting_item_id)?.name||'Startgegenstand')+'</small></button>').join('')+'</div><div id="md-class-stats" class="md-card"></div><p class="md-warning">Ein neuer Charakter ersetzt den aktuellen lokalen Spielstand. Bestehende Cloud-Spielstände bleiben erhalten, bis du einen Slot überschreibst.</p><div class="md-actions"><button class="primary" id="md-begin">Charakter erstellen</button><button id="md-back">Zurück</button></div>','creator');
+let selected=0;
+function drawClass(){
+ const c=classes[selected],kit=ARMOR_SETS.find(set=>set.id===classKits[c.id]);
+ document.querySelectorAll('[data-md-class]').forEach((b,i)=>b.classList.toggle('active',i===selected));
+ document.getElementById('md-class-stats').innerHTML='<h3>'+mdEscape(c.name_de)+'</h3><small>'+
+  (kit?'Startausrüstung · '+mdEscape(kit.name)+'-Set':'Startausrüstung · Leinenkleidung, ohne Rüstung')+'</small>'+
+  attributeCards(classAttributes(c),weaponById(c.weapon_id));
+}
 document.querySelectorAll('[data-md-class]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.mdClass);drawClass();updatePreview()});drawClass();
 function updatePreview(){
  const c=classes[selected];
  mountPortrait($('#md-preview'),{
-  color:$('#md-color').value,skin:$('#md-skin').value,hair:$('#md-hair').value
- },c.weapon_id);
+  color:$('#md-color').value,skin:$('#md-skin').value,hair:$('#md-hair').value,gender:$('#md-gender').value
+ },c.weapon_id,Object.fromEntries(Object.entries(classArmor(c)).map(([slot,id])=>[slot,armorById(id).color])));
 }
-for(const id of ['md-color','md-skin','md-hair'])document.getElementById(id).oninput=updatePreview;
+for(const id of ['md-color','md-skin','md-hair','md-gender'])document.getElementById(id).oninput=updatePreview;
 updatePreview();
 mdButton('md-back',mdTitle);mdButton('md-begin',()=>{const name=document.getElementById('md-name').value.trim();if(!name){alert('Bitte gib einen Namen ein.');return}if(!confirm('Neuen Charakter beginnen? Der aktuelle lokale Spielstand wird ersetzt.'))return;
-const c=classes[selected],attrs=Object.fromEntries(Object.keys(ATTRS).map(k=>[k,10]));Object.assign(attrs,c.attributes||{});
-const newSave={hp:32+(attrs.vigor||10)*3,x:5.5*TILE,y:6.5*TILE,xp:0,gold:0,kills:0,solved:{},packs:save.packs||[],opened:[],floor:1,gates:{},gateProgress:{},gateQuestions:{},level:1,attributes:attrs,inventory:[{kind:'weapon',id:c.weapon_id},...(c.starting_item_id?[{kind:'ring',id:c.starting_item_id}]:[])],equipment:{weapon:c.weapon_id,rings:[c.starting_item_id||null,null],armor:{}},pendingLevels:0,enemyTier:1,playtime:0,character:{name,classId:c.id,className:c.name_de,color:document.getElementById('md-color').value,skin:document.getElementById('md-skin').value,hair:document.getElementById('md-hair').value}};
+const c=classes[selected],attrs=classAttributes(c),armor=classArmor(c);
+const newSave={hp:32+(attrs.vigor||10)*3,x:5.5*TILE,y:6.5*TILE,xp:0,gold:0,kills:0,solved:{},packs:save.packs||[],opened:[],floor:1,gates:{},gateProgress:{},gateQuestions:{},level:1,attributes:attrs,inventory:[{kind:'weapon',id:c.weapon_id},...(c.starting_item_id?[{kind:'ring',id:c.starting_item_id}]:[]),...Object.values(armor).map(id=>({kind:'armor',id}))],equipment:{weapon:c.weapon_id,rings:[c.starting_item_id||null,null],armor},pendingLevels:0,enemyTier:1,playtime:0,character:{name,classId:c.id,className:c.name_de,gender:$('#md-gender').value,color:document.getElementById('md-color').value,skin:document.getElementById('md-skin').value,hair:document.getElementById('md-hair').value}};
 writeAndReload({...newSave,...run.freshRun(run.freshSeed()),activePack:save.activePack,trophies:save.trophies},true)})}
 function mdSaves(){
 show('<div class="md-kicker">Chroniken der Wanderer</div><h2 class="md-title">Spielstände</h2><p class="md-status">Lokal wird immer der aktuelle Charakter gesichert. Cloud-Slots sind an dein Konto gebunden.</p><div class="md-slot"><div><b>Lokaler Spielstand</b><br><small>'+mdEscape(save.character?.name||'Wanderer')+' · '+mdDuration(save.playtime)+'</small></div><button id="md-local">Fortsetzen</button></div><div id="md-cloud-slots"><p>Cloud-Spielstände werden geladen …</p></div><div class="md-actions"><button id="md-account">Konto</button><button id="md-back">Zurück</button></div>','saves');

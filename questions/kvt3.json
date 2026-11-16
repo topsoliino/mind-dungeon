@@ -1,12 +1,11 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "packId": "kvt3-konfrontationsverfahren",
   "title": "KVT III – Die Festung der Vermeidung",
   "version": 1,
   "questions": [
     {
       "id": "kvt3-001",
-      "topic": "Grundlagen",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Welche Aussage charakterisiert Konfrontationsverfahren im Skript?",
@@ -21,11 +20,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 2
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "grundlagen"
     },
     {
       "id": "kvt3-002",
-      "topic": "Grundlagen",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Ein Patient stellt sich eine gefürchtete Situation lebhaft vor. Welche Expositionsart ist das?",
@@ -40,11 +40,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 3
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "grundlagen"
     },
     {
       "id": "kvt3-003",
-      "topic": "Grundlagen",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Eine Patientin begegnet dem angstauslösenden Reiz in der realen Umgebung. Welche Art?",
@@ -59,11 +60,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 3
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "grundlagen"
     },
     {
       "id": "kvt3-004",
-      "topic": "Grundlagen",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Was bedeutet graduiertes Vorgehen?",
@@ -78,11 +80,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 3
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "grundlagen"
     },
     {
       "id": "kvt3-005",
-      "topic": "Grundlagen",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was kennzeichnet massierte Reizkonfrontation?",
@@ -97,11 +100,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 3
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "grundlagen"
     },
     {
       "id": "kvt3-006",
-      "topic": "Methodenmatrix",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Welche Kombination bezeichnet Flooding in der Tabelle?",
@@ -116,11 +120,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 27
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "methodenmatrix"
     },
     {
       "id": "kvt3-007",
-      "topic": "Methodenmatrix",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Wo wird Implosion eingeordnet?",
@@ -135,11 +140,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 27
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "methodenmatrix"
     },
     {
       "id": "kvt3-008",
-      "topic": "Methodenmatrix",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Wo wird systematische Desensibilisierung in der Tabelle unter anderem aufgeführt?",
@@ -154,11 +160,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 27
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "methodenmatrix"
     },
     {
       "id": "kvt3-009",
-      "topic": "Leitlinien",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Welche Behandlung wird bei Zwangsstörungen im Skript besonders hervorgehoben?",
@@ -173,11 +180,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 5
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "leitlinien"
     },
     {
       "id": "kvt3-010",
-      "topic": "Leitlinien",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was ist bei generalisierter Angststörung (GAS) im Skript eine Besonderheit?",
@@ -192,11 +200,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 5
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "leitlinien"
     },
     {
       "id": "kvt3-011",
-      "topic": "Leitlinien",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Welche Besonderheit wird für Exposition bei sozialer Phobie genannt?",
@@ -211,11 +220,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 5
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "leitlinien"
     },
     {
       "id": "kvt3-012",
-      "topic": "Leitlinien",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Wie viele Expositionssitzungen werden bei PTBS im Skript als Beispiel empfohlen?",
@@ -230,11 +240,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 5
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "leitlinien"
     },
     {
       "id": "kvt3-013",
-      "topic": "Mowrer",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Nach Mowrers Zwei-Faktoren-Theorie wird Angst primär erworben durch …",
@@ -249,11 +260,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 9
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "mowrer"
     },
     {
       "id": "kvt3-014",
-      "topic": "Mowrer",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Nach Mowrer wird Vermeidungsverhalten vor allem aufrechterhalten durch …",
@@ -268,11 +280,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 9
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "mowrer"
     },
     {
       "id": "kvt3-015",
-      "topic": "Mowrer",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Ein früher neutraler Reiz löst nach Kopplung mit einem aversiven Ereignis Angst aus. Der Reiz ist jetzt …",
@@ -287,11 +300,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 9
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "mowrer"
     },
     {
       "id": "kvt3-016",
-      "topic": "Mowrer",
       "difficulty": 3,
       "type": "single-choice",
       "prompt": "Welche Abfolge beschreibt die Aufrechterhaltung einer Phobie am besten?",
@@ -306,11 +320,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 9
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "mowrer"
     },
     {
       "id": "kvt3-017",
-      "topic": "Mowrer",
       "difficulty": 3,
       "type": "single-choice",
       "prompt": "Eine Person meidet nach einer Panikattacke Busse. Warum kann das die Angst langfristig stabilisieren?",
@@ -325,11 +340,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 10
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "mowrer"
     },
     {
       "id": "kvt3-018",
-      "topic": "Zwang",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was bedeutet Reaktionsverhinderung bei einem Reinigungszwang?",
@@ -344,11 +360,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 15
-      }
+      },
+      "categoryId": "zwang",
+      "subcategoryId": "reaktionsverhinderung"
     },
     {
       "id": "kvt3-019",
-      "topic": "Zwang",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was wird bei Exposition mit Reaktionsverhinderung zusätzlich parallel bearbeitet?",
@@ -363,11 +380,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 15
-      }
+      },
+      "categoryId": "zwang",
+      "subcategoryId": "reaktionsverhinderung"
     },
     {
       "id": "kvt3-020",
-      "topic": "Zwang",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Eine Person verlässt bei Kontrollzwang das Haus. Welche Handlung wäre Reaktionsverhinderung?",
@@ -382,11 +400,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 15
-      }
+      },
+      "categoryId": "zwang",
+      "subcategoryId": "reaktionsverhinderung"
     },
     {
       "id": "kvt3-021",
-      "topic": "PTBS",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was geschieht bei imaginativer prolongierter Exposition?",
@@ -401,11 +420,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 17
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "ptbs"
     },
     {
       "id": "kvt3-022",
-      "topic": "PTBS",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Welche Bedingung gilt laut Skript für in-vivo-Exposition bei PTBS?",
@@ -420,11 +440,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 17
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "ptbs"
     },
     {
       "id": "kvt3-023",
-      "topic": "PTBS",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Wozu dient eine Triggeranalyse vor der Exposition?",
@@ -439,11 +460,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 17
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "ptbs"
     },
     {
       "id": "kvt3-024",
-      "topic": "PTBS",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was ist der Kern des Diskriminationstrainings?",
@@ -458,11 +480,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 18
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "ptbs"
     },
     {
       "id": "kvt3-025",
-      "topic": "PTBS",
       "difficulty": 3,
       "type": "single-choice",
       "prompt": "Ein Geräusch ähnelt einem früheren Trauma-Trigger. Welche Frage passt zur „Gleich-aber-anders“-Übung?",
@@ -477,11 +500,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 18
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "ptbs"
     },
     {
       "id": "kvt3-026",
-      "topic": "IRRT",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was geschieht in Phase I der IRRT laut Skript?",
@@ -496,11 +520,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 19
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "irrt"
     },
     {
       "id": "kvt3-027",
-      "topic": "IRRT",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Welche Handlung gehört zur zweiten IRRT-Phase?",
@@ -515,11 +540,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 19
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "irrt"
     },
     {
       "id": "kvt3-028",
-      "topic": "IRRT",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was ist Inhalt der dritten IRRT-Phase?",
@@ -534,11 +560,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 19
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "irrt"
     },
     {
       "id": "kvt3-029",
-      "topic": "Angstkreislauf",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Was ist die kurzfristige Folge von Vermeidung im dargestellten Teufelskreis?",
@@ -553,11 +580,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 24
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "angstkreislauf"
     },
     {
       "id": "kvt3-030",
-      "topic": "Angstkreislauf",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was ist eine langfristige Folge von Vermeidung laut Diagramm?",
@@ -572,11 +600,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 24
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "angstkreislauf"
     },
     {
       "id": "kvt3-031",
-      "topic": "Angstkreislauf",
       "difficulty": 1,
       "type": "single-choice",
       "prompt": "Welche drei Bestandteile der Angst werden in der kognitiven Vorbereitung dargestellt?",
@@ -591,11 +620,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 23
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "angstkreislauf"
     },
     {
       "id": "kvt3-032",
-      "topic": "Expositionsplanung",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Welche Reihenfolge entspricht dem dargestellten Vorgehen bei einer Angststörung?",
@@ -610,11 +640,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 21
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "expositionsplanung"
     },
     {
       "id": "kvt3-033",
-      "topic": "Expositionsplanung",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Welche Abfolge steigert im Spinnenbeispiel die Annäherung an den Reiz?",
@@ -629,11 +660,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 30
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "expositionsplanung"
     },
     {
       "id": "kvt3-034",
-      "topic": "Expositionsplanung",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was folgt in der aufgeführten Durchführung auf die Reizkonfrontationsphase?",
@@ -648,11 +680,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 28
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "expositionsplanung"
     },
     {
       "id": "kvt3-035",
-      "topic": "Expositionsplanung",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Welche beiden Lernprozesse nennt das Skript als Ziel der kognitiven Vorbereitung?",
@@ -667,11 +700,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 25
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "expositionsplanung"
     },
     {
       "id": "kvt3-036",
-      "topic": "Expositionsplanung",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Für welche Art von Ängsten soll die dargestellte Konfrontationslogik laut Folie gelten?",
@@ -686,11 +720,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 22
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "expositionsplanung"
     },
     {
       "id": "kvt3-037",
-      "topic": "Expositionsplanung",
       "difficulty": 2,
       "type": "single-choice",
       "prompt": "Was veranschaulicht die idealtypische Kurve über wiederholte Expositionsübungen?",
@@ -705,11 +740,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 26
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "expositionsplanung"
     },
     {
       "id": "kvt3-freitext-01",
-      "topic": "Mowrer",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Welche zwei Lernprinzipien erklären in Mowrers Zwei-Faktoren-Theorie Erwerb und Aufrechterhaltung von Angst?",
@@ -721,11 +757,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 7
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "mowrer"
     },
     {
       "id": "kvt3-freitext-02",
-      "topic": "Mowrer",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Welcher operante Mechanismus hält Vermeidung aufrecht, wenn durch Vermeidung die erwartete Angstreaktion ausbleibt?",
@@ -737,11 +774,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 8
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "mowrer"
     },
     {
       "id": "kvt3-freitext-03",
-      "topic": "Grundlagen",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Wie heißt Exposition in der realen Situation?",
@@ -753,11 +791,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 3
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "grundlagen"
     },
     {
       "id": "kvt3-freitext-04",
-      "topic": "Methodenmatrix",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Wie heißt die massierte Exposition in der Vorstellung?",
@@ -769,11 +808,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 27
-      }
+      },
+      "categoryId": "grundlagen",
+      "subcategoryId": "methodenmatrix"
     },
     {
       "id": "kvt3-freitext-05",
-      "topic": "Angstkreislauf",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Wie heißt das Verhalten, das kurzfristig Angst reduziert, aber den Angstkreislauf aufrechterhalten kann?",
@@ -785,11 +825,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 22
-      }
+      },
+      "categoryId": "lernen",
+      "subcategoryId": "angstkreislauf"
     },
     {
       "id": "kvt3-freitext-06",
-      "topic": "Expositionsplanung",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Welche individuelle Rangfolge angstauslösender Situationen wird vor der Konfrontation erstellt?",
@@ -801,11 +842,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 29
-      }
+      },
+      "categoryId": "anwendung",
+      "subcategoryId": "expositionsplanung"
     },
     {
       "id": "kvt3-freitext-07",
-      "topic": "Zwang",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Wie nennt man die Unterlassung gewohnter Zwangshandlungen während der Exposition?",
@@ -818,11 +860,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 15
-      }
+      },
+      "categoryId": "zwang",
+      "subcategoryId": "reaktionsverhinderung"
     },
     {
       "id": "kvt3-freitext-08",
-      "topic": "Zwang",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Nenne ein im Skript genanntes Beispiel für Exposition mit Reaktionsverhinderung bei Reinigungszwang.",
@@ -836,11 +879,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 15
-      }
+      },
+      "categoryId": "zwang",
+      "subcategoryId": "reaktionsverhinderung"
     },
     {
       "id": "kvt3-freitext-09",
-      "topic": "PTBS",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Welches Training hilft bei PTBS, zwischen objektiv bedrohlichen und vermeintlich bedrohlichen Triggern zu unterscheiden?",
@@ -852,11 +896,12 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 17
-      }
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "ptbs"
     },
     {
       "id": "kvt3-freitext-10",
-      "topic": "PTBS",
       "difficulty": 2,
       "type": "free-text",
       "prompt": "Welche zwei Expositionsformen werden bei prolongierter Exposition im Skript beschrieben?",
@@ -869,7 +914,293 @@
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 17
+      },
+      "categoryId": "trauma",
+      "subcategoryId": "ptbs"
+    },
+    {
+      "id": "kvt3-bild-grundlagen",
+      "categoryId": "grundlagen",
+      "subcategoryId": "grundlagen",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Jemand stellt sich die gefürchtete Szene vor und steigert anschließend schrittweise ihre Schwierigkeit. Wie lässt sich die Übung mit den beiden Achsen im Ausschnitt einordnen?",
+      "choices": [
+        "In sensu und graduiert",
+        "In vivo und massiert",
+        "In vivo und graduiert"
+      ],
+      "correctIndex": 0,
+      "explanation": "Das Ereignis wird vorgestellt (in sensu). Die Schwierigkeit steigt stufenweise (graduiert).",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 3
+      },
+      "image": {
+        "src": "questions/figures/kvt3-grundlagen.webp",
+        "alt": "Ausschnitt der Folie mit zwei Durchführungsformen und zwei Intensitätsverläufen.",
+        "caption": "KVT III · Folie 3 · Vorlesungsausschnitt"
       }
+    },
+    {
+      "id": "kvt3-bild-methodenmatrix",
+      "categoryId": "grundlagen",
+      "subcategoryId": "methodenmatrix",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Wo würdest du in der Matrix die Vorstellung eines maximal angstauslösenden Reizes einordnen?",
+      "choices": [
+        "Graduiert und in vivo",
+        "Massiert und in vivo",
+        "Massiert und in sensu"
+      ],
+      "correctIndex": 2,
+      "explanation": "Die Vorstellung entspricht in sensu. Die unmittelbare Konfrontation mit einem sehr starken Reiz entspricht der Zeile für massierte Exposition.",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 27
+      },
+      "image": {
+        "src": "questions/figures/kvt3-methodenmatrix.webp",
+        "alt": "Vorlesungstabelle mit Verfahrensformen in sensu und in vivo, jeweils graduiert oder massiert.",
+        "caption": "KVT III · Folie 27 · Vorlesungsausschnitt"
+      }
+    },
+    {
+      "id": "kvt3-bild-mowrer",
+      "categoryId": "lernen",
+      "subcategoryId": "mowrer",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Warum nimmt das Vermeidungsverhalten in der unteren Hälfte des Modells zu?",
+      "choices": [
+        "Der gefürchtete Reiz wird neutral.",
+        "Die erwartete aversive Reaktion bleibt aus.",
+        "Die Vermeidung erzeugt einen neuen unkonditionierten Reiz."
+      ],
+      "correctIndex": 1,
+      "explanation": "Der Wegfall der erwarteten Angstreaktion verstärkt das Vermeidungsverhalten negativ.",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 10
+      },
+      "image": {
+        "src": "questions/figures/kvt3-mowrer.webp",
+        "alt": "Schema des Angsterwerbs und der Aufrechterhaltung bei Agoraphobie.",
+        "caption": "KVT III · Folie 10 · Vorlesungsausschnitt"
+      }
+    },
+    {
+      "id": "kvt3-bild-angstkreislauf",
+      "categoryId": "lernen",
+      "subcategoryId": "angstkreislauf",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Jemand erlebt Herzrasen und deutet es als Zeichen einer ernsten Gefahr. Welche Rückkopplung zeigt das Modell für diesen Moment?",
+      "choices": [
+        "Die wahrgenommenen Körpersymptome können die Gefahrengedanken und die Angst weiter verstärken.",
+        "Sicherheitsverhalten löscht die Gefahrengedanken sofort.",
+        "Die körperliche Reaktion bleibt unabhängig von der Bewertung."
+      ],
+      "correctIndex": 0,
+      "explanation": "Körpersymptome werden als Gefahr wahrgenommen. Die Bewertung verstärkt die Angst, die ihrerseits körperliche Symptome verstärken kann.",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 24
+      },
+      "image": {
+        "src": "questions/figures/kvt3-angstkreislauf.webp",
+        "alt": "Flussdiagramm zum Angstkreislauf mit Wahrnehmung, Gefahrengedanken, Körperreaktionen und Vermeidung.",
+        "caption": "KVT III · Folie 24 · Vorlesungsausschnitt"
+      }
+    },
+    {
+      "id": "kvt3-bild-leitlinien",
+      "categoryId": "anwendung",
+      "subcategoryId": "leitlinien",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Für welche Störung hebt der Ausschnitt Sorgenkonfrontation und Konfrontation mit Unsicherheit besonders hervor?",
+      "choices": [
+        "Spezifische Phobie",
+        "Agoraphobie",
+        "Generalisierte Angststörung"
+      ],
+      "correctIndex": 2,
+      "explanation": "Bei der generalisierten Angststörung sind Sorgen und der Umgang mit Unsicherheit zentrale Ansatzpunkte.",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 5
+      },
+      "image": {
+        "src": "questions/figures/kvt3-leitlinien.webp",
+        "alt": "Vorlesungsauszug zu expositionsbasierten Empfehlungen bei verschiedenen Angststörungen.",
+        "caption": "KVT III · Folie 5 · Vorlesungsausschnitt"
+      }
+    },
+    {
+      "id": "kvt3-bild-expositionsplanung",
+      "categoryId": "anwendung",
+      "subcategoryId": "expositionsplanung",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Was soll die Abfolge der gezeichneten Kurven veranschaulichen?",
+      "choices": [
+        "Bei jeder folgenden Übung muss die Angst stärker werden.",
+        "Die Angst kann innerhalb einer Übung und über mehrere Übungen hinweg abnehmen.",
+        "Die Angst soll direkt zu Übungsbeginn verschwinden."
+      ],
+      "correctIndex": 1,
+      "explanation": "Die Kurven zeigen einen idealtypischen Verlauf mit einer Abnahme innerhalb und zwischen Übungen. Individuelle Verläufe können davon abweichen.",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 26
+      },
+      "image": {
+        "src": "questions/figures/kvt3-expositionsplanung.webp",
+        "alt": "Kurven des idealtypischen Angstverlaufs bei wiederholten Expositionen.",
+        "caption": "KVT III · Folie 26 · Vorlesungsausschnitt"
+      }
+    },
+    {
+      "id": "kvt3-bild-reaktionsverhinderung",
+      "categoryId": "zwang",
+      "subcategoryId": "reaktionsverhinderung",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Welche Verhaltensänderung ermöglicht beim Kontrollzwang die in der Grafik dargestellte Erfahrung?",
+      "choices": [
+        "Das Haus verlassen und auf die erneute Kontrolle verzichten.",
+        "Das Haus erst verlassen, sobald die Angst vollständig abgeklungen ist.",
+        "Die Tür kontrollieren, sobald die Angst ansteigt."
+      ],
+      "correctIndex": 0,
+      "explanation": "Die Person setzt sich der gefürchteten Situation aus und unterlässt das Ritual. So kann sie erleben, wie sich die Belastung ohne erneute Kontrolle verändert.",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 15
+      },
+      "image": {
+        "src": "questions/figures/kvt3-reaktionsverhinderung.webp",
+        "alt": "Kurvengrafik zum Belastungsverlauf bei Exposition und Reaktionsverhinderung.",
+        "caption": "KVT III · Folie 15 · Vorlesungsausschnitt"
+      }
+    },
+    {
+      "id": "kvt3-bild-ptbs",
+      "categoryId": "trauma",
+      "subcategoryId": "ptbs",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Welchen Unterschied würde man beim Diskriminationstraining nach einem ähnlichen Motorengeräusch gezielt herausarbeiten?",
+      "choices": [
+        "Ob das Geräusch grundsätzlich vermieden werden sollte.",
+        "Ob man jede Einzelheit des früheren Geräusches erinnern kann.",
+        "Was an der aktuellen Situation konkret anders und sicher ist."
+      ],
+      "correctIndex": 2,
+      "explanation": "Die Übung macht Unterschiede zwischen der früheren Gefahr und der heutigen Situation bewusst, etwa Ort, Beteiligte und Handlungsmöglichkeiten.",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 18
+      },
+      "image": {
+        "src": "questions/figures/kvt3-ptbs.webp",
+        "alt": "Vorlesungsausschnitt zu Unterschieden zwischen damals und heute im Diskriminationstraining.",
+        "caption": "KVT III · Folie 18 · Vorlesungsausschnitt"
+      }
+    },
+    {
+      "id": "kvt3-bild-irrt",
+      "categoryId": "trauma",
+      "subcategoryId": "irrt",
+      "type": "single-choice",
+      "difficulty": 2,
+      "prompt": "Wer greift laut dem gezeigten Ablauf in der zweiten Phase in die erinnerte Szene ein?",
+      "choices": [
+        "Das heutige erwachsene Ich",
+        "Nur die behandelnde Person",
+        "Das damalige Kind allein"
+      ],
+      "correctIndex": 0,
+      "explanation": "In Phase zwei greift das heutige erwachsene Ich ein. In Phase drei begegnet es dem damaligen Kind und kann es trösten und unterstützen.",
+      "source": {
+        "document": "KVT III – Konfrontationsverfahren · Prof. Dr. Dr. Ronny Redlich",
+        "page": 19
+      },
+      "image": {
+        "src": "questions/figures/kvt3-irrt.webp",
+        "alt": "Vorlesungsausschnitt zur zweiten und dritten Phase der Imagery Rescripting and Reprocessing Therapy.",
+        "caption": "KVT III · Folie 19 · Vorlesungsausschnitt"
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "grundlagen",
+      "title": "Formen der Konfrontation",
+      "subcategories": [
+        {
+          "id": "grundlagen",
+          "title": "Verfahrensgrundlagen"
+        },
+        {
+          "id": "methodenmatrix",
+          "title": "Methodenmatrix"
+        }
+      ]
+    },
+    {
+      "id": "lernen",
+      "title": "Lernmodelle der Angst",
+      "subcategories": [
+        {
+          "id": "mowrer",
+          "title": "Zwei-Faktoren-Theorie"
+        },
+        {
+          "id": "angstkreislauf",
+          "title": "Angstkreislauf"
+        }
+      ]
+    },
+    {
+      "id": "anwendung",
+      "title": "Indikation und Planung",
+      "subcategories": [
+        {
+          "id": "leitlinien",
+          "title": "Störungsspezifische Empfehlungen"
+        },
+        {
+          "id": "expositionsplanung",
+          "title": "Expositionsplanung"
+        }
+      ]
+    },
+    {
+      "id": "zwang",
+      "title": "Zwangsstörungen",
+      "subcategories": [
+        {
+          "id": "reaktionsverhinderung",
+          "title": "Exposition und Reaktionsverhinderung"
+        }
+      ]
+    },
+    {
+      "id": "trauma",
+      "title": "Traumafokussierte Verfahren",
+      "subcategories": [
+        {
+          "id": "ptbs",
+          "title": "Prolongierte Exposition"
+        },
+        {
+          "id": "irrt",
+          "title": "Imagery Rescripting"
+        }
+      ]
     }
   ]
 }

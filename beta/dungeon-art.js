@@ -126,10 +126,6 @@ window.DungeonArt = (() => {
       const x=rng(57),y=rng(61);
       r(x,y,5+rng(10),1,'#83a8a697');r(x+4,y+1,3,1,'#4a7a86');
      }
-    }else if(type==='partition'){
-     r(1,32,62,24,'#171c2299');r(1,17,62,31,'#292b2c');r(3,17,58,7,'#79756a');
-     for(const x of [3,25,45]){r(x,26,x===45?16:20,10,'#5f5b55');r(x+1,27,16,2,'#827d72');}
-     r(4,38,54,7,'#45464a');r(6,45,50,2,'#8a765e');
     }else{
      if(type==='bridge-y'){const ctx=c.getContext('2d');ctx.translate(64,0);ctx.rotate(Math.PI/2);}
      r(0,0,64,64,'#282324');
@@ -149,6 +145,7 @@ window.DungeonArt = (() => {
     for(let y=0;y<map.length;y++) for(let x=0;x<map[y].length;x++){
       const z=zoneAt(x,y),v=rnd(12);
       const surfaceType=terrain?.[y]?.[x];
+      if(surfaceType==='partition'){g.drawImage(floor(z,v),x*SIZE,y*SIZE);continue;}
       if(surfaceType){g.drawImage(terrainTile(surfaceType,v),x*SIZE,y*SIZE);continue;}
       if(map[y][x]===0){g.drawImage(floor(z,v),x*SIZE,y*SIZE);continue;}
       const mask=(map[y-1]?.[x]===0?1:0)|(map[y]?.[x+1]===0?2:0)|(map[y+1]?.[x]===0?4:0)|(map[y]?.[x-1]===0?8:0);
@@ -166,6 +163,26 @@ window.DungeonArt = (() => {
     }
     g.restore();
     return c;
+  }
+  function partition(zone=0,ends=3){
+    const key='partition-'+zone+'-'+ends;
+    if(spriteCache.has(key))return spriteCache.get(key);
+    const c=surface(),{r}=brush(c),p=stone[zone].wall;
+    const left=ends&1?3:0,right=ends&2?61:64,w=right-left;
+    r(left+1,45,w-1,9,'#100e12a0');
+    r(left,17,w,32,p[0]);r(left,21,w,25,p[1]);
+    r(left+1,17,w-2,7,p[3]);r(left,24,w,2,p[0]);
+    for(const [y,joints] of [[26,[0,19,41,64]],[38,[0,9,34,54,64]]]){
+      for(let i=0;i<joints.length-1;i++){
+        const a=Math.max(joints[i],left),b=Math.min(joints[i+1],right);
+        if(b-a<2)continue;
+        r(a,y,b-a-1,8,p[2]);r(a+1,y,b-a-2,1,p[3]);
+      }
+      r(left,y+8,w,2,p[0]);
+    }
+    if(ends&1)r(left,21,2,28,p[0]);
+    if(ends&2)r(right-2,21,2,28,p[0]);
+    spriteCache.set(key,c);return c;
   }
   function furniture(type,variant=0) {
     const key=type+'-'+variant;
@@ -281,13 +298,78 @@ window.DungeonArt = (() => {
       shadow(17,69,94,15);planks(18,37,92,34);r(25,64,8,15,shade);r(94,64,8,15,shade);
       for(const [i,id] of ['bread','banana','chicken'].entries())c.getContext('2d').drawImage(icon('food',id),24+i*24,32,25,25);
       r(77,56,10,6,'#b4a286');r(85,57,2,3,'#efe3b9');
+    }else if(type==='round-table'){
+      shadow(24,66,80,18);
+      for(const x of [34,58,86]){r(x,49,7,27,shade);r(x+1,52,2,23,edge);}
+      poly([[36,31],[91,31],[104,44],[104,55],[92,66],[37,66],[24,54],[24,43]],shade);
+      poly([[38,31],[89,31],[101,44],[92,57],[36,57],[27,45]],grain);
+      r(38,32,50,2,edge);for(const y of [40,46,52])r(35,y,57,1,wood);
+      r(53,42,21,9,'#6c724c');r(55,43,17,2,'#a5a471');r(61,38,6,9,'#c1a574');r(63,36,2,4,bright);
+    }else if(type==='banquet-long'){
+      shadow(6,64,116,18);
+      for(const x of [10,47,73,112]){r(x,52,6,24,shade);r(x+1,54,2,21,edge);}
+      planks(5,37,58,30);planks(64,37,59,30);
+      r(8,48,112,8,'#673c46');r(8,48,112,1,'#b48b65');
+      for(const [i,id] of ['bread','chicken','banana','bread'].entries())c.getContext('2d').drawImage(icon('food',id),12+i*27,35,23,23);
+    }else if(type==='bench'||type==='fence'){
+      const fence=type==='fence',start=fence?10:24,end=128-start;
+      shadow(start,68,end-start,12);
+      for(const x of [start+2,end-8]){
+        r(x,fence?34:39,7,fence?44:38,shade);r(x+1,fence?35:40,2,fence?42:36,edge);
+        r(x-1,fence?33:38,9,4,wood);r(x,fence?33:38,6,1,gold);
+      }
+      planks(start,44,end-start,13);planks(start,fence?60:54,end-start,fence?9:14);
+    }else if(type==='weapon-rack'||type==='armor-rack'){
+      const weapon=type==='weapon-rack';
+      shadow(29,68,69,13);
+      for(const x of [29,92]){r(x,24,7,49,shade);r(x+1,25,2,45,edge);}
+      planks(30,25,68,10);planks(26,64,77,11);
+      const ctx=c.getContext('2d');
+      if(weapon)for(const [i,id] of ['rust','rapier','hammer'].entries())ctx.drawImage(icon('weapon',id),27+i*19,31+i%2*2,36,37);
+      else {
+        ctx.drawImage(icon('armor','helmet','#a9afbe'),47,19,32,28);
+        ctx.drawImage(icon('armor','chest','#96a0a0'),34,34,57,34);
+      }
+    }else if(type==='display'||type==='dresser'){
+      const glass=type==='display';
+      shadow(24,68,81,13);planks(24,glass?52:31,81,23+(glass?0:18));
+      for(const x of [28,94])r(x,69,6,8,shade);
+      if(glass){
+        poly([[31,27],[96,27],[104,35],[105,57],[24,57],[24,36]],'#352830');
+        r(28,35,73,19,'#456468');r(29,33,69,2,'#90adaa');r(30,36,2,16,'#b2c6af');
+        for(const [i,col] of ['#be8d68','#94c8cd','#b4a3d9'].entries()){
+          const x=43+i*16;r(x+2,42,4,2,col);r(x,44,8,7,col);r(x+2,45,2,3,'#f2d6a3');
+        }
+      }else for(const y of [36,48,60]){r(30,y,69,9,shade);r(32,y+1,65,5,grain);r(60,y+3,9,2,gold);}
+    }else if(type==='statue'){
+      const p=stone[variant].wall;
+      shadow(25,65,76,19);
+      r(31,63,66,13,p[0]);r(34,59,60,11,p[2]);r(36,60,56,2,p[3]);
+      poly([[54,18],[72,18],[77,27],[77,34],[84,43],[81,60],[46,60],[43,44],[49,35],[49,26]],p[0]);
+      poly([[55,23],[69,23],[73,31],[70,37],[79,44],[75,59],[51,59],[49,45],[55,35]],p[2]);
+      r(57,27,12,2,p[3]);r(57,30,4,2,p[0]);r(65,30,4,2,p[0]);r(59,39,8,10,p[3]);
+      r(62,46,3,15,p[0]);r(63,44,2,17,p[3]);r(58,47,12,2,p[3]);
+      for(const x of [38,82])r(x,64,6,2,'#947e57');
+    }else if(type==='campfire'){
+      shadow(23,58,82,23);
+      for(const [x,y,w] of [[25,56,15],[36,66,15],[53,69,15],[71,65,15],[86,57,15],[78,50,14],[34,51,15]]){
+        r(x,y,w,8,'#392f2b');r(x+2,y,w-4,5,'#867564');r(x+3,y,w-6,2,'#a99378');
+      }
+      poly([[42,63],[46,55],[83,62],[79,68]],'#94543a');
+      poly([[46,62],[77,53],[85,57],[52,68]],'#6d3f2e');
+      poly([[47,62],[43,50],[51,41],[56,23],[61,36],[68,31],[72,13],[76,33],[83,48],[87,55],[80,65]],'#b24a32');
+      poly([[51,60],[48,52],[57,45],[62,34],[65,45],[73,34],[79,50],[81,60],[75,65]],'#ff9b48');
+      poly([[57,62],[55,54],[64,50],[69,40],[73,55],[76,62],[69,66]],'#ffd584');
+      r(65,55,6,9,'#fff1b4');r(51,32,3,4,'#e7a15a');r(80,27,2,4,'#f7bd68');
     }else if(type==='market'){
-      shadow(4,67,120,22);
-      for(const x of [12,109]){r(x,20,7,57,shade);r(x+1,21,2,55,edge);}
-      poly([[18,12],[108,12],[122,33],[7,33]],'#723e46');
-      for(const x of [20,39,58,77,96])poly([[x,13],[x+9,13],[x+13,33],[x-3,33]],'#cb9663');
-      r(8,33,112,4,shade);planks(12,51,105,19);r(13,68,103,8,wood);
-      for(const [x,y] of [[21,44],[42,48],[83,46],[101,47]]){r(x,y,10,9,'#8d754b');r(x+2,y,7,2,'#d8b57b');}
+      shadow(4,68,120,21);
+      for(const x of [8,113]){r(x,17,7,62,shade);r(x+1,18,2,59,edge);}
+      poly([[14,4],[110,4],[127,19],[1,19]],'#723e46');
+      for(const x of [16,37,58,79,100])poly([[x,5],[x+9,5],[x+15,19],[x-5,19]],'#ca9a6a');
+      r(2,19,124,5,'#372329');r(2,19,124,1,gold);
+      for(const x of [14,103]){r(x,30,9,28,wood);r(x+1,31,6,8,'#ae7f4e');r(x+1,43,6,9,'#96755a');}
+      planks(9,56,110,22);r(9,56,110,2,'#d1a270');r(11,73,106,4,shade);
+      for(const [x,y] of [[19,50],[34,53],[88,51],[104,50]]){r(x,y,10,8,'#8d754b');r(x+2,y,7,2,'#d8b57b');}
     }else if(type==='lectern'){
       shadow(37,69,53,11);
       r(59,48,11,23,wood);r(49,68,30,6,edge);
@@ -421,22 +503,38 @@ window.DungeonArt = (() => {
   }
   function actor(type,options={}) {
     if(type==='foe')return enemyPose(options.zone||0,options.frame||0);
-    const {frame=0,skin='#d4a785',hair='#392b4e',color='#755666',armor={}}=options;
+    const {frame=0,skin='#d4a785',hair='#392b4e',color='#755666',gender='male',armor={}}=options;
     const c=surface(),{r,poly}=brush(c);
     const shape=(p,col)=>poly(p,col);
     shape([[13,47],[49,47],[55,52],[51,56],[13,56],[8,53]],'#100d13a8');
     if(type==='hero'){
       const step=frame===1?2:frame===2?-2:0;
-      shape([[21,25],[43,25],[51,50],[44,54],[19,54],[12,49]],ink);
-      shape([[22,27],[42,27],[47,49],[36,52],[17,48]],color);
-      r(23,41,8,12+step,armor.legs||'#3d343e');r(34,41,8,12-step,armor.legs||'#3d343e');
-      r(20,50+step,11,4,armor.boots||ink);r(34,50-step,12,4,armor.boots||ink);
-      r(20,29,24,11,ink);r(23,27,18,14,armor.chest||'#999890');
-      r(24,29,15,2,'#d6c9a8');r(26,33,12,2,'#5f5d56');r(24,38,17,3,'#51362d');r(31,38,4,4,gold);
-      r(16,28,9,8,'#514846');r(17,28,7,2,'#bcb39c');r(40,28,9,8,'#514846');r(41,28,6,2,'#bcb39c');
+      if(armor.chest){
+        shape([[21,25],[43,25],[51,50],[44,54],[19,54],[12,49]],ink);
+        shape([[22,27],[42,27],[47,49],[36,52],[17,48]],color);
+      }
+      for(const [x,y] of [[23,step],[34,-step]]){
+        r(x,41,8,12+y,ink);r(x+1,42,6,10+y,armor.legs||skin);
+        r(x-2,50+y,11,4,armor.boots||skin);
+      }
+      r(20,29,24,12,ink);r(23,27,18,14,armor.chest||skin);
+      if(armor.chest){
+        r(24,29,15,2,'#d6c9a8');r(26,33,12,2,'#5f5d56');
+        r(16,28,9,8,'#514846');r(17,28,7,2,'#bcb39c');r(40,28,9,8,'#514846');r(41,28,6,2,'#bcb39c');
+      }else{
+        r(18,29,7,10,skin);r(40,29,6,9,skin);
+        if(gender==='female'){r(22,28,20,8,'#5f3d30');r(24,29,16,2,'#ac7856');r(24,34,16,2,'#3a2623');}
+        else {r(24,30,6,1,'#8b5d5290');r(34,30,5,1,'#8b5d5290');r(31,36,2,2,'#8b5d52a0');}
+      }
+      if(!armor.legs){
+        shape([[23,39],[41,39],[39,49],[32,52],[25,48]],'#4d3228');
+        shape([[26,40],[39,40],[36,49],[29,50]],'#9b7452');r(29,42,2,6,'#c79b63');
+      }
+      r(23,38,18,3,'#51362d');r(31,38,4,4,gold);
       r(17,38,6,6,skin);r(42,37,6,6,skin);
       r(22,11,20,16,ink);r(24,13,16,13,skin);r(23,10,18,6,hair);r(22,15,4,7,hair);r(39,15,4,6,hair);
       r(27,18,3,2,ink);r(35,18,3,2,ink);r(30,23,5,1,'#905d51');
+      if(gender==='female'&&!armor.helmet){r(21,18,4,10,hair);r(39,18,5,9,hair);}
       if(armor.helmet){r(22,10,21,7,armor.helmet);r(24,9,16,2,'#ddd5b4');r(22,15,5,9,armor.helmet);r(39,15,4,9,armor.helmet);}
     }
     return c;
@@ -446,7 +544,17 @@ window.DungeonArt = (() => {
     if(iconCache.has(key))return iconCache.get(key);
     const c=surface(),{r,poly}=brush(c);
     const iron=color||'#9aabad', pale='#d6dcd0';
-    if(type==='soul'){
+    if(type==='rest-cat'){
+      poly([[12,43],[49,43],[54,48],[43,52],[13,51],[8,47]],'#171214a0');
+      poly([[21,30],[33,29],[41,36],[44,44],[39,49],[17,49],[15,41]],'#211d25');
+      poly([[18,23],[22,18],[28,24],[33,24],[39,18],[42,24],[42,36],[36,42],[24,42],[18,36]],'#27232b');
+      r(22,24,3,3,'#ba8c8a');r(36,24,3,3,'#ba8c8a');
+      poly([[26,33],[35,33],[39,37],[35,44],[31,46],[24,44],[24,37]],'#ede2cb');
+      r(23,31,4,2,'#cdd78d');r(34,31,4,2,'#cdd78d');r(30,36,3,2,'#a87676');
+      r(20,45,7,4,'#d8cbb7');r(33,45,6,4,'#e9ddc2');
+      poly([[39,43],[48,43],[52,39],[53,34],[57,34],[57,41],[52,47],[43,49]],'#27232b');
+      r(53,33,4,4,'#e5dcc7');
+    }else if(type==='soul'){
       const f=Number(id)||0,tone=color||'#f3e6cb';
       const blend=(target,alpha)=>{
        const rgb=[1,3,5].map((i,j)=>Math.round(parseInt(tone.slice(i,i+2),16)*(1-alpha)+target[j]*alpha));
@@ -599,5 +707,5 @@ window.DungeonArt = (() => {
     if(!urls.has(key))urls.set(key,icon(type,id,color).toDataURL());
     return urls.get(key);
   }
-  return {world,furniture,actor,icon,gate,url};
+  return {world,furniture,partition,actor,icon,gate,url};
 })();

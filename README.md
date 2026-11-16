@@ -29,17 +29,31 @@ Neun an Dark Souls III angelehnte Attribute: Vigor, Attunement, Endurance, Vital
 
 ## Fragenpakete
 
-Das offizielle Fragenpaket liegt **außerhalb des Spielcodes** in `questions/kvt3.json`. Es enthält **47 Aufgaben**: 37 Multiple-Choice-Aufgaben und 10 Freitextfragen (je 2 pro Themenbereich). Neue Pakete können über das Lernjournal importiert werden.
+Das KVT-III-Paket der [Beta](https://topsoliino.github.io/mind-dungeon/beta/) liegt in `questions/kvt3.json`. Es enthält 47 Textfragen und neun Bildkarten. Bildkarten öffnen sich auch direkt über **Q → Bildkarten**.
 
-JSON-Schema für Freitext:
+### Ein neues Skript als Dungeon vorbereiten
+
+1. Die prüfungsrelevanten Hauptthemen des Skripts bestimmen und in Unterkategorien gliedern, die sich jeweils mit eigenen Fragen prüfen lassen.
+2. Hauptthemen und Unterkategorien mit festen IDs in `categories` erfassen. Jede Frage verweist über `categoryId` und `subcategoryId` darauf. Bestehende IDs bei Überarbeitungen beibehalten, damit Spiel- und Lernfortschritt zugeordnet bleiben.
+3. Je Unterkategorie eine Frage zu einer Abbildung erstellen. Wenn die Folie keine Abbildung enthält, lässt sich der passende Vorlesungsausschnitt verwenden. Folie, Dokument und Alternativtext angeben. Externe Pakete können PNG, JPEG oder WebP als Base64-Daten direkt in `image.src` mitliefern. Hauseigene Bilddateien können unter `questions/figures/` liegen.
+4. Die JSON-Datei über **P → Fragenpakete → JSON importieren** laden. Das Spiel verteilt die Hauptthemen auf die fünf Wissensräume und wechselt die aktive Unterkategorie mit der Tiefe. Deren Titel erscheint am Raum, und ihr Fragenpool wird am Altar verwendet. Bei mehr als fünf Hauptthemen verteilt das Spiel sie über die Tiefen. Sehr große Pakete können mehrere Themen in einem Raum bündeln. Jede Unterkategorie stellt außerdem eine Brauzutat bereit. Grundriss, Einrichtung und Kampfstil werden unabhängig davon generiert.
+
+Beispiel für Schema 2:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "packId": "beispiel",
+  "title": "Mein Vorlesungsskript",
+  "categories": [{
+    "id": "trauma",
+    "title": "Traumafokussierte Verfahren",
+    "subcategories": [{"id": "diskrimination", "title": "Diskriminationstraining"}]
+  }],
   "questions": [{
     "id": "beispiel-01",
-    "topic": "PTBS",
+    "categoryId": "trauma",
+    "subcategoryId": "diskrimination",
     "difficulty": 2,
     "type": "free-text",
     "prompt": "Wie heißt die Unterscheidung zwischen damals und heute?",
@@ -50,7 +64,7 @@ JSON-Schema für Freitext:
 }
 ```
 
-Antwortvergleich ignoriert Groß-/Kleinschreibung, Leerzeichen, Satzzeichen und toleriert je nach Antwortlänge kleine Tippfehler. Bei offenen Antworten ist dies eine **regelbasierte** Prüfung gegen hinterlegte Varianten, keine semantische KI-Bewertung.
+Für Auswahlfragen `type: "single-choice"`, `choices` und den bei null beginnenden `correctIndex` verwenden. Ein optionales Bild ist ein Objekt mit `src`, `alt` und optional `caption`. Ältere Pakete mit `topic` pro Frage können weiterhin importiert werden. Der Antwortvergleich für Freitext ignoriert Groß-/Kleinschreibung, Leerzeichen und Satzzeichen und toleriert je nach Antwortlänge kleine Tippfehler.
 
 ## Hosting
 
