@@ -35,6 +35,23 @@ window.DungeonItems = (() => {
   blade:{split:{physical:.65,fire:.35}},dagger:{split:{physical:.5,dark:.5},status:'poison'},
   greatsword:{split:{physical:.7,frost:.3}}
  };
+ const weaponWeights={rust:8,rapier:5,hammer:20,staff:7,blade:11,dagger:3,greatsword:26};
+ const armorWeights={wanderer:20,scholar:12,hunter:31,knight:51,shadow:62};
+ const weaponWeight=weapon=>Number.isFinite(weapon.kg)&&weapon.kg>0?weapon.kg:weaponWeights[weapon.id]??8;
+ const armorWeight=(set,part)=>Math.round(armorWeights[set]*part/7*2)/2;
+ const loads=[
+  {name:'Leicht',move:1,dashSpeed:3.1,dashTime:.22,stamina:1},
+  {name:'Mittel',move:.91,dashSpeed:2.55,dashTime:.22,stamina:.88},
+  {name:'Schwer',move:.79,dashSpeed:2.45,dashTime:.145,stamina:.72}
+ ];
+ function loadout(kg){
+  return {...loads[kg>=70?2:kg>=50?1:0],kg,resist:Math.floor(kg/2)*.005};
+ }
+ const defenseBonus=(level,load)=>Math.max(0,level-1)*.005+load.resist;
+ function upgradeRank(item){
+  const ranks=Object.keys(rarity);
+  return ranks[ranks.indexOf(rank(item))+1]||null;
+ }
  const scaling={
   rust:{strength:'E',dexterity:'E'},rapier:{dexterity:'C',luck:'E'},
   hammer:{strength:'B',vitality:'D'},staff:{intelligence:'A',attunement:'D'},
@@ -118,5 +135,5 @@ window.DungeonItems = (() => {
   }
   return [...picks.map(row=>row[0]),...picks.map(row=>row[1])];
  }
- return {damage,rarity,weaponScaling,food,requirements,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,weaponScaling,food,requirements,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

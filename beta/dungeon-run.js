@@ -2,6 +2,13 @@ window.DungeonRun = (() => {
  'use strict';
  const LAST_DEPTH=5, DEFAULT_PACK='kvt3-konfrontationsverfahren';
  const W=56,H=64,REST_ID=15;
+ // Shape offsets from a room corner, reflected independently on each axis.
+ const partitionPlans=[
+  [[0,0],[1,0],[2,0]],
+  [[0,0],[1,0],[2,0],[2,1]],
+  [[0,0],[1,0],[2,0],[3,0]],
+  [[0,0],[1,0],[1,1],[1,2]]
+ ];
  const sizes=[[11,9],[12,9],[14,10],[12,11],[14,11]];
  const gateStyles=[
   ['conditioning','Konditionierung','#8ce6c9'],['exposure','Exposition','#edb3ff'],
@@ -18,7 +25,7 @@ window.DungeonRun = (() => {
  }
  function nextSeed(seed){return (Math.imul(seed,1664525)+1013904223)>>>0;}
  function freshSeed(){return crypto.getRandomValues(new Uint32Array(1))[0];}
- function generate(seed,varied=true,revision=3){
+ function generate(seed,varied=true,revision=4){
   const rng=random(seed);
   const cells=Array.from({length:6},(_,i)=>({col:i%3,row:i/3|0}));
   const adjacent=(a,b)=>Math.abs(a.col-b.col)+Math.abs(a.row-b.row)===1;
@@ -63,7 +70,15 @@ window.DungeonRun = (() => {
    if(room.i>0){
     const right=style()<.5,x=right?room.x+room.w-3:room.x+2;
     const top=style()<.5,y=top?room.y+2:room.y+room.h-3;
-    for(let i=0;i<2;i++){map[y][x+(right?-i:i)]=1;terrain[y][x+(right?-i:i)]='partition';}
+    if(revision<4){
+     for(let i=0;i<2;i++){map[y][x+(right?-i:i)]=1;terrain[y][x+(right?-i:i)]='partition';}
+    }else{
+     const plan=partitionPlans[Math.floor(style()*partitionPlans.length)];
+     for(const [dx,dy] of plan){
+      const px=x+(right?-dx:dx),py=y+(top?dy:-dy);
+      map[py][px]=1;terrain[py][px]='partition';
+     }
+    }
    }
   }
   const visited=new Set([0]),corridors=[],gates=[];
@@ -228,7 +243,7 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:3,brewIngredients:[],activeBrew:null,brewEffects:[]};
+   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:4,wellOffer:null,brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
   return {...floorState(seed,1),solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};

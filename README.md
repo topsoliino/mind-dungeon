@@ -18,7 +18,8 @@ Browserbasiertes Top-down-Lern-RPG mit KVT-III-Fragen zu Konfrontationsverfahren
 | I | Inventar (Gegenstände ausrüsten) |
 | C | Ausrüstung und Waffendetails |
 | L | Attribute / offene Levelpunkte |
-| Q | Lernjournal / JSON-Import |
+| J | Lernjournal / JSON-Import |
+| Q / Shift + Q | Schnellplatz verwenden / nächsten Schnellplatz wählen (Beta) |
 | P | Pause |
 
 Sobald Maus oder Touchpad bewegt werden, bleibt die Waffenrichtung bei WASD-Bewegung erhalten. Mit **F** wechselt man zurück zur Laufrichtungs-Zielsteuerung.
@@ -29,7 +30,7 @@ Neun an Dark Souls III angelehnte Attribute: Vigor, Attunement, Endurance, Vital
 
 ## Fragenpakete
 
-Das KVT-III-Paket der [Beta](https://topsoliino.github.io/mind-dungeon/beta/) liegt in `questions/kvt3.json`. Es enthält 47 Textfragen und neun Bildkarten. Bildkarten öffnen sich auch direkt über **Q → Bildkarten**.
+Das KVT-III-Paket der [Beta](https://topsoliino.github.io/mind-dungeon/beta/) liegt in `questions/kvt3.json`. Es enthält 47 Textfragen und neun Bildkarten. Bildkarten öffnen sich auch direkt über **J → Bildkarten**.
 
 ### Ein neues Skript als Dungeon vorbereiten
 

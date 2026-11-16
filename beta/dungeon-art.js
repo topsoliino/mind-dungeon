@@ -168,7 +168,11 @@ window.DungeonArt = (() => {
     const key='partition-'+zone+'-'+ends;
     if(spriteCache.has(key))return spriteCache.get(key);
     const c=surface(),{r}=brush(c),p=stone[zone].wall;
-    const left=ends&1?3:0,right=ends&2?61:64,w=right-left;
+    const vertical=(ends&3)===3&&(ends&12);
+    const left=vertical?23:ends&1?3:0,right=vertical?41:ends&2?61:64,w=right-left;
+    if(ends&4)r(23,0,18,20,p[1]);
+    if(ends&4)r(26,0,4,20,p[3]);
+    if(ends&8){r(23,44,18,20,p[0]);r(26,47,12,17,p[2]);r(26,47,3,17,p[3]);}
     r(left+1,45,w-1,9,'#100e12a0');
     r(left,17,w,32,p[0]);r(left,21,w,25,p[1]);
     r(left+1,17,w-2,7,p[3]);r(left,24,w,2,p[0]);
@@ -184,8 +188,8 @@ window.DungeonArt = (() => {
     if(ends&2)r(right-2,21,2,28,p[0]);
     spriteCache.set(key,c);return c;
   }
-  function furniture(type,variant=0) {
-    const key=type+'-'+variant;
+  function furniture(type,variant=0,pose=0) {
+    const key=type+'-'+variant+'-'+pose;
     if(spriteCache.has(key))return spriteCache.get(key);
     const c=surface(128,112),{r,poly}=brush(c);
     const shadow=(x,y,w,h)=>poly([[x+5,y],[x+w-4,y],[x+w,y+h-4],[x+w-5,y+h],[x,y+h],[x,y+5]],'#100e12aa');
@@ -311,10 +315,10 @@ window.DungeonArt = (() => {
       planks(5,37,58,30);planks(64,37,59,30);
       r(8,48,112,8,'#673c46');r(8,48,112,1,'#b48b65');
       for(const [i,id] of ['bread','chicken','banana','bread'].entries())c.getContext('2d').drawImage(icon('food',id),12+i*27,35,23,23);
-    }else if(type==='bench'||type==='fence'){
-      const fence=type==='fence',start=fence?10:24,end=128-start;
+    }else if(type==='bench'||type.startsWith('fence')){
+      const fence=type.startsWith('fence'),start=fence?10:24,end=128-start;
       shadow(start,68,end-start,12);
-      for(const x of [start+2,end-8]){
+      for(const x of type==='fence'?[start+2]:[start+2,end-8]){
         r(x,fence?34:39,7,fence?44:38,shade);r(x+1,fence?35:40,2,fence?42:36,edge);
         r(x-1,fence?33:38,9,4,wood);r(x,fence?33:38,6,1,gold);
       }
@@ -342,14 +346,31 @@ window.DungeonArt = (() => {
         }
       }else for(const y of [36,48,60]){r(30,y,69,9,shade);r(32,y+1,65,5,grain);r(60,y+3,9,2,gold);}
     }else if(type==='statue'){
-      const p=stone[variant].wall;
-      shadow(25,65,76,19);
-      r(31,63,66,13,p[0]);r(34,59,60,11,p[2]);r(36,60,56,2,p[3]);
-      poly([[54,18],[72,18],[77,27],[77,34],[84,43],[81,60],[46,60],[43,44],[49,35],[49,26]],p[0]);
-      poly([[55,23],[69,23],[73,31],[70,37],[79,44],[75,59],[51,59],[49,45],[55,35]],p[2]);
-      r(57,27,12,2,p[3]);r(57,30,4,2,p[0]);r(65,30,4,2,p[0]);r(59,39,8,10,p[3]);
-      r(62,46,3,15,p[0]);r(63,44,2,17,p[3]);r(58,47,12,2,p[3]);
-      for(const x of [38,82])r(x,64,6,2,'#947e57');
+      const [dark,shadowStone,mid,light]=stone[variant].wall;
+      shadow(24,67,82,14);
+      poly([[46,15],[53,10],[65,16],[77,10],[87,19],[90,40],[83,55],[87,66],[76,73],[49,73],[40,66],[45,57],[34,44],[36,26]],dark);
+      poly([[45,20],[50,15],[56,33],[53,43],[43,47],[38,39]],shadowStone);
+      poly([[83,18],[85,39],[80,47],[75,42],[72,31],[79,16]],mid);
+      poly([[55,21],[63,17],[71,21],[74,30],[70,36],[78,42],[82,58],[75,67],[51,67],[45,59],[50,42],[57,36],[53,29]],mid);
+      poly([[57,22],[63,20],[68,23],[65,30],[59,31],[55,28]],light);
+      r(56,26,4,1,dark);r(65,26,3,1,dark);
+      poly([[53,41],[58,38],[61,51],[55,61],[50,55]],shadowStone);
+      poly([[70,39],[76,44],[78,54],[72,60],[68,53]],light);
+      r(61,37,3,31,dark);r(64,38,3,27,light);r(56,43,16,3,shadowStone);
+      poly([[47,68],[77,68],[85,72],[79,76],[49,76],[42,73]],shadowStone);
+      r(73,62,5,2,'#65754b');r(50,73,7,2,'#74744a');r(52,70,2,2,'#87915a');
+    }else if(type==='well'){
+      shadow(12,70,104,20);
+      poly([[15,45],[28,35],[98,35],[113,45],[114,67],[100,81],[27,81],[14,69]],'#20262f');
+      poly([[19,46],[30,37],[97,37],[109,46],[98,59],[30,59]],'#70818b');
+      poly([[25,47],[35,41],[93,41],[103,47],[95,54],[35,54]],'#263d4f');
+      r(36,47,54,5,'#4f93ab');r(49,46,26,2,'#91d9d0');r(61,46,6,2,'#dcfce5');
+      for(const [x,y,w] of [[20,61,21],[44,60,18],[65,60,20],[88,61,21],[30,71,26],[59,70,17],[79,71,20]]){
+        r(x,y,w,8,'#465462');r(x+1,y,w-2,2,'#687a88');
+      }
+      poly([[28,33],[37,19],[88,19],[99,31],[95,35],[87,26],[39,26],[32,37]],'#455264');
+      r(62,25,3,19,'#99977d');
+      poly([[63,26],[68,33],[63,40],[58,33]],'#6ad3be');r(62,29,2,6,'#c6ffe5');
     }else if(type==='campfire'){
       shadow(23,58,82,23);
       for(const [x,y,w] of [[25,56,15],[36,66,15],[53,69,15],[71,65,15],[86,57,15],[78,50,14],[34,51,15]]){
@@ -357,10 +378,11 @@ window.DungeonArt = (() => {
       }
       poly([[42,63],[46,55],[83,62],[79,68]],'#94543a');
       poly([[46,62],[77,53],[85,57],[52,68]],'#6d3f2e');
-      poly([[47,62],[43,50],[51,41],[56,23],[61,36],[68,31],[72,13],[76,33],[83,48],[87,55],[80,65]],'#b24a32');
-      poly([[51,60],[48,52],[57,45],[62,34],[65,45],[73,34],[79,50],[81,60],[75,65]],'#ff9b48');
-      poly([[57,62],[55,54],[64,50],[69,40],[73,55],[76,62],[69,66]],'#ffd584');
-      r(65,55,6,9,'#fff1b4');r(51,32,3,4,'#e7a15a');r(80,27,2,4,'#f7bd68');
+      const sway=[0,3,5,2,-2,-4,-2,1][pose],tip=[0,-4,1,-5,-2,3,-4,1][pose];
+      poly([[47,62],[43-sway,50],[50,41],[56-sway,26-tip],[61,37],[68+sway,31],[72+sway,17+tip],[77+sway,35],[83,48],[87,55],[80,65]],'#ba4b32');
+      poly([[51,60],[48,52],[57,45],[61-sway,35+tip],[65,45],[73+sway,33+tip],[79,50],[81,60],[75,65]],'#ff9b48');
+      poly([[57,62],[55,54],[64,50],[69+sway,41+tip],[73,55],[76,62],[69,66]],'#ffd584');
+      r(65,55,6,9,'#fff1b4');r(47+sway,32+tip,3,4,'#e7a15a');
     }else if(type==='market'){
       shadow(4,68,120,21);
       for(const x of [8,113]){r(x,17,7,62,shade);r(x+1,18,2,59,edge);}
@@ -379,9 +401,9 @@ window.DungeonArt = (() => {
     }
     function flame(x,y,tall){
       r(x-4,y-2,8,5,shade);r(x-2,y-(tall?19:9),4,tall?19:9,tall?grain:'#d9c195');
-      const yy=y-(tall?21:10);
-      poly([[x-6,yy],[x-6,yy-7],[x-2,yy-20],[x+1,yy-16],[x+5,yy-11],[x+7,yy-3],[x+4,yy+2],[x-3,yy+2]],'#ae4b32');
-      r(x-4,yy-9,8,10,'#f49648');r(x-1,yy-13,3,12,'#ffcd6d');r(x-2,yy-5,4,5,'#fff2aa');
+      const yy=y-(tall?21:10),drift=tall?[0,1,3,2,-1,-2,-3,-1][pose]:0;
+      poly([[x-6,yy],[x-6,yy-7],[x-2+drift,yy-20+Math.abs(drift)],[x+1+drift,yy-16],[x+5+drift,yy-11],[x+7,yy-3],[x+4,yy+2],[x-3,yy+2]],'#ae4b32');
+      r(x-4,yy-9,8,10,'#f49648');r(x-1+Math.sign(drift),yy-13,3,12,'#ffcd6d');r(x-2,yy-5,4,5,'#fff2aa');
     }
     spriteCache.set(key,c);return c;
   }
@@ -545,15 +567,40 @@ window.DungeonArt = (() => {
     const c=surface(),{r,poly}=brush(c);
     const iron=color||'#9aabad', pale='#d6dcd0';
     if(type==='rest-cat'){
-      poly([[12,43],[49,43],[54,48],[43,52],[13,51],[8,47]],'#171214a0');
-      poly([[21,30],[33,29],[41,36],[44,44],[39,49],[17,49],[15,41]],'#211d25');
-      poly([[18,23],[22,18],[28,24],[33,24],[39,18],[42,24],[42,36],[36,42],[24,42],[18,36]],'#27232b');
-      r(22,24,3,3,'#ba8c8a');r(36,24,3,3,'#ba8c8a');
-      poly([[26,33],[35,33],[39,37],[35,44],[31,46],[24,44],[24,37]],'#ede2cb');
-      r(23,31,4,2,'#cdd78d');r(34,31,4,2,'#cdd78d');r(30,36,3,2,'#a87676');
-      r(20,45,7,4,'#d8cbb7');r(33,45,6,4,'#e9ddc2');
-      poly([[39,43],[48,43],[52,39],[53,34],[57,34],[57,41],[52,47],[43,49]],'#27232b');
-      r(53,33,4,4,'#e5dcc7');
+      const [mode,pose='0']=id.split('-'),n=Number(pose),dark='#24212a',white='#ede2cb',shadeWhite='#c6bda9';
+      poly([[14,48],[49,48],[55,52],[42,55],[13,54],[9,51]],'#17121488');
+      const face=(x,y,closed)=>{
+        poly([[x-10,y-4],[x-11,y-13],[x-6,y-10],[x+4,y-10],[x+10,y-14],[x+11,y-6],[x+10,y+4],[x+6,y+7],[x-6,y+7],[x-10,y+4]],dark);
+        r(x-9,y-10,2,3,'#ab7b7d');r(x+6,y-10,2,3,'#ab7b7d');
+        poly([[x-5,y],[x+4,y],[x+7,y+3],[x+4,y+7],[x-5,y+7],[x-8,y+3]],white);
+        r(x-6,y-3,3,closed?1:2,closed?'#8d8075':'#d0da94');r(x+4,y-3,3,closed?1:2,closed?'#8d8075':'#d0da94');
+        r(x-1,y+2,3,2,'#a9767b');
+      };
+      if(mode==='sleep'){
+        const breath=n%4===1||n%4===2?1:0;
+        poly([[16,40],[26,35-breath],[39,35-breath],[46,41],[47,48],[44,51],[17,51],[12,46]],dark);
+        r(18,43,11,6,shadeWhite);face(38,42,true);
+        r(13,44,5,6,dark);r(14,48,12,3,dark);r(20,49,4,2,white);
+      }else if(mode==='walk'||mode==='jump'){
+        const jump=mode==='jump',lift=jump?[0,4,9,11,9,5,1,0][n]:0;
+        const y=37-lift,bob=jump?0:n%2;
+        poly([[15,y],[25,y-6],[38,y-6],[47,y-1],[44,y+7],[18,y+7],[13,y+3]],dark);
+        r(27,y+3,12,4,white);
+        poly([[16,y+1],[10,y-4],[8,y-12],[11,y-14],[13,y-7],[19,y-3]],dark);
+        r(9,y-14,4,3,white);face(47,y-3-bob,false);
+        for(const [i,x] of [18,26,39,46].entries()){
+          const dx=jump?(i<2?-3:4):[[-3,2],[0,0],[3,-2],[0,0]][n%4][i%2];
+          const foot=y+(jump?8+i%2*2:11+(i+n)%2*2);
+          r(x+dx,y+6,4,foot-y-4,dark);r(x+dx,foot,5,2,white);
+        }
+      }else{
+        const y=mode==='sit'?29:34,tail=[0,1,3,1][n%4];
+        poly([[21,y+1],[33,y],[42,y+5],[46,46],[40,50],[20,50],[15,45]],dark);
+        poly([[29,y+4],[36,y+4],[38,42],[34,49],[26,49]],white);
+        for(const x of [24,34])r(x,47,6,4,white);
+        poly([[40,44],[49,44],[54,41-tail],[57,37-tail],[60,38-tail],[57,47],[49,51],[42,51]],dark);
+        r(57,37-tail,3,3,shadeWhite);face(31,y-1,n===3);
+      }
     }else if(type==='soul'){
       const f=Number(id)||0,tone=color||'#f3e6cb';
       const blend=(target,alpha)=>{

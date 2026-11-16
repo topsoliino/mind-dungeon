@@ -221,3 +221,19 @@ button.bad { background:#643730!important; }
 .lecture-figure figcaption,.image-card-list small { display:block;margin-top:5px;color:var(--dim); }
 .image-card-list { display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:7px; }
 @media(max-width:800px){#right{top:52px;max-width:min(47vw,330px);}}
+
+#stamina[hidden],#quickBar[hidden],#catSleep[hidden] { display:none; }
+#quickBar { position:fixed;z-index:5;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:5px;pointer-events:none; }
+.quick-slot { position:relative;width:42px;height:42px;display:grid;place-items:center;border:1px solid #685338;background:#231d1ee8;box-shadow:inset 0 0 0 2px #171215; }
+.quick-slot.active { border-color:#e6bc73;box-shadow:0 0 9px #dfaa5a66,inset 0 0 0 2px #6c4b34; }
+.quick-slot .item-glyph { width:37px;height:37px;border:0;background:none; }
+.quick-slot b,.quick-slot small { position:absolute;bottom:1px;color:#e8c68e;text-shadow:1px 1px #161011;font-size:10px; }
+.quick-slot b { left:3px; }
+.quick-slot small { right:3px; }
+.quick-empty { color:#7e6a53; }
+.quick-choose,.well-list { display:grid;gap:6px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); }
+.well-list button { display:flex;align-items:center;gap:7px;padding:6px; }
+.well-list small { display:block;color:#c4ad87; }
+#md-quick-selected { margin-top:5px; }
+#catSleep { position:fixed;z-index:7;pointer-events:none;transform:translate(-50%,-50%);color:#d4dbea;font:bold italic 19px Georgia,serif;text-shadow:2px 2px #282537; }
+@media(pointer:coarse){#quickBar{bottom:55px}}
