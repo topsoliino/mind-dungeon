@@ -227,8 +227,26 @@ function mdCreator(){
 const classes=mdClasses.length?mdClasses:MD_FALLBACK_CLASSES;
 show('<div class="md-kicker">Ein neues Vermächtnis</div><h2 class="md-title">Charakter erschaffen</h2><label class="md-field">Name<input id="md-name" maxlength="24" placeholder="Name deines Helden" value="Wanderer"></label><div class="md-layout"><div><label class="md-field">Gewandfarbe<input type="color" id="md-color" value="#7652a9"></label><label class="md-field">Hautfarbe<input type="color" id="md-skin" value="#d4a785"></label><label class="md-field">Haarfarbe<input type="color" id="md-hair" value="#392b4e"></label></div><div class="md-card"><div class="md-kicker">Vorschau</div><div id="md-preview" class="md-portrait" style="margin:10px auto">♟</div><p class="md-status">Farben werden am Charaktermodell verwendet, sofern der Renderer sie unterstützt.</p></div></div><h3>Startklasse</h3><div class="md-layout">'+classes.map((c,i)=>'<button class="md-card md-class '+(!i?'active':'')+'" data-md-class="'+i+'"><h3>'+mdEscape(c.icon)+' '+mdEscape(c.name_de)+'</h3><p>'+mdEscape(c.description_de)+'</p><small>'+mdEscape(weaponById(c.weapon_id).name)+' · '+mdEscape(ringById(c.starting_item_id)?.name||'Startgegenstand')+'</small></button>').join('')+'</div><div id="md-class-stats" class="md-card"></div><p class="md-warning">Ein neuer Charakter ersetzt den aktuellen lokalen Spielstand. Bestehende Cloud-Spielstände bleiben erhalten, bis du einen Slot überschreibst.</p><div class="md-actions"><button class="primary" id="md-begin">Charakter erstellen</button><button id="md-back">Zurück</button></div>','creator');
 let selected=0;function drawClass(){const c=classes[selected];document.querySelectorAll('[data-md-class]').forEach((b,i)=>b.classList.toggle('active',i===selected));document.getElementById('md-class-stats').innerHTML='<b>'+mdEscape(c.name_de)+'</b><p class="md-status">'+Object.entries(c.attributes||{}).map(([k,v])=>mdEscape(ATTRS[k]?.[0]||k)+': '+v).join(' · ')+'</p>'}
-document.querySelectorAll('[data-md-class]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.mdClass);drawClass()});drawClass();
-for(const id of ['md-color','md-skin','md-hair'])document.getElementById(id).oninput=()=>{document.getElementById('md-preview').style.borderColor=document.getElementById('md-color').value};
+document.querySelectorAll('[data-md-class]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.mdClass);drawClass();updatePreview()});drawClass();
+function updatePreview(){
+ const outfit=document.getElementById('md-color').value,skin=document.getElementById('md-skin').value,hair=document.getElementById('md-hair').value,c=classes[selected];
+ const canvas=document.querySelector('#md-preview canvas');if(!canvas)return;
+ const g=canvas.getContext('2d');g.clearRect(0,0,64,64);
+ const rect=(x,y,w,h,color)=>{g.fillStyle=color;g.fillRect(x,y,w,h)};
+ rect(17,56,32,3,'#242032');rect(25,47,7,10,'#292336');rect(35,47,7,10,'#292336');
+ rect(22,23,24,27,outfit);rect(18,26,5,20,outfit);rect(45,26,5,20,outfit);
+ rect(28,27,12,19,'#e4c68f');rect(24,9,20,16,skin);rect(23,8,22,7,hair);
+ rect(23,13,4,8,hair);rect(41,12,4,8,hair);rect(28,18,3,2,'#302a36');rect(37,18,3,2,'#302a36');
+ rect(18,45,5,6,skin);rect(45,45,5,6,skin);rect(27,37,3,9,'#3a2c52');rect(39,37,3,9,'#3a2c52');
+ const weapon=c.weapon_id;
+ if(weapon==='staff'){rect(53,13,3,42,'#9a653f');rect(50,7,9,11,'#85d3e8');rect(52,8,5,6,'#e6f8ff')}
+ else if(weapon==='hammer'){rect(53,18,3,37,'#91603b');rect(47,13,15,12,'#aab6cb');rect(48,14,13,3,'#f0f4ff')}
+ else if(weapon==='dagger'){rect(53,32,3,20,'#896341');rect(49,30,11,4,'#d8b768');rect(53,17,3,13,'#dbe4ee')}
+ else{rect(53,25,3,30,'#896341');rect(49,25,11,4,'#d8b768');rect(53,weapon==='greatsword'?2:8,3,17,'#dbe4ee');rect(53,weapon==='greatsword'?2:8,1,16,'#ffffff')}
+}
+const portrait=document.getElementById('md-preview');portrait.innerHTML='<canvas width="64" height="64" style="width:128px;height:128px;image-rendering:pixelated;display:block"></canvas>';portrait.style.width='154px';portrait.style.height='154px';
+for(const id of ['md-color','md-skin','md-hair'])document.getElementById(id).oninput=updatePreview;
+updatePreview();
 mdButton('md-back',mdTitle);mdButton('md-begin',()=>{const name=document.getElementById('md-name').value.trim();if(!name){alert('Bitte gib einen Namen ein.');return}if(!confirm('Neuen Charakter beginnen? Der aktuelle lokale Spielstand wird ersetzt.'))return;
 const c=classes[selected],attrs=Object.fromEntries(Object.keys(ATTRS).map(k=>[k,10]));Object.assign(attrs,c.attributes||{});
 const newSave={hp:70+(attrs.vigor||10)*3,x:4.5*TILE,y:5.5*TILE,xp:0,gold:0,kills:0,solved:{},packs:save.packs||[],opened:[],floor:1,gates:{},gateProgress:{},gateQuestions:{},level:1,attributes:attrs,inventory:[{kind:'weapon',id:c.weapon_id},...(c.starting_item_id?[{kind:'ring',id:c.starting_item_id}]:[])],equipment:{weapon:c.weapon_id,rings:[c.starting_item_id||null,null]},pendingLevels:0,enemyTier:1,playtime:0,character:{name,classId:c.id,className:c.name_de,color:document.getElementById('md-color').value,skin:document.getElementById('md-skin').value,hair:document.getElementById('md-hair').value}};
