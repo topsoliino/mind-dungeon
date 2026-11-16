@@ -35,7 +35,12 @@ function addPack(p){let added=0;for(const q of p.questions||[]){if(!q.id||!q.pro
 for(const p of save.packs||[])addPack(p);
 async function loadQuestions(){try{const response=await fetch('./questions/kvt3.json',{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);addPack(await response.json());tell(questions.length+' Lernfragen geladen')}catch(e){console.error('Fragenpaket konnte nicht geladen werden',e);tell('Fragenpaket fehlt – prüfe questions/kvt3.json')}};
 const zones=[{name:'Konditionierungskammer',topic:'Konditionierung',x:4,y:5},{name:'Expositionslabyrinth',topic:'Grundlagen',x:15,y:5},{name:'Spinnenkrypta',topic:'Angststörungen',x:30,y:5},{name:'Kammer der Zwangsrituale',topic:'Zwang',x:15,y:23},{name:'Echo der Vergangenheit',topic:'PTBS',x:31,y:23}];
-const map=Array.from({length:H},()=>Array(W).fill(1));function carve(x,y,w,h){for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)if(i>0&&j>0&&i<W-1&&j<H-1)map[j][i]=0}carve(2,2,11,9);carve(14,2,12,9);carve(28,2,14,10);carve(14,17,12,11);carve(28,17,14,11);carve(12,5,3,3);carve(25,6,4,3);carve(19,10,4,8);carve(19,21,10,3);carve(34,11,3,7);carve(25,20,4,3);
+const rooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
+const corridors=[[12,5,3,3],[25,6,4,3],[19,10,4,8],[19,21,10,3],[34,11,3,7],[25,20,4,3]];
+const map=Array.from({length:H},()=>Array(W).fill(1));
+for(const [x,y,w,h] of [...rooms,...corridors]){
+ for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)map[j][i]=0;
+}
 const gates=[{id:'conditioning',x:13,y:6,vertical:true,from:0,name:'Konditionierung',color:'#8ce6c9'},{id:'exposure',x:26,y:7,vertical:true,from:1,name:'Exposition',color:'#edb3ff'},{id:'ritual',x:20,y:14,vertical:false,from:1,name:'Reaktionsverhinderung',color:'#f4b66d'},{id:'memory',x:26,y:21,vertical:true,from:3,name:'Erinnerung',color:'#80b7ff'},{id:'echo',x:35,y:14,vertical:false,from:2,name:'Integration',color:'#ff8fa9'}];
 function gateLineBlocked(x1,y1,x2,y2){const n=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/12));for(let i=0;i<=n;i++){const t=i/n,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(gateBlocked(x,y)||wall(x,y))return true}return false}
 function gateBlocked(x,y){return gates.some(g=>!save.gates[g.id]&&(g.vertical?Math.abs(x/TILE-(g.x+.5))<.52&&Math.abs(y/TILE-(g.y+.5))<2.1:Math.abs(y/TILE-(g.y+.5))<.52&&Math.abs(x/TILE-(g.x+.5))<2.1))}
@@ -194,7 +199,7 @@ for(const [zone,plan] of roomPlans.entries()){
   if(!placeRoomSet(pieces,...at[first],zone))placeRoomSet(pieces,...at[1-first],zone);
  }
 }
-if(!valid(player.x,player.y)){player.x=shrines[0].x;player.y=shrines[0].y;}
+if(!valid(player.x,player.y)){player.x=5.5*TILE;player.y=6.5*TILE;}
 for(const [i,z] of zones.entries())for(let k=0;k<4+i;k++){let x=(z.x+2+rand(0,4))*TILE,y=(z.y+rand(0,3))*TILE;if(valid(x,y,17)&&Math.hypot(x-player.x,y-player.y)>120)enemies.push({x,y,hp:i===4?65:42,max:i===4?65:42,zone:i,phase:rand(0,7),vx:0,vy:0,hit:0,attack:rand(0,2),boss:k===0&&i>0,size:(k===0&&i>0?1.5:(k%3===0?.8:1.05)),special:0,windup:0,move:0,angle:0,telegraph:0,tier:1+i})}
 const keys={};let mouse={x:0,y:0},aimMode='keyboard';let near=null;const $=q=>document.querySelector(q);
 function resize(){dpr=Math.min(devicePixelRatio||1,1.25);cw=innerWidth;ch=innerHeight;canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);scene.width=canvas.width;scene.height=canvas.height;displayContext.imageSmoothingEnabled=false}window.addEventListener('resize',resize);resize();
@@ -213,8 +218,15 @@ function tell(t){$('#notice').textContent=t;$('#notice').style.opacity=1;noticeU
 function show(content,type='menu'){paused=true;modalType=type;$('#dungeonPrompt').hidden=true;$('#modal').innerHTML=content;$('#modalWrap').style.display='flex'}function close(){paused=false;modalType='';$('#modalWrap').style.display='none';for(const k in keys)keys[k]=false}
 function qEsc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const themes=[{floor:'#183a36',edge:'#3c8375',glow:'#83edc5',detail:'#67bdac'},{floor:'#303048',edge:'#9e78ce',glow:'#e3b6ff',detail:'#7561b5'},{floor:'#382c38',edge:'#a65d82',glow:'#ff8fb8',detail:'#a96583'},{floor:'#443528',edge:'#ba8b4f',glow:'#ffc57b',detail:'#c99d63'},{floor:'#22374a',edge:'#6098c3',glow:'#8bd7ff',detail:'#7aa9c7'}];
-function tileZone(i,j){let best=0,dist=Infinity;zones.forEach((z,k)=>{let d=Math.hypot(i-z.x,j-z.y);if(d<dist){dist=d;best=k}});return best}
-function area(){let best=0,dist=Infinity;zones.forEach((z,i)=>{let d=Math.hypot(player.x-(z.x+.5)*TILE,player.y-(z.y+.5)*TILE);if(d<dist){dist=d;best=i}});return best}
+function tileZone(x,y){
+ let zone=0,best=Infinity;
+ for(const [i,[left,top,w,h]] of rooms.entries()){
+  const dx=Math.max(left-x,x-(left+w-1),0),dy=Math.max(top-y,y-(top+h-1),0),d=dx*dx+dy*dy;
+  if(d<best){zone=i;best=d;}
+ }
+ return zone;
+}
+function area(){return tileZone(Math.floor(player.x/TILE),Math.floor(player.y/TILE));}
 function selectQuestion(topic,excluded=[]){
  const thematic={Konditionierung:['Mowrer','Angstkreislauf'],Grundlagen:['Grundlagen','Methodenmatrix','Leitlinien'],Angststörungen:['Expositionsplanung','Angstkreislauf'],Zwang:['Zwang'],PTBS:['PTBS','IRRT']};
  save.questionReview=save.questionReview||{};save.questionCount=save.questionCount||0;
@@ -395,7 +407,11 @@ class DungeonScene extends Phaser.Scene{
    cam.x=this.cameras.main.scrollX;cam.y=this.cameras.main.scrollY;renderStats.fps=Math.round(this.game.loop.actualFps);renderStats.draws=this.game.renderer.drawCount||0;
   }
  }
- phaserGame=new Phaser.Game({type:Phaser.AUTO,parent:'phaser-host',width:innerWidth,height:innerHeight,backgroundColor:'#080c18',render:{antialias:false,pixelArt:true,roundPixels:true},fps:{target:60,forceSetTimeOut:false},scene:[DungeonScene],scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});return true;
+ const probe=document.createElement('canvas');
+ const webgl=probe.getContext('webgl');
+ const renderer=webgl?Phaser.WEBGL:Phaser.CANVAS;
+ webgl?.getExtension('WEBGL_lose_context')?.loseContext();
+ phaserGame=new Phaser.Game({type:renderer,parent:'phaser-host',width:innerWidth,height:innerHeight,backgroundColor:'#080c18',render:{antialias:false,pixelArt:true,roundPixels:true},fps:{target:60,forceSetTimeOut:false},scene:[DungeonScene],scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});return true;
  }catch(e){console.warn('Phaser konnte nicht gestartet werden; Canvas-Ersatzrenderer wird verwendet.',e);return false}}
 
 function loop(t){let dt=Math.min(.035,(t-last)/1000||.016);last=t;if(!phaserActive){if(!paused)update(dt);draw()}requestAnimationFrame(loop)}requestAnimationFrame(loop);startPhaser();

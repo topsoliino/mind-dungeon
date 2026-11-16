@@ -96,3 +96,9 @@ button.bad { background:#643730!important; }
 @media(pointer:coarse) {
   #dungeonPrompt { bottom:178px; }
 }
+#md-preview { width:138px;height:138px; }
+#md-preview canvas { width:128px;height:128px; }
+#modal input[type="color"] { height:31px;padding:4px;cursor:pointer; }
+#modal input[type="color"]::-webkit-color-swatch-wrapper { padding:0; }
+#modal input[type="color"]::-webkit-color-swatch { border:1px solid #8b6b4b; }
+#modal input[type="color"]::-moz-color-swatch { border:1px solid #8b6b4b; }
