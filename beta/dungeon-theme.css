@@ -237,3 +237,24 @@ button.bad { background:#643730!important; }
 #md-quick-selected { margin-top:5px; }
 #catSleep { position:fixed;z-index:7;pointer-events:none;transform:translate(-50%,-50%);color:#d4dbea;font:bold italic 19px Georgia,serif;text-shadow:2px 2px #282537; }
 @media(pointer:coarse){#quickBar{bottom:55px}}
+
+#modal:has(.inventory-ledger) { width:min(1120px,96vw); }
+.inventory-ledger { grid-template-columns:minmax(230px,1fr) minmax(0,1.58fr); }
+.item-comparison { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:8px;align-items:start; }
+.item-comparison section { min-width:0;padding:8px;background:#211916;border:1px solid #67513a; }
+.item-comparison section+section { border-color:#9d8354;background:#2b2219; }
+.comparison-title { margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #79614080;color:#e6c691;font:11px var(--paper);letter-spacing:.075em;text-transform:uppercase; }
+.item-comparison .item-detail-title { gap:6px; }
+.item-comparison .item-detail-title>.item-glyph { width:34px;height:34px; }
+.item-comparison .item-detail-title h3 { font-size:15px; }
+.item-comparison .item-stats { margin:6px 0; }
+@media(max-width:790px) {
+ .inventory-ledger { grid-template-columns:1fr; }
+ .inventory-ledger .rpg-cell,.inventory-ledger .rpg-cell .item-glyph { max-height:43px; }
+}
+@media(max-width:460px) {
+ .item-comparison section { padding:5px; }
+ .item-comparison .item-detail-title { display:block; }
+ .item-comparison .item-detail-title h3 { font-size:13px; }
+ .item-comparison .stat-token,.item-comparison .scale-grade { font-size:10px;padding:2px 3px; }
+}

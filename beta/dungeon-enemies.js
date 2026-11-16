@@ -12,11 +12,31 @@ window.DungeonEnemies = (() => {
   {id:'crossbow',range:315,windup:.86,recovery:.73,color:'#beac7d',speed:40}
  ];
  const depthFactor=depth=>1.5**Math.max(0,depth-1);
- function health(type,boss,depth,variant){
-  const heavy=type===0||type===5||type===8;
-  const original=variant==='ambush'?85:type===6?29:type===2?87:heavy?132:108;
-  const base=boss?Math.round(original*1.4)+(heavy?400:320):original+(heavy?240:200);
-  return Math.round(base*depthFactor(depth));
+ const profiles=[
+  {hp:140,balance:67,sight:.47}, // Anstürmer
+  {hp:110,balance:44,sight:.59}, // Priester
+  {hp:72,balance:36,sight:.38}, // Spinne
+  {hp:100,balance:49,sight:.51}, // Skelett
+  {hp:125,balance:58,sight:.65}, // Frostgeist
+  {hp:135,balance:54,sight:.25}, // Zombie
+  {hp:60,balance:24,sight:.34}, // Schlange
+  {hp:90,balance:39,sight:.75}, // Bogen
+  {hp:120,balance:46,sight:.68} // Armbrust
+ ];
+ function health(type,boss,depth){
+  return Math.round((profiles[type].hp+50*Math.max(0,depth-1))*(boss?1.5:1));
+ }
+ function eyeRange(type,boss,width,height,angle){
+  const dx=Math.cos(angle)/Math.max(width,1),dy=Math.sin(angle)/Math.max(height,1);
+  return Math.min(.75,profiles[type].sight+(boss?.07:0))/Math.hypot(dx,dy);
+ }
+ const balance=(type,boss)=>profiles[type].balance+(boss?14:0);
+ function knockbackDistance(impact,stability){
+  const difference=impact-stability;
+  if(difference>=30)return 22;
+  if(difference>0)return 9;
+  if(difference>=-20)return 4;
+  return 0;
  }
  function resistances(profile,depth){
   return Object.fromEntries(Object.entries(profile).map(([type,base])=>[
@@ -36,5 +56,5 @@ window.DungeonEnemies = (() => {
   return Math.floor(e.phase*(e.moving?11:3))%4;
  }
  const PRIEST=1,ZOMBIE=5,SNAKE=6,ARCHER=7,CROSSBOW=8;
- return {attacks,depthFactor,health,resistances,turn,spriteFrame,PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW};
+ return {attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW};
 })();

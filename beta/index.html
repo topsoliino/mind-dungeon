@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=11"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="notice"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=11"></script><script src="beta/dungeon-items.js?v=11"></script><script src="beta/dungeon-brewing.js?v=11"></script><script src="beta/dungeon-enemies.js?v=11"></script><script src="beta/dungeon-effects-art.js?v=11"></script><script src="beta/dungeon-art.js?v=11"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=12"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="notice"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=12"></script><script src="beta/dungeon-items.js?v=12"></script><script src="beta/dungeon-brewing.js?v=12"></script><script src="beta/dungeon-enemies.js?v=12"></script><script src="beta/dungeon-effects-art.js?v=12"></script><script src="beta/dungeon-art.js?v=12"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const {PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW}=enemyRules;
@@ -159,6 +159,7 @@ const FURNITURE={
 const furniture=[];
 function furnitureBlocked(x,y,r=12){return furniture.some(p=>p.solid&&Math.abs(x-p.x)<p.w/2+r&&Math.abs(y-p.y)<p.h/2+r)}
 function valid(x,y,r=12,ignoreSeals=false){return !wall(x-r,y-r)&&!wall(x+r,y-r)&&!wall(x-r,y+r)&&!wall(x+r,y+r)&&(ignoreSeals||!gateBlocked(x-r,y-r)&&!gateBlocked(x+r,y-r)&&!gateBlocked(x-r,y+r)&&!gateBlocked(x+r,y+r))&&!furnitureBlocked(x,y,r)}
+const HERO_RADIUS=14;
 const player={dash:0,dashCooldown:0,dashX:0,dashY:0,x:save.x??spawn.x,y:save.y??spawn.y,hp:Math.max(1,save.hp),max:100,speed:178,dir:0,attack:0,inv:0,walk:0};
 const ATTRS={vigor:['Vitalität (Vigor)','Maximale Lebenspunkte'],attunement:['Zauberei (Attunement)','Fokusenergie für besondere Angriffe'],endurance:['Kondition (Endurance)','Ausdauer für Angriffe und Ausweichen'],vitality:['Belastung (Vitality)','Rüstung und Schadensreduktion'],strength:['Stärke (Strength)','Schwere Waffen'],dexterity:['Geschicklichkeit (Dexterity)','Schnelle Waffen'],intelligence:['Intelligenz (Intelligence)','Arkane Waffen'],faith:['Glaube (Faith)','Geweihte Waffen'],luck:['Glück (Luck)','Beute und kritische Treffer']};
 let WEAPONS=[{id:'rust',name:'Rostige Klinge',base:17,reach:88,speed:.34,stamina:18,scale:{strength:.35,dexterity:.2},desc:'Ein zuverlässiges altes Schwert.'},{id:'rapier',name:'Präzisionsrapier',base:14,reach:105,speed:.21,stamina:12,scale:{dexterity:.95,luck:.12},desc:'Schnelle Stiche und präzise Konter.'},{id:'hammer',name:'Gedankenhammer',base:27,reach:78,speed:.55,stamina:29,scale:{strength:1.1,vitality:.12},desc:'Langsam, aber wuchtig.'},{id:'staff',name:'Neuronenstab',base:18,reach:118,speed:.39,stamina:21,scale:{intelligence:1.05,attunement:.3},desc:'Arkane Energie in einem Stab gebündelt.'},{id:'blade',name:'Klinge des Mitgefühls',base:19,reach:100,speed:.31,stamina:18,scale:{faith:.9,dexterity:.2},desc:'Geweihte Klinge für achtsame Krieger.'},{id:'dagger',name:'Schattenmesser',base:11,reach:67,speed:.16,stamina:9,scale:{dexterity:.75,luck:.75},desc:'Rasante Treffer mit hohem Krit-Potenzial.'},{id:'greatsword',name:'Expositionsgroßschwert',base:35,reach:113,speed:.66,stamina:36,scale:{strength:1.25,endurance:.18},desc:'Hoher Schaden und großer Schwungradius.'}];
@@ -202,13 +203,17 @@ function xpRequired(){return 60+save.level*38+save.level*save.level*5}
 function grantXP(n){save.xp+=n;while(save.xp>=xpRequired()){save.xp-=xpRequired();save.level++;save.pendingLevels++;player.hp=Math.min(maxHP(),player.hp+22);tell('LEVEL '+save.level+' – Attribut wählen!')}persist()}
 const attributeIcons={vigor:'♥',attunement:'✧',endurance:'ϟ',vitality:'⬡',strength:'⚒',dexterity:'➶',intelligence:'✦',faith:'☀',luck:'◇'};
 function attributeName(key){return ATTRS[key][0].split(' (')[0];}
+function scalingRule({points,step}){
+ return '+'+points+' Schaden je '+(step===1?'Attributpunkt':step+' Attributpunkte');
+}
 function attributeCards(attributes,weapon,editable=false){
  const scaling=new Map(items.weaponScaling(weapon,attributes).map(entry=>[entry.attribute,entry]));
  return '<div class="ritual-grid">'+Object.entries(ATTRS).map(([key,[,desc]])=>{
   const current=attributes[key],gain=scaling.get(key);
   const start=editable?'<button data-stat="'+key+'">':'<div class="ritual-attribute">';
   return start+'<span class="ritual-icon" aria-hidden="true">'+attributeIcons[key]+'</span><span><b>'+qEsc(attributeName(key))+'</b><small>'+qEsc(desc)+'</small>'+
-   (gain?'<small class="ritual-gain">'+gain.grade+' · +'+gain.bonus+' Schaden'+(editable?' (+'+gain.points+' je Punkt)':'')+'</small>':'')+
+   (gain?'<small class="ritual-gain" title="'+scalingRule(gain)+'">'+gain.grade+' · +'+gain.bonus+' Schaden'+
+    (editable?(gain.nextGain?' (+'+gain.nextGain+' beim nächsten Punkt)':' (nächster Punkt: +0)'):'')+'</small>':'')+
    '</span><span class="ritual-value">'+current+(editable?' <span>→</span> '+(current+1):'')+'</span>'+(editable?'</button>':'</div>');
  }).join('')+'</div>';
 }
@@ -294,10 +299,11 @@ function itemDetails(it){
  if(it.kind==='weapon'){
   const w=weaponById(it.id),profile=items.weapon(it.id),total=weaponDamage(w,rank);
   const {base,bonus,scaling}=damageBreakdown(w,rank);
-  const grades=scaling.map(({attribute,grade,points,bonus})=>'<span class="scale-grade" title="'+points+' Schaden pro Punkt · +'+bonus+' aktuell">'+attributeIcons[attribute]+' '+qEsc(attributeName(attribute))+' <b>'+grade+'</b></span>').join('');
+  const grades=scaling.map(entry=>'<span class="scale-grade" title="'+scalingRule(entry)+' · +'+entry.bonus+' aktuell">'+
+   attributeIcons[entry.attribute]+' '+qEsc(attributeName(entry.attribute))+' <b>'+entry.grade+'</b></span>').join('');
   const types=Object.entries(profile.split).map(([type,share])=>statToken(type,Math.round(total*share))).join('');
   const status=profile.status?statToken(profile.status,profile.status==='poison'?'3 Ticks':'8 % LP'):'';
-  return header+'<p class="weapon-totals"><b>'+base+' <span>+'+bonus+'</span></b> Grundschaden + Skalierung</p><div class="scaling-list">'+grades+'</div><div class="item-stats">'+types+status+'</div><p>Reichweite '+w.reach+' · '+w.speed+' s · '+Math.round(w.stamina*(mythic?1.25:1))+' Ausdauer · '+kgText(items.weaponWeight(w))+'</p>'+
+  return header+'<p class="weapon-totals"><b>'+base+' <span>+'+bonus+'</span></b> Grundschaden + Skalierung</p><div class="scaling-list">'+grades+'</div><div class="item-stats">'+types+status+'</div><p>Reichweite '+w.reach+' · '+w.speed+' s · '+Math.round(w.stamina*(mythic?1.25:1))+' Ausdauer · '+kgText(items.weaponWeight(w))+'</p><p>Rückstoßkraft '+items.knockbackPower(w,save.attributes)+'</p>'+
    (mythic?'<p class="item-malus">Mythisch · +25 % Ausdauerkosten</p>':'')+weaponRequirements(it.id);
  }
  if(it.kind==='armor'){
@@ -383,6 +389,14 @@ function equipInventoryItem(it){
  player.stamina=Math.min(player.stamina,maxStamina());persist();tell('Ausgerüstet · '+itemTitle(it));
 }
 const bagFilters={all:'Alle',...items.kinds,food:'Nahrung'};
+function inventoryInspection(it){
+ if(!it||it.kind!=='weapon'&&it.kind!=='armor')return itemDetails(it);
+ const equipped=it.kind==='weapon'?equippedWeapon():equippedArmor(armorById(it.id)?.slot);
+ return '<div class="item-comparison">'+
+  '<section aria-label="Ausgewählt"><div class="comparison-title">Ausgewählt</div>'+itemDetails(it)+'</section>'+
+  '<section aria-label="Ausgerüstet"><div class="comparison-title">Ausgerüstet</div>'+
+  (equipped.id?itemDetails(equipped):'<p class="muted">Dieser Platz ist frei.</p>')+'</section></div>';
+}
 function inventoryMenu(filter='all',page=0,selected){
  const list=save.inventory.map((it,index)=>({it,index})).filter(({it})=>filter==='all'||filter===it.kind);
  const size=innerHeight<430?6:innerWidth<650||innerHeight<540?12:18;
@@ -390,14 +404,14 @@ function inventoryMenu(filter='all',page=0,selected){
  page=Math.min(page,pages-1);
  const entries=list.slice(page*size,(page+1)*size);
  const selection=entries.find(row=>row.index===selected)||entries[0];
- show('<div class="rpg-shell ledger"><section class="rpg-left"><div class="rpg-head"><h2>Inventar</h2><small>'+save.inventory.length+'/30</small></div>'+
+ show('<div class="rpg-shell ledger inventory-ledger"><section class="rpg-left"><div class="rpg-head"><h2>Inventar</h2><small>'+save.inventory.length+'/30</small></div>'+
   '<div class="ledger-tabs">'+Object.entries(bagFilters).map(([id,label])=>'<button data-filter="'+id+'" aria-pressed="'+(filter===id)+'">'+label+'</button>').join('')+'</div>'+
   '<div class="rpg-grid">'+entries.map(({it,index})=>'<button class="rpg-cell'+(isEquipped(it)?' equipped':'')+'" data-item="'+index+'" aria-pressed="'+(selection?.index===index)+'" title="'+qEsc(itemTitle(it))+'" aria-label="'+qEsc(itemTitle(it))+'">'+itemTile(it)+(isEquipped(it)?'<span class="count">E</span>':'')+'</button>').join('')+'</div>'+
   '<div class="ledger-actions">'+(pages>1?'<button id="bagPrev" '+(page===0?'disabled':'')+' aria-label="Vorherige Seite">‹</button><small>'+(page+1)+'/'+pages+'</small><button id="bagNext" '+(page+1>=pages?'disabled':'')+' aria-label="Nächste Seite">›</button>':'')+
   '<button id="toGear">Ausrüstung</button><button id="closeInv">Schließen</button></div></section>'+
   '<aside class="rpg-right"><div id="rpgInspect"></div><button class="primary" id="md-equip-selected">Ausrüsten</button><button id="md-quick-selected">Zur Schnellauswahl</button></aside></div>','inventory');
  const inspect=it=>{
-  $('#rpgInspect').innerHTML=itemDetails(it);
+  $('#rpgInspect').innerHTML=inventoryInspection(it);
   const shortcut=$('#md-quick-selected');shortcut.disabled=!it;
   shortcut.onclick=()=>quickSelect(it,()=>inventoryMenu(filter,page,save.inventory.indexOf(it)));
   const button=$('#md-equip-selected'),food=it?.kind==='food';
@@ -597,6 +611,31 @@ function placeRoomSet(pieces,ax,ay,zone){
  furniture.push(...group);
  return true;
 }
+const wallFurniture=new Set(['cabinet','bookcase','dresser','weapon-rack','armor-rack','display','provisions','alchemy','statue']);
+function placeWallFurniture(type,room,preferredX,preferredY,zone){
+ const d=FURNITURE[type],left=room.x*TILE,top=room.y*TILE,right=(room.x+room.w)*TILE;
+ const rear=d.h/2+(type==='statue'?28:9),side=d.w/2+9,sites=[];
+ for(let i=1;i<room.w-1;i++){
+  const x=left+(i+.5)*TILE;
+  if(wall(x,top-7))sites.push({x,y:top+rear,score:Math.abs(x/TILE-preferredX)});
+ }
+ for(let i=1;i<room.h-1;i++){
+  const y=top+(i+.5)*TILE;
+  if(wall(left-7,y))sites.push({x:left+side,y,score:5+Math.hypot(left/TILE-preferredX,y/TILE-preferredY)});
+  if(wall(right+7,y))sites.push({x:right-side,y,score:5+Math.hypot(right/TILE-preferredX,y/TILE-preferredY)});
+ }
+ sites.sort((a,b)=>a.score-b.score);
+ return sites.some(({x,y})=>placeRoomSet([[type,0,0]],x/TILE,y/TILE,zone));
+}
+function furnishRoom(type,room,x,y,zone){
+ if(save.layoutRevision>=5&&wallFurniture.has(type))return placeWallFurniture(type,room,x,y,zone);
+ return placeRoomSet([[type,0,0]],x,y,zone);
+}
+const roomGroupings={
+ 0:{at:[[.42,.69],[.62,.72],[.63,.3]],pieces:[['carpet',0,.18],['round-table',0,0],['chair',0,1],['chair',-1.06,0]]},
+ 1:{at:[[.53,.34],[.50,.70],[.6,.48]],pieces:[['banquet-long',0,0],['chair',-.75,1],['chair',.75,1]]},
+ 3:{at:[[.61,.7],[.36,.66],[.58,.31]],pieces:[['carpet',0,.2],['round-table',0,0],['chair',-1.07,0],['chair',1.07,0]]}
+};
 const roomAccents=[
  [['round-table','dresser'],['display','armor-rack']],
  [['banquet-long','fence'],['weapon-rack','armor-rack']],
@@ -607,7 +646,16 @@ const roomAccents=[
 for(const [zone,plan] of roomPlans.entries()){
  const {offsetX,offsetY}=zones[zone];
  const room=rooms[zone];
- if(save.layoutRevision>=3)for(const types of roomAccents[zone]){
+ let arranged=false;
+ if(save.layoutRevision>=5){
+  for(const [type,x,y] of plan.fixed)if(wallFurniture.has(type))furnishRoom(type,room,x+offsetX,y+offsetY,zone);
+  for(const [index,types] of roomAccents[zone].entries()){
+   const storage=types.filter(type=>wallFurniture.has(type));
+   for(const [i,type] of storage.entries())furnishRoom(type,room,room.x+room.w*(index===0?.24+i*.12:.76-i*.12),room.y+1,zone);
+  }
+  const grouping=roomGroupings[zone];
+  if(grouping)arranged=grouping.at.some(([x,y])=>placeRoomSet(grouping.pieces,room.x+room.w*x,room.y+room.h*y,zone));
+ }else if(save.layoutRevision>=3)for(const types of roomAccents[zone]){
   const anchors=run.shuffle([[.23,.27],[.77,.26],[.24,.74],[.76,.74],[.23,.47],[.76,.49],[.5,.27],[.5,.75]],roomRandom);
   for(const type of types){
    if(save.layoutRevision>=4&&type==='fence')continue;
@@ -615,8 +663,11 @@ for(const [zone,plan] of roomPlans.entries()){
    if(placed>=0)anchors.splice(placed,1);
   }
  }
- for(const [type,x,y] of plan.fixed)placeRoomSet([[type,0,0]],x+offsetX,y+offsetY,zone);
+ for(const [type,x,y] of plan.fixed){
+  if(save.layoutRevision<5||!wallFurniture.has(type))furnishRoom(type,room,x+offsetX,y+offsetY,zone);
+ }
  for(const {at,pieces} of plan.sets){
+  if(arranged)continue;
   const choices=run.shuffle([...at],roomRandom);
   // Alternate anchors keep a full furniture group available near varying exits.
   const [left,top,w,h]=legacyRooms[zone];
@@ -635,7 +686,7 @@ const annexDecor={
 };
 if(rest){
  const decor=[['campfire',0,0],['bench',-1.65,.2],['bench',1.65,.2],['statue',0,-2.7],['torch',-3,-2.5],['torch',2.15,-2.7],
-  ['round-table',-3.55,1.42],['dresser',3.8,1.6],['armor-rack',-3.65,-.65],['well',3.4,-2.1]];
+  ['round-table',-3.55,1.42],['dresser',4.72,1.6],['armor-rack',-4.88,-.65],['well',3.4,-2.1]];
  for(const [type,dx,dy] of decor)furniture.push({type,...pointIn(rest,dx,dy),zone:rest.theme,...FURNITURE[type]});
 }
 const annexAccents={pantry:[['dresser',1.3,4.5],['round-table',5.4,4.35]],brewery:[['display',7.6,3.19],['dresser',1.55,3.1]],
@@ -651,10 +702,10 @@ if(save.layoutRevision>=4){
  }
 }
 for(const annex of annexes){
- for(const [type,x,y] of [...annexDecor[annex.key],...annexAccents[annex.key]])placeRoomSet([[type,0,0]],annex.x+x,annex.y+y,annex.theme);
+ for(const [type,x,y] of [...annexDecor[annex.key],...annexAccents[annex.key]])furnishRoom(type,annex,annex.x+x,annex.y+y,annex.theme);
 }
 
-if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y))Object.assign(player,spawn);
+if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y,HERO_RADIUS))Object.assign(player,spawn);
 const cabinets=furniture.filter(p=>p.type==='cabinet'||p.type==='bookcase').map((p,id)=>({...p,id,
  gold:run.random(save.dungeonSeed^(0x111723+id*2246822519))()<.44?9+save.floor*3+id%5:0
 }));
@@ -666,6 +717,26 @@ function searchCabinet(index){
  tell(cabinet.gold?'Schrank durchsucht · +'+cabinet.gold+' Gold':'Der Schrank ist leer');
  persist();
 }
+// Exclude decorative pockets that the player cannot physically enter, even
+// after opening the seals. The grid also covers half-tile corridors.
+function reachableSpawnTiles(){
+ const step=TILE/4,cols=W*TILE/step,rows=H*TILE/step,seen=new Uint8Array(cols*rows);
+ const frontier=[];
+ const enqueue=(x,y)=>{
+  if(x<0||x>=cols||y<0||y>=rows)return;
+  const id=y*cols+x;
+  if(seen[id])return;
+  seen[id]=1;
+  if(valid(x*step,y*step,HERO_RADIUS,true)){seen[id]=2;frontier.push(id);}
+ };
+ enqueue(Math.round(spawn.x/step),Math.round(spawn.y/step));
+ for(let i=0;i<frontier.length;i++){
+  const id=frontier[i],x=id%cols,y=Math.floor(id/cols);
+  enqueue(x-1,y);enqueue(x+1,y);enqueue(x,y-1);enqueue(x,y+1);
+ }
+ return (x,y)=>seen[Math.round(y/step)*cols+Math.round(x/step)]===2;
+}
+const canReachSpawn=save.layoutRevision>=5?reachableSpawnTiles():()=>true;
 const defeated=new Set(save.defeated);
 const explored=new Set(save.explored);
 const nearbyRegions=[[0,-1],[1,0],[0,1],[-1,0],[-1,-1],[1,-1],[1,1],[-1,1]];
@@ -681,7 +752,7 @@ for(const room of rooms){
  const positions=[];
  for(let j=top+1;j<top+h-1;j++)for(let i=left+1;i<left+w-1;i++){
   const x=(i+.5)*TILE,y=(j+.5)*TILE;
-  if(valid(x,y,19,true)&&landmarks.every(p=>Math.hypot(x-p.x,y-p.y)>45)
+  if(canReachSpawn(x,y)&&valid(x,y,19,true)&&landmarks.every(p=>Math.hypot(x-p.x,y-p.y)>45)
      &&(roomId!==0||Math.hypot(x-spawn.x,y-spawn.y)>175))positions.push({x,y});
  }
  run.shuffle(positions,encounterRandom);
@@ -705,7 +776,7 @@ function spawnAmbush(ambush){
  ambush.positions.forEach((p,i)=>{
   const id='ambush-'+ambush.index+'-'+i;
   if(defeated.has(id))return;
-  const max=enemyRules.health(p.type,false,save.floor,'ambush');
+  const max=enemyRules.health(p.type,false,save.floor);
   enemies.push({...p,id,roomId:ambush.index,type:p.type,hp:max,max,size:.93,phase:i,hit:0,attack:1.4+i*.45,windup:0,angle:0});
  });
 }
@@ -722,7 +793,11 @@ function breakPriest(priest){
  for(const [i,offset] of [-.85,.85].entries()){
   const angle=away+offset;
   const x=priest.x+Math.cos(angle)*26,y=priest.y+Math.sin(angle)*26;
-  const point=valid(x,y,8)&&!gateLineBlocked(priest.x,priest.y,x,y)?{x,y}:{x:priest.x,y:priest.y};
+  const candidates=[{x,y},...[-Math.PI/2,Math.PI/2,0].map(delta=>({
+   x:priest.x+Math.cos(away+delta)*32,y:priest.y+Math.sin(away+delta)*32
+  })),priest];
+  const point=candidates.find(p=>valid(p.x,p.y,8)&&!nearActor({...p,type:SNAKE},player,3)&&
+   !gateLineBlocked(priest.x,priest.y,p.x,p.y))||priest;
   const spawn={...point,id:priest.id+'-snake-'+i,roomId:priest.roomId,angle};
   save.serpents.push(spawn);addSerpent(spawn);
  }
@@ -1042,11 +1117,13 @@ $('#import').onchange=async e=>{
 function startMenu(){mdTitle()}
 function burst(x,y,c,n){if(particles.length>450)particles.splice(0,particles.length-350);for(let i=0;i<n;i++){let a=rand(0,TAU),v=rand(30,150);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.3,.85),max:.85,c,r:rand(1.5,4)})}}
 let combatTime=0,staminaRest=0;
+function heroSees(e){
+ return Math.abs(e.x-player.x)<cw/2+24&&Math.abs(e.y-player.y)<ch/2+24&&
+  regionVisibleAt(e.x,e.y)&&!gateLineBlocked(player.x,player.y,e.x,e.y);
+}
 function updateCombat(dt){
  if(inRest(player.x,player.y)){combatTime=0;return;}
- const visible=enemies.some(e=>e.hp>0&&Math.abs(e.x-player.x)<Math.min(cw/2+32,380)&&
-  Math.abs(e.y-player.y)<Math.min(ch/2+32,380)&&Math.hypot(e.x-player.x,e.y-player.y)<380&&
-  !gateLineBlocked(player.x,player.y,e.x,e.y));
+ const visible=enemies.some(e=>e.hp>0&&(e.aggro>0||heroSees(e)));
  combatTime=visible?1.35:Math.max(0,combatTime-dt);
 }
 function spendStamina(cost){
@@ -1074,6 +1151,7 @@ function strike(){
  updateCombat(0);
  const w=usableWeapon(),rank=pickedRarity(w);
  const cost=Math.round(w.stamina*(rank==='mythic'?1.25:1)*brewBonus.cost);
+ const impact=items.knockbackPower(w,save.attributes);
  if(!spendStamina(cost)){tell('Zu wenig Ausdauer');return;}
  player.attack=w.speed;
  const ang=player.dir,profile=items.weapon(w.id),split=brewBonus.element?{[brewBonus.element]:1}:profile.split;
@@ -1097,7 +1175,12 @@ function strike(){
    if(foeResistances[e.type].poison===1)showDamage(e.x,e.y-13,0,'poison');
    else e.poison={untilTick:.72,ticks:3};
   }
-  if(hit.total>0){moveEnemy(e,Math.cos(a)*9,Math.sin(a)*9);shake=4;if(hasRing('faith'))player.hp=Math.min(maxHP(),player.hp+3);}
+  if(hit.total>0){
+   const push=enemyRules.knockbackDistance(impact,enemyRules.balance(e.type,e.boss));
+   if(push)moveEnemy(e,Math.cos(a)*push,Math.sin(a)*push);
+   shake=push>=20?6:4;
+   if(hasRing('faith'))player.hp=Math.min(maxHP(),player.hp+3);
+  }
  }
 }
 function hurtEnemy(e,hit){
@@ -1161,9 +1244,7 @@ function update(dt){
   if(aimMode==='keyboard')player.dir=Math.atan2(dy,dx);
   const slow=player.webSlow>0||player.grabSlow>0||onWeb();
   const speed=player.speed*brewBonus.speed*load.move*(slow?.53:1)*(player.dash>0?(player.dashSpeed??load.dashSpeed):1);
-  const nx=player.x+dx*speed*dt,ny=player.y+dy*speed*dt;
-  if(valid(nx,player.y))player.x=nx;
-  if(valid(player.x,ny))player.y=ny;
+  moveActor(player,dx*speed*dt,dy*speed*dt);
  }
  const region=regionAt(player.x,player.y);
  if(region>=0&&!explored.has(region)){explored.add(region);save.explored=[...explored];}
@@ -1220,20 +1301,44 @@ function onWeb(){
  return furniture.some(p=>p.type==='web'&&Math.abs(p.x-player.x)<p.w/2+9&&Math.abs(p.y-player.y)<p.h/2+9)
   || webPatches.some(p=>Math.hypot(p.x-player.x,p.y-player.y)<p.radius);
 }
-function moveEnemy(e,dx,dy){
- const radius=e.type===SNAKE?8:e.boss?18:14;
- if(!inRest(e.x+dx,e.y)&&valid(e.x+dx,e.y,radius))e.x+=dx;
- if(!inRest(e.x,e.y+dy)&&valid(e.x,e.y+dy,radius))e.y+=dy;
+const actorRadius=e=>e===player?HERO_RADIUS:e.type===SNAKE?8:e.boss?19:14;
+function nearActor(a,b,extra=0){
+ const range=actorRadius(a)+actorRadius(b)+extra;
+ return Math.abs(a.x-b.x)<range&&Math.abs(a.y-b.y)<range;
 }
+function clearsActor(actor,x,y,other){
+ const range=actorRadius(actor)+actorRadius(other);
+ const dx=Math.abs(x-other.x),dy=Math.abs(y-other.y);
+ if(dx>=range||dy>=range)return true;
+ // An actor already overlapping after a reload can still move out.
+ const ox=Math.abs(actor.x-other.x),oy=Math.abs(actor.y-other.y);
+ return ox<range&&oy<range&&dx>=ox&&dy>=oy&&(dx>ox||dy>oy);
+}
+function moveActor(actor,dx,dy){
+ const hero=actor===player,radius=actorRadius(actor);
+ const traversable=(x,y)=>valid(x,y,radius)&&
+  (hero?enemies.every(e=>e.hp<=0||clearsActor(actor,x,y,e)):
+   !inRest(x,y)&&clearsActor(actor,x,y,player));
+ const count=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
+ for(let i=0;i<count;i++){
+  const x=actor.x+dx/count,y=actor.y+dy/count;
+  if(dx&&traversable(x,actor.y))actor.x=x;
+  if(dy&&traversable(actor.x,y))actor.y=y;
+ }
+}
+function moveEnemy(e,dx,dy){moveActor(e,dx,dy);}
 function updateEnemy(e,dt){
  const spec=enemyRules.attacks[e.type];
  if(e.emerge>0){e.emerge=Math.max(0,e.emerge-dt);return;}
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
- if(inRest(player.x,player.y)){e.windup=0;e.runAttack=0;e.track=0;return;}
+ if(inRest(player.x,player.y)){e.windup=0;e.runAttack=0;e.track=0;e.aggro=0;return;}
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
- const clear=d<380&&!gateLineBlocked(e.x,e.y,player.x,player.y);
- const touch=12+15*e.size;
- if(e.type!==SNAKE&&clear&&d<touch&&!(e.runAttack>0))takeDamage(9+(e.boss?5:0),items.foeAttack[e.type]);
+ const range=enemyRules.eyeRange(e.type,e.boss,Math.min(cw,W*TILE),Math.min(ch,H*TILE),angle);
+ const line=d<range*1.22&&!gateLineBlocked(e.x,e.y,player.x,player.y);
+ const spotted=line&&d<=range;
+ e.aggro=spotted?1.4:Math.max(0,(e.aggro||0)-dt);
+ const clear=line&&e.aggro>0;
+ if(e.type!==SNAKE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))takeDamage(9+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.runAttack>0){
   if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'){advanceRush(e,spec,dt,angle);return;}
   if(['web','frost','bow','crossbow'].includes(spec.id)){
@@ -1260,7 +1365,7 @@ function updateEnemy(e,dt){
   return;
  }
  if(!clear){
-  if(e.type===SNAKE&&d<800)chaseSerpent(e,dt,spec.speed,true);
+  if(e.type===SNAKE&&e.aggro>0&&d<range*1.22)chaseSerpent(e,dt,spec.speed,true);
   return;
  }
  if(e.attack<=0&&d<spec.range&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
@@ -1268,7 +1373,7 @@ function updateEnemy(e,dt){
   if(spec.id==='frost')e.frostTargets=frostSites(e);
   return;
  }
- if(d<=touch*.85||(spec.id==='bow'||spec.id==='crossbow')&&d<spec.range*.72)return;
+ if(nearActor(e,player,1)||(spec.id==='bow'||spec.id==='crossbow')&&d<spec.range*.72)return;
  const speed=(spec.speed+(e.boss?7:0))*(1+.075*(save.floor-1));
  e.moving=true;
  if(e.type===SNAKE){
@@ -1302,7 +1407,7 @@ function advanceRush(e,spec,dt,targetAngle){
   e.trailTimer-=dt;
   if(e.trailTimer<=0){e.trailTimer=.12;enemyHazards.push({x:oldX,y:oldY,radius:25,life:3.9,wait:0,angle:e.angle,type:'dark',power:8});}
  }
- if(!e.struck&&Math.hypot(player.x-e.x,player.y-e.y)<27*e.size&&!gateLineBlocked(e.x,e.y,player.x,player.y)){
+ if(!e.struck&&nearActor(e,player,9)&&!gateLineBlocked(e.x,e.y,player.x,player.y)){
   const dark=spec.id==='rift';
   const damage=spec.id==='bite'?5:spec.id==='grab'?13:21;
   e.struck=takeDamage(damage,dark?{dark:1}:{physical:1});
@@ -1640,7 +1745,7 @@ const drawLine=(x,y,ex,ey,color,alpha)=>{
 drawCombatEffects(drawCanvasEffect,true);
 drawWebHazards((x,y)=>drawWorldImage(s,{x,y,bitmap:webGroundBitmap}));
 const layers=scenery.filter(o=>!o.ground&&o.visible()&&regionVisibleAt(o.x,o.y));
-for(const e of enemies)layers.push({x:e.x,y:e.y,draw:()=>drawCanvasFoe(e)});
+for(const e of enemies)if(regionVisibleAt(e.x,e.y))layers.push({x:e.x,y:e.y,draw:()=>drawCanvasFoe(e)});
 layers.push({x:player.x,y:player.y,draw:drawCanvasHero});
 layers.sort((a,b)=>a.y-b.y);
 for(const entry of layers){
@@ -1706,13 +1811,13 @@ const partitions=terrain.flatMap((row,y)=>row.flatMap((tile,x)=>{
  const zone=tileZone(x,y),ends=(row[x-1]==='partition'?0:1)|(row[x+1]==='partition'?0:2)|
   (terrain[y-1]?.[x]==='partition'?4:0)|(terrain[y+1]?.[x]==='partition'?8:0);
  return [{x:(x+.5)*TILE,y:(y+.5)*TILE,key:'partition-'+zone+'-'+ends,
-  bitmap:art.partition(zone,ends),visible:always}];
+  bitmap:art.partition(zone,ends),oy:65,visible:always}];
 }));
 const animatedFire=new Map();
 function furnishingScenery(p){
  const key=p.type+'-'+p.zone,bitmap=art.furniture(p.type,p.zone);
  const entry={...p,key,bitmap,scale:({market:1.9,'banquet-long':1.45,statue:1.5})[p.type],ox:64,
-  oy:p.type==='market'?68:56,ground:p.type==='carpet'||p.type==='web',visible:always};
+  oy:p.type==='market'?68:p.type==='statue'?83:56,ground:p.type==='carpet'||p.type==='web',visible:always};
  if(p.type==='torch'||p.type==='campfire'){
   if(!animatedFire.has(key))animatedFire.set(key,Array.from({length:8},(_,pose)=>art.furniture(p.type,p.zone,pose)));
   entry.frames=animatedFire.get(key);
@@ -1810,17 +1915,26 @@ function refreshHeroArt(textures){
 function heroFrame(){return player.attack>0?0:Math.sin(player.walk)>.25?1:Math.sin(player.walk)<-.25?2:0;}
 function foeFrame(e){return enemyRules.spriteFrame(e);}
 function foeLift(e){return Math.round(Math.sin(e.phase*4)*2-(e.windup>0?Math.min(4,7*e.windup):0));}
-function weaponAngle(){return player.dir+Math.PI/2+(player.attack>0?-.9+(1-player.attack/weaponById(save.equipment.weapon).speed)*1.8:0);}
-function weaponPosition(){
- const angle=weaponAngle()-Math.PI/2;
- return {x:player.x+Math.cos(angle)*21,y:player.y-6+Math.sin(angle)*21};
+const gripHeights={dagger:46,hammer:47,staff:46};
+function weaponPose(){
+ const w=usableWeapon(),id=weaponArtId(w.id);
+ const swing=player.attack>0?(1-Math.min(1,player.attack/w.speed))*1.1-.55:0;
+ const angle=player.dir+swing,dx=Math.cos(angle),dy=Math.sin(angle);
+ const side=dx<0?-1:1;
+ return {id,x:player.x+side*(17+Math.abs(dx)*9),y:player.y-12+dy*12,
+  angle:angle+Math.PI/2,grip:(gripHeights[id]??50)/64,depth:player.y+(dy<-.28?-.5:.5)};
 }
+function heroAlpha(){return (player.inv>0||player.dash>0)&&Math.sin(frame*25)>0?.6:1;}
 function drawCanvasHero(){
  refreshHeroArt();
+ const pose=weaponPose(),alpha=heroAlpha();
+ const hero=()=>{s.globalAlpha=alpha;s.drawImage(heroBitmaps[heroFrame()],Math.round(player.x-37),Math.round(player.y-48),74,74);};
  s.save();
- s.globalAlpha=(player.inv>0||player.dash>0)&&Math.sin(frame*25)>0?.6:1;
- s.drawImage(heroBitmaps[heroFrame()],Math.round(player.x-37),Math.round(player.y-48),74,74);
- const pos=weaponPosition();s.translate(pos.x,pos.y);s.rotate(weaponAngle());s.drawImage(weaponBitmap(save.equipment.weapon),-29,-29,58,58);s.restore();
+ if(pose.depth>player.y)hero();
+ s.save();s.globalAlpha=alpha;s.translate(pose.x,pose.y);s.rotate(pose.angle);
+ s.drawImage(weaponBitmap(pose.id),-29,-58*pose.grip,58,58);s.restore();
+ if(pose.depth<player.y)hero();
+ s.restore();
 }
 function drawCanvasFoe(e){
  const size=70*e.size;
@@ -1870,10 +1984,10 @@ class DungeonScene extends Phaser.Scene{
    const dt=Math.min(.035,delta/1000);if(!paused)update(dt);frame+=paused?dt:0;
    refreshHeroArt(this.textures);
    this.hero.setTexture('hero-'+heroFrame()).setPosition(player.x,player.y).setDepth(player.y)
-    .setAlpha((player.inv>0||player.dash>0)&&Math.sin(frame*25)>0?.6:1);
-   const pos=weaponPosition();
-   this.weapon.setTexture('weapon-'+weaponArtId(save.equipment.weapon))
-    .setPosition(pos.x,pos.y).setRotation(weaponAngle()).setDepth(player.y+.5);
+    .setAlpha(heroAlpha());
+   const pose=weaponPose();
+   this.weapon.setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
+    .setPosition(pose.x,pose.y).setRotation(pose.angle).setDepth(pose.depth).setAlpha(heroAlpha());
    const quake=settings.shake?shake:0;
    this.cameras.main.x=rand(-quake,quake);this.cameras.main.y=rand(-quake,quake);
    window.__mindPhaserCameraX=this.cameras.main.scrollX-this.cameras.main.x;

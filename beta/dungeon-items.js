@@ -58,12 +58,19 @@ window.DungeonItems = (() => {
   blade:{faith:'A',dexterity:'D',luck:'E'},dagger:{dexterity:'D',luck:'C'},
   greatsword:{strength:'S',endurance:'C',vitality:'D',dexterity:'E'}
  };
- const gradePoints={E:1,D:2,C:3,B:4,A:5,S:6};
+ const gradeRates={S:[2,1],A:[1,1],B:[1,2],C:[1,3],D:[1,4],E:[1,5]};
  function weaponScaling(weapon,attributes){
   const grades=scaling[weapon.id]||{strength:'E',dexterity:'E'};
-  return Object.entries(grades).map(([attribute,grade])=>({
-   attribute,grade,points:gradePoints[grade],bonus:Math.max(0,attributes[attribute]||0)*gradePoints[grade]
-  }));
+  return Object.entries(grades).map(([attribute,grade])=>{
+   const [points,step]=gradeRates[grade],level=Math.max(0,Math.floor(attributes[attribute]||0));
+   const bonus=Math.floor(level/step)*points;
+   return {attribute,grade,points,step,bonus,nextGain:Math.floor((level+1)/step)*points-bonus};
+  });
+ }
+ const weaponImpact={rust:34,rapier:22,hammer:66,staff:29,blade:42,dagger:15,greatsword:74};
+ function knockbackPower(weapon,attributes){
+  const levels=key=>Math.floor(Math.max(0,attributes[key]||0)/2);
+  return (weaponImpact[weapon.id]??34)+levels('strength')+levels('vitality');
  }
  const armor={
   wanderer:{physical:.14,magic:-.10},scholar:{magic:.30,lightning:.13,physical:-.15},
@@ -135,5 +142,5 @@ window.DungeonItems = (() => {
   }
   return [...picks.map(row=>row[0]),...picks.map(row=>row[1])];
  }
- return {damage,rarity,weaponScaling,food,requirements,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

@@ -167,25 +167,46 @@ window.DungeonArt = (() => {
   function partition(zone=0,ends=3){
     const key='partition-'+zone+'-'+ends;
     if(spriteCache.has(key))return spriteCache.get(key);
-    const c=surface(),{r}=brush(c),p=stone[zone].wall;
-    const vertical=(ends&3)===3&&(ends&12);
-    const left=vertical?23:ends&1?3:0,right=vertical?41:ends&2?61:64,w=right-left;
-    if(ends&4)r(23,0,18,20,p[1]);
-    if(ends&4)r(26,0,4,20,p[3]);
-    if(ends&8){r(23,44,18,20,p[0]);r(26,47,12,17,p[2]);r(26,47,3,17,p[3]);}
-    r(left+1,45,w-1,9,'#100e12a0');
-    r(left,17,w,32,p[0]);r(left,21,w,25,p[1]);
-    r(left+1,17,w-2,7,p[3]);r(left,24,w,2,p[0]);
-    for(const [y,joints] of [[26,[0,19,41,64]],[38,[0,9,34,54,64]]]){
-      for(let i=0;i<joints.length-1;i++){
-        const a=Math.max(joints[i],left),b=Math.min(joints[i+1],right);
-        if(b-a<2)continue;
-        r(a,y,b-a-1,8,p[2]);r(a+1,y,b-a-2,1,p[3]);
-      }
-      r(left,y+8,w,2,p[0]);
+    const c=surface(64,90),{r,poly}=brush(c);
+    const [dark,base,mid,edgeTone]=stone[zone].wall;
+    const left=ends&1?3:0,right=ends&2?61:64;
+    const north=Boolean(ends&4),south=Boolean(ends&8);
+    const upright=(ends&3)===3&&(north||south);
+    const edgeLight=zone===4?'#899caa':zone===2?'#a78d91':'#a9a08a';
+    // The face extends up from the middle of the occupied tile. A raised
+    // coping strip and offset mortar joints read as masonry at game scale.
+    if(north){
+      r(21,0,25,48,dark);r(24,0,18,48,mid);r(24,0,3,48,edgeLight);
+      for(const y of [11,24,38]){r(23,y,20,2,dark);r(27,y+2,13,1,edgeTone);}
     }
-    if(ends&1)r(left,21,2,28,p[0]);
-    if(ends&2)r(right-2,21,2,28,p[0]);
+    if(south){
+      r(18,50,33,40,'#100e13aa');r(21,47,24,43,dark);r(23,47,19,43,mid);
+      r(24,47,4,43,edgeLight);
+      for(const y of [60,73,86]){r(22,y,22,2,dark);r(28,y+2,12,1,edgeTone);}
+    }
+    const x=upright?18:left,w=upright?29:right-left;
+    if(!upright){
+      r(x,64,w,9,'#100e12aa');r(x,27,w,42,dark);r(x,37,w,27,base);
+      for(const [y,seams] of [[39,[0,14,33,50,64]],[53,[0,7,24,42,57,64]]]){
+        for(let i=1;i<seams.length;i++){
+          const a=Math.max(x,seams[i-1]),b=Math.min(right,seams[i]);
+          if(b-a<3)continue;
+          r(a,y,b-a-1,10,mid);r(a+1,y,b-a-3,2,edgeTone);
+          r(a+2,y+8,b-a-4,1,base);
+        }
+        r(x,y+11,w,2,dark);
+      }
+      poly([[x,28],[x+3,20],[x+w-3,20],[x+w,28],[x+w,36],[x,36]],dark);
+      r(x+(ends&1?3:0),22,w-(ends&1?3:0)-(ends&2?3:0),9,edgeTone);
+      r(x+(ends&1?3:0),22,w-(ends&1?3:0)-(ends&2?3:0),3,edgeLight);
+      r(x,33,w,2,mid);
+      if(ends&1){r(x,29,3,38,dark);r(x+3,34,2,31,edgeTone);}
+      if(ends&2)r(x+w-3,29,3,38,dark);
+    }
+    if(upright||north||south){
+      r(18,25,30,7,dark);r(20,24,26,4,edgeLight);r(23,31,20,6,edgeTone);
+      r(21,38,24,3,mid);
+    }
     spriteCache.set(key,c);return c;
   }
   function furniture(type,variant=0,pose=0) {
@@ -346,19 +367,31 @@ window.DungeonArt = (() => {
         }
       }else for(const y of [36,48,60]){r(30,y,69,9,shade);r(32,y+1,65,5,grain);r(60,y+3,9,2,gold);}
     }else if(type==='statue'){
-      const [dark,shadowStone,mid,light]=stone[variant].wall;
-      shadow(24,67,82,14);
-      poly([[46,15],[53,10],[65,16],[77,10],[87,19],[90,40],[83,55],[87,66],[76,73],[49,73],[40,66],[45,57],[34,44],[36,26]],dark);
-      poly([[45,20],[50,15],[56,33],[53,43],[43,47],[38,39]],shadowStone);
-      poly([[83,18],[85,39],[80,47],[75,42],[72,31],[79,16]],mid);
-      poly([[55,21],[63,17],[71,21],[74,30],[70,36],[78,42],[82,58],[75,67],[51,67],[45,59],[50,42],[57,36],[53,29]],mid);
-      poly([[57,22],[63,20],[68,23],[65,30],[59,31],[55,28]],light);
-      r(56,26,4,1,dark);r(65,26,3,1,dark);
-      poly([[53,41],[58,38],[61,51],[55,61],[50,55]],shadowStone);
-      poly([[70,39],[76,44],[78,54],[72,60],[68,53]],light);
-      r(61,37,3,31,dark);r(64,38,3,27,light);r(56,43,16,3,shadowStone);
-      poly([[47,68],[77,68],[85,72],[79,76],[49,76],[42,73]],shadowStone);
-      r(73,62,5,2,'#65754b');r(50,73,7,2,'#74744a');r(52,70,2,2,'#87915a');
+      const [dark,base,mid,edgeTone]=stone[variant].wall;
+      const highlight=variant===4?'#a1abb3':'#b2a794',weathered='#77745e';
+      shadow(22,83,84,13);
+      poly([[34,85],[45,77],[83,78],[94,86],[88,92],[42,92]],dark);
+      poly([[44,77],[83,77],[90,85],[38,85]],mid);
+      r(41,85,47,2,edgeTone);
+      // The cloak opens over two boots, with a long blade beside the figure.
+      poly([[53,22],[73,22],[80,28],[82,42],[89,73],[78,79],[50,78],[39,72],[45,46],[43,36]],dark);
+      poly([[48,30],[58,25],[55,44],[50,61],[49,74],[41,71],[45,52]],base);
+      poly([[72,28],[79,33],[79,47],[83,63],[86,73],[75,77],[72,59],[70,41]],mid);
+      poly([[55,42],[72,42],[74,58],[72,71],[77,78],[66,80],[62,75],[60,75],[57,81],[47,80],[48,75],[52,70],[51,57]],dark);
+      poly([[53,53],[62,55],[59,68],[56,74],[51,74],[54,65]],edgeTone);
+      poly([[64,54],[72,51],[71,65],[72,74],[67,76],[65,67]],mid);
+      r(48,77,10,3,mid);r(67,77,10,3,edgeTone);
+      poly([[55,29],[61,24],[71,25],[77,32],[74,45],[68,50],[58,48],[53,43]],mid);
+      r(57,32,15,2,highlight);r(57,37,15,2,edgeTone);r(58,46,13,5,base);r(63,46,4,4,highlight);
+      poly([[53,27],[50,35],[55,43],[62,43],[64,40],[57,39],[55,32]],edgeTone);
+      poly([[77,30],[82,35],[81,45],[86,47],[84,50],[76,47],[75,39]],edgeTone);
+      r(79,46,15,3,highlight);r(85,42,3,10,base);
+      poly([[85,50],[90,51],[90,71],[87,80],[84,72]],edgeTone);r(86,52,1,21,highlight);
+      poly([[57,11],[63,7],[70,9],[73,14],[73,23],[68,28],[58,26],[54,21],[54,15]],dark);
+      poly([[59,12],[64,10],[70,13],[70,21],[66,25],[59,23],[57,18]],edgeTone);
+      r(59,13,9,2,highlight);r(58,17,11,2,dark);r(64,19,2,3,mid);
+      r(49,64,2,9,edgeTone);r(80,59,1,8,edgeTone);
+      r(42,86,8,2,weathered);r(78,82,5,2,'#7e8d60');
     }else if(type==='well'){
       shadow(12,70,104,20);
       poly([[15,45],[28,35],[98,35],[113,45],[114,67],[100,81],[27,81],[14,69]],'#20262f');
