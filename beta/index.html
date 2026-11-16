@@ -40,7 +40,27 @@ const gates=[{id:'conditioning',x:13,y:6,vertical:true,from:0,name:'Konditionier
 function gateLineBlocked(x1,y1,x2,y2){const n=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/12));for(let i=0;i<=n;i++){const t=i/n,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(gateBlocked(x,y)||wall(x,y))return true}return false}
 function gateBlocked(x,y){return gates.some(g=>!save.gates[g.id]&&(g.vertical?Math.abs(x/TILE-(g.x+.5))<.52&&Math.abs(y/TILE-(g.y+.5))<2.1:Math.abs(y/TILE-(g.y+.5))<.52&&Math.abs(x/TILE-(g.x+.5))<2.1))}
 function wall(x,y){const i=Math.floor(x/TILE),j=Math.floor(y/TILE);return i<0||j<0||i>=W||j>=H||map[j][i]===1}
-function valid(x,y,r=12){return !wall(x-r,y-r)&&!wall(x+r,y-r)&&!wall(x-r,y+r)&&!wall(x+r,y+r)&&!gateBlocked(x-r,y-r)&&!gateBlocked(x+r,y-r)&&!gateBlocked(x-r,y+r)&&!gateBlocked(x+r,y+r)}
+
+// Data-driven furnishing catalogue. Solid furniture blocks both heroes and enemies.
+const FURNITURE={
+ table:{label:'Tisch',w:65,h:34,solid:true,color:0x80543b},
+ chair:{label:'Stuhl',w:26,h:26,solid:true,color:0x966a4b},
+ cabinet:{label:'Schrank',w:42,h:34,solid:true,color:0x604454},
+ carpet:{label:'Teppich',w:95,h:60,solid:false,color:0x557a66},
+ candle:{label:'Kerze',w:12,h:12,solid:false,color:0xffd39a},
+ torch:{label:'Fackel',w:16,h:16,solid:false,color:0xffa75e}
+};
+const furniture=[];
+function addFurniture(type,x,y){const d=FURNITURE[type];if(!d)return false;
+ if(wall(x,y)||gates.some(g=>Math.hypot(x-(g.x+.5)*TILE,y-(g.y+.5)*TILE)<130))return false;
+ if(Math.hypot(x-4.5*TILE,y-5.5*TILE)<110)return false;
+ if(furniture.some(p=>Math.abs(p.x-x)<(p.w+d.w)/2+12&&Math.abs(p.y-y)<(p.h+d.h)/2+12))return false;
+ const r=Math.max(d.w,d.h)/2+10;
+ if(d.solid&&[[-r,-r],[r,-r],[-r,r],[r,r]].some(([dx,dy])=>wall(x+dx,y+dy)))return false;
+ furniture.push({type,x,y,...d});return true;
+}
+function furnitureBlocked(x,y,r=12){return furniture.some(p=>p.solid&&Math.abs(x-p.x)<p.w/2+r&&Math.abs(y-p.y)<p.h/2+r)}
+function valid(x,y,r=12){return !wall(x-r,y-r)&&!wall(x+r,y-r)&&!wall(x-r,y+r)&&!wall(x+r,y+r)&&!gateBlocked(x-r,y-r)&&!gateBlocked(x+r,y-r)&&!gateBlocked(x-r,y+r)&&!gateBlocked(x+r,y+r)&&!furnitureBlocked(x,y,r)}
 const player={dash:0,dashCooldown:0,dashX:0,dashY:0,x:valid(save.x,save.y)?save.x:220,y:valid(save.x,save.y)?save.y:250,hp:Math.max(1,save.hp),max:100,speed:178,dir:0,attack:0,inv:0,walk:0};
 const ATTRS={vigor:['Vitalität (Vigor)','Maximale Lebenspunkte'],attunement:['Zauberei (Attunement)','Fokusenergie für besondere Angriffe'],endurance:['Kondition (Endurance)','Ausdauer für Angriffe und Ausweichen'],vitality:['Belastung (Vitality)','Rüstung und Schadensreduktion'],strength:['Stärke (Strength)','Schwere Waffen'],dexterity:['Geschicklichkeit (Dexterity)','Schnelle Waffen'],intelligence:['Intelligenz (Intelligence)','Arkane Waffen'],faith:['Glaube (Faith)','Geweihte Waffen'],luck:['Glück (Luck)','Beute und kritische Treffer']};
 let WEAPONS=[{id:'rust',name:'Rostige Klinge',base:17,reach:88,speed:.34,stamina:18,scale:{strength:.35,dexterity:.2},desc:'Ein zuverlässiges altes Schwert.'},{id:'rapier',name:'Präzisionsrapier',base:14,reach:105,speed:.21,stamina:12,scale:{dexterity:.95,luck:.12},desc:'Schnelle Stiche und präzise Konter.'},{id:'hammer',name:'Gedankenhammer',base:27,reach:78,speed:.55,stamina:29,scale:{strength:1.1,vitality:.12},desc:'Langsam, aber wuchtig.'},{id:'staff',name:'Neuronenstab',base:18,reach:118,speed:.39,stamina:21,scale:{intelligence:1.05,attunement:.3},desc:'Arkane Energie in einem Stab gebündelt.'},{id:'blade',name:'Klinge des Mitgefühls',base:19,reach:100,speed:.31,stamina:18,scale:{faith:.9,dexterity:.2},desc:'Geweihte Klinge für achtsame Krieger.'},{id:'dagger',name:'Schattenmesser',base:11,reach:67,speed:.16,stamina:9,scale:{dexterity:.75,luck:.75},desc:'Rasante Treffer mit hohem Krit-Potenzial.'},{id:'greatsword',name:'Expositionsgroßschwert',base:35,reach:113,speed:.66,stamina:36,scale:{strength:1.25,endurance:.18},desc:'Hoher Schaden und großer Schwungradius.'}];
@@ -120,6 +140,19 @@ function dungeonMapMenu(){
  show('<h2>🗺 Händlerkarte</h2><p>Der Händler hält sich in folgender Kammer auf:</p><h3>'+qEsc(zones[save.merchantZone].name)+'</h3><p class="muted">Erkunde die verbundenen Kammern und suche nach dem Händler-Symbol.</p><button id="md-map-close">Schließen</button>','map');$('#md-map-close').onclick=close
 }
 const shrines=zones.map((z,i)=>({x:(z.x+.5)*TILE,y:(z.y+.5)*TILE,i}));const chests=[{x:10.5*TILE,y:7.5*TILE},{x:23.5*TILE,y:4.5*TILE},{x:38.5*TILE,y:9.5*TILE},{x:22.5*TILE,y:25.5*TILE},{x:37.5*TILE,y:25.5*TILE}];
+
+const furnishingSeed=(save.dungeonSeed??=Math.floor(Math.random()*2147483647));
+function seededRandom(seed){let x=seed|0;return ()=>{x=(Math.imul(x,1664525)+1013904223)|0;return (x>>>0)/4294967296}}
+const roomRandom=seededRandom(furnishingSeed);
+for(let zi=0;zi<zones.length;zi++){
+ const z=zones[zi];const roomCx=(z.x+3)*TILE,roomCy=(z.y+2)*TILE;
+ addFurniture('carpet',roomCx,roomCy);
+ addFurniture('table',roomCx+70,roomCy+30);
+ addFurniture('chair',roomCx+70,roomCy+77);
+ addFurniture('chair',roomCx+70,roomCy-20);
+ addFurniture('cabinet',(z.x+1.5)*TILE,(z.y+3.5)*TILE);
+ for(let k=0;k<3;k++){const type=['candle','torch','chair'][k];addFurniture(type,(z.x+2+roomRandom()*4)*TILE,(z.y+1+roomRandom()*3)*TILE)}
+}
 for(const [i,z] of zones.entries())for(let k=0;k<4+i;k++){let x=(z.x+2+rand(0,4))*TILE,y=(z.y+rand(0,3))*TILE;if(valid(x,y,17)&&Math.hypot(x-player.x,y-player.y)>120)enemies.push({x,y,hp:i===4?65:42,max:i===4?65:42,zone:i,phase:rand(0,7),vx:0,vy:0,hit:0,attack:rand(0,2),boss:k===0&&i>0,size:(k===0&&i>0?1.5:(k%3===0?.8:1.05)),special:0,windup:0,move:0,angle:0,telegraph:0,tier:1+i})}
 const keys={};let mouse={x:0,y:0},aimMode='keyboard';let near=null;const $=q=>document.querySelector(q);
 function resize(){dpr=Math.min(devicePixelRatio||1,1.25);cw=innerWidth;ch=innerHeight;canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);scene.width=canvas.width;scene.height=canvas.height;scale=dpr;if(gl)gl.viewport(0,0,canvas.width,canvas.height)}window.addEventListener('resize',resize);resize();
@@ -182,6 +215,7 @@ for(let j=minY;j<=maxY;j++)for(let i=minX;i<=maxX;i++){const x=i*TILE,y=j*TILE,n
 for(let j=minY;j<=maxY;j++)for(let i=minX;i<=maxX;i++){const x=i*TILE,y=j*TILE,n=(i*43+j*97+i*j*7)%17,t=themes[tileZone(i,j)];if(map[j][i]){s.fillStyle=t.edge;s.globalAlpha=.17;s.fillRect(x+3,y+6,41,2);s.globalAlpha=1;s.fillStyle='#101522';s.fillRect(x+4,y+40,39,5)}else if(n===4||n===12){s.strokeStyle=t.detail;s.globalAlpha=.32;s.lineWidth=1;s.beginPath();s.moveTo(x+7,y+14);s.lineTo(x+23,y+24);s.lineTo(x+15,y+34);s.stroke();s.globalAlpha=1}}
 for(let k=0;k<95;k++){const x=(k*431+113)%(W*TILE),y=(k*271+57)%(H*TILE),tx=Math.floor(x/TILE),ty=Math.floor(y/TILE);if(map[ty]?.[tx])continue;const t=themes[tileZone(tx,ty)];s.fillStyle=t.glow;s.globalAlpha=.25+.22*Math.sin(frame*1.7+k);s.beginPath();s.arc(x+Math.sin(frame*.8+k)*5,y+Math.cos(frame*.6+k)*6,1.3+(k%3)*.45,0,TAU);s.fill()}s.globalAlpha=1;
 for(const d of dust){s.globalAlpha=d.life*.35;s.fillStyle='#bfa9d4';s.beginPath();s.arc(d.x,d.y,6*(1-d.life),0,TAU);s.fill()}s.globalAlpha=1;
+for(const p of furniture){if(p.x<cam.x-110||p.x>cam.x+cw+110||p.y<cam.y-110||p.y>cam.y+ch+110)continue;drawFurnishing(s,p)}
 for(const p of props){if(p.x<cam.x-70||p.x>cam.x+cw+70||p.y<cam.y-70||p.y>cam.y+ch+70)continue;s.fillStyle='#151322';s.beginPath();s.ellipse(p.x,p.y+10,18,7,0,0,TAU);s.fill();if(p.type===0){s.fillStyle='#55465f';s.fillRect(p.x-13,p.y-14,26,24);s.fillStyle='#776282';s.fillRect(p.x-10,p.y-17,20,5)}else{s.fillStyle='#564363';s.beginPath();s.arc(p.x,p.y,11,0,TAU);s.fill();s.fillStyle='#816b87';s.fillRect(p.x-7,p.y-8,8,5)}}
 for(const t of torches){let flick=Math.sin(frame*9+t.phase)*3;s.fillStyle='#55425f';s.fillRect(t.x-3,t.y-10,6,20);s.fillStyle='#d68f77';s.beginPath();s.ellipse(t.x,t.y-15+flick*.2,5+flick*.2,10,0,0,TAU);s.fill();s.fillStyle='#ffe0a1';s.beginPath();s.ellipse(t.x,t.y-15,2,6,0,0,TAU);s.fill()}
 for(const g of gates){if(save.gates[g.id])continue;const x=(g.x+.5)*TILE,y=(g.y+.5)*TILE;s.save();s.translate(x,y);s.shadowColor=g.color;s.shadowBlur=22;s.strokeStyle=g.color;s.lineWidth=4;s.globalAlpha=.7+.3*Math.sin(frame*3);for(let k=-2;k<=2;k++){s.beginPath();if(g.vertical){s.moveTo(0,k*20-9);s.lineTo(0,k*20+9)}else{s.moveTo(k*20-9,0);s.lineTo(k*20+9,0)}s.stroke()}s.beginPath();s.arc(0,0,18,0,TAU);s.stroke();s.font='bold 19px system-ui';s.textAlign='center';s.textBaseline='middle';s.fillStyle='#fff';s.fillText('✦',0,1);s.restore()}
@@ -224,7 +258,19 @@ if(gl){gl.bindTexture(gl.TEXTURE_2D,tex);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,f
 // bleibt für Spielstand-Kompatibilität zunächst als eigenständige Simulation erhalten.
 let phaserGame=null,phaserActive=false,renderStats={fps:0,draws:0};
 function makeSpriteTexture(scene,key,paint,w=72,h=88){const factor=3,c=document.createElement('canvas');c.width=w*factor;c.height=h*factor;const g=c.getContext('2d');g.scale(factor,factor);paint(g,w,h);scene.textures.addCanvas(key,c)}
-function buildWorldTexture(scene){const c=document.createElement('canvas');c.width=W*TILE;c.height=H*TILE;const g=c.getContext('2d');for(let y=0;y<H;y++)for(let x=0;x<W;x++){const xx=x*TILE,yy=y*TILE,t=themes[tileZone(x,y)];g.fillStyle=map[y][x]?'#171825':t.floor;g.fillRect(xx,yy,TILE,TILE);if(map[y][x]){g.fillStyle=t.edge;g.globalAlpha=.55;g.fillRect(xx,yy,TILE,5);g.fillStyle='#080d17';g.fillRect(xx+3,yy+40,TILE-6,6)}else{g.strokeStyle=t.edge;g.globalAlpha=.4;g.strokeRect(xx+.5,yy+.5,TILE-1,TILE-1);if((x*71+y*137)%11<4){g.fillStyle=t.detail;g.fillRect(xx+9,yy+12,14,2);g.fillRect(xx+26,yy+32,8,2)}}g.globalAlpha=1}scene.textures.addCanvas('dungeon-ground',c)}
+function drawFurnishing(g,p){
+ const x=p.x,y=p.y;
+ g.save();g.translate(x,y);g.fillStyle='#171522';g.beginPath();g.ellipse(0,p.h/3,p.w*.52,p.h*.25,0,0,TAU);g.fill();
+ const rect=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(x,y,w,h)};
+ if(p.type==='carpet'){rect(-48,-29,96,60,'#344d42');rect(-44,-25,88,52,'#557a66');g.strokeStyle='#d0ae72';g.lineWidth=3;g.strokeRect(-39,-21,78,44)}
+ else if(p.type==='table'){rect(-30,-9,60,32,'#3c2a28');rect(-34,-16,68,28,'#855a3c');rect(-28,-11,56,18,'#ac7950');rect(-30,14,9,17,'#4e342b');rect(21,14,9,17,'#4e342b')}
+ else if(p.type==='chair'){rect(-11,-16,22,9,'#b38a61');rect(-13,-10,26,23,'#68482f');rect(-9,-6,18,14,'#a3764c');rect(-10,10,5,10,'#51382c');rect(5,10,5,10,'#51382c')}
+ else if(p.type==='cabinet'){rect(-21,-29,42,62,'#3c2b35');rect(-18,-26,36,55,'#76536a');rect(-14,-22,28,24,'#9b7081');rect(-14,5,28,20,'#9b7081');rect(8,-11,3,4,'#f5c979');rect(8,14,3,4,'#f5c979')}
+ else if(p.type==='candle'){rect(-5,-6,10,17,'#e9ddc4');rect(-2,-13,4,8,'#ffce73');rect(-1,-17,2,6,'#fff4b1')}
+ else if(p.type==='torch'){rect(-3,-5,6,24,'#71513e');rect(-6,-19,12,18,'#e99c4d');rect(-3,-23,6,15,'#ffe39a')}
+ g.restore()
+}
+function buildWorldTexture(scene){const c=document.createElement('canvas');c.width=W*TILE;c.height=H*TILE;const g=c.getContext('2d');for(let y=0;y<H;y++)for(let x=0;x<W;x++){const xx=x*TILE,yy=y*TILE,t=themes[tileZone(x,y)];g.fillStyle=map[y][x]?'#171825':t.floor;g.fillRect(xx,yy,TILE,TILE);if(map[y][x]){g.fillStyle=t.edge;g.globalAlpha=.55;g.fillRect(xx,yy,TILE,5);g.fillStyle='#080d17';g.fillRect(xx+3,yy+40,TILE-6,6)}else{g.strokeStyle=t.edge;g.globalAlpha=.4;g.strokeRect(xx+.5,yy+.5,TILE-1,TILE-1);if((x*71+y*137)%11<4){g.fillStyle=t.detail;g.fillRect(xx+9,yy+12,14,2);g.fillRect(xx+26,yy+32,8,2)}}g.globalAlpha=1}for(const p of furniture)drawFurnishing(g,p);scene.textures.addCanvas('dungeon-ground',c)}
 function heroArt(g){g.translate(36,43);g.fillStyle='#131126';g.beginPath();g.ellipse(0,26,19,6,0,0,TAU);g.fill();g.fillStyle='#4d367e';g.beginPath();g.moveTo(-14,-9);g.lineTo(-20,25);g.lineTo(19,25);g.lineTo(14,-9);g.fill();g.strokeStyle='#c3a1f2';g.lineWidth=2;g.stroke();g.fillStyle='#8877c3';g.beginPath();g.moveTo(-13,-10);g.lineTo(13,-10);g.lineTo(13,14);g.lineTo(0,20);g.lineTo(-13,14);g.fill();g.fillStyle='#f0c3a0';g.fillRect(-9,-30,18,20);g.fillStyle='#32213b';g.beginPath();g.arc(0,-28,12,Math.PI,TAU);g.fill();g.fillRect(-11,-27,4,10);g.fillStyle='#fff0ce';g.fillRect(-6,-20,4,3);g.fillRect(3,-20,4,3);g.fillStyle='#efca7d';g.fillRect(-12,9,24,3)}
 function foeArt(g,w,h,zone){const t=themes[zone];g.translate(w/2,h/2);g.fillStyle='#0d0d20';g.beginPath();g.ellipse(0,24,20,7,0,0,TAU);g.fill();g.fillStyle=t.edge;g.strokeStyle=t.glow;g.lineWidth=3;if(zone===2){for(let k=0;k<8;k++){const side=k<4?-1:1,y=-15+k%4*9;g.beginPath();g.moveTo(side*8,y);g.lineTo(side*26,y-7);g.lineTo(side*30,y+5);g.stroke()}g.beginPath();g.ellipse(0,-4,17,21,0,0,TAU);g.fill();g.stroke();for(let i=-1;i<=1;i++){g.fillStyle='#ffcadf';g.fillRect(i*8-2,-15,4,4)}}else{g.beginPath();g.moveTo(-18,18);g.lineTo(-15,-15);g.lineTo(0,-31);g.lineTo(15,-15);g.lineTo(18,18);g.closePath();g.fill();g.stroke();g.fillStyle='#fff1e2';g.fillRect(-10,-10,6,4);g.fillRect(4,-10,6,4);if(zone===3){g.beginPath();g.arc(0,0,11,0,TAU);g.stroke()}if(zone===4){g.beginPath();g.arc(0,-5,24,0,TAU);g.stroke()}}}
 function startPhaser(){if(!window.Phaser)return false;try{
