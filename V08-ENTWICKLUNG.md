@@ -20,3 +20,13 @@ Die produktive GitHub-Pages-Version bleibt auf `main`. Diese Änderungen liegen 
 
 ## QA
 Syntaxprüfung des Frontend-JavaScripts erfolgreich. Automatisierter Browser-Test war in dieser Sitzung durch Browser-Netzwerkrestriktionen blockiert; Animationen, Hover und FPS sind daher noch **nicht** in Chromium abgenommen. Nicht auf `main` zusammenführen, bevor diese Tests gelingen.
+
+## Erweiterung: Charaktereditor und Cloud-Speicherung
+
+- Supabase-Projekt `lgpppwxreeppgcywvlld`: Tabellen `item_catalog` (13 Datensätze), `starter_classes` (5 Klassen), `character_saves` (derzeit 0 Datensätze) sind eingerichtet.
+- Sicherheitsberater: keine Warnungen zum Prüfzeitpunkt.
+- Titelbildschirm, Charaktereditor (Name, Gewand-, Haut- und Haarfarbe), klassenspezifische Startwaffen und Startgegenstände, Spielzeit und Cloud-Slots 1–3 im Entwicklungsbranch.
+- E-Mail-/Passwort-Anmeldung über Supabase Auth; Bestätigungs-E-Mail kann erforderlich sein. Das Frontend nutzt nur den Publishable Key.
+- Sieben unterschiedliche prozedural gezeichnete Waffensilhouetten in Phaser; Gewandfarbe wird als Tint angewandt. Haut- und Haarfarbe sind bisher nur als Charakterdaten gespeichert, nicht individuell gezeichnet.
+- JavaScript-Syntaxprüfung erfolgreich. **Noch keine erfolgreiche Ende-zu-Ende-Prüfung der Anmeldung, Cloud-Slots oder FPS im Browser.** Daher noch nicht nach `main` übertragen.
+- Achtung: Spielstände sind derzeit vollständig clientseitig manipulierbar. Für Bestenlisten oder kompetitive Systeme wäre serverseitige Validierung nötig.
