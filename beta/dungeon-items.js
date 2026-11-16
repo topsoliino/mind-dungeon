@@ -35,6 +35,19 @@ window.DungeonItems = (() => {
   blade:{split:{physical:.65,fire:.35}},dagger:{split:{physical:.5,dark:.5},status:'poison'},
   greatsword:{split:{physical:.7,frost:.3}}
  };
+ const scaling={
+  rust:{strength:'E',dexterity:'E'},rapier:{dexterity:'C',luck:'E'},
+  hammer:{strength:'B',vitality:'D'},staff:{intelligence:'A',attunement:'D'},
+  blade:{faith:'A',dexterity:'D',luck:'E'},dagger:{dexterity:'D',luck:'C'},
+  greatsword:{strength:'S',endurance:'C',vitality:'D',dexterity:'E'}
+ };
+ const gradePoints={E:1,D:2,C:3,B:4,A:5,S:6};
+ function weaponScaling(weapon,attributes){
+  const grades=scaling[weapon.id]||{strength:'E',dexterity:'E'};
+  return Object.entries(grades).map(([attribute,grade])=>({
+   attribute,grade,points:gradePoints[grade],bonus:Math.max(0,attributes[attribute]||0)*gradePoints[grade]
+  }));
+ }
  const armor={
   wanderer:{physical:.14,magic:-.10},scholar:{magic:.30,lightning:.13,physical:-.15},
   hunter:{poison:.36,bleed:.18,fire:-.18},knight:{physical:.28,fire:.22,lightning:-.28},
@@ -48,11 +61,13 @@ window.DungeonItems = (() => {
   {bleed:1,poison:1,magic:.20,lightning:-.40},
   {frost:1,dark:.32,fire:-.32,magic:-.23},
   {poison:1,dark:.30,fire:-.40},
-  {poison:1,frost:-.25}
+  {poison:1,frost:-.25},
+  {bleed:1,poison:1,magic:.20,lightning:-.40},
+  {poison:1,dark:.30,fire:-.40}
  ];
  const foeAttack=[
   {physical:1},{physical:.35,fire:.65},{physical:.75,dark:.25},
-  {physical:.4,magic:.6},{frost:.75,dark:.25},{physical:.75,dark:.25},{physical:1}
+  {physical:.4,magic:.6},{frost:.75,dark:.25},{physical:.75,dark:.25},{physical:1},{physical:1},{physical:.85,dark:.15}
  ];
  function rank(item){return rarity[item?.rarity]?item.rarity:'common';}
  function key(item){return [item.kind,item.id,rank(item)].join('/');}
@@ -103,5 +118,5 @@ window.DungeonItems = (() => {
   }
   return [...picks.map(row=>row[0]),...picks.map(row=>row[1])];
  }
- return {damage,rarity,food,requirements,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,weaponScaling,food,requirements,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

@@ -18,7 +18,7 @@ window.DungeonRun = (() => {
  }
  function nextSeed(seed){return (Math.imul(seed,1664525)+1013904223)>>>0;}
  function freshSeed(){return crypto.getRandomValues(new Uint32Array(1))[0];}
- function generate(seed,varied=true){
+ function generate(seed,varied=true,revision=2){
   const rng=random(seed);
   const cells=Array.from({length:6},(_,i)=>({col:i%3,row:i/3|0}));
   const adjacent=(a,b)=>Math.abs(a.col-b.col)+Math.abs(a.row-b.row)===1;
@@ -39,11 +39,27 @@ window.DungeonRun = (() => {
    }
   }
   const map=Array.from({length:H},()=>Array(W).fill(1));
+  const terrain=Array.from({length:H},()=>Array(W).fill(null));
+  const style=random(seed^0x9a19ac27);
   const regions=Array.from({length:H},()=>Array(W).fill(-1));
   const carve=({x,y,w,h},id)=>{
    for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++){map[j][i]=0;regions[j][i]=id;}
   };
-  for(const room of rooms)carve(room,room.i);
+  for(const room of rooms){
+   carve(room,room.i);
+   if(revision<2)continue;
+   // Chamfer opposing corners while leaving all four possible doorways free.
+   const corners=style()<.5?[[-1,-1],[1,1]]:[[1,-1],[-1,1]];
+   for(const [sx,sy] of corners){
+    const x=sx<0?room.x:room.x+room.w-1,y=sy<0?room.y:room.y+room.h-1;
+    for(const [a,b] of [[x,y],[x-sx,y],[x,y-sy]]){map[b][a]=1;regions[b][a]=-1;}
+   }
+   if(room.i>0){
+    const right=style()<.5,x=right?room.x+room.w-3:room.x+2;
+    const top=style()<.5,y=top?room.y+2:room.y+room.h-3;
+    for(let i=0;i<2;i++){map[y][x+(right?-i:i)]=1;terrain[y][x+(right?-i:i)]='partition';}
+   }
+  }
   const visited=new Set([0]),corridors=[],gates=[];
   while(visited.size<rooms.length){
    const candidates=[];
@@ -53,16 +69,19 @@ window.DungeonRun = (() => {
    const [from,to]=candidates[Math.floor(rng()*candidates.length)],a=rooms[from],b=rooms[to];
    const vertical=a.cy===b.cy;
    const [first,last]=[a,b].sort((p,q)=>vertical?p.x-q.x:p.y-q.y);
+   const step=corridors.length;
+   const breadth=revision<2?3:step===0?3:step===1?2:step===2?5:3;
+   const lane=Math.floor(breadth/2);
    const corridor=vertical
-    ? {x:first.x+first.w,y:first.cy-1,w:last.x-first.x-first.w,h:3}
-    : {x:first.cx-1,y:first.y+first.h,w:3,h:last.y-first.y-first.h};
+    ? {x:first.x+first.w,y:first.cy-lane,w:last.x-first.x-first.w,h:breadth}
+    : {x:first.cx-lane,y:first.y+first.h,w:breadth,h:last.y-first.y-first.h};
    const id=rooms.length+corridors.length;
    const [gateId,name,color]=gateStyles[to];
    const x=vertical?corridor.x+Math.floor(corridor.w/2):a.cx;
    const y=vertical?a.cy:corridor.y+Math.floor(corridor.h/2);
    carve(corridor,id);
    corridors.push({...corridor,id,from,to,vertical});
-   gates.push({id:gateId,x,y,vertical,from,to,name,color});
+   if(revision<2||step===0||step===3&&style()<.45)gates.push({id:gateId,x,y,vertical,from,to,name,color,corridorId:id});
    visited.add(to);
   }
   const climate=random(seed^0x832a79f1);
@@ -80,7 +99,22 @@ window.DungeonRun = (() => {
    carve(support,id);
    return {...support,passage:{id:id+1,x:parent.cx-1,y:start,w:3,h:y-start,from:parent.i,vertical:false}};
   });
-  return {rooms,corridors,map,regions,gates,annexes};
+  if(revision>=2){
+   const crossings=shuffle(corridors.filter(c=>!gates.some(g=>g.corridorId===c.id)),style);
+   for(const [i,c] of crossings.slice(0,style()<.58?2:1).entries()){
+    const water=i===1, span=c.vertical?c.w:c.h;
+    for(let distance=0;distance<span;distance++){
+     for(let lane=-3;lane<(c.vertical?c.h:c.w)+3;lane++){
+      const x=c.x+(c.vertical?distance:lane),y=c.y+(c.vertical?lane:distance);
+      if(map[y]?.[x]===undefined)continue;
+      if(regions[y][x]===c.id)terrain[y][x]=c.vertical?'bridge-x':'bridge-y';
+      else if(map[y][x]===1&&!terrain[y][x]){terrain[y][x]=water?'river':'abyss';regions[y][x]=c.id;}
+     }
+    }
+   }
+  }
+  return {rooms,corridors,map,regions,gates,annexes,terrain};
+
  }
  function differentLayoutSeed(seed,rooms,gates){
   const signature=(r,g)=>r.map(p=>[p.x,p.y,p.w,p.h].join(':')).join('|')+'/'+g.map(p=>p.from+':'+p.to).sort().join('|');
@@ -124,10 +158,10 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[0],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],brewIngredients:[],activeBrew:null,brewEffects:[]};
+   defeated:[],explored:[0],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:2,brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
-  return {...floorState(seed,1),solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1};
+  return {...floorState(seed,1),solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};
  }
  const runFields=[...Object.keys(freshRun(0))];
  function snapshot(save){

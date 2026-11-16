@@ -54,6 +54,24 @@ window.DungeonEffectsArt = (() => {
     const x=(i*13+frame*5)%63,y=12+(i*7+frame*2)%40;
     pixel(x,y,2+(i%3),1,i%2?'#e199d9a8':'#714c9c');
    }
+  }else if(type==='altar'){
+   const ring=[26,20,14,8,4,13][frame];
+   for(let i=0;i<12;i++){
+    const a=i*Math.PI/6,x=32+Math.cos(a)*ring,y=30+Math.sin(a)*ring*.76;
+    const col=frame<4?(i%2?'#c8c1f0':'#8fbdc0'):'#ffdf99';
+    pixel(x,y,3,3,col);pixel(x+2,y+1,1,1,'#f6eded');
+   }
+   const size=[2,5,8,11,15,5][frame];
+   shape([[32,29-size],[34+size,30],[32,32+size],[30-size,30]],'#80b5c1a0');
+   shape([[32,31-size],[34+size/2|0,30],[32,31+size],[30-size/2|0,30]],'#fbebbc');
+   pixel(31,22,2,17,'#fff2db');
+  }else if(type==='arrow'){
+   rArrow();
+   function rArrow(){
+    pixel(5,30,50,4,'#292420');pixel(6,31,49,2,'#c29566');
+    shape([[49,27],[62,32],[49,37]],'#d9d1b7');pixel(50,31,7,1,'#fff1d4');
+    shape([[3,26],[14,28],[17,32],[14,36],[3,38],[7,32]],'#b49672');
+   }
   }else if(type==='web-shot'){
    for(const [x,y] of [[14,23],[22,16],[35,16],[47,23],[48,36],[39,46],[25,47],[16,39]]){
     const dx=x-32,dy=y-32;
@@ -73,7 +91,7 @@ window.DungeonEffectsArt = (() => {
   }else{
    const palettes={
     charge:['#775334','#bd8b50','#f1cd81'],rift:['#40254e','#985bb2','#e0a7ec'],
-    web:['#57505b','#aea29e','#f2e5cc'],reap:['#764039','#bc6654','#f8b786'],
+    web:['#57505b','#aea29e','#f2e5cc'],bow:['#65583c','#ad9568','#e9d3a4'],crossbow:['#54433a','#a28056','#ded0aa'],reap:['#764039','#bc6654','#f8b786'],
     grab:['#44543b','#8d9058','#d8bd7d'],bite:['#4c5838','#9fa067','#e8ce83']
    };
    const [low,mid,high]=palettes[type];
@@ -92,7 +110,7 @@ window.DungeonEffectsArt = (() => {
   }
   return c;
  }
- const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite'];
+ const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','altar'];
  const frames=Object.fromEntries(types.map(type=>[type,Array.from({length:6},(_,i)=>paint(type,i))]));
  return {frames};
 })();

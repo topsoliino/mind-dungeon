@@ -51,7 +51,19 @@ window.DungeonArt = (() => {
     if(floorCache.has(key))return floorCache.get(key);
     const c=surface(),{r,poly}=brush(c),t=stone[zone],p=t.floor,rnd=random(key+37);
     r(0,0,64,64,p[0]);
-    if(zone===3){
+    if(zone===5){
+      r(0,0,64,64,p[1]);
+      for(let i=0;i<118;i++){
+       const x=rnd(64),y=rnd(64),w=1+rnd(8);
+       r(x,y,w,1,[p[0],p[2],p[4],'#626346'][rnd(4)]);
+       if(i%8===0){r(x,y-3,1,4,'#687c4b');r(x+2,y-2,1,3,p[3]);}
+      }
+      if(variant%3===0){
+       for(let i=0;i<8;i++){
+        const x=rnd(58),y=rnd(58);r(x,y,4,3,'#777364');r(x+1,y,3,1,'#a09a7a');
+       }
+      }
+    }else if(zone===3){
       for(let y=0;y<64;y+=16){
         const split=12+rnd(38);
         block(r,0,y,split,16,p,rnd(2));block(r,split,y,64-split,16,p,rnd(2));
@@ -97,12 +109,47 @@ window.DungeonArt = (() => {
     }
     wallCache.set(key,c);return c;
   }
-  function world(map,zoneAt,lights,seed) {
+  const terrainCache=new Map();
+  function terrainTile(type,variant){
+    const key=type+variant;
+    if(terrainCache.has(key))return terrainCache.get(key);
+    const c=surface(),{r,poly}=brush(c),rng=random(variant+31);
+    if(type==='abyss'||type==='river'){
+     const river=type==='river';
+     r(0,0,64,64,river?'#182e37':'#11151e');
+     for(let i=0;i<42;i++){
+      const x=rng(64),y=rng(64),w=2+rng(15);
+      const palette=river?['#223d48','#2e4e57','#42737c']:['#1b2230','#262938','#343344'];
+      r(x,y,w,1+rng(3),palette[rng(3)]);
+     }
+     if(river)for(let i=0;i<8;i++){
+      const x=rng(57),y=rng(61);
+      r(x,y,5+rng(10),1,'#83a8a697');r(x+4,y+1,3,1,'#4a7a86');
+     }
+    }else if(type==='partition'){
+     r(1,32,62,24,'#171c2299');r(1,17,62,31,'#292b2c');r(3,17,58,7,'#79756a');
+     for(const x of [3,25,45]){r(x,26,x===45?16:20,10,'#5f5b55');r(x+1,27,16,2,'#827d72');}
+     r(4,38,54,7,'#45464a');r(6,45,50,2,'#8a765e');
+    }else{
+     if(type==='bridge-y'){const ctx=c.getContext('2d');ctx.translate(64,0);ctx.rotate(Math.PI/2);}
+     r(0,0,64,64,'#282324');
+     for(let y=0;y<64;y+=12){
+      r(0,y+1,64,10,y%24?'#735339':'#674934');
+      r(0,y+2,64,2,'#a27248');r(0,y+9,64,2,'#4e372b');
+      for(let i=0;i<4;i++){r(rng(59),y+4+rng(4),4+rng(8),1,'#906347');}
+     }
+     for(const y of [5,57]){r(0,y,64,3,'#b18957');for(const x of [8,30,53])r(x,y,2,2,'#2e2622');}
+    }
+    terrainCache.set(key,c);return c;
+  }
+  function world(map,zoneAt,lights,seed,terrain) {
     const c=surface(map[0].length*SIZE,map.length*SIZE),{g,r}=brush(c);
     r(0,0,c.width,c.height,'#101212');
     const rnd=random(seed);
     for(let y=0;y<map.length;y++) for(let x=0;x<map[y].length;x++){
       const z=zoneAt(x,y),v=rnd(12);
+      const surfaceType=terrain?.[y]?.[x];
+      if(surfaceType){g.drawImage(terrainTile(surfaceType,v),x*SIZE,y*SIZE);continue;}
       if(map[y][x]===0){g.drawImage(floor(z,v),x*SIZE,y*SIZE);continue;}
       const mask=(map[y-1]?.[x]===0?1:0)|(map[y]?.[x+1]===0?2:0)|(map[y+1]?.[x]===0?4:0)|(map[y]?.[x-1]===0?8:0);
       if(mask)g.drawImage(wall(z,mask,v%4),x*SIZE,y*SIZE);
@@ -207,6 +254,40 @@ window.DungeonArt = (() => {
       for(const [x,y,col] of [[26,31,'#dbb377'],[94,34,'#89b8b8'],[101,37,'#ad779c']]){
        r(x+3,y,4,5,edge);r(x,y+5,10,12,ink);r(x+1,y+7,8,8,col);r(x+2,y+8,2,4,bright);
       }
+    }else if(type==='tree'){
+      shadow(27,65,73,22);r(57,43,13,36,'#77523b');r(58,48,4,28,'#ab7850');
+      poly([[19,46],[24,33],[32,24],[42,20],[45,12],[62,10],[77,15],[82,22],[99,30],[108,47],[101,55],[80,64],[50,60],[30,62]],'#26382c');
+      poly([[24,44],[33,31],[47,27],[50,17],[63,14],[76,20],[84,29],[98,36],[101,48],[89,56],[73,57],[55,52],[40,57],[29,52]],'#456147');
+      for(const [x,y,w] of [[31,38,17],[44,26,18],[55,21,17],[64,35,20],[78,42,18],[46,45,16]]){r(x,y,w,6,'#687a4d');r(x+2,y-2,w-7,3,'#88945d');r(x+3,y+7,w-5,2,'#3a5744');}
+      r(60,70,3,8,'#816746');r(52,76,10,3,'#574236');
+    }else if(type==='grass'){
+      for(const [x,y,h] of [[44,59,11],[52,56,13],[58,61,8],[67,57,15],[76,63,10],[85,58,8]]){
+       poly([[x-5,y],[x-7,y-h],[x,y-4],[x+3,y-h-3],[x+5,y]],'#536a42');
+       r(x+2,y-6,2,6,'#8d9959');
+      }
+    }else if(type==='provisions'||type==='alchemy'){
+      shadow(20,70,87,12);planks(23,21,82,51);r(28,25,72,38,'#2e2423');
+      for(const row of [28,49]){
+       r(26,row+16,76,4,edge);
+       for(let i=0;i<5;i++){
+        const x=32+i*13,col=['#b48450','#9eae75','#c8986d','#798f9e','#ad7d96'][i];
+        if(type==='alchemy'){
+         r(x+2,row,4,6,'#b4a585');r(x,row+5,8,10,col);r(x+1,row+6,2,6,'#dad3ae');
+        }else{r(x,row+5,10,10,col);r(x+1,row+4,8,3,'#d0a366');r(x+3,row+8,2,4,'#77553d');}
+       }
+      }
+      r(25,23,78,3,'#b28051');
+    }else if(type==='banquet'){
+      shadow(17,69,94,15);planks(18,37,92,34);r(25,64,8,15,shade);r(94,64,8,15,shade);
+      for(const [i,id] of ['bread','banana','chicken'].entries())c.getContext('2d').drawImage(icon('food',id),24+i*24,32,25,25);
+      r(77,56,10,6,'#b4a286');r(85,57,2,3,'#efe3b9');
+    }else if(type==='market'){
+      shadow(4,67,120,22);
+      for(const x of [12,109]){r(x,20,7,57,shade);r(x+1,21,2,55,edge);}
+      poly([[18,12],[108,12],[122,33],[7,33]],'#723e46');
+      for(const x of [20,39,58,77,96])poly([[x,13],[x+9,13],[x+13,33],[x-3,33]],'#cb9663');
+      r(8,33,112,4,shade);planks(12,51,105,19);r(13,68,103,8,wood);
+      for(const [x,y] of [[21,44],[42,48],[83,46],[101,47]]){r(x,y,10,9,'#8d754b');r(x+2,y,7,2,'#d8b57b');}
     }else if(type==='lectern'){
       shadow(37,69,53,11);
       r(59,48,11,23,wood);r(49,68,30,6,edge);
@@ -230,7 +311,23 @@ window.DungeonArt = (() => {
     const crouch=stage===1?anticipation:stage===2?-2:stage===3?3-step:Math.abs(stride);
     const y=n=>n+crouch;
     poly([[10,51],[18,47],[48,47],[55,52],[49,56],[14,56]],'#100d13a8');
-    if(zone===5){
+    if(zone===7||zone===8){
+     const bow=zone===7,body=enemyPose(bow?3:5,stage===0?frame:4);
+     c.getContext('2d').drawImage(body,0,0);
+     r(44,14,20,38,'#211b1a77');
+     const pull=stage===1?step*3:stage===2?8-step*2:0;
+     if(bow){
+      poly([[48,12],[53,9],[60,18],[63,29],[61,42],[54,49],[49,48],[57,40],[59,29],[55,19]],'#b68959');
+      poly([[52,10],[55-pull,29],[54,49],[52,49],[53-pull,29]],'#dec8a4');
+      if(stage<2)r(47-pull,28,15+pull,2,'#f2dcaa');
+     }else{
+      r(40,28,22,5,'#a47a51');r(47-pull/2|0,30,6,11,'#674437');
+      poly([[42,19],[47,21],[51,26],[57,22],[62,21],[60,25],[52,30],[44,24]],'#99918a');
+      r(55,27,8,2,'#e6d6ab');
+     }
+     r(42-pull/2|0,29,5,5,bow?'#cfc09e':'#a5a473');
+     return c;
+    }else if(zone===5){
      // A bent corpse straightens and reaches with both hands before its grab.
      const thrust=stage===2?reach+6:stage===1?-anticipation:stride;
      r(21,40+stride,9,14-stride,'#252923');r(36,40-stride,9,14+stride,'#303229');
@@ -401,6 +498,14 @@ window.DungeonArt = (() => {
       poly([[32,11],[43,25],[41,37],[32,45],[22,37],[22,25]],type==='seal'?glow:'#526d75');
       poly([[32,16],[40,26],[39,34],[32,41],[25,34],[25,26]],glow);
       r(30,20,3,13,'#e6e6bf');r(26,26,11,3,'#e6e6bf');r(31,36,2,2,ink);
+    }else if(type==='bat-merchant'){
+      poly([[5,45],[2,29],[12,21],[20,27],[23,20],[22,11],[29,14],[35,14],[42,9],[42,21],[47,25],[54,19],[63,30],[58,47],[46,46],[45,54],[20,54],[18,47]],'#211922');
+      poly([[7,29],[13,24],[22,30],[22,44],[15,38],[9,41]],'#654550');
+      poly([[43,30],[53,24],[59,29],[55,41],[50,38],[43,43]],'#654550');
+      poly([[23,27],[39,26],[46,46],[40,53],[22,51],[18,42]],'#574c62');
+      r(25,17,15,13,'#86727d');r(26,20,4,2,'#f1bf6f');r(35,20,4,2,'#f1bf6f');
+      r(28,26,9,2,'#2f2227');r(29,27,2,3,'#e9daac');r(34,27,2,3,'#e9daac');
+      r(24,38,19,4,'#70513a');r(31,38,5,5,'#d1aa67');
     }else if(type==='merchant'){
       r(10,50,45,6,'#130f10a0');r(11,32,42,17,ink);r(14,35,36,11,wood);r(16,35,32,2,edge);
       r(14,18,3,29,edge);r(47,18,3,29,edge);

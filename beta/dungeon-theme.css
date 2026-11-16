@@ -177,3 +177,21 @@ button.bad { background:#643730!important; }
  .brew-kettle>img { width:94px; }
 }
 @media(prefers-reduced-motion:reduce) { .brew-bubbles span { animation:none; } }
+
+.weapon-totals b { color:#f3d4a0;font-size:17px; }
+.weapon-totals b span { color:#b9d29b; }
+.scaling-list { display:flex;flex-wrap:wrap;gap:4px; }
+.scale-grade { padding:2px 5px;border:1px solid #72583a;background:#1c1715;color:#dbc59c;font-size:12px; }
+.scale-grade b { color:#ffd285;margin-left:3px; }
+#modal:has(.level-ritual) { width:min(790px,96vw); }
+.ritual-header { display:flex;gap:18px;align-items:center;padding-bottom:13px;border-bottom:1px solid #876343; }
+.ritual-header h2,.ritual-header p { margin:2px 0; }
+.ritual-emblem { display:grid;place-items:center;width:65px;height:65px;border:3px double #bc9062;
+ background:radial-gradient(ellipse,#654952,#271d23 70%);color:#ffe5ac;font-size:30px;text-shadow:0 0 12px #c79766; }
+.ritual-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:11px; }
+.ritual-grid button { display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:5px 8px;padding:7px; }
+.ritual-grid small { display:block;margin-top:3px;font-size:11px; }
+.ritual-icon { color:#f9d2a0;font-size:20px;line-height:1; }
+.ritual-value { grid-column:2;color:#f1d4a4; }
+.ritual-value span,.ritual-grid .ritual-gain { color:#b5cb98; }
+@media(max-width:660px){.ritual-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }}
