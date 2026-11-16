@@ -156,3 +156,24 @@ button.bad { background:#643730!important; }
  .ledger .rpg-cell,.ledger .rpg-cell .item-glyph,.ledger .rpg-cell .item-glyph img { max-height:41px; }
 }
 @media(pointer:coarse) { #soulPreview { bottom:220px; } }
+
+#modal:has(.brew-menu) { width:min(760px,96vw); }
+.brew-layout { display:grid;grid-template-columns:minmax(160px,.78fr) minmax(0,1.22fr);gap:16px; }
+.brew-kettle { position:relative;display:grid;justify-items:center;align-content:center;text-align:center;min-height:200px;padding:14px;border:1px solid #89663b;background:radial-gradient(ellipse at 50% 55%,#372f21,#211914 66%); }
+.brew-kettle>img { width:min(100%,188px);height:auto;image-rendering:pixelated; }
+.brew-kettle p { margin:0;font-size:14px; }
+.brew-kettle small { margin-top:5px; }
+.brew-bubbles { position:absolute;inset:22% 22% auto;display:flex;justify-content:space-evenly;pointer-events:none; }
+.brew-bubbles span { width:8px;height:8px;background:var(--bubble);box-shadow:0 0 9px var(--bubble);animation:brew-bubble 1.6s steps(6,end) infinite; }
+.brew-bubbles span:nth-child(2) { animation-delay:-.5s; }
+.brew-bubbles span:nth-child(3) { animation-delay:-1s; }
+@keyframes brew-bubble { from { transform:translateY(12px);opacity:0; } 35% { opacity:1; } to { transform:translateY(-30px);opacity:0; } }
+.brew-menu p { margin:4px 0 8px; }
+.ingredient { display:block;width:100%;padding:7px 10px;margin-bottom:5px; }
+.ingredient small { display:block;margin-top:3px; }
+@media(max-width:560px) {
+ .brew-layout { grid-template-columns:1fr;gap:8px; }
+ .brew-kettle { min-height:0;padding:7px; }
+ .brew-kettle>img { width:94px; }
+}
+@media(prefers-reduced-motion:reduce) { .brew-bubbles span { animation:none; } }

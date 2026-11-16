@@ -17,6 +17,16 @@ window.DungeonItems = (() => {
   legendary:{label:'Legendär',color:'#ffab59',power:1.39,value:2.4},
   mythic:{label:'Mythisch',color:'#ff6769',power:1.58,value:3}
  };
+ const food={
+  glucose:{name:'Traubenzucker',heal:9},
+  banana:{name:'Banane',heal:15},
+  bread:{name:'Brot',heal:23},
+  chicken:{name:'Hühnchen',heal:34}
+ };
+ const requirements={
+  rapier:{dexterity:12},hammer:{strength:14,vitality:12},staff:{intelligence:13},
+  blade:{faith:13},dagger:{dexterity:11,luck:10},greatsword:{strength:15,endurance:13}
+ };
  const kinds={weapon:'Waffen',ring:'Ringe',armor:'Rüstung'};
  const merchantRing={id:'merchant',name:'Händlerring',desc:'Ausgerüstet zeigt der Händler je eine zusätzliche Waffe, einen Ring und ein Rüstungsteil.',bonus:'merchant'};
  const weapons={
@@ -45,10 +55,10 @@ window.DungeonItems = (() => {
  function rank(item){return rarity[item?.rarity]?item.rarity:'common';}
  function key(item){return [item.kind,item.id,rank(item)].join('/');}
  function enemyRarity(roll,depth){
-  if(roll<.35)return 'common';
-  if(roll<.45)return 'rare';
-  if(roll<.50)return depth>=3?'mythic':'epic';
-  if(roll<.51)return 'legendary';
+  if(roll<.13)return 'common';
+  if(roll<.165)return 'rare';
+  if(roll<.178)return depth>=3?'mythic':'epic';
+  if(roll<.18)return 'legendary';
   return null;
  }
  const weapon=id=>weapons[id]||weapons.rust;
@@ -70,7 +80,7 @@ window.DungeonItems = (() => {
   actor.dominant=Object.keys(actor.damageTypes).reduce((best,type)=>actor.damageTypes[type]>actor.damageTypes[best]?type:best,hit.type);
  }
  function price(item,depth){
-  const base={weapon:38,ring:32,armor:28}[item.kind]+Math.max(0,depth-1)*5;
+  const base={weapon:38,ring:32,armor:28,food:7}[item.kind]+Math.max(0,depth-1)*5;
   return Math.round(base*rarity[rank(item)].value);
  }
  function shop(seed,depth,pools){
@@ -91,5 +101,5 @@ window.DungeonItems = (() => {
   }
   return [...picks.map(row=>row[0]),...picks.map(row=>row[1])];
  }
- return {damage,rarity,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,food,requirements,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

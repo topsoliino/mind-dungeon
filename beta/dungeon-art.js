@@ -7,7 +7,8 @@ window.DungeonArt = (() => {
     { floor:['#28252b','#403a44','#4f4652','#63555c','#332d38'], wall:['#1c1923','#393342','#524453','#6c5764'], accent:'#8f5749', light:'#ed9c54' },
     { floor:['#252029','#3a313b','#483946','#594553','#302832'], wall:['#19151e','#322932','#493844','#694b58'], accent:'#92535d', light:'#bb6670' },
     { floor:['#2f2521','#48352c','#574236','#68503f','#372923'], wall:['#211b1b','#3d302c','#564238','#735543'], accent:'#a38049', light:'#ffae58' },
-    { floor:['#1d282e','#30424a','#3b5058','#4b636a','#26343f'], wall:['#151f27','#2b3c48','#3d535e','#597079'], accent:'#588a91', light:'#79b7c6' }
+    { floor:['#1d282e','#30424a','#3b5058','#4b636a','#26343f'], wall:['#151f27','#2b3c48','#3d535e','#597079'], accent:'#588a91', light:'#79b7c6' },
+    { floor:['#26342a','#394633','#485540','#647054','#303b30'], wall:['#242b22','#3b4433','#545e44','#788165'], accent:'#71854f', light:'#b1bc75' }
   ];
   const ink='#17141a', shade='#352323', wood='#694433', grain='#855837', edge='#aa7847', gold='#c99b56', bright='#ecd28d';
   const floorCache = new Map(), wallCache = new Map(), spriteCache = new Map(), iconCache = new Map();
@@ -68,7 +69,7 @@ window.DungeonArt = (() => {
       const x=4+rnd(55),y=4+rnd(55);
       r(x,y,1+rnd(zone===3?11:4),1+rnd(2),p[2+rnd(3)]);
     }
-    if(variant<5&&(zone===0||zone===4)){
+    if(variant<5&&(zone===0||zone===4||zone===5)){
       const x=variant%2?5:48,y=12+rnd(31);
       for(let i=0;i<12;i++)r(x+rnd(12),y+rnd(12),1+rnd(4),1+rnd(3),i%3?t.accent:p[4]);
     }
@@ -198,6 +199,14 @@ window.DungeonArt = (() => {
         poly([[x+4,y-4],[x+1,y-h+10],[x+6,y-h+3],[x+w-7,y-h+9],[x+w-6,y-8]],p[1]);
         r(x+5,y-h+7,2,h/3|0,p[2]);r(x+8,y-h+10,2,h/4|0,p[2]);
       }
+    }else if(type==='lab'){
+      shadow(13,69,103,16);planks(17,41,94,29);
+      for(const x of [23,98]){r(x,66,8,15,shade);r(x,67,2,13,edge);}
+      r(19,67,90,3,edge);
+      c.getContext('2d').drawImage(icon('kettle'),40,10,47,52);
+      for(const [x,y,col] of [[26,31,'#dbb377'],[94,34,'#89b8b8'],[101,37,'#ad779c']]){
+       r(x+3,y,4,5,edge);r(x,y+5,10,12,ink);r(x+1,y+7,8,8,col);r(x+2,y+8,2,4,bright);
+      }
     }else if(type==='lectern'){
       shadow(37,69,53,11);
       r(59,48,11,23,wood);r(49,68,30,6,edge);
@@ -213,8 +222,85 @@ window.DungeonArt = (() => {
     }
     spriteCache.set(key,c);return c;
   }
+  // Integer-pixel sprite poses. The feet stay anchored while limbs, faces and effects move.
+  function enemyPose(zone,frame){
+    const c=surface(),{r,poly}=brush(c),step=frame%4,stage=(frame/4)|0;
+    const stride=[-2,0,2,0][step],reach=[0,5,10,4][step];
+    const anticipation=[0,1,3,5][step];
+    const crouch=stage===1?anticipation:stage===2?-2:stage===3?3-step:Math.abs(stride);
+    const y=n=>n+crouch;
+    poly([[10,51],[18,47],[48,47],[55,52],[49,56],[14,56]],'#100d13a8');
+    if(zone===0){
+     // Moss sentinel plants alternating feet, tucks its head, then drives both fists forward.
+     const p=['#222b22','#414d35','#647454','#a49f6b','#324334'];
+     const arm=stage===2?8+reach:stage===1?-anticipation:stride;
+     block(r,19,40+stride,12,14-stride,p,0);block(r,34,40-stride,12,14+stride,p,0);
+     block(r,11,y(26)+arm,12,17,p,1);block(r,41,y(26)+arm,12,17,p,1);
+     block(r,19,y(21),27,24,p,1);block(r,22,y(10),21,17,p,1);
+     r(25,y(18),5,3,'#f0c77b');r(34,y(18),5,3,'#f0c77b');
+     r(20,y(33),8,3,'#89925b');r(34,y(26),9,4,'#8c9b61');
+     if(stage===2){r(5,19+step*5,5,4,'#c5aa7766');r(55,27+step*4,4,3,'#c5aa7766');}
+    }else if(zone===1){
+     // The cinder cultist disappears into its cloak and tears a dark rift while lunging.
+     const sway=stage===2?reach:stride;
+     poly([[30,y(8)],[42,y(14)],[48,y(29)],[53+sway,50],[40,53],[17+sway,54],[10+sway,48],[19,y(22)]],ink);
+     poly([[31,y(12)],[41,y(17)],[44,y(33)],[49+sway,48],[34+sway,51],[15+sway,49],[22,y(23)]],'#794147');
+     poly([[27,y(18)],[33,y(15)],[39,y(21)],[38,y(29)],[25,y(29)]],'#b27157');
+     r(27,y(23),11,5,ink);r(29,y(24),3,2,'#ffd18a');r(34,y(24),3,2,'#ffd18a');
+     r(31+sway,y(34),3,9,'#b8845c');r(29+sway,y(36),7,2,'#e2b779');
+     if(stage>0&&stage<3){
+      const x=13+reach;
+      poly([[x,y(33)],[x+3,y(28)],[x+10,y(32)],[x+8,y(39)],[x-3,y(42)]],'#b17ecf');
+      r(x+2,y(34),4,5,'#ebc6f4');r(x-6,y(43)+step,3,2,'#b37bc6');
+     }
+    }else if(zone===2){
+     // Each opposing leg pair changes angle. The abdomen rises before the web release.
+     const lift=stage===1?anticipation*2:stage===2?8-reach/2:0;
+     for(const side of [-1,1])for(let i=0;i<4;i++){
+      const leg=22+i*6,bend=7+i*3+(i%2===0?stride:-stride)+lift;
+      const mir=points=>points.map(([x,yy])=>[32+(x-32)*side,Math.round(yy)]);
+      poly(mir([[37,leg],[54,leg-bend],[59,leg-bend+3],[63,leg+5],[60,leg+7],[55,leg-bend+7],[37,leg+6]]),ink);
+      poly(mir([[39,leg+1],[54,leg-bend+2],[58,leg-bend+4],[61,leg+5],[57,leg-bend+6],[38,leg+4]]),'#986361');
+     }
+     poly([[24,y(10)],[40,y(10)],[47,y(22)],[44,43],[38,50],[24,49],[18,39],[19,y(23)]],ink);
+     poly([[25,y(12)],[38,y(12)],[44,y(23)],[42,39],[35,46],[24,43],[22,34],[22,y(22)]],'#593a4b');
+     r(27,y(19),10,4,'#9c626c');r(24,y(26),3,3,'#805869');r(38,y(26),3,3,'#805869');
+     for(const x of [24,30,36])r(x,38,4,3,'#f19478');
+     r(24,43,3,6,'#a78579');r(37,43,3,6,'#a78579');
+     if(stage===2){r(30,48+step,4+step*2,2,'#ebdfc8');r(25-step,52+step,3,2,'#c5b9a9');}
+    }else if(zone===3){
+     // A skeleton raises its blade overhead, then swings through four hand positions.
+     poly([[22,y(25)],[43,y(25)],[49,49],[40,53],[17,52],[13,49]],'#473631');
+     r(24,29+stride,5,20,'#a4977a');r(35,29-stride,5,20,'#b1a88a');
+     r(20,y(9),24,20,ink);r(23,y(10),18,16,'#c0b399');r(23,y(10),18,3,'#e2d4ae');
+     r(25,y(17),5,5,ink);r(34,y(17),5,5,ink);r(30,y(22),4,4,'#63574a');
+     for(const i of [0,1,2]){r(23,31+i*4,20,2,'#cebf99');}
+     const [x,handY,tipX,tipY]=(stage===1?[[50,34,53,11],[50,30,55,6],[47,26,52,4],[43,22,48,3]]:
+      stage===2?[[42,22,56,5],[48,27,63,23],[48,38,62,49],[42,42,48,61]]:
+      [[46,37,52,13],[47,37,53,14],[46,39,52,15],[46,38,52,14]])[step];
+     poly([[39,29],[x,handY],[x-3,handY+5],[37,34]],'#b3a78c');
+     poly([[x-2,handY],[tipX-2,tipY],[tipX+2,tipY],[x+3,handY+4]],'#d6c7a2');
+     r(x-3,handY,7,3,'#a8784d');
+    }else{
+     // The wraith's hem ripples, then ice crystals grow between its raised hands.
+     const float=y(0),spread=stage===2?step*3:stride;
+     poly([[31,6+float],[43,14+float],[48,27+float],[55+spread,46],[43,44],[40,54],[31,49+stride],[23,55],[19,47],[11-spread,51],[17,26+float]],'#223140');
+     poly([[31,10+float],[41,17+float],[44,28+float],[49+spread,42],[38,42],[36,49],[29,46],[23,51],[18-spread,45],[21,30+float]],'#537d8b');
+     poly([[29,y(13)],[39,y(17)],[43,y(26)],[35,y(30)],[24,y(27)],[24,y(20)]],'#87aab2');
+     r(25,y(23),15,5,'#304351');r(27,y(24),4,2,'#c7f7ef');r(34,y(24),4,2,'#c7f7ef');
+     if(stage===1||stage===2){
+      for(const x of [12,51]){
+       const height=3+step*2+(stage===2?5:0);
+       poly([[x,31-height],[x+4,31],[x+1,37],[x-3,32]],'#b3f0ff');
+       r(x,31,2,4,'#e9ffff');
+      }
+     }
+    }
+    return c;
+  }
   function actor(type,options={}) {
-    const {zone=0,frame=0,skin='#d4a785',hair='#392b4e',color='#755666',armor={}}=options;
+    if(type==='foe')return enemyPose(options.zone||0,options.frame||0);
+    const {frame=0,skin='#d4a785',hair='#392b4e',color='#755666',armor={}}=options;
     const c=surface(),{r,poly}=brush(c);
     const shape=(p,col)=>poly(p,col);
     shape([[13,47],[49,47],[55,52],[51,56],[13,56],[8,53]],'#100d13a8');
@@ -231,46 +317,6 @@ window.DungeonArt = (() => {
       r(22,11,20,16,ink);r(24,13,16,13,skin);r(23,10,18,6,hair);r(22,15,4,7,hair);r(39,15,4,6,hair);
       r(27,18,3,2,ink);r(35,18,3,2,ink);r(30,23,5,1,'#905d51');
       if(armor.helmet){r(22,10,21,7,armor.helmet);r(24,9,16,2,'#ddd5b4');r(22,15,5,9,armor.helmet);r(39,15,4,9,armor.helmet);}
-    }else if(zone===0){
-      const p=['#252a22','#3d4b31','#65704c','#9a9266'];
-      for(const [x,y,w,h] of [[20,38,11,15],[34,38,11,15],[10,26,12,21],[40,27,14,22],[17,19,30,26],[22,9,22,22]]){
-        block(r,x,y,w,h,[p[0],p[1],p[2],p[3],ink],1);
-      }
-      r(25,19,5,3,'#eab863');r(35,19,5,3,'#efc779');r(22,35,7,4,'#a6a36a');r(35,28,8,3,'#828b51');
-    }else if(zone===1){
-      shape([[16,24],[20,14],[31,8],[43,15],[49,27],[54,49],[43,53],[18,53],[10,48]],ink);
-      shape([[18,26],[24,14],[33,12],[45,22],[47,38],[51,48],[38,50],[25,48],[14,49]],'#753f41');
-      shape([[22,24],[27,16],[34,15],[41,23],[39,32],[24,32]],'#a86356');
-      r(25,22,14,7,ink);r(27,23,4,2,'#ffd885');r(34,23,3,2,'#ffd885');
-      r(29,34,7,3,gold);r(31,37,3,9,bright);r(15,34,5,13,'#ae695b');r(45,33,5,13,'#61383a');
-    }else if(zone===2){
-      for(const side of [-1,1])for(let i=0;i<4;i++){
-        const y=21+i*6, bend=7+i*4+(frame===2?4:frame===1?-2:0);
-        const mirror=points=>points.map(([x,yy])=>[32+(x-32)*side,yy]);
-        shape(mirror([[38,y],[55,y-bend],[61,y-bend+3],[63,y+4],[60,y+6],[56,y-bend+7],[38,y+6]]),ink);
-        shape(mirror([[39,y+1],[55,y-bend+2],[59,y-bend+4],[61,y+4],[57,y-bend+6],[39,y+4]]),'#835455');
-      }
-      shape([[24,11],[40,11],[47,22],[46,40],[39,49],[25,49],[18,40],[18,24]],ink);
-      shape([[25,13],[38,13],[43,23],[42,38],[36,45],[26,44],[21,36],[22,22]],'#53374a');
-      r(27,18,9,5,'#99616a');r(25,25,3,3,'#715164');r(37,25,3,3,'#715164');
-      for(const x of [24,30,37])r(x,36,4,3,'#f68f75');
-      r(24,42,3,6,'#ab8679');r(37,42,3,6,'#ab8679');
-    }else if(zone===3){
-      shape([[22,24],[42,24],[50,49],[44,53],[20,53],[13,49]],ink);
-      shape([[24,25],[40,25],[46,48],[35,50],[17,47]],'#5f4538');
-      r(19,8,27,21,ink);r(22,10,21,16,'#aca284');r(22,10,21,3,'#d6c9a1');r(24,17,6,5,ink);r(35,17,6,5,ink);
-      r(30,22,5,5,'#6f6254');for(let i=0;i<4;i++)r(24+i*4,29,3,3,'#c4b795');
-      r(24,36,17,4,gold);r(31,33,3,14,'#dfc58d');r(49,18,4,33,'#9e7445');r(47,14,8,6,'#d5aa66');
-    }else{
-      shape([[29,6],[38,11],[47,21],[54,44],[42,44],[43,55],[35,51],[29,57],[23,48],[12,52],[16,28]],'#1c2838');
-      shape([[29,10],[38,15],[44,24],[49,42],[38,39],[39,48],[33,45],[29,51],[24,43],[17,47],[21,28]],'#4f7884');
-      shape([[29,13],[39,18],[42,26],[37,29],[24,27],[24,20]],'#779aa1');
-      r(25,22,15,7,'#2d4354');r(27,23,4,2,'#c0f3ed');r(34,23,4,2,'#c0f3ed');r(23,34,3,5,'#8cb4b7');r(38,36,4,3,'#8cb4b7');
-    }
-    if(type==='foe'&&frame===2){
-      const flare=['#fac16c','#ffd880','#ff9b78','#ffe0a0','#bbf3ed'][zone];
-      const y=[20,23,36,19,24][zone];
-      for(const x of [25,36]){r(x-2,y-1,7,4,flare);r(x,y,3,2,'#fff1c1');}
     }
     return c;
   }
@@ -279,7 +325,46 @@ window.DungeonArt = (() => {
     if(iconCache.has(key))return iconCache.get(key);
     const c=surface(),{r,poly}=brush(c);
     const iron=color||'#9aabad', pale='#d6dcd0';
-    if(type==='chest'){
+    if(type==='soul'){
+      const f=Number(id)||0,tone=color||'#f3e6cb';
+      const blend=(target,alpha)=>{
+       const rgb=[1,3,5].map((i,j)=>Math.round(parseInt(tone.slice(i,i+2),16)*(1-alpha)+target[j]*alpha));
+       return '#'+rgb.map(n=>n.toString(16).padStart(2,'0')).join('');
+      };
+      const mist=blend([255,255,255],.37),dark=blend([21,14,29],.64),core=blend([255,250,230],.72);
+      poly([[15,50],[26,47],[41,47],[50,52],[41,55],[19,55]],'#100e1680');
+      poly([[31+f%3,9],[36,16],[46,26],[49,36],[45,46],[37,51],[26,51],[17,46],[14,37],[18,27],[24,20]],tone+'36');
+      poly([[30+f%3,14],[36,22],[43,29],[46,37],[43,44],[36,48],[25,48],[19,43],[17,36],[21,28],[26,23]],dark);
+      poly([[30+f%3,19],[34,26],[41,31],[43,38],[39,45],[32,47],[24,45],[20,39],[22,31],[27,25]],tone);
+      poly([[30,25+f%2],[34,32],[38,34],[36,42],[30,45],[25,40],[25,34]],mist);
+      poly([[30,31],[34,35],[33,41],[29,42],[27,37]],core);
+      r(23,31,2,6,mist);r(37,42,3,2,dark);
+      for(const [x,y,w] of [[12+f,23-f,2],[47-f,17+f*2,2],[25+f*2,10+f,1],[44,39-f,2]])r(x,y,w,w,mist);
+    }else if(type==='kettle'){
+      r(9,53,46,4,'#1a1515');r(15,44,34,9,'#674434');r(18,45,7,7,'#44302b');r(39,45,7,7,'#44302b');
+      poly([[9,25],[55,25],[52,38],[47,45],[40,49],[24,49],[17,45],[12,38]],ink);
+      poly([[12,25],[52,25],[50,36],[45,43],[39,46],[25,46],[19,43],[14,36]],'#52535a');
+      r(9,24,46,5,'#817b6b');r(14,25,36,2,'#6eb49f');r(16,31,3,8,'#a7a08a');r(45,32,3,5,'#6a7774');
+      r(27,51,9,7,'#713b25');r(30,49,4,8,'#ec9a54');r(31,52,3,4,'#ffda83');
+      for(const [x,y] of [[24,20],[37,15],[30,11],[35,6]]){r(x,y,3,3,'#789a87');r(x+1,y,1,1,'#a9ceb3');}
+    }else if(type==='food'){
+      if(id==='glucose'){
+       for(const [x,y] of [[18,31],[32,27],[27,41]]){r(x,y,15,12,'#786368');r(x+2,y+1,11,8,'#e6d0cb');r(x+2,y+1,11,2,'#fff2e3');}
+      }else if(id==='banana'){
+       poly([[14,23],[20,21],[22,29],[28,34],[37,35],[44,28],[45,19],[51,20],[53,29],[48,40],[39,46],[26,46],[17,39]],'#84542d');
+       poly([[17,24],[20,25],[22,34],[30,40],[40,40],[46,34],[49,22],[51,25],[47,37],[38,44],[27,44],[19,37]],'#e6bb52');
+       r(19,22,3,4,'#82905b');r(46,21,6,2,'#e9d681');
+      }else if(id==='bread'){
+       poly([[12,38],[16,29],[22,24],[39,22],[49,25],[53,32],[51,42],[45,46],[19,47],[12,43]],'#693d2f');
+       poly([[15,35],[20,28],[29,25],[40,24],[48,28],[50,33],[45,40],[19,43],[15,40]],'#bc8250');
+       for(const x of [22,31,40])poly([[x,29],[x+3,28],[x+7,33],[x+4,35]],'#eac189');
+      }else{
+       poly([[13,27],[21,21],[34,23],[43,31],[43,38],[34,46],[20,45],[13,38]],'#6b3931');
+       poly([[16,28],[23,24],[33,25],[39,31],[40,38],[31,44],[21,42],[16,36]],'#b47047');
+       r(21,29,9,2,'#e1aa65');r(26,35,8,2,'#d49155');
+       poly([[39,33],[51,36],[54,34],[57,37],[55,43],[49,44],[38,39]],'#e4cab0');
+      }
+    }else if(type==='chest'){
       r(8,39,48,13,'#110e12aa');r(10,23,44,25,ink);r(13,27,38,18,wood);r(15,41,34,2,edge);
       if(id==='open'){r(14,15,36,15,shade);r(17,15,29,3,grain);r(17,26,30,7,ink);}
       else{poly([[11,28],[14,20],[19,17],[47,17],[54,23],[54,30],[11,30]],grain);r(17,18,29,2,edge);r(12,27,42,3,gold);}

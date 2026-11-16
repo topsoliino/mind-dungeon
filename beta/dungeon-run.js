@@ -1,7 +1,7 @@
 window.DungeonRun = (() => {
  'use strict';
  const LAST_DEPTH=5, DEFAULT_PACK='kvt3-konfrontationsverfahren';
- const W=56,H=36;
+ const W=56,H=52;
  const sizes=[[11,9],[12,9],[14,10],[12,11],[14,11]];
  const gateStyles=[
   ['conditioning','Konditionierung','#8ce6c9'],['exposure','Exposition','#edb3ff'],
@@ -18,7 +18,7 @@ window.DungeonRun = (() => {
  }
  function nextSeed(seed){return (Math.imul(seed,1664525)+1013904223)>>>0;}
  function freshSeed(){return crypto.getRandomValues(new Uint32Array(1))[0];}
- function generate(seed){
+ function generate(seed,varied=true){
   const rng=random(seed);
   const cells=Array.from({length:6},(_,i)=>({col:i%3,row:i/3|0}));
   const adjacent=(a,b)=>Math.abs(a.col-b.col)+Math.abs(a.row-b.row)===1;
@@ -30,6 +30,14 @@ window.DungeonRun = (() => {
    const [w,h]=sizes[i],cx=9+col*18,cy=9+row*17;
    return {x:cx-(w>>1),y:cy-(h>>1),w,h,cx,cy,i};
   });
+  if(varied){
+   const shape=random(seed^0x4caeb671);
+   for(const room of rooms){
+    const centerX=room.cx,centerY=room.cy;
+    room.w+=Math.floor(shape()*3);room.h+=Math.floor(shape()*3);
+    room.x=centerX-(room.w>>1);room.y=centerY-(room.h>>1);
+   }
+  }
   const map=Array.from({length:H},()=>Array(W).fill(1));
   const regions=Array.from({length:H},()=>Array(W).fill(-1));
   const carve=({x,y,w,h},id)=>{
@@ -53,14 +61,29 @@ window.DungeonRun = (() => {
    const x=vertical?corridor.x+Math.floor(corridor.w/2):a.cx;
    const y=vertical?a.cy:corridor.y+Math.floor(corridor.h/2);
    carve(corridor,id);
-   corridors.push({...corridor,id,from,to});
+   corridors.push({...corridor,id,from,to,vertical});
    gates.push({id:gateId,x,y,vertical,from,to,name,color});
    visited.add(to);
   }
-  return {rooms,corridors,map,regions,gates};
+  const climate=random(seed^0x832a79f1);
+  const court=climate()<.5,rain=climate()<.5;
+  const annexes=shuffle([
+   {name:'Vorratskammer',key:'pantry',w:7,h:6,theme:3},
+   {name:'Brauerei',key:'brewery',w:9,h:7,theme:1},
+   ...(court?[{name:'Hof',key:'court',w:13,h:8,theme:5,rain}]:[])
+  ],climate).map((annex,col)=>{
+   const parent=rooms.filter(room=>room.cx===9+col*18).sort((a,b)=>b.cy-a.cy)[0];
+   const x=parent.cx-(annex.w>>1),y=41,id=9+col*2;
+   const support={...annex,x,y,id,cx:parent.cx,cy:y+(annex.h>>1)};
+   const start=parent.y+parent.h;
+   carve({x:parent.cx-1,y:start,w:3,h:y-start},id+1);
+   carve(support,id);
+   return {...support,passage:{id:id+1,x:parent.cx-1,y:start,w:3,h:y-start,from:parent.i,vertical:false}};
+  });
+  return {rooms,corridors,map,regions,gates,annexes};
  }
  function differentLayoutSeed(seed,rooms,gates){
-  const signature=(r,g)=>r.map(p=>p.x+':'+p.y).join('|')+'/'+g.map(p=>p.from+':'+p.to).sort().join('|');
+  const signature=(r,g)=>r.map(p=>[p.x,p.y,p.w,p.h].join(':')).join('|')+'/'+g.map(p=>p.from+':'+p.to).sort().join('|');
   const old=signature(rooms,gates);
   let candidate=seed;
   for(let attempt=0;attempt<24;attempt++){
@@ -101,7 +124,7 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[0],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[]};
+   defeated:[],explored:[0],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
   return {...floorState(seed,1),solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1};
