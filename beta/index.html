@@ -157,6 +157,7 @@ const shrines=zones.map((z,i)=>({x:(z.x+.5)*TILE,y:(z.y+.5)*TILE,i}));const ches
 const furnishingSeed=(save.dungeonSeed??=Math.floor(Math.random()*2147483647));
 function seededRandom(seed){let x=seed|0;return ()=>{x=(Math.imul(x,1664525)+1013904223)|0;return (x>>>0)/4294967296}}
 const roomRandom=seededRandom(furnishingSeed);
+// Stable room dressing variants are generated from the character's dungeon seed.
 for(let zi=0;zi<zones.length;zi++){
  const z=zones[zi];const roomCx=(z.x+3)*TILE,roomCy=(z.y+2)*TILE;
  addFurniture('carpet',roomCx,roomCy);
@@ -347,6 +348,8 @@ function updatePreview(){
  if(weapon==='staff'){rect(53,13,3,42,'#9a653f');rect(50,7,9,11,'#85d3e8');rect(52,8,5,6,'#e6f8ff')}
  else if(weapon==='hammer'){rect(53,18,3,37,'#91603b');rect(47,13,15,12,'#aab6cb');rect(48,14,13,3,'#f0f4ff')}
  else if(weapon==='dagger'){rect(53,32,3,20,'#896341');rect(49,30,11,4,'#d8b768');rect(53,17,3,13,'#dbe4ee')}
+ else if(weapon==='rapier'){rect(53,29,2,24,'#896341');rect(47,27,13,2,'#d8b768');rect(54,5,1,22,'#eaf3ff');rect(53,8,1,19,'#8eb8d6')}
+ else if(weapon==='blade'){rect(53,28,3,26,'#79513e');rect(48,25,13,4,'#e2b975');rect(53,8,4,17,'#a8d4ef');rect(54,7,2,18,'#f5faff')}
  else{rect(53,25,3,30,'#896341');rect(49,25,11,4,'#d8b768');rect(53,weapon==='greatsword'?2:8,3,17,'#dbe4ee');rect(53,weapon==='greatsword'?2:8,1,16,'#ffffff')}
 }
 const portrait=document.getElementById('md-preview');portrait.innerHTML='<canvas width="64" height="64" style="width:128px;height:128px;image-rendering:pixelated;display:block"></canvas>';portrait.style.width='154px';portrait.style.height='154px';
