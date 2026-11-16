@@ -46,11 +46,13 @@ window.DungeonItems = (() => {
   {fire:.55,dark:.25,frost:-.40},
   {poison:1,fire:-.45,bleed:.20},
   {bleed:1,poison:1,magic:.20,lightning:-.40},
-  {frost:1,dark:.32,fire:-.32,magic:-.23}
+  {frost:1,dark:.32,fire:-.32,magic:-.23},
+  {poison:1,dark:.30,fire:-.40},
+  {poison:1,frost:-.25}
  ];
  const foeAttack=[
   {physical:1},{physical:.35,fire:.65},{physical:.75,dark:.25},
-  {physical:.4,magic:.6},{frost:.75,dark:.25}
+  {physical:.4,magic:.6},{frost:.75,dark:.25},{physical:.75,dark:.25},{physical:1}
  ];
  function rank(item){return rarity[item?.rarity]?item.rarity:'common';}
  function key(item){return [item.kind,item.id,rank(item)].join('/');}

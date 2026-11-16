@@ -124,7 +124,7 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[0],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,brewIngredients:[],activeBrew:null,brewEffects:[]};
+   defeated:[],explored:[0],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
   return {...floorState(seed,1),solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1};

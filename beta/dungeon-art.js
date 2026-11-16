@@ -230,7 +230,31 @@ window.DungeonArt = (() => {
     const crouch=stage===1?anticipation:stage===2?-2:stage===3?3-step:Math.abs(stride);
     const y=n=>n+crouch;
     poly([[10,51],[18,47],[48,47],[55,52],[49,56],[14,56]],'#100d13a8');
-    if(zone===0){
+    if(zone===5){
+     // A bent corpse straightens and reaches with both hands before its grab.
+     const thrust=stage===2?reach+6:stage===1?-anticipation:stride;
+     r(21,40+stride,9,14-stride,'#252923');r(36,40-stride,9,14+stride,'#303229');
+     poly([[20,y(21)],[45,y(19)],[48,y(42)],[32,48],[17,y(43)]],'#182123');
+     poly([[23,y(22)],[40,y(22)],[44,y(37)],[38,45],[21,43]],'#526459');
+     r(25,y(30),13,3,'#887d67');r(23,y(36),6,3,'#465349');
+     poly([[25,y(7)],[38,y(8)],[44,y(15)],[41,y(27)],[32,y(29)],[22,y(24)],[21,y(15)]],'#252b25');
+     r(25,y(12),14,11,'#9a9e73');r(27,y(10),10,3,'#656b51');
+     r(26,y(18),4,3,'#deb86e');r(35,y(18),4,3,'#d5a96f');r(29,y(24),8,2,'#50433c');
+     for(const x of [12,43]){
+      r(x,y(24)+thrust,8,13,'#344840');r(x+1,y(34)+thrust,6,6,'#a4a57c');r(x+1,y(38)+thrust,2,4,'#c1bc8c');
+     }
+     if(stage===2){r(9,43+step,4,2,'#c1bc8c');r(54,42+step,4,2,'#c1bc8c');}
+    }else if(zone===6){
+     // A low serpentine silhouette, lifted head and a separate strike pose.
+     const wave=[0,3,0,-3][step],lift=stage===1?anticipation*2:stage===2?8:0;
+     const tail=[[4,42],[11,44+wave],[19,44],[24,38],[33,35-wave],[44,39],[53,36],[57,27-lift],[61,32-lift],[60,42],[51,49],[41,49],[33,45+wave],[25,47],[17,51],[10,48]];
+     poly(tail,'#252822');
+     poly([[7,44],[18,46],[26,40],[35,39-wave],[45,42],[53,40],[57,33-lift],[59,37-lift],[57,44],[48,47],[38,44+wave],[26,44],[17,49]],'#727c54');
+     for(let n=0;n<4;n++)r(19+n*8,43+(n%2?wave:0),3,2,'#afb47c');
+     poly([[51,27-lift],[55,23-lift],[62,23-lift],[64,28-lift],[61,35-lift],[53,35-lift],[50,32-lift]],'#303728');
+     r(54,27-lift,8,5,'#a7a879');r(59,27-lift,2,2,'#f4ce7f');
+     if(stage===2){r(59,33-lift,4,2,'#e2d8aa');r(60,36-lift,4,1,'#c88f89');}
+    }else if(zone===0){
      // Moss sentinel plants alternating feet, tucks its head, then drives both fists forward.
      const p=['#222b22','#414d35','#647454','#a49f6b','#324334'];
      const arm=stage===2?8+reach:stage===1?-anticipation:stride;
