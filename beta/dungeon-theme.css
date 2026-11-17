@@ -354,3 +354,83 @@ button.bad { background:#643730!important; }
 .map-legend .here { background:#f9d48a;border-radius:50%; }
 .map-legend .mark { background:#aa6479; }
 @media(max-width:760px) { #wallet:not([hidden]) { max-width:none; } .coin img { width:26px;height:26px; } }
+
+.weapon-totals { display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:11px 0; }
+.weapon-totals .damage-stat { display:grid;gap:3px;line-height:1.06; }
+.weapon-totals .damage-stat small { color:#cbb490;font-size:10px;white-space:nowrap; }
+.weapon-totals .damage-stat b { font-size:22px; }
+.weapon-totals .damage-stat.bonus b { color:#bfdb9f; }
+.weapon-totals .item-stats { margin:0;flex:1; }
+.damage-number.counter-number { color:#b1fbde!important;font-size:21px!important;text-shadow:0 0 12px #5fbeaa,2px 2px #211923; }
+.damage-number.fatal-number { color:#ffba98!important; }
+#mobileNav { position:absolute;right:18px;bottom:98px;width:47px;height:47px;pointer-events:auto;font-size:20px; }
+#modalWrap[data-screen="navigation"] { align-items:flex-end;padding-bottom:clamp(28px,8vh,100px); }
+#modal:has(.game-nav) { width:min(690px,96vw); }
+.game-nav h2,.pause-ledger h2 { margin:0 0 10px; }
+.nav-destinations { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px; }
+.nav-destinations button { display:grid;gap:7px;justify-items:center;align-content:start;min-width:0; }
+.nav-destinations button>span { color:#dcba81;font-size:26px; }
+.nav-destinations button b { font-size:clamp(12px,2vw,15px); }
+.pause-ledger { margin:auto;max-width:440px;text-align:center; }
+.pause-ledger p { color:#cbb490; }
+.pause-actions { display:grid;grid-template-columns:1fr;gap:7px; }
+#pause-quit { border-color:#936263;background:linear-gradient(145deg,#48292b,#2b1b1b);color:#f4cbb3; }
+
+#modal:has(.status-dossier) { width:min(950px,96vw); }
+.status-header { display:flex;align-items:center;gap:13px;border-bottom:1px solid #a48050;padding-bottom:12px; }
+.status-header .md-portrait { width:65px;height:67px;flex-shrink:0; }
+.status-header h2,.status-header p,.status-dossier h3 { margin:0; }
+.status-header p { margin-top:4px;color:#cbb490;font-size:14px; }
+.status-level { margin-left:auto;text-align:center;display:grid;gap:3px;padding:6px 11px; }
+.status-level strong { color:#ffe0a3;font-size:34px;line-height:.95; }
+.status-level span { font-size:12px;color:#d0b07b; }
+.status-grid { display:grid;grid-template-columns:1fr 1.35fr 1.1fr;gap:9px;margin-top:12px; }
+.status-grid section { min-width:0;padding:12px;background:linear-gradient(150deg,#33271d,#221918);border:1px solid #805d38; }
+.status-dossier h3 { color:#e6c48b;margin-bottom:7px;font-size:16px;letter-spacing:.045em; }
+.status-dossier dl { margin:6px 0 13px;display:grid;gap:4px;font-size:13px; }
+.status-dossier dl div { display:flex;gap:6px;justify-content:space-between;border-bottom:1px solid #a481503f;padding:3px 0; }
+.status-dossier dt { color:#e5ceaa; }
+.status-dossier dd { margin:0;color:#ffdfa0;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap; }
+.status-grid section p { margin:6px 0 9px;font-size:12px;color:#cdb18c; }
+.status-dossier .load-value { color:#f2d292;font-variant-numeric:tabular-nums; }
+.status-dossier meter { width:100%;height:12px;margin-top:5px;accent-color:#d7a265; }
+@media(max-width:720px) { .status-grid { grid-template-columns:1fr 1.25fr; } .status-grid section:last-child { grid-column:1/-1; } }
+@media(max-width:480px) { .status-grid,.nav-destinations { grid-template-columns:repeat(2,minmax(0,1fr)); } .status-grid{grid-template-columns:1fr;} }
+
+#modalWrap[data-screen="title"] { padding:0;inset:0;background:#100c14; }
+#modalWrap[data-screen="title"] #modal { max-width:none;max-height:none;width:100%;height:100%;padding:0;border:0;box-shadow:none;overflow:auto; }
+.title-view {
+ min-height:100%;position:relative;isolation:isolate;display:flex;align-items:center;
+ background-image:linear-gradient(90deg,#100c14f7 0%,#161019d9 26%,#1a101750 57%,#0d081033 100%),url("./assets/shadowbound-title.webp");
+ background-position:center,60% center;background-size:cover;background-color:#171018;overflow:hidden;
+}
+.title-content { position:relative;z-index:1;width:min(660px,86vw);margin:0 0 0 max(5vw,28px);padding:34px 0; }
+.title-brand { margin-bottom:clamp(21px,5vh,51px); }
+.title-brand h1 {
+ color:#ffda9a;font-size:clamp(49px,8vw,114px);letter-spacing:-.033em;line-height:.86;margin:0;
+ font-variant:small-caps;text-shadow:0 3px #754628,0 5px #1b1017,0 7px 30px #c1874852;
+}
+.title-brand p { margin:16px 0 0;text-transform:uppercase;letter-spacing:.38em;font-size:clamp(13px,2vw,20px);color:#e8bf91; }
+.title-body { width:min(400px,100%); }
+.title-save { display:flex;align-items:center;gap:10px;border:1px solid #ad7b5d8c;padding:7px 10px;background:#241b24c9;margin-bottom:12px; }
+.title-save .md-portrait { width:48px;height:51px;background:#251926;flex-shrink:0; }
+.title-save canvas { width:47px;height:47px; }
+.title-save p { margin:4px 0 0;font-size:13px;color:#cfb79f; }
+.title-actions { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px; }
+#modal .title-actions button { min-height:40px;background:#2b2026e8;border-color:#95725c;color:#ffdfaf;text-align:left;padding-left:12px; }
+#modal .title-actions .primary { grid-column:1/-1;background:linear-gradient(100deg,#593b31e8,#30232ce8);border-color:#d0a273;font-weight:700; }
+#modal .title-actions button:hover { background:#4e343b;border-color:#e5bb80; }
+.title-embers { position:absolute;inset:0;pointer-events:none;overflow:hidden; }
+.title-embers i { position:absolute;left:var(--x);top:103%;width:3px;height:3px;background:#f8a25d;box-shadow:0 0 9px #f29662;animation:title-ember var(--duration) var(--delay) linear infinite; }
+.title-embers i:nth-child(3n) { width:4px;height:4px;background:#b587da;box-shadow:0 0 10px #ba82ea; }
+@keyframes title-ember {
+ 0% { opacity:0;transform:translate(0,0); }
+ 24%,55% { opacity:.8; }
+ 100% { opacity:0;transform:translate(var(--drift),-115vh); }
+}
+@media(max-width:650px) {
+ .title-view { background-position:center,68% center;background-image:linear-gradient(0deg,#1a121bf0,#1a121b8d 67%),url("./assets/shadowbound-title.webp"); }
+ .title-content { margin:0 auto; }
+ .title-brand h1 { font-size:clamp(49px,12vw,82px); }
+}
+@media(prefers-reduced-motion:reduce) { .title-embers i { animation:none; } }

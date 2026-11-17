@@ -21,10 +21,10 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=14"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=14"></script><script src="beta/dungeon-expedition.js?v=14"></script><script src="beta/dungeon-items.js?v=14"></script><script src="beta/dungeon-brewing.js?v=14"></script><script src="beta/dungeon-enemies.js?v=14"></script><script src="beta/dungeon-effects-art.js?v=14"></script><script src="beta/dungeon-art.js?v=14"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=15"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=15"></script><script src="beta/dungeon-expedition.js?v=15"></script><script src="beta/dungeon-balance.js?v=15"></script><script src="beta/dungeon-items.js?v=15"></script><script src="beta/dungeon-brewing.js?v=15"></script><script src="beta/dungeon-enemies.js?v=15"></script><script src="beta/dungeon-effects-art.js?v=15"></script><script src="beta/dungeon-art.js?v=15"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
-const expedition=window.DungeonExpedition;
+const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
 const {PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT}=enemyRules;
 const isBat=e=>e.type===BAT||e.type===STORM_BAT;
 const isLion=e=>e.type===LION||e.type===LIONESS;
@@ -33,6 +33,7 @@ const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,1
 const canvas=document.querySelector('#game'),displayContext=canvas.getContext('2d',{alpha:false});
 const scene=document.createElement('canvas'),s=scene.getContext('2d',{alpha:false});
 let cw=0,ch=0,dpr=1,frame=0,last=0,paused=true,modalType='',noticeUntil=0,shake=0,cam={x:0,y:0};
+let atTitle=true;
 const settingsKey=KEY+'-settings';
 const settings={shake:true,damageNumbers:true};
 try{
@@ -184,11 +185,16 @@ function furnitureBlocked(x,y,rx=12,ry=rx){
 function valid(x,y,r=12,ignoreSeals=false,feet=false){return !wall(x-r,y-r)&&!wall(x+r,y-r)&&!wall(x-r,y+r)&&!wall(x+r,y+r)&&(ignoreSeals||!gateBlocked(x-r,y-r)&&!gateBlocked(x+r,y-r)&&!gateBlocked(x-r,y+r)&&!gateBlocked(x+r,y+r))&&!furnitureBlocked(x,y,feet?9:r,feet?6:r)}
 const HERO_RADIUS=14;
 const player={dash:0,dashCooldown:0,dashX:0,dashY:0,x:save.x??spawn.x,y:save.y??spawn.y,hp:Math.max(1,save.hp),max:100,speed:178,dir:0,attack:0,inv:0,walk:0};
-const ATTRS={vigor:['Vitalität (Vigor)','Maximale Lebenspunkte'],attunement:['Zauberei (Attunement)','Fokusenergie für besondere Angriffe'],endurance:['Kondition (Endurance)','Ausdauer für Angriffe und Ausweichen'],vitality:['Belastung (Vitality)','Rüstung und Schadensreduktion'],strength:['Stärke (Strength)','Schwere Waffen'],dexterity:['Geschicklichkeit (Dexterity)','Schnelle Waffen'],intelligence:['Intelligenz (Intelligence)','Arkane Waffen'],faith:['Glaube (Faith)','Geweihte Waffen'],luck:['Glück (Luck)','Beute und kritische Treffer']};
+const ATTRS={vigor:['Vitalität (Vigor)','Maximale Lebenspunkte'],attunement:['Zauberei (Attunement)','Fokusenergie für besondere Angriffe'],endurance:['Kondition (Endurance)','Ausdauer für Angriffe und Ausweichen'],vitality:['Belastung (Vitality)','Pro Punkt +3 Basis-Knockback und +2 kg Traglast'],strength:['Stärke (Strength)','Schwere Waffen'],dexterity:['Geschicklichkeit (Dexterity)','Schnelle Waffen'],intelligence:['Intelligenz (Intelligence)','Arkane Waffen'],faith:['Glaube (Faith)','Geweihte Waffen'],luck:['Glück (Luck)','Beute und Skalierung für bestimmte Waffen']};
 let WEAPONS=[{id:'rust',name:'Rostige Klinge',base:17,reach:88,speed:.34,stamina:18,scale:{strength:.35,dexterity:.2},desc:'Ein zuverlässiges altes Schwert.'},{id:'rapier',name:'Präzisionsrapier',base:14,reach:105,speed:.21,stamina:12,scale:{dexterity:.95,luck:.12},desc:'Schnelle Stiche und präzise Konter.'},{id:'hammer',name:'Gedankenhammer',base:27,reach:78,speed:.55,stamina:29,scale:{strength:1.1,vitality:.12},desc:'Langsam, aber wuchtig.'},{id:'staff',name:'Neuronenstab',base:18,reach:118,speed:.39,stamina:21,scale:{intelligence:1.05,attunement:.3},desc:'Arkane Energie in einem Stab gebündelt.'},{id:'blade',name:'Klinge des Mitgefühls',base:19,reach:100,speed:.31,stamina:18,scale:{faith:.9,dexterity:.2},desc:'Geweihte Klinge für achtsame Krieger.'},{id:'dagger',name:'Schattenmesser',base:11,reach:67,speed:.16,stamina:9,scale:{dexterity:.75,luck:.75},desc:'Rasante Treffer mit hohem Krit-Potenzial.'},{id:'greatsword',name:'Expositionsgroßschwert',base:35,reach:113,speed:.66,stamina:36,scale:{strength:1.25,endurance:.18},desc:'Hoher Schaden und großer Schwungradius.'}];
 let RINGS=[{id:'hunter',name:'Ring des Jägers',desc:'+18 % Schaden mit schnellen Waffen.',bonus:'fast'},{id:'bulwark',name:'Ring des Bollwerks',desc:'12 % weniger erlittenen Schaden.',bonus:'guard'},{id:'scholar',name:'Ring des Gelehrten',desc:'+22 % Schaden mit Intelligenz-Waffen.',bonus:'arcane'},{id:'faith',name:'Ring der Zuversicht',desc:'Nach jedem Treffer 3 Lebenspunkte heilen (maximal).',bonus:'heal'},{id:'luck',name:'Ring der Entdeckung',desc:'Bessere Beutechancen.',bonus:'loot'},{id:'dodge',name:'Ring des Ausweichens',desc:'Ausweichen kostet weniger Ausdauer.',bonus:'dodge'}];
 save.level=save.level||1;save.attributes=save.attributes||Object.fromEntries(Object.keys(ATTRS).map(k=>[k,10]));save.inventory=save.inventory||[{kind:'weapon',id:'rust'}];save.equipment=save.equipment||{weapon:'rust',rings:[null,null]};save.pendingLevels=save.pendingLevels||0;save.enemyTier=save.enemyTier||1;save.playtime=save.playtime||0;
-const weaponById=id=>WEAPONS.find(w=>w.id===id)||WEAPONS[0];
+const weaponById=id=>{
+ const w=WEAPONS.find(row=>row.id===id&&balance.weaponTable[row.id])||WEAPONS.find(row=>row.id==='rust')||{id:'rust',name:'Rostige Klinge'};
+ return {...w,...items.weapon(w.id)};
+};
+save.combatRecord=Object.fromEntries(['deaths','dealt','taken','crits','counters'].map(key=>
+ [key,Math.max(0,Number(save.combatRecord?.[key])||0)]));
 const specialRings=[items.merchantRing,items.precisionRing,items.breweryRing];
 const ringById=id=>specialRings.find(r=>r.id===id)||RINGS.find(r=>r.id===id);
 function equippedWeapon(){return {kind:'weapon',id:save.equipment.weapon,rarity:save.equipment.weaponRarity||'common'};}
@@ -203,23 +209,27 @@ function usableWeapon(){return unmetRequirements(save.equipment.weapon).length?w
 function pickedRarity(w){return w.id===save.equipment.weapon?items.rank(equippedWeapon()):'common';}
 const hasRing=id=>save.equipment.rings.includes(id);
 function maxHP(){return 32+save.attributes.vigor*3}
+function mythicArmorMove(){
+ const mythic=Object.keys(save.equipment.armor||{}).filter(slot=>save.equipment.armorRarities?.[slot]==='mythic').length;
+ return balance.armorMythicMove**mythic;
+}
 function equipmentLoad(w=weaponById(save.equipment.weapon)){
  const kg=items.weaponWeight(w)+
   Object.values(save.equipment.armor||{}).reduce((sum,id)=>sum+(armorById(id)?.kg||0),0);
- return items.loadout(kg);
+ return items.loadout(kg,save.attributes.vitality);
 }
 const pct=chance=>(chance*100).toLocaleString('de-DE',{maximumFractionDigits:1})+' %';
 function critChance(w=usableWeapon(),rank=pickedRarity(w)){
  const accessory=gearItems().reduce((sum,it)=>sum+(it.kind==='armor'?items.armorCrit(it.id,items.rank(it)):
   it.kind==='ring'&&it.id==='precision'?.08:0),0);
- return items.critChance(save.attributes.dexterity,equipmentLoad(w).kg,items.weaponCrit(w.id,rank),accessory+brewBonus.crit);
+ return items.critChance(save.attributes.dexterity,equipmentLoad(w),items.weaponCrit(w.id,rank),accessory+brewBonus.crit);
 }
 function maxStamina(load=equipmentLoad()){return Math.round((39+save.attributes.endurance*2)*load.stamina);}
 function kgText(kg){return kg.toLocaleString('de-DE')+' kg';}
 player.max=maxHP();player.hp=Math.min(player.max,player.hp);player.focus=60+save.attributes.attunement*4;
 function damageBreakdown(w,rank){
- const base=Math.round(w.base*items.rarity[rank].power);
- const scaling=items.weaponScaling(w,save.attributes);
+ const base=items.weapon(w.id,rank).base;
+ const scaling=items.weaponScaling(w,save.attributes,rank);
  return {base,scaling,bonus:scaling.reduce((sum,entry)=>sum+entry.bonus,0)};
 }
 function weaponDamage(w=weaponById(save.equipment.weapon),rank=pickedRarity(w)){
@@ -237,7 +247,7 @@ function scalingRule({points,step}){
  return '+'+points+' Schaden je '+(step===1?'Attributpunkt':step+' Attributpunkte');
 }
 function attributeCards(attributes,weapon,editable=false){
- const scaling=new Map(items.weaponScaling(weapon,attributes).map(entry=>[entry.attribute,entry]));
+ const scaling=new Map(items.weaponScaling(weapon,attributes,editable?pickedRarity(weapon):'common').map(entry=>[entry.attribute,entry]));
  return '<div class="ritual-grid">'+Object.entries(ATTRS).map(([key,[,desc]])=>{
   const current=attributes[key],gain=scaling.get(key);
   const start=editable?'<button data-stat="'+key+'">':'<div class="ritual-attribute">';
@@ -272,7 +282,7 @@ async function refreshCatalog(){
   const rows=await response.json();
   const weapons=rows.filter(x=>x.kind==='weapon').map(x=>({id:x.id,name:x.name_de,desc:x.description_de,base:x.base_damage,reach:x.reach,speed:Number(x.attack_seconds),stamina:x.stamina_cost,scale:x.scaling||{}}));
   const rings=rows.filter(x=>x.kind==='ring').map(x=>({id:x.id,name:x.name_de,desc:x.description_de,bonus:x.effect?.bonus}));
-  if(!weapons.length||!rings.length)throw Error('Supabase-Katalog ist noch leer');
+  if(!weapons.some(w=>w.id==='rust')||!rings.length)throw Error('Grundkatalog unvollständig');
   WEAPONS=weapons;RINGS=rings;window.__mindCatalogSource='Supabase';
  }catch(err){
   console.warn('Supabase noch nicht verfügbar, lade lokalen Katalog:',err.message);
@@ -288,10 +298,13 @@ const ARMOR_SETS=[
  {id:'shadow',name:'Schatten',color:'#5c4d7f',def:8}
 ];
 const ARMOR_PARTS={helmet:['Helm',1],chest:['Harnisch',3],legs:['Hose',2],boots:['Stiefel',1]};
-const ARMOR_ITEMS=ARMOR_SETS.flatMap(set=>Object.entries(ARMOR_PARTS).map(([slot,[label,mult]])=>({id:set.id+'-'+slot,kind:'armor',slot,set:set.id,weight:mult,kg:items.armorWeight(set.id,mult),name:set.name+'-'+label,color:set.color,defense:set.def*mult,desc:'Rüstung: '+set.def*mult+' Verteidigung'})));
+const ARMOR_ITEMS=ARMOR_SETS.flatMap(set=>Object.entries(ARMOR_PARTS).map(([slot,[label]])=>{
+ const id=set.id+'-'+slot;
+ return {id,kind:'armor',slot,set:set.id,kg:items.armorProfile(id).kg,name:set.name+'-'+label,color:set.color};
+}));
 function armorById(id){return ARMOR_ITEMS.find(a=>a.id===id)}
 function armorDefense(){
- return Object.keys(ARMOR_PARTS).map(equippedArmor).reduce((sum,it)=>sum+(armorById(it.id)?.defense||0)*items.rarity[items.rank(it)].power,0);
+ return gearItems().filter(it=>it.kind==='armor').reduce((sum,it)=>sum+(items.armorProfile(it.id,items.rank(it))?.defense||0),0);
 }
 // Older heroes may own and equip a weapon that now has attribute requirements.
 if(unmetRequirements(save.equipment.weapon).length){
@@ -334,22 +347,25 @@ function itemDetails(it){
   '<p style="color:'+items.rarity[effect.rank].color+'">'+qEsc(brewEffectLabel(effect))+'</p>').join('');
  if(it.kind==='food')return header+'<p>Heilt bis zu '+(items.food[it.id]?.heal||0)+' Lebenspunkte.</p>';
  if(it.kind==='weapon'){
-  const w=weaponById(it.id),profile=items.weapon(it.id),total=weaponDamage(w,rank);
+  const w=weaponById(it.id),profile=items.weapon(w.id,rank);
   const {base,bonus,scaling}=damageBreakdown(w,rank);
   const grades=scaling.map(entry=>'<span class="scale-grade" title="'+scalingRule(entry)+' · +'+entry.bonus+' aktuell">'+
    attributeIcons[entry.attribute]+' '+qEsc(attributeName(entry.attribute))+' <b>'+entry.grade+'</b></span>').join('');
-  const types=Object.entries(profile.split).map(([type,share])=>statToken(type,Math.round(total*share))).join('');
-  const status=profile.status?statToken(profile.status,profile.status==='poison'?'3 Ticks':'8 % LP'):'';
-  return header+'<p class="weapon-totals"><b>'+base+' <span>+'+bonus+'</span></b> Grundschaden + Skalierung</p><div class="scaling-list">'+grades+'</div><div class="item-stats">'+types+status+'</div><p>Reichweite '+w.reach+' · '+w.speed+' s · '+Math.round(w.stamina*(mythic?1.25:1))+' Ausdauer · '+kgText(items.weaponWeight(w))+'</p><p>Rückstoßkraft '+items.knockbackPower(w,save.attributes)+' · Crit '+pct(critChance(w,rank))+' <small>(Waffe +'+pct(items.weaponCrit(w.id,rank))+')</small></p>'+
-   (mythic?'<p class="item-malus">Mythisch · +25 % Ausdauerkosten</p>':'')+weaponRequirements(it.id);
+  const types=Object.keys(profile.split).map(type=>statToken(type,items.damage[type].label)).join('');
+  const status=profile.status?statToken(profile.status,items.damage[profile.status].label):'';
+  return header+'<div class="weapon-totals"><span class="damage-stat"><b>'+base+'</b><small>Grundschaden</small></span>'+
+   '<span class="damage-stat bonus"><b>+'+bonus+'</b><small>Attributsbonus</small></span><div class="item-stats" aria-label="Schadensarten">'+types+status+'</div></div>'+
+   '<div class="scaling-list">'+grades+'</div><p>Knockback '+items.knockbackPower(w,save.attributes)+' · '+kgText(profile.kg)+' · Waffen-Crit +'+pct(profile.crit)+(profile.critFactor>2?' · Crit ×'+profile.critFactor.toLocaleString('de-DE'):'')+'</p>'+
+   (mythic?'<p class="item-malus">Mythisch · +20 % Dash-Abklingzeit</p>':'')+weaponRequirements(it.id);
  }
  if(it.kind==='armor'){
   const piece=armorById(it.id);
   if(!piece)return header;
   const mods=items.affinity(piece,rank);
-  return header+'<p>'+qEsc(ARMOR_PARTS[piece.slot][0])+' · '+Math.round(piece.defense*rarity.power)+' Schutz · '+kgText(piece.kg)+'</p>'+
+  return header+'<p>'+qEsc(ARMOR_PARTS[piece.slot][0])+' · '+items.armorProfile(it.id,rank).defense.toLocaleString('de-DE',{maximumFractionDigits:1})+' Schutz · '+kgText(piece.kg)+'</p>'+
    '<div class="item-stats">'+Object.entries(mods).map(([type,v])=>statToken(type,(v>0?'+':'')+Math.round(v*100)+' %',items.damage[type].label+(v>0?' · Resistenz':' · Anfälligkeit'))).join('')+'</div>'+
-   (items.armorCrit(it.id,rank)?'<p>Crit-Chance +'+pct(items.armorCrit(it.id,rank))+'</p>':'');
+   (items.armorCrit(it.id,rank)?'<p>Crit-Chance +'+pct(items.armorCrit(it.id,rank))+'</p>':'')+
+   (mythic?'<p class="item-malus">Mythisch · −3 % Lauftempo</p>':'');
  }
  const mythicText=mythic?'<p class="item-malus">Mythisch · +20 % Waffenschaden, +12 % erlittener Dunkelschaden</p>':'';
  return header+'<p>'+qEsc(ringEffectText(it.id))+'</p>'+mythicText;
@@ -357,7 +373,7 @@ function itemDetails(it){
 function weaponRequirements(id){
  const requirements=Object.entries(items.requirements[id]||{});
  if(!requirements.length)return '';
- return '<p class="item-requirements">Benötigt '+requirements.map(([stat,value])=>{
+ return '<p class="item-requirements">Voraussetzung: '+requirements.map(([stat,value])=>{
   const label=ATTRS[stat][0].split(' (')[0];
   return '<span class="'+(save.attributes[stat]<value?'item-malus':'')+'">'+qEsc(label)+' '+value+'</span>';
  }).join(' · ')+'</p>';
@@ -405,7 +421,7 @@ function itemTile(it){
 function equipInventoryItem(it){
  if(it.kind==='weapon'){
   if(unmetRequirements(it.id).length){tell('Attributvoraussetzungen fehlen');return;}
-  save.equipment.weapon=it.id;save.equipment.weaponRarity=items.rank(it);
+  heldAttack=null;save.equipment.weapon=it.id;save.equipment.weaponRarity=items.rank(it);
  }else if(it.kind==='armor'){
   const piece=armorById(it.id);if(!piece)return;
   (save.equipment.armor??={})[piece.slot]=it.id;(save.equipment.armorRarities??={})[piece.slot]=items.rank(it);
@@ -481,7 +497,7 @@ function equipmentMenu(selected=0){
 }
 function itemPools(){
  return {
-  weapon:WEAPONS.map(w=>({kind:'weapon',id:w.id})),
+  weapon:WEAPONS.filter(w=>balance.weaponTable[w.id]).map(w=>({kind:'weapon',id:w.id})),
   ring:[...RINGS,...specialRings].filter((r,i,all)=>all.findIndex(x=>x.id===r.id)===i).map(r=>({kind:'ring',id:r.id})),
   armor:ARMOR_ITEMS.map(a=>({kind:'armor',id:a.id}))
  };
@@ -1018,15 +1034,17 @@ function show(content,type='menu'){
  const focused=document.activeElement;
  const previous=focused?.closest?.('#modal')&&focused;
  const selector=previous?.id?'#'+CSS.escape(previous.id):null;
- paused=true;modalType=type;
+ paused=true;heldAttack=null;modalType=type;
  $('#dungeonPrompt').hidden=true;$('#soulPreview').hidden=true;$('#mobileInteract').hidden=true;
- panel.innerHTML=content;$('#modalWrap').style.display='flex';
+ panel.innerHTML=content;$('#modalWrap').dataset.screen=type;$('#modalWrap').style.display='flex';
  if(type==='quiz'){panel.querySelector('.choice')?.focus();return;}
  const replacement=selector&&panel.querySelector(selector);
  (replacement&&!replacement.disabled?replacement:panel.querySelector('button[aria-pressed="true"]:not(:disabled),button:not(:disabled)'))?.focus();
 }
+function resumeGame(){atTitle=false;close();}
 function close(){
- paused=false;modalType='';pending=null;$('#modalWrap').style.display='none';
+ if(atTitle){mdTitle();return;}
+ paused=false;modalType='';pending=null;$('#modalWrap').style.display='none';$('#modalWrap').dataset.screen='';
  $('#hud').hidden=false;$('#xpHud').hidden=false;$('#wallet').hidden=false;updateWallet();updateQuickBar();
  if(queuedAltar!==null){
   altarBursts.push({...shrines[queuedAltar],life:1.12});queuedAltar=null;
@@ -1035,14 +1053,25 @@ function close(){
  for(const k in keys)keys[k]=false;
 }
 function navModal(e){
- if(e.code==='KeyP'&&['title','settings'].includes(modalType)){
-  e.preventDefault();if(!e.repeat){if(modalType==='settings')mdTitle();else close();}return;
+ if(e.target?.matches?.('input,textarea,select,[contenteditable]')&&e.code!=='Escape')return;
+ const gameMenus=['pause','navigation','status','inventory','equipment','quick','settings','journal','packs','trophies','saves','account','level'];
+ if(e.code==='KeyP'&&!atTitle&&gameMenus.includes(modalType)){
+  e.preventDefault();if(!e.repeat){if(modalType==='pause')close();else pauseMenu();}return;
+ }
+ if(e.code==='KeyR'&&!atTitle&&gameMenus.includes(modalType)){
+  e.preventDefault();if(!e.repeat){if(modalType==='navigation')close();else navigationMenu();}return;
  }
  if((e.code==='KeyI'&&['inventory','quick'].includes(modalType))||(e.code==='KeyC'&&modalType==='equipment')){
   e.preventDefault();if(!e.repeat)close();return;
  }
  if(e.code==='Escape'){
-  e.preventDefault();if(modalType==='settings')mdTitle();else if(trial)finishTrial(trial.passed===true);else if(pending?.reason==='study')imageCards();else if(brewQuestion)finishIngredient(brewQuestion.answered===true);else close();
+  e.preventDefault();
+  if(trial)finishTrial(trial.passed===true);
+  else if(pending?.reason==='study')imageCards();
+  else if(brewQuestion)finishIngredient(brewQuestion.answered===true);
+  else if(modalType==='settings')backToMenu();
+  else if(!atTitle&&modalType==='status')navigationMenu();
+  else if(modalType!=='title')close();
   return;
  }
  if(!['KeyW','KeyS','ArrowUp','ArrowDown','Enter','NumpadEnter'].includes(e.code))return;
@@ -1380,7 +1409,21 @@ $('#import').onchange=async e=>{
 function startMenu(){mdTitle()}
 function burst(x,y,c,n){if(particles.length>450)particles.splice(0,particles.length-350);for(let i=0;i<n;i++){let a=rand(0,TAU),v=rand(30,150);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.3,.85),max:.85,c,r:rand(1.5,4)})}}
 let combatTime=0,staminaRest=0,levelBannerTimer=0;
-let impactBursts=[];
+let impactBursts=[],heldAttack=null,combatClock=0;
+function startAttack(input){
+ if(!paused&&player.attack<=0&&player.dash<=0&&!heldAttack)heldAttack={input,started:combatClock};
+}
+function releaseAttack(input){
+ if(heldAttack?.input!==input)return;
+ const charged=combatClock-heldAttack.started>=balance.chargeSeconds;
+ heldAttack=null;
+ strike(charged);
+}
+function enemyRecovery(e,seconds){
+ e.recover=seconds;
+ e.counterUntil=combatClock+balance.counterSeconds;
+}
+function chargeProgress(){return heldAttack?Math.min(1,(combatClock-heldAttack.started)/balance.chargeSeconds):0;}
 function updateLevelNotice(dt){
  const banner=$('#levelNotice');
  levelBannerTimer=Math.max(0,levelBannerTimer-dt);
@@ -1408,7 +1451,7 @@ function spendStamina(cost){
  return true;
 }
 function recoverStamina(dt,load){
- if(player.attack>0||player.dash>0){staminaRest=0;return;}
+ if(heldAttack||player.attack>0||player.dash>0){staminaRest=0;return;}
  staminaRest+=dt;
  if(staminaRest<.45)return;
  const boost=Math.min(2.8,1+(staminaRest-.45)*2.2);
@@ -1421,35 +1464,44 @@ function weatherSplit(amount,split,x,y){
  const total=Object.values(adjusted).reduce((sum,value)=>sum+value,0);
  return {amount:amount*total,split:Object.fromEntries(Object.entries(adjusted).map(([type,value])=>[type,value/total]))};
 }
-function strike(){
- if(paused||player.attack>0)return;
+function strike(charged=false){
+ if(paused||player.attack>0||player.dash>0)return;
  updateCombat(0);
- const w=usableWeapon(),rank=pickedRarity(w);
- const cost=Math.round(w.stamina*(rank==='mythic'?1.25:1)*brewBonus.cost);
+ const w=usableWeapon(),rank=pickedRarity(w),profile=items.weapon(w.id,rank);
+ const cost=Math.round(profile.stamina*(charged?1.28:1)*brewBonus.cost);
  const impact=items.knockbackPower(w,save.attributes)+brewBonus.impact,rollChance=critChance(w,rank);
  if(!spendStamina(cost)){tell('Zu wenig Ausdauer');return;}
- player.attack=w.speed;
- const ang=player.dir,profile=items.weapon(w.id),split=brewBonus.element?{[brewBonus.element]:1}:profile.split;
+ player.attackDuration=profile.speed*(charged?1.25:1);
+ player.attack=player.attackDuration;
+ const ang=player.dir,split=brewBonus.element?{[brewBonus.element]:1}:profile.split;
  const color=items.damage[Object.keys(split)[0]].color;
- slashes.push({x:player.x,y:player.y,ang,life:.22,color,radius:63*brewBonus.reach});
- burst(player.x+Math.cos(ang)*28,player.y+Math.sin(ang)*28,color,6);
+ slashes.push({x:player.x,y:player.y,ang,life:.22,color,radius:Math.min(84,w.reach*.76)*brewBonus.reach});
+ if(charged){
+  const duration=.35,distance=Math.min(56,w.reach*.63);
+  impactBursts.push({x:player.x+Math.cos(ang)*distance,y:player.y+Math.sin(ang)*distance,angle:ang,
+   life:duration,duration,kind:'charged-swing'});
+ }
+ burst(player.x+Math.cos(ang)*28,player.y+Math.sin(ang)*28,color,charged?15:6);
  for(const e of enemies){
   const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
-  if(e.hp<=0||d>=w.reach*brewBonus.reach+(e.size-1)*10||Math.cos(a-ang)<=.25||gateLineBlocked(player.x,player.y,e.x,e.y))continue;
-  const backAngle=Math.atan2(player.y-e.y,player.x-e.x);
-  const multiplier=items.critMultiplier(!e.moving,e.facing??e.angle,backAngle,Math.random()<rollChance);
+  if(e.hp<=0||d>=profile.reach*brewBonus.reach+(e.size-1)*10||Math.cos(a-ang)<=.25||gateLineBlocked(player.x,player.y,e.x,e.y))continue;
+  const counter=e.counterUntil>combatClock,rolled=!counter&&Math.random()<rollChance;
+  const multiplier=balance.hitMultiplier(charged,counter,rolled,profile.critFactor);
   const amount=weaponDamage(w,rank)*brewBonus.damage*multiplier;
   const wet=inRain(player.x,player.y)?player:e;
   const damage=weatherSplit(amount,split,wet.x,wet.y);
   const hit=items.hit(damage.amount,damage.split,foeResistances[e.type]);
-  hurtEnemy(e,hit,multiplier);
-  if(profile.status==='bleed'&&e.hp>0&&(e.bleedCooldown||0)<=0){
+  const critical=counter?(charged?'fatal':'counter'):rolled?'critical':'';
+  hurtEnemy(e,hit,true,critical);
+  if(counter&&hit.total>0)e.counterUntil=0;
+  if(profile.status==='bleed'&&e.hp>0&&(e.bleedCooldown||0)<=0&&hit.total>0){
    e.bleedCooldown=3;
-   hurtEnemy(e,items.hit(e.max*.08*items.rarity[rank].power,{bleed:1},foeResistances[e.type]));
+   const bleedRatio=.08+(profile.statusLevel-1)*.02;
+   hurtEnemy(e,items.hit(e.max*bleedRatio,{bleed:1},foeResistances[e.type]),true);
   }
-  if(profile.status==='poison'&&e.hp>0&&!e.poison){
+  if(profile.status==='poison'&&e.hp>0&&!e.poison&&hit.total>0){
    if(foeResistances[e.type].poison===1)showDamage(e.x,e.y-13,0,'poison');
-   else e.poison={untilTick:.72,ticks:3,power:items.rarity[rank].power};
+   else e.poison={untilTick:.72,ticks:3,power:1+(profile.statusLevel-1)*.25,playerHit:true};
   }
   if(hit.total>0){
    const push=enemyRules.knockbackDistance(impact,enemyRules.balance(e.type,e.boss));
@@ -1459,17 +1511,22 @@ function strike(){
   }
  }
 }
-function hurtEnemy(e,hit,multiplier=1){
+function hurtEnemy(e,hit,playerHit=false,critical=''){
  if(hit.total>0){
+  if(playerHit){
+   save.combatRecord.dealt+=Math.min(e.hp,hit.total);
+   if(critical)save.combatRecord[critical==='critical'?'crits':'counters']++;
+  }
   e.hp-=hit.total;e.hit=.2;items.rememberDamage(e,hit);
   burst(e.x,e.y,items.damage[hit.type].color,7);
-  if(multiplier>1){
-   const fatal=multiplier===4,color=fatal?'#ff706f':'#ffda86',duration=fatal?.58:.38;
-   impactBursts.push({x:e.x,y:e.y,life:duration,duration,kind:fatal?'fatal-hit':'critical-hit'});
+  if(critical){
+   const fatal=critical==='fatal',color=fatal?'#ff706f':critical==='counter'?'#9fe9da':'#ffda86',duration=fatal?.58:.38;
+   const kind=fatal?'fatal-hit':critical==='counter'?'counter-hit':'critical-hit';
+   impactBursts.push({x:e.x,y:e.y,life:duration,duration,kind});
    burst(e.x,e.y,color,fatal?33:17);shake=Math.max(shake,fatal?14:6);
   }
  }
- showDamage(e.x,e.y,hit.total,hit.type,false,hit.total>0?multiplier:1);
+ showDamage(e.x,e.y,hit.total,hit.type,false,hit.total>0?critical:'');
 }
 function tickPoison(e,dt){
  e.bleedCooldown=Math.max(0,(e.bleedCooldown||0)-dt);
@@ -1479,7 +1536,7 @@ function tickPoison(e,dt){
  const status=e.poison;
  const amount=Math.max(3,e.max*.035);
  if(e===player)takeDamage(amount,{poison:1},true);
- else hurtEnemy(e,items.hit(amount*(status.power||1),{poison:1},foeResistances[e.type]));
+ else hurtEnemy(e,items.hit(amount*(status.power||1),{poison:1},foeResistances[e.type]),status.playerHit===true);
  if(e.poison!==status)return;
  status.untilTick+=.72;if(--status.ticks===0)e.poison=null;
 }
@@ -1496,7 +1553,51 @@ if(near?.kind==='trial'){offerTrial(near.i);return;}
 if(near?.kind==='portal'){enterPortal();return;}if(near?.kind==='merchant'){merchantMenu();return}if(near?.kind==='map'){save.merchantMapFound=true;persist();dungeonMapMenu();return}if(near?.kind==='gate'){gateQuiz(gates[near.i]);return}if(near?.kind==='shrine')quiz(near.i,'shrine');else if(near?.kind==='chest'){const k=near.i;if(!save.opened.includes(k)){save.opened.push(k);const gold=22+Math.floor(run.random(save.dungeonSeed^(k*10631+31))()*15)+save.floor*4;
 save.gold+=gold;player.hp=Math.min(maxHP(),player.hp+12);
 burst(chests[k].x,chests[k].y,'#ffd27d',35);tell('Truhe geöffnet · +'+gold+' Gold');persist()}}else{tell('Hier gibt es nichts zu untersuchen')}}
-window.addEventListener('keydown',e=>{if(paused){navModal(e);return;}if(e.target.closest('input,textarea,select,[contenteditable]'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();keys[e.code]=true;if(e.repeat)return;if(e.code==='Escape'){if(paused)close();else mdTitle();return}if(e.code==='Space')strike();if(e.code==='KeyE')interact();if(e.code==='KeyJ')journal();if(e.code==='KeyQ'){if(e.shiftKey){save.quickActive=(save.quickActive+1)%4;updateQuickBar();persist();}else useQuickSlot();}if(e.code==='KeyI')inventoryMenu();if(e.code==='KeyC')equipmentMenu();if(e.code==='KeyL')levelMenu();if(e.code==='KeyF')aimMode='keyboard';if(e.code==='KeyP'){mdTitle()}});window.addEventListener('keyup',e=>keys[e.code]=false);window.addEventListener('blur',()=>{for(let k in keys)keys[k]=false});window.addEventListener('pointermove',e=>{if(e.target.closest?.('#modalWrap'))return;mouse.x=e.clientX;mouse.y=e.clientY;aimMode='mouse';const rect=document.querySelector('#phaser-host').getBoundingClientRect();const px=phaserActive?window.__mindPhaserCameraX??(cam.x):cam.x;const py=phaserActive?window.__mindPhaserCameraY??(cam.y):cam.y;player.dir=Math.atan2(py+mouse.y-rect.top-player.y,px+mouse.x-rect.left-player.x)});window.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){aimMode='mouse';strike()}});document.querySelectorAll('[data-key]').forEach(b=>{let key=b.dataset.key;b.onpointerdown=e=>{e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId)};b.onpointerup=b.onpointercancel=()=>keys[key]=false});$('#mobileInteract').onclick=interact;$('#attack').onpointerdown=e=>{e.preventDefault();strike()};
+window.addEventListener('keydown',e=>{
+ if(paused){navModal(e);return;}
+ if(e.target.closest('input,textarea,select,[contenteditable]'))return;
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
+ keys[e.code]=true;
+ if(e.repeat)return;
+ if(e.code==='Space')startAttack('keyboard');
+ if(e.code==='KeyE')interact();
+ if(e.code==='KeyJ')journal();
+ if(e.code==='KeyQ'){
+  if(e.shiftKey){save.quickActive=(save.quickActive+1)%4;updateQuickBar();persist();}
+  else useQuickSlot();
+ }
+ if(e.code==='KeyI')inventoryMenu();
+ if(e.code==='KeyC')equipmentMenu();
+ if(e.code==='KeyL')levelMenu();
+ if(e.code==='KeyF')aimMode='keyboard';
+ if(e.code==='KeyP'||e.code==='Escape')pauseMenu();
+ if(e.code==='KeyR')navigationMenu();
+});
+window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')releaseAttack('keyboard');});
+window.addEventListener('blur',()=>{for(const key in keys)keys[key]=false;heldAttack=null;});
+window.addEventListener('pointermove',e=>{
+ if(e.target.closest?.('#modalWrap'))return;
+ mouse.x=e.clientX;mouse.y=e.clientY;aimMode='mouse';
+ const rect=$('#phaser-host').getBoundingClientRect();
+ const px=phaserActive?window.__mindPhaserCameraX??cam.x:cam.x;
+ const py=phaserActive?window.__mindPhaserCameraY??cam.y:cam.y;
+ player.dir=Math.atan2(py+mouse.y-rect.top-player.y,px+mouse.x-rect.left-player.x);
+});
+window.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='mouse'&&e.button===0&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
+  aimMode='mouse';startAttack(e.pointerId);
+ }
+});
+window.addEventListener('pointerup',e=>releaseAttack(e.pointerId));
+window.addEventListener('pointercancel',e=>{if(heldAttack?.input===e.pointerId)heldAttack=null;});
+document.querySelectorAll('[data-key]').forEach(b=>{
+ const key=b.dataset.key;
+ b.onpointerdown=e=>{e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId);};
+ b.onpointerup=b.onpointercancel=()=>keys[key]=false;
+});
+$('#mobileInteract').onclick=interact;
+$('#mobileNav').onclick=()=>{if(!paused)navigationMenu();};
+$('#attack').onpointerdown=e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);startAttack(e.pointerId);};
 function update(dt){
  if(mdNavigatingToNewCharacter)return;
  if(aimMode==='mouse'){
@@ -1504,7 +1605,7 @@ function update(dt){
   const my=(phaserActive?(window.__mindPhaserCameraY??cam.y):cam.y)+mouse.y;
   player.dir=Math.atan2(my-player.y,mx-player.x);
  }
- frame+=dt;save.playtime+=dt;
+ frame+=dt;combatClock+=dt;save.playtime+=dt;
  const load=equipmentLoad();
  updateCombat(dt);updateLevelNotice(dt);recoverStamina(dt,load);updateRestCat(dt);
  player.dash=Math.max(0,player.dash-dt);
@@ -1517,7 +1618,8 @@ function update(dt){
  let dy=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
  const length=Math.hypot(dx,dy)||1;dx/=length;dy/=length;
  if((keys.ShiftLeft||keys.ShiftRight)&&player.dashCooldown<=0&&(dx||dy)&&spendStamina(dashCost())){
-  player.dash=load.dashTime;player.dashCooldown=.85*brewBonus.dashCooldown;player.dashX=dx;player.dashY=dy;
+  heldAttack=null;
+  player.dash=load.dashTime;player.dashCooldown=.85*brewBonus.dashCooldown*(pickedRarity(usableWeapon())==='mythic'?balance.weaponMythicDash:1);player.dashX=dx;player.dashY=dy;
   player.dashSpeed=load.dashSpeed*brewBonus.dashDistance;burst(player.x,player.y,'#ae94f8',12);
  }
  if(player.dash>0){dx=player.dashX;dy=player.dashY;}
@@ -1527,7 +1629,7 @@ function update(dt){
   player.walk+=dt*(player.dash>0?23:12);
   if(aimMode==='keyboard')player.dir=Math.atan2(dy,dx);
   const slow=player.webSlow>0||player.grabSlow>0||onWeb();
-  const speed=player.speed*brewBonus.speed*load.move*(slow?.53:1)*(player.dash>0?(player.dashSpeed??load.dashSpeed):1);
+  const speed=player.speed*brewBonus.speed*load.move*mythicArmorMove()*(heldAttack?.64:1)*(slow?.53:1)*(player.dash>0?(player.dashSpeed??load.dashSpeed):1);
   moveActor(player,dx*speed*dt,dy*speed*dt);
  }
  const region=regionAt(player.x,player.y);
@@ -1654,7 +1756,7 @@ function updateEnemy(e,dt){
   if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'){advanceRush(e,spec,dt,angle);return;}
   if(['web','frost','bow','crossbow'].includes(spec.id)){
    e.runAttack=Math.max(0,e.runAttack-dt);
-   if(!e.runAttack)e.recover=spec.recovery;
+   if(!e.runAttack)enemyRecovery(e,spec.recovery);
    return;
   }
   e.runAttack=Math.max(0,e.runAttack-dt);
@@ -1665,7 +1767,7 @@ function updateEnemy(e,dt){
     if((player.bleedCooldown||0)<=0){player.bleedCooldown=3;takeDamage(maxHP()*.07,{bleed:1},true);}
    }
   }
-  if(!e.runAttack)e.recover=spec.recovery;
+  if(!e.runAttack)enemyRecovery(e,spec.recovery);
   return;
  }
  if(e.recover>0){e.recover=Math.max(0,e.recover-dt);return;}
@@ -1726,7 +1828,7 @@ function advanceRush(e,spec,dt,targetAngle){
    if(spec.id==='bite'&&!player.poison)player.poison={untilTick:.72,ticks:3};
   }
  }
- if(e.runAttack<=0)e.recover=spec.recovery;
+ if(e.runAttack<=0)enemyRecovery(e,spec.recovery);
 }
 function frostSites(e){
  return [-34,0,34].map(offset=>({
@@ -1839,7 +1941,7 @@ function updateLion(e,dt){
    if(ally){ally.called=9;ally.aggro=9;}
    burst(e.x,e.y,'#e2b472',23);
   }
-  if(t>=move.duration){e.lionMove=null;e.attack=spec.recovery+.55;}
+  if(t>=move.duration){e.lionMove=null;e.attack=spec.recovery+.55;e.counterUntil=combatClock+balance.counterSeconds;}
   return;
  }
  e.roarCooldown=Math.max(0,(e.roarCooldown||0)-dt);
@@ -1883,6 +1985,7 @@ function updateBat(e,dt){
     takeDamage(lightning?4:6,{[lightning?'lightning':'fire']:1},true);
    }
   }
+  if(age>=move.duration&&!move.finished){move.finished=true;e.counterUntil=combatClock+balance.counterSeconds;}
   if(age>=move.duration+.24){e.batMove=null;e.attack=spec.recovery+1.2;}
   return;
  }
@@ -2000,14 +2103,14 @@ function updateWebs(dt){
   p.x=x;p.y=y;return true;
  });
 }
-function showDamage(x,y,value,type,hero=false,multiplier=1){
+function showDamage(x,y,value,type,hero=false,critical=''){
  if(!settings.damageNumbers)return;
  const node=document.createElement('div');node.className='damage-number';
  node.style.color=items.damage[type]?.color||items.damage.physical.color;
  node.textContent=value>0?(hero?'−':'')+value:'Immun';
- if(multiplier>1){
-  node.className+=' '+(multiplier===4?'fatal-number':'crit-number');
-  node.textContent=(multiplier===4?'FATAL · ':'CRIT · ')+node.textContent;
+ if(critical){
+  node.className+=' '+(critical==='fatal'?'fatal-number':critical==='counter'?'counter-number':'crit-number');
+  node.textContent=({fatal:'FATALER KONTER',counter:'KONTER',critical:'CRIT'})[critical]+' · '+node.textContent;
  }
  const scrollX=phaserActive?window.__mindPhaserCameraX??cam.x:cam.x,scrollY=phaserActive?window.__mindPhaserCameraY??cam.y:cam.y;
  node.style.left=Math.round(x-scrollX+rand(-9,9))+'px';node.style.top=Math.round(y-scrollY-26)+'px';
@@ -2025,20 +2128,23 @@ function gearResistance(){
  for(const [type,value] of Object.entries(brewBonus.resist))protection[type]=(protection[type]||0)+value;
  return Object.fromEntries(Object.entries(protection).map(([type,value])=>[type,Math.min(.9,value)]));
 }
+function generalGuard(){return Math.min(.65,(hasRing('bulwark')?.12:0)+armorDefense()*.006);}
 function takeDamage(amount,split={physical:1},status=false){
  if(inRest(player.x,player.y)||player.dash>0||player.inv>0&&!status||mdNavigatingToNewCharacter)return false;
- const reduction=Math.min(.65,Math.min(.25,(save.attributes.vitality-10)*.008)+(hasRing('bulwark')?.12:0)+armorDefense()*.006);
+ const reduction=generalGuard();
  const damage=weatherSplit(amount*enemyDepth*(1-reduction)*brewBonus.guard,split,player.x,player.y);
  const hit=items.hit(damage.amount,damage.split,gearResistance());
  if(!hit.total)return false;
  items.rememberDamage(player,hit);
  combatTime=1.35;staminaRest=0;
+ save.combatRecord.taken+=Math.min(player.hp,hit.total);
  player.hp=Math.max(0,player.hp-hit.total);if(!status)player.inv=.75;shake=9;
  showDamage(player.x,player.y,hit.total,hit.type,true);burst(player.x,player.y,items.damage[hit.type].color,12);
  if(player.hp<=0)retreatAfterDeath();
  return true;
 }
 function retreatAfterDeath(){
+ save.combatRecord.deaths++;
  const depth=Math.max(1,save.floor-1);
  const seed=depth===save.floor?save.dungeonSeed:save.depthSeeds[depth]??run.freshSeed();
  const gear=gearItems();
@@ -2199,10 +2305,20 @@ function drawCombatEffects(draw,ground){
  if(!ground)for(const fx of impactBursts){
   if(!regionVisibleAt(fx.x,fx.y))continue;
   const index=Math.min(5,Math.floor((1-fx.life/fx.duration)*6));
-  const size=fx.kind==='fatal-hit'?136:fx.kind==='level-rise'?103:84;
-  draw(fx.kind,index,fx.x,fx.y-8,size,size,0,Math.min(1,fx.life*6));
+  const size=fx.kind==='fatal-hit'?136:fx.kind==='charged-swing'?110:fx.kind==='level-rise'?103:84;
+  draw(fx.kind,index,fx.x,fx.y-8,size,size,fx.angle||0,Math.min(1,fx.life*6));
  }
  const pose=Math.floor(frame*12)%6;
+ if(!ground){
+  if(heldAttack){
+   const progress=chargeProgress();
+   draw('charge-aura',progress<1?Math.floor(progress*5):4+pose%2,player.x,player.y-4,90,72,0,.52+progress*.46);
+  }
+  for(const e of enemies){
+   if(e.counterUntil<=combatClock||!e.counterUntil||e.hp<=0||Math.hypot(player.x-e.x,player.y-e.y)>180||!regionVisibleAt(e.x,e.y))continue;
+   draw('counter-mark',pose,e.x,e.y-47*e.size,30,30,0,Math.min(1,(e.counterUntil-combatClock)*8));
+  }
+ }
  for(const strike of stormStrikes){
   if(!regionVisibleAt(strike.x,strike.y))continue;
   if(ground&&strike.age<1)draw('storm-mark',pose,strike.x,strike.y,109,109,0,.65+strike.age*.25);
@@ -2506,7 +2622,7 @@ function weaponPose(){
  const dx=Math.cos(player.dir),dy=Math.sin(player.dir);
  if(Math.abs(dx)>.23)player.weaponSide=Math.sign(dx);
  const side=player.weaponSide||1,behind=dy<-.38;
- const swing=player.attack>0?(1-Math.min(1,player.attack/w.speed))*.8-.4:0;
+ const swing=heldAttack?-side*(.65+chargeProgress()*.8):player.attack>0?(1-Math.min(1,player.attack/player.attackDuration))*1.5-.66:0;
  // Socket coordinates on the 64px actor sprite: palm centers at (20,41) and (45,40).
  const palmX=side<0?20:45,palmY=side<0?41:40;
  const socketScale=74/64;
@@ -2688,7 +2804,7 @@ function archiveRuns(){
  return [...others,{packId:save.activePack,state:run.snapshot(save)}];
 }
 function switchPack(packId,restart=false){
- if(packId===save.activePack&&!restart){if(save.completed)trophyMenu(true);else close();return;}
+ if(packId===save.activePack&&!restart){if(save.completed)trophyMenu(true);else resumeGame();return;}
  persist();
  const archived=archiveRuns();
  const stored=archived.find(r=>r.packId===packId)?.state;
@@ -2708,9 +2824,9 @@ function packMenu(status=''){
    return '<div class="md-slot"><div><b>'+qEsc(packTitle(id))+'</b><br><small>'+
     (active?'Aktiv · ':'')+label+'</small></div><button data-pack="'+i+'">'+(state?.completed?'Trophäe ansehen':state?'Fortsetzen':'Dungeon starten')+'</button></div>';
   }).join('')
-  +'<div class="md-actions"><button class="primary" id="md-import-pack">JSON importieren</button><button id="md-back">Hauptmenü</button></div>','packs');
+  +'<div class="md-actions"><button class="primary" id="md-import-pack">JSON importieren</button><button id="md-back">Zurück</button></div>','packs');
  document.querySelectorAll('[data-pack]').forEach(b=>b.onclick=()=>switchPack(ids[Number(b.dataset.pack)]));
- mdButton('md-import-pack',()=>$('#import').click());mdButton('md-back',mdTitle);
+ mdButton('md-import-pack',()=>$('#import').click());mdButton('md-back',backToMenu);
 }
 function trophyMenu(victory=false){
  const ids=[DEFAULT_PACK,...save.packs.map(p=>p.packId),...save.trophies.map(t=>t.packId)];
@@ -2723,33 +2839,96 @@ function trophyMenu(victory=false){
  }).join('');
  show('<h2 class="md-title">'+(victory?'Tiefe 5 bezwungen':'Trophäen')+'</h2>'+rows+
   '<div class="md-actions">'+(victory?'<button id="md-restart">Diesen Dungeon neu starten</button>':'')+
-  '<button id="md-back">Hauptmenü</button></div>','trophies');
- mdButton('md-back',mdTitle);
+  '<button id="md-back">Zurück</button></div>','trophies');
+ mdButton('md-back',backToMenu);
  mdButton('md-restart',()=>switchPack(save.activePack,true));
 }
 const controlRows=[
- ['Bewegen','W A S D / Pfeiltasten'],['Zielen','Maus / F für Tastatur-Zielen'],['Angreifen','Linksklick / Leertaste'],['Ausweichen','Umschalt + Richtung'],
+ ['Bewegen','W A S D / Pfeiltasten'],['Zielen','Maus / F für Tastatur-Zielen'],['Normal / aufgeladen angreifen','Linksklick / Leertaste antippen oder halten'],['Ausweichen','Umschalt + Richtung'],
  ['Interagieren','E'],['Inventar / Ausrüstung','I / C'],['Leveln / Lernjournal','L / J'],['Schnellplatz benutzen','Q'],['Schnellplatz wechseln','Umschalt + Q'],
- ['Antworten und Menüs','W / S und Enter'],['Hauptmenü / Zurück','P / Esc']
+ ['Antworten und Menüs','W / S und Enter'],['Pause / Navigation / Zurück','P / R / Esc']
 ];
+function backToMenu(){if(atTitle)mdTitle();else pauseMenu();}
 function mdSettings(){
  show('<h2 class="md-title">Einstellungen</h2><section class="md-card settings-card"><h3>Spielanzeige</h3>'+
   '<label><input type="checkbox" id="setting-shake" '+(settings.shake?'checked':'')+'> Bildschirmerschütterung</label>'+
   '<label><input type="checkbox" id="setting-damage" '+(settings.damageNumbers?'checked':'')+'> Schadenszahlen</label></section>'+
   '<section class="md-card settings-card"><h3>Steuerung</h3><dl>'+controlRows.map(([label,key])=>
    '<div><dt>'+label+'</dt><dd><kbd>'+key+'</kbd></dd></div>').join('')+'</dl></section>'+
-  '<div class="actions"><button id="md-back">Hauptmenü</button></div>','settings');
+  '<div class="actions"><button id="md-back">Zurück</button></div>','settings');
  for(const [id,key] of [['setting-shake','shake'],['setting-damage','damageNumbers']])$('#'+id).onchange=e=>{
   settings[key]=e.target.checked;
   try{localStorage.setItem(settingsKey,JSON.stringify(settings));}catch{tell('Einstellungen konnten nur für diese Sitzung übernommen werden');}
  };
- mdButton('md-back',mdTitle);
+ mdButton('md-back',backToMenu);
+}
+function navigationMenu(){
+ show('<nav class="game-nav" aria-label="Spielnavigation"><h2 class="md-title">Navigation</h2><div class="nav-destinations">'+
+  [['equip','⚔','Ausrüstung','C'],['inv','▤','Inventar','I'],['status','✦','Charakterstatus',''],['pause','Ⅱ','Spielmenü','P']].map(([id,icon,label,key])=>
+   '<button id="nav-'+id+'"><span aria-hidden="true">'+icon+'</span><b>'+label+'</b>'+(key?'<kbd>'+key+'</kbd>':'')+'</button>').join('')+
+  '</div><button id="nav-close">Schließen <kbd>R</kbd></button></nav>','navigation');
+ mdButton('nav-equip',()=>equipmentMenu());mdButton('nav-inv',()=>inventoryMenu());mdButton('nav-status',statusMenu);
+ mdButton('nav-pause',pauseMenu);mdButton('nav-close',close);
+}
+function statusRows(rows){
+ return '<dl>'+rows.map(([label,value])=>'<div><dt>'+qEsc(label)+'</dt><dd>'+qEsc(value)+'</dd></div>').join('')+'</dl>';
+}
+function statusMenu(){
+ const hero=save.character,w=usableWeapon(),rank=pickedRarity(w),load=equipmentLoad(),gear=gearResistance(),base=damageBreakdown(w,rank);
+ const num=v=>Number(v).toLocaleString('de-DE',{maximumFractionDigits:1});
+ const {deaths,dealt,taken,crits,counters}=save.combatRecord;
+ const resistance=Object.entries(items.damage).map(([type,info])=>{
+  const value=1-(1-generalGuard())*(1-(gear[type]||0));
+  return statToken(type,(value>=0?'+':'')+pct(value),info.label);
+ }).join('');
+ show('<section class="status-dossier"><header class="status-header"><div class="md-portrait" id="status-portrait"></div>'+
+  '<div><h2>'+qEsc(hero?.name||'Unbenannter Wanderer')+'</h2><p>'+qEsc(hero?.className||'Wanderer')+' · '+qEsc(w.name)+'</p></div>'+
+  '<div class="status-level"><strong>'+save.level+'</strong><span>Gesamtstufe</span></div></header>'+
+  '<div class="status-grid"><section><h3>Attribute</h3>'+statusRows(Object.keys(ATTRS).map(key=>[attributeName(key),save.attributes[key]]))+
+  '<p>'+save.pendingLevels+' freie Punkte</p></section><section><h3>Kampf</h3>'+statusRows([
+   ['Leben',num(player.hp)+' / '+maxHP()],['Ausdauer',maxStamina()],['Angriffsschaden',num(weaponDamage(w,rank)*brewBonus.damage)],
+   ['Grundschaden / Attributsbonus',base.base+' / +'+base.bonus],['Crit-Chance',pct(critChance(w,rank))],
+   ['Zufalls-Crit-Faktor','×'+num(items.weapon(w.id,rank).critFactor)],
+   ['Knockback',items.knockbackPower(w,save.attributes)+brewBonus.impact],
+   ['Basis-Knockback',balance.knockbackBase(save.attributes.vitality)]
+  ])+'<h3>Resistenzen</h3><div class="item-stats">'+resistance+'</div></section>'+
+  '<section><h3>Ausrüstung und Chronik</h3><b class="load-value">'+qEsc(kgText(load.kg)+' / '+kgText(load.max))+'</b>'+
+  '<meter min="0" max="100" low="50" high="99" optimum="35" value="'+Math.min(load.ratio*100,100)+'" aria-label="Ausrüstungslast"></meter>'+
+  '<p>'+qEsc(load.name)+' · '+pct(load.ratio)+'</p>'+statusRows([
+   ['Ausgeteilter Schaden',num(dealt)],['Erlittener Schaden',num(taken)],['Zufalls-Crits',num(crits)],['Konter-Crits',num(counters)],
+   ['Tode',num(deaths)],['Spielzeit',mdDuration(save.playtime)]
+  ])+'</section></div><div class="actions"><button id="status-back">Navigation</button>'+
+  (save.pendingLevels?'<button id="status-level-up">Attribute steigern</button>':'')+'<button id="status-close">Schließen</button></div></section>','status');
+ mountPortrait($('#status-portrait'),hero,w.id,equippedArmorColors());
+ mdButton('status-back',navigationMenu);mdButton('status-level-up',()=>levelMenu());mdButton('status-close',close);
+}
+function pauseMenu(){
+ show('<section class="pause-ledger"><h2 class="md-title">Spiel pausiert</h2>'+
+  '<p>Tiefe '+save.floor+' · Stufe '+save.level+'</p><div class="pause-actions">'+
+  '<button class="primary" id="pause-continue">Weiterspielen</button><button id="pause-nav">Navigation <kbd>R</kbd></button>'+
+  '<button id="pause-journal">Lernjournal</button><button id="pause-settings">Einstellungen</button>'+
+  '<button id="pause-quit">Beenden</button></div></section>','pause');
+ mdButton('pause-continue',close);mdButton('pause-nav',navigationMenu);mdButton('pause-journal',journal);
+ mdButton('pause-settings',mdSettings);
+ mdButton('pause-quit',()=>{if(persist())mdTitle();else tell('Spielstand konnte nicht gespeichert werden.');});
 }
 function mdTitle(){
-const hero=save.character;show('<div class="md-theme"><div class="md-kicker">Ein Vermächtnis aus Schatten und Wissen</div><h1 class="md-title">MIND DUNGEON</h1><p class="md-subtitle">SHADOWBOUND</p><div class="md-hero"><div class="md-portrait" id="md-title-portrait"></div><div><b>'+mdEscape(hero?.name||'Unbenannter Wanderer')+'</b><p class="md-status">'+mdEscape(hero?.className||'Noch keine Klasse')+' · Stufe '+save.level+'<br>Spielzeit: '+mdDuration(save.playtime)+'</p></div></div><div class="md-actions"><button class="primary" id="md-continue">▶ Fortsetzen</button><button id="md-create">Neuer Charakter</button><button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-journal">Lernjournal</button><button id="md-saves">Spielstände</button><button id="md-settings">Einstellungen</button><button id="md-login">Konto / Cloud</button></div></div>','title');
-mountPortrait($('#md-title-portrait'),hero,save.equipment.weapon,equippedArmorColors());
-mdButton('md-continue',()=>{if(save.completed){trophyMenu(true);return;}close();if(save.pendingLevels)setTimeout(levelMenu,300)});
-mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-packs',()=>packMenu());mdButton('md-trophies',()=>trophyMenu());mdButton('md-journal',journal);mdButton('md-saves',mdSaves);mdButton('md-login',mdAccount);
+ atTitle=true;
+ const hero=save.character;
+ const embers=Array.from({length:22},(_,i)=>'<i style="--x:'+((i*67+11)%100)+'%;--drift:'+((i*13)%71-35)+'px;--delay:-'+(i*1.83%15).toFixed(1)+'s;--duration:'+(11+i%7)+'s"></i>').join('');
+ show('<main class="title-view"><div class="title-embers" aria-hidden="true">'+embers+'</div><div class="title-content">'+
+  '<header class="title-brand"><h1>Mind Dungeon</h1><p>Shadowbound</p></header>'+
+  '<div class="title-body"><div class="title-save"><div class="md-portrait" id="md-title-portrait"></div><div><b>'+
+  mdEscape(hero?.name||'Unbenannter Wanderer')+'</b><p>'+mdEscape(hero?.className||'Noch keine Klasse')+
+  ' · Stufe '+save.level+'</p></div></div><div class="title-actions">'+
+  '<button class="primary" id="md-continue">Fortsetzen</button><button id="md-create">Neuer Charakter</button>'+
+  '<button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-saves">Spielstände</button>'+
+  '<button id="md-journal">Lernjournal</button><button id="md-settings">Einstellungen</button><button id="md-login">Konto / Cloud</button>'+
+  '</div></div></div></main>','title');
+ mountPortrait($('#md-title-portrait'),hero,save.equipment.weapon,equippedArmorColors());
+ mdButton('md-continue',()=>{if(save.completed){trophyMenu(true);return;}resumeGame();if(save.pendingLevels)setTimeout(()=>{if(!paused)levelMenu();},300);});
+ mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-packs',()=>packMenu());
+ mdButton('md-trophies',()=>trophyMenu());mdButton('md-journal',journal);mdButton('md-saves',mdSaves);mdButton('md-login',mdAccount);
 }
 const classKits={guardian:'knight',duelist:'wanderer',scholar:'scholar',pilgrim:'hunter'};
 function classAttributes(c){return {...Object.fromEntries(Object.keys(ATTRS).map(key=>[key,10])),...c.attributes};}
@@ -2783,7 +2962,7 @@ const newSave={hp:32+(attrs.vigor||10)*3,x:5.5*TILE,y:6.5*TILE,xp:0,gold:0,kills
 writeAndReload({...newSave,...run.freshRun(run.freshSeed()),activePack:save.activePack,trophies:save.trophies},true)})}
 function mdSaves(){
 show('<div class="md-kicker">Chroniken der Wanderer</div><h2 class="md-title">Spielstände</h2><p class="md-status">Lokal wird immer der aktuelle Charakter gesichert. Cloud-Slots sind an dein Konto gebunden.</p><div class="md-slot"><div><b>Lokaler Spielstand</b><br><small>'+mdEscape(save.character?.name||'Wanderer')+' · '+mdDuration(save.playtime)+'</small></div><button id="md-local">Fortsetzen</button></div><div id="md-cloud-slots"><p>Cloud-Spielstände werden geladen …</p></div><div class="md-actions"><button id="md-account">Konto</button><button id="md-back">Zurück</button></div>','saves');
-mdButton('md-local',close);mdButton('md-back',mdTitle);mdButton('md-account',mdAccount);
+mdButton('md-local',resumeGame);mdButton('md-back',mdTitle);mdButton('md-account',mdAccount);
 const el=document.getElementById('md-cloud-slots');if(!mdSession){el.innerHTML='<p class="md-warning">Für Cloud-Spielstände bitte anmelden.</p>';return}
 (async()=>{try{const rows=await mdRest('character_saves?select=slot,data,updated_at&order=slot.asc');const by=new Map(rows.map(r=>[r.slot,r]));el.innerHTML=[1,2,3].map(slot=>{const r=by.get(slot),d=r?.data;return '<div class="md-slot"><div><b>Cloud-Slot '+slot+'</b><br><small>'+(d?mdEscape(d.character?.name||'Wanderer')+' · '+mdDuration(d.playtime):'Leer')+'</small></div><div class="md-row"><button data-save="'+slot+'">Speichern</button>'+(d?'<button data-load="'+slot+'">Laden</button>':'')+'</div></div>'}).join('');
 el.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{const slot=Number(b.dataset.save);if(!confirm('Lokalen Spielstand in Cloud-Slot '+slot+' speichern und vorhandenen Inhalt überschreiben?'))return;mdSlot=slot;localStorage.setItem('mind-beta-slot',String(slot));persist();try{await syncSave();mdSaves()}catch(err){alert('Cloud-Speichern fehlgeschlagen: '+err.message)}});
@@ -2818,7 +2997,7 @@ loadQuestions();
 stockSpecialRooms();
 deliverWellOffer();
 if(save.trials[trialIndex]==='started')finishTrial(false,true);
-if(resume)close();else mdTitle();
+if(resume)resumeGame();else mdTitle();
 const resumeMessage=sessionStorage.getItem(RESUME_KEY+'-message');
 if(resumeMessage){sessionStorage.removeItem(RESUME_KEY+'-message');tell(resumeMessage);}
 mdInit().then(async()=>{

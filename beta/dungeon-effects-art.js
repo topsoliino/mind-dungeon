@@ -80,9 +80,9 @@ window.DungeonEffectsArt = (() => {
    shape([[19,29],[25,20],[37,21],[45,29],[44,37],[34,44],[24,40],[18,34]],'#7e6f78');
    shape([[21,29],[28,24],[37,24],[42,30],[39,38],[28,40],[22,35]],'#d7cbb3');
    pixel(25+frame%3,28,10,3,'#f4e9d2');pixel(28,34,8,2,'#fbf3de');
-  }else if(['critical-hit','fatal-hit','level-rise'].includes(type)){
+  }else if(['critical-hit','counter-hit','fatal-hit','level-rise'].includes(type)){
    const fatal=type==='fatal-hit',level=type==='level-rise';
-   const glow=fatal?'#ed5972':level?'#9bd8be':'#e4a35d',bright=fatal?'#ffe2b4':'#fff0b9';
+   const glow=fatal?'#ed5972':type==='counter-hit'?'#63cfbf':level?'#9bd8be':'#e4a35d',bright=fatal?'#ffe2b4':'#fff0b9';
    for(let i=0;i<(fatal?16:10);i++){
     const a=i*Math.PI*2/(fatal?16:10),dist=7+4*frame+(i%3)*2;
     const x=32+Math.cos(a)*dist,y=34+Math.sin(a)*dist*(level?.64:1);
@@ -93,6 +93,29 @@ window.DungeonEffectsArt = (() => {
    if(frame<=1)shape([[31,13],[34,26],[45,30],[34,34],[31,44],[28,33],[18,30],[28,27]],bright);
    if(level)for(let i=0;i<5;i++)pixel(21+i*5,51-7*frame-i%3*6,2,8,bright);
    if(fatal&&frame<4){pixel(27-frame*2,29,12+frame*4,3,bright);pixel(31,20-frame*2,2,22+frame*4,bright);}
+  }else if(type==='charge-aura'){
+   const full=frame>=4;
+   for(let i=0;i<22;i++){
+    const a=Math.PI*2*i/22+frame*.15;
+    const x=32+Math.cos(a)*(26-frame*1.4),y=35+Math.sin(a)*(16-frame*.6);
+    if(full||i%3!==0)pixel(x,y,full?3:2,full?3:2,i%3?'#cd9c62':'#ffedb6');
+   }
+   for(let i=0;i<8;i++){
+    const a=i*Math.PI/4+frame*.55,x=32+Math.cos(a)*(10+frame),y=34+Math.sin(a)*(10+frame);
+    pixel(x,y,1+(i%2),2,i%2?'#d39a66':'#ffe6a6');
+   }
+   if(full)shape([[32,8],[34,24],[45,29],[34,32],[32,48],[30,32],[19,29],[30,24]],'#fff3beab');
+  }else if(type==='counter-mark'){
+   const shift=frame%3;
+   shape([[32,14-shift],[47,28],[32,43+shift],[17,28]],'#73daca');
+   shape([[32,18-shift],[43,28],[32,39+shift],[21,28]],'#25434a');
+   shape([[32,22],[39,28],[32,35],[25,28]],'#f4efbf');
+  }else if(type==='charged-swing'){
+   const offset=frame*2;
+   shape([[8,19],[27,8],[46,13],[60,29],[56,43],[41,57],[15,57],[34,46],[45,33],[40,22],[25,17]],
+    frame<3?'#e7a764b8':'#c5875c75');
+   shape([[13,15+offset],[29,11],[48,16],[58,29],[55,37],[38,50],[47,33],[43,22],[28,16]],'#fff0b9');
+   for(let i=0;i<7;i++)pixel(28+i*4,18+(i*19+frame*7)%32,2,2,'#ffe6a8');
   }else if(['bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'].includes(type)){
    const ice=type==='bat-beam'||type==='bat-lightning-warning'||type.startsWith('storm');
    const tone=ice?'#78bfe9':'#df804b',hot=ice?'#d9f5ff':'#ffe2a4';
@@ -146,7 +169,7 @@ window.DungeonEffectsArt = (() => {
   }
   return c;
  }
- const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','altar','critical-hit','fatal-hit','level-rise','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
+ const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
  const frames=Object.fromEntries(types.map(type=>[type,Array.from({length:6},(_,i)=>paint(type,i))]));
  return {frames};
 })();

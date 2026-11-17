@@ -1,5 +1,6 @@
 window.DungeonItems = (() => {
  'use strict';
+ const balance=window.DungeonBalance;
  const damage={
   physical:{label:'Physisch',icon:'⚔',color:'#ead9b8'},
   fire:{label:'Feuer',icon:'♨',color:'#ff914b'},
@@ -31,65 +32,39 @@ window.DungeonItems = (() => {
  const merchantRing={id:'merchant',name:'Händlerring',desc:'Ausgerüstet zeigt der Händler je eine zusätzliche Waffe, einen Ring und ein Rüstungsteil.',bonus:'merchant'};
  const precisionRing={id:'precision',name:'Ring der Präzision',desc:'+8 Prozentpunkte Würfel-Crit-Chance.',bonus:'critical'};
  const breweryRing={id:'brewer',name:'Ring des Sudmeisters',desc:'Hebt die Seltenheit aller fünf Brauangebote um eine zulässige Stufe an.',bonus:'brewery'};
- const weapons={
-  rust:{split:{physical:1}},rapier:{split:{physical:1},status:'bleed'},
-  hammer:{split:{physical:.7,lightning:.3}},staff:{split:{magic:.65,frost:.35}},
-  blade:{split:{physical:.65,fire:.35}},dagger:{split:{physical:.5,dark:.5},status:'poison'},
-  greatsword:{split:{physical:.7,frost:.3}}
- };
- const weaponCritRates={rust:0,rapier:.04,hammer:.01,staff:.02,blade:.025,dagger:.06,greatsword:.015};
- const armorCritRates={'hunter-helmet':.025,'hunter-boots':.015,'wanderer-legs':.01,'shadow-helmet':.03,'shadow-boots':.02};
- const weaponCrit=(id,itemRank='common')=>(weaponCritRates[id]||0)*rarity[itemRank].power;
- const armorCrit=(id,itemRank='common')=>(armorCritRates[id]||0)*rarity[itemRank].power;
- function critChance(dexterity,kg,weaponBonus,gearBonus){
-  return Math.min(1,.05+Math.floor(Math.max(0,dexterity)/2)*.01+(kg<50?.05:0)+weaponBonus+gearBonus);
+ const weapon=(id,rank='common')=>balance.weaponTable[id]?.[rank]||balance.weaponTable.rust.common;
+ const armorProfile=(id,rank='common')=>balance.armorTable[id]?.[rank];
+ const weaponCrit=(id,rank)=>weapon(id,rank).crit;
+ const armorCrit=(id,rank)=>armorProfile(id,rank)?.crit||0;
+ function critChance(dexterity,load,weaponBonus,gearBonus){
+  return Math.min(1,.05+Math.floor(Math.max(0,dexterity)/2)*.01+(load.ratio<.5?.05:0)+weaponBonus+gearBonus);
  }
- function critMultiplier(stationary,facing,fromEnemy,rolled){
-  const situational=stationary||Math.cos(facing-fromEnemy)<-.54;
-  return (situational?2:1)*(rolled?2:1);
- }
- const weaponWeights={rust:8,rapier:5,hammer:20,staff:7,blade:11,dagger:3,greatsword:26};
- const armorWeights={wanderer:20,scholar:12,hunter:31,knight:51,shadow:62};
- const weaponWeight=weapon=>Number.isFinite(weapon.kg)&&weapon.kg>0?weapon.kg:weaponWeights[weapon.id]??8;
- const armorWeight=(set,part)=>Math.round(armorWeights[set]*part/7*2)/2;
+ const weaponWeight=w=>weapon(w.id).kg;
  const loads=[
   {name:'Leicht',move:1,dashSpeed:3.1,dashTime:.22,stamina:1},
   {name:'Mittel',move:.91,dashSpeed:2.55,dashTime:.22,stamina:.88},
   {name:'Schwer',move:.79,dashSpeed:2.45,dashTime:.145,stamina:.72}
  ];
- function loadout(kg){
-  return {...loads[kg>=70?2:kg>=50?1:0],kg,resist:Math.floor(kg/2)*.005};
+ function loadout(kg,burden){
+  const max=balance.capacity(burden),ratio=kg/max;
+  return {...loads[ratio>=1?2:ratio>=.5?1:0],kg,max,ratio,resist:Math.floor(kg/2)*.005};
  }
  const defenseBonus=(level,load)=>Math.max(0,level-1)*.005+load.resist;
  function upgradeRank(item){
   const ranks=Object.keys(rarity);
   return ranks[ranks.indexOf(rank(item))+1]||null;
  }
- const scaling={
-  rust:{strength:'E',dexterity:'E'},rapier:{dexterity:'C',luck:'E'},
-  hammer:{strength:'B',vitality:'D'},staff:{intelligence:'A',attunement:'D'},
-  blade:{faith:'A',dexterity:'D',luck:'E'},dagger:{dexterity:'D',luck:'C'},
-  greatsword:{strength:'S',endurance:'C',vitality:'D',dexterity:'E'}
- };
  const gradeRates={S:[2,1],A:[1,1],B:[1,2],C:[1,3],D:[1,4],E:[1,5]};
- function weaponScaling(weapon,attributes){
-  const grades=scaling[weapon.id]||{strength:'E',dexterity:'E'};
-  return Object.entries(grades).map(([attribute,grade])=>{
+ function weaponScaling(w,attributes,rank='common'){
+  return Object.entries(weapon(w.id,rank).grades).map(([attribute,grade])=>{
    const [points,step]=gradeRates[grade],level=Math.max(0,Math.floor(attributes[attribute]||0));
    const bonus=Math.floor(level/step)*points;
    return {attribute,grade,points,step,bonus,nextGain:Math.floor((level+1)/step)*points-bonus};
   });
  }
- const weaponImpact={rust:34,rapier:22,hammer:66,staff:29,blade:42,dagger:15,greatsword:74};
- function knockbackPower(weapon,attributes){
-  const levels=key=>Math.floor(Math.max(0,attributes[key]||0)/2);
-  return (weaponImpact[weapon.id]??34)+levels('strength')+levels('vitality');
+ function knockbackPower(w,attributes){
+  return weapon(w.id).impact+balance.knockbackBase(attributes.vitality)+Math.floor((attributes.strength||0)/2);
  }
- const armor={
-  wanderer:{physical:.14,magic:-.10},scholar:{magic:.30,lightning:.13,physical:-.15},
-  hunter:{poison:.36,bleed:.18,fire:-.18},knight:{physical:.28,fire:.22,lightning:-.28},
-  shadow:{dark:.40,frost:.21,magic:-.24}
- };
  // Positive affinity reduces incoming damage. 1 represents immunity.
  const foes=[
   {physical:.30,fire:-.35,poison:1,lightning:-.18},
@@ -117,12 +92,7 @@ window.DungeonItems = (() => {
   if(roll<.18)return 'legendary';
   return null;
  }
- const weapon=id=>weapons[id]||weapons.rust;
- function affinity(piece,itemRank){
-  if(!piece)return {};
-  const factor=rarity[itemRank].power;
-  return Object.fromEntries(Object.entries(armor[piece.set]||{}).map(([type,value])=>[type,value*piece.weight/7*(value>0?factor:1/factor)]));
- }
+ const affinity=(piece,itemRank)=>armorProfile(piece?.id,itemRank)?.stats||{};
  function hit(amount,split,resistance){
   const parts=Object.entries(split).map(([type,share])=>({
    type,value:amount*share*Math.max(0,1-(resistance[type]||0))
@@ -168,5 +138,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,precisionRing,breweryRing,weaponCrit,armorCrit,critChance,critMultiplier,weapon,armor,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,precisionRing,breweryRing,weaponCrit,armorCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();
