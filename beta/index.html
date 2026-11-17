@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=16"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=16"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=16"></script><script src="beta/dungeon-items.js?v=16"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=16"></script><script src="beta/dungeon-effects-art.js?v=16"></script><script src="beta/dungeon-art.js?v=16"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=16"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=16"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=16"></script><script src="beta/dungeon-items.js?v=16"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=16"></script><script src="beta/dungeon-effects-art.js?v=16"></script><script src="beta/dungeon-art.js?v=16"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=2"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -35,11 +35,33 @@ const scene=document.createElement('canvas'),s=scene.getContext('2d',{alpha:fals
 let cw=0,ch=0,dpr=1,frame=0,last=0,paused=true,modalType='',noticeUntil=0,shake=0,cam={x:0,y:0};
 let atTitle=true;
 const settingsKey=KEY+'-settings';
-const settings={shake:true,damageNumbers:true};
+const settings={shake:true,damageNumbers:true,soundVolume:.8};
 try{
  const saved=JSON.parse(localStorage.getItem(settingsKey)||'{}');
- for(const key of Object.keys(settings))if(typeof saved?.[key]==='boolean')settings[key]=saved[key];
+ for(const key of ['shake','damageNumbers'])if(typeof saved?.[key]==='boolean')settings[key]=saved[key];
+ if(Number.isFinite(saved?.soundVolume))settings.soundVolume=Math.max(0,Math.min(1,saved.soundVolume));
 }catch{}
+const audio=window.DungeonAudio;
+audio?.setVolume(settings.soundVolume);
+let lastUiSound=-Infinity;
+function soundUI(id,options){
+ lastUiSound=performance.now();
+ return audio?.play(id,{priority:2,...options});
+}
+function soundWorld(id,point,options={}){
+ if(!audio)return;
+ const dx=point.x-player.x,dy=point.y-player.y;
+ const distance=Math.hypot(dx,dy),energy=Math.max(0,1-distance/510)**1.4;
+ if(energy<.018)return;
+ const pan=Math.max(-.76,Math.min(.76,dx/310));
+ const {gain=1,...mix}=options;
+ return audio.play(id,{scene:'world',gain:energy*gain,pan,...mix});
+}
+const swingCue={rust:'weapon_swing_light',rapier:'weapon_thrust',hammer:'weapon_hammer',staff:'weapon_staff',
+ blade:'weapon_blade',dagger:'weapon_dagger',greatsword:'weapon_greatsword'};
+const hitCue={fire:'element_fire_impact',magic:'element_magic_hit',frost:'element_frost_impact',
+ dark:'element_dark_hit',lightning:'element_lightning_impact',bleed:'element_bleed_enemy'};
+const criticalCue={critical:'hit_crit',counter:'hit_counter',fatal:'hit_fatal'};
 const raw=localStorage.getItem(KEY);
 let save={hp:100,xp:0,gold:0,kills:0,packs:[]};
 try{if(raw)Object.assign(save,JSON.parse(raw));}catch(e){console.warn('Spielstand ist ungültig',e);}
@@ -286,7 +308,7 @@ function levelMenu(selected){
  document.querySelectorAll('[data-stat]').forEach(b=>b.onclick=()=>{
   if(!save.pendingLevels)return;
   const key=b.dataset.stat;
-  save.attributes[key]++;save.pendingLevels--;player.max=maxHP();
+  save.attributes[key]++;save.pendingLevels--;player.max=maxHP();soundUI('learn_stat');
   player.hp=Math.min(player.max,player.hp+(key==='vigor'?3:0));
   player.stamina=Math.min(player.stamina,maxStamina());persist();
   if(save.pendingLevels)levelMenu(key);else close();
@@ -409,7 +431,7 @@ function weaponRequirements(id){
 function slotItem(index){return save.inventory.find(it=>items.key(it)===save.quickSlots[index]);}
 function useQuickSlot(){
  const it=slotItem(save.quickActive);
- if(!it){tell('Schnellplatz '+(save.quickActive+1)+' ist leer');return;}
+ if(!it){soundUI('ui_error');tell('Schnellplatz '+(save.quickActive+1)+' ist leer');return;}
  if(it.kind==='potion'){usePotion(it);return;}
  if(it.kind==='food'){if(!eatFood(it))tell('Deine Lebenspunkte sind voll');return;}
  if(isEquipped(it)){tell('Bereits ausgerüstet · '+itemTitle(it));return;}
@@ -419,6 +441,7 @@ function quickSelect(it){
  if(!it||!save.inventory.includes(it))return;
  save.quickSlots=expedition.firstSlot(save.quickSlots,items.key(it));
  save.quickActive=0;
+ soundUI('ui_confirm');
  persist();
  tell(itemTitle(it)+' · Auf Schnellplatz 1');
 }
@@ -451,18 +474,18 @@ function itemTile(it){
 }
 function equipInventoryItem(it,targetSlot){
  if(it.kind==='weapon'){
-  if(unmetRequirements(it.id).length){tell('Attributvoraussetzungen fehlen');return;}
-  heldAttack=null;save.equipment.weapon=it.id;save.equipment.weaponRarity=items.rank(it);
+  if(unmetRequirements(it.id).length){soundUI('ui_error');tell('Attributvoraussetzungen fehlen');return;}
+  clearHeldAttack();save.equipment.weapon=it.id;save.equipment.weaponRarity=items.rank(it);
  }else if(it.kind==='armor'){
   const piece=armorById(it.id);if(!piece)return;
   (save.equipment.armor??={})[piece.slot]=it.id;(save.equipment.armorRarities??={})[piece.slot]=items.rank(it);
  }else if(it.kind==='ring'){
   let slot=typeof targetSlot==='number'?targetSlot:save.equipment.rings.indexOf(it.id);
   if(slot<0)slot=save.equipment.rings.findIndex(r=>!r);
-  if(slot<0){tell('Beide Ringplätze sind belegt · Lege zuerst einen Ring ab');return;}
+  if(slot<0){soundUI('ui_error');tell('Beide Ringplätze sind belegt · Lege zuerst einen Ring ab');return;}
   save.equipment.rings[slot]=it.id;(save.equipment.ringRarities??=[])[slot]=items.rank(it);
  }
- player.stamina=Math.min(player.stamina,maxStamina());persist();tell('Ausgerüstet · '+itemTitle(it));
+ player.stamina=Math.min(player.stamina,maxStamina());soundUI('ui_confirm');persist();tell('Ausgerüstet · '+itemTitle(it));
 }
 const bagFilters={all:'Alle',...items.kinds,food:'Nahrung',potion:'Tränke',cup:'Becher'};
 function itemComparison(it,label='Ausgewählt'){
@@ -530,7 +553,7 @@ function equipmentMenu(selected=0){
   '<button id="replaceGear">'+(active.kind==='weapon'?'Waffe wechseln':'Passendes ausrüsten')+'</button>')+'</aside></div>','equipment');
  document.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>equipmentMenu(Number(b.dataset.slot)));
  const openSlot=()=>inventoryMenu(active.kind,0,undefined,{slot:active.slot,label:active.label,index:selected});
- mdButton('removeGear',()=>{active.remove();player.stamina=Math.min(player.stamina,maxStamina());persist();openSlot();});
+ mdButton('removeGear',()=>{active.remove();player.stamina=Math.min(player.stamina,maxStamina());soundUI('ui_confirm');persist();openSlot();});
  mdButton('replaceGear',openSlot);
  mdButton('toInventory',()=>inventoryMenu());mdButton('closeEq',close);
 }
@@ -554,15 +577,18 @@ function lootChoice(rank,source,kind=null,rng=Math.random){
  const pool=candidates.length?candidates:list;
  return {...pool[Math.floor(rng()*pool.length)],rarity:rank,source};
 }
-function dropSoul(pos,it){
+function dropSoul(pos,it,announce=true){
  const x=pos.x,y=pos.y;
  save.souls.push({x,y,item:it,phase:Math.random()*TAU});
  burst(x,y,items.rarity[items.rank(it)].color,13);
+ if(announce)soundWorld('loot_soul_spawn',pos,{gain:.68,cooldown:.16});
 }
 function claimSoul(index){
- if(save.inventory.length>=30){tell('Inventar voll');return;}
+ if(save.inventory.length>=30){soundUI('ui_error');tell('Inventar voll');return;}
  const orb=save.souls[index];if(!orb)return;
  save.inventory.push(orb.item);save.souls.splice(index,1);persist();
+ const rank=items.rank(orb.item);
+ soundUI(rank==='common'?'loot_soul_pick':rank==='rare'?'loot_rare':rank==='epic'?'loot_epic':'loot_exalted');
  tell('Aufgehoben · '+itemTitle(orb.item));
 }
 const rand=(a,b)=>a+Math.random()*(b-a);let enemies=[],particles=[],slashes=[],webShots=[],webPatches=[],enemyHazards=[],deathBursts=[],bolts=[],altarBursts=[];const dust=[];let moveClock=0;
@@ -633,7 +659,7 @@ function merchantMenu(mode='gold',page=0,selected=0){
    if(save.inventory[index]!==it||isEquipped(it))return;
    save.inventory.splice(index,1);save.gold+=amount;
   }
-  persist();merchantMenu(mode,page,selected);
+  soundUI('ui_confirm');persist();merchantMenu(mode,page,selected);
  });
 }
 function dungeonMapMenu(){
@@ -927,6 +953,7 @@ function addSerpent(spawn){
 }
 for(const spawn of save.serpents)addSerpent(spawn);
 function breakPriest(priest){
+ soundWorld('element_dark_hit',priest,{gain:.59,rate:.78,cooldown:.18});
  deathBursts.push({x:priest.x,y:priest.y,life:.42});
  const away=Math.atan2(priest.y-player.y,priest.x-player.x);
  for(const [i,offset] of [-.85,.85].entries()){
@@ -991,6 +1018,7 @@ let trial=null;
 function offerTrial(index){
  if(save.trials[index]||!questions.length){tell('Keine Prüfung verfügbar');return;}
  const target=Math.min(3,questions.length);
+ soundUI('trial_open');
  show('<h2>Versiegelte Prüftruhe</h2><p>Beantworte '+target+' Fragen in 60 Sekunden richtig. Bei einem Fehlschlag löst die Truhe einen Hinterhalt aus.</p><div class="actions"><button class="primary" id="beginTrial">Prüfung starten</button><button id="leaveTrial">Später</button></div>','trial-offer');
  mdButton('leaveTrial',close);
  mdButton('beginTrial',()=>beginTrial(index,target));
@@ -998,6 +1026,7 @@ function offerTrial(index){
 function beginTrial(index,target){
  if(trial||save.trials[index]||!questions.length)return;
  trial={index,target,correct:0,deadline:Date.now()+60000,queue:run.shuffle([...questions],Math.random),timer:null,lastAnswer:null};
+ soundUI('trial_start');
  // A reload or closed tab cannot turn the wager back into an unused chest.
  save.trials[index]='started';persist();
  trial.timer=setInterval(()=>{
@@ -1005,6 +1034,7 @@ function beginTrial(index,target){
   const timer=$('#trial-timer');
   const remaining=Math.max(0,Math.ceil((trial.deadline-Date.now())/1000));
   if(timer)timer.textContent=remaining+' s';
+  if([10,3,2,1].includes(remaining)&&trial.warning!==remaining){trial.warning=remaining;soundUI('trial_warning',{gain:.78});}
   if(Date.now()>=trial.deadline)finishTrial(false);
  },150);
  nextTrialQuestion();
@@ -1040,15 +1070,29 @@ function finishTrial(passed,restoring=false){
   const hasMerchantRing=save.inventory.some(it=>it.id==='merchant')||save.souls.some(p=>p.item.id==='merchant');
   const prize=hasMerchantRing?lootChoice(save.floor>=3?'mythic':'rare',source):
    {id:'merchant',kind:'ring',rarity:'rare',source};
-  dropSoul(position,prize);
-  dropSoul({x:position.x+17,y:position.y},lootChoice(save.floor>=3?'legendary':'rare',source));
+  dropSoul(position,prize,false);
+  dropSoul({x:position.x+17,y:position.y},lootChoice(save.floor>=3?'legendary':'rare',source),false);
  }else makeAmbush(index);
  persist();
  if(!restoring){
-  close();tell(passed?'Prüftruhe geöffnet · Zwei Seelenbälle':'Prüfung gescheitert · Hinterhalt!');
+  soundUI(passed?'trial_win':'trial_fail',{priority:3});
+  close();
+  if(!passed&&save.ambushes.find(ambush=>ambush.index===index)?.positions.length){
+   soundWorld('trial_ambush',chests[index],{priority:2,gain:.72});
+  }
+  tell(passed?'Prüftruhe geöffnet · Zwei Seelenbälle':'Prüfung gescheitert · Hinterhalt!');
  }
 }
 const keys={};let mouse={x:0,y:0},aimMode='keyboard';let near=null;const $=q=>document.querySelector(q);
+document.addEventListener('click',event=>{
+ const button=event.target.closest?.('button');
+ if(!button||button.closest('#mobile')||button===document.querySelector('#attack'))return;
+ if(!event.composedPath().includes($('#modal')))return;
+ if(performance.now()-lastUiSound<48)return;
+ const id=button.matches('[data-review],[data-item],[data-slot],[data-stock],[data-shop-mode],[data-class],[data-filter]')
+  ?'ui_select':/back|leave|cancel/i.test(button.id)?'ui_back':'ui_click';
+ soundUI(id);
+});
 function resize(){dpr=Math.min(devicePixelRatio||1,1.25);cw=innerWidth;ch=innerHeight;canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);scene.width=canvas.width;scene.height=canvas.height;displayContext.imageSmoothingEnabled=false}window.addEventListener('resize',resize);resize();
 const SAVE_SCHEMA=1;let saveBusy=false;let mdConfig=null,mdSession=null,mdClasses=[],mdSlot=Number(localStorage.getItem('mind-beta-slot')||1);
 const MD_AUTH_KEY='mind-dungeon-beta-auth-v1';const MD_PUBLIC_CONFIG={url:'https://lgpppwxreeppgcywvlld.supabase.co',publishableKey:'sb_publishable_SB46czSlamMCuxXaCTdNew_VOSDZuLa'};
@@ -1069,12 +1113,14 @@ let mdNavigatingToNewCharacter=false;function persist(){if(mdNavigatingToNewChar
 }setInterval(()=>{persist()},12000);
 function tell(t){$('#notice').textContent=t;$('#notice').style.opacity=1;noticeUntil=performance.now()+2100}
 function show(content,type='menu'){
+ if(!paused&&type!=='quiz'&&performance.now()-lastUiSound>48)soundUI('ui_open');
+ audio?.setPaused(true);
  $('#hud').hidden=true;$('#xpHud').hidden=true;$('#quickBar').hidden=true;$('#wallet').hidden=true;
  const panel=$('#modal');
  const focused=document.activeElement;
  const previous=focused?.closest?.('#modal')&&focused;
  const selector=previous?.id?'#'+CSS.escape(previous.id):null;
- paused=true;heldAttack=null;modalType=type;
+ paused=true;clearHeldAttack();modalType=type;
  $('#dungeonPrompt').hidden=true;$('#soulPreview').hidden=true;$('#mobileInteract').hidden=true;
  panel.innerHTML=content;$('#modalWrap').dataset.screen=type;$('#modalWrap').style.display='flex';
  if(type==='quiz'){panel.querySelector('.choice')?.focus();return;}
@@ -1084,9 +1130,12 @@ function show(content,type='menu'){
 function resumeGame(){atTitle=false;close();}
 function close(){
  if(atTitle){mdTitle();return;}
+ if(paused&&performance.now()-lastUiSound>48)soundUI('ui_close');
+ audio?.setPaused(false);
  paused=false;modalType='';pending=null;$('#modalWrap').style.display='none';$('#modalWrap').dataset.screen='';
  $('#hud').hidden=false;$('#xpHud').hidden=false;$('#wallet').hidden=false;updateWallet();updateQuickBar();
  if(queuedAltar!==null){
+  soundWorld('shrine_spent',shrines[queuedAltar],{priority:2});
   altarBursts.push({...shrines[queuedAltar],life:1.12});queuedAltar=null;
   tell('Altar vollendet · Wissen bewahrt');
  }
@@ -1136,6 +1185,7 @@ function navModal(e){
  e.preventDefault();
  const index=controls.indexOf(focused),direction=['KeyW','ArrowUp'].includes(e.code)?-1:1;
  controls[index<0?(direction<0?controls.length-1:0):(index+direction+controls.length)%controls.length].focus();
+ soundUI('ui_select');
 }
 function qEsc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const themes=[{floor:'#183a36',edge:'#3c8375',glow:'#83edc5',detail:'#67bdac'},{floor:'#303048',edge:'#9e78ce',glow:'#e3b6ff',detail:'#7561b5'},{floor:'#382c38',edge:'#a65d82',glow:'#ff8fb8',detail:'#a96583'},{floor:'#443528',edge:'#ba8b4f',glow:'#ffc57b',detail:'#c99d63'},{floor:'#22374a',edge:'#6098c3',glow:'#8bd7ff',detail:'#7aa9c7'}];
@@ -1250,7 +1300,7 @@ function updateConsumption(dt){
  if(paused)return;
  if(!consumeMove&&save.consumeQueue&&player.attack<=0&&player.dash<=0){
   const it=save.consumeQueue;
-  heldAttack=null;
+  clearHeldAttack();
   consumeMove={it,age:0,length:it.kind==='food'?.69:.82};
  }
  if(!consumeMove)return;
@@ -1262,12 +1312,14 @@ function updateConsumption(dt){
    if(food){
     const healed=Math.min(maxHP()-player.hp,Math.round(food.heal*brewBonus.food));
     player.hp+=healed;tell(food.name+' · +'+Math.round(healed)+' LP');
+    if(healed>0)soundWorld('element_heal',player,{priority:2});
     burst(player.x,player.y-13,'#e1cb8b',12);
    }
   }else if(it.kind==='potion'){
    const effects=brewing.entries(it.brew);
    save.activeBrew={effects,remaining:it.duration,duration:it.duration};
    brewBonus=brewing.bonuses(save.activeBrew);
+   soundWorld('element_buff_on',player,{priority:2});
    tell('Trank getrunken · '+Math.ceil(it.duration)+' s');
    burst(player.x,player.y-13,brewing.mix(effects),19);
   }
@@ -1283,10 +1335,11 @@ function updateBrew(dt){
  save.activeBrew.remaining-=dt;
  if(save.activeBrew.remaining>0)return;
  save.activeBrew=null;brewBonus=brewing.bonuses(null);persist();tell('Trankwirkung abgeklungen');
+ soundWorld('element_buff_off',player,{gain:.8});
 }
 function gateQuiz(g){
  if(save.gates[g.id])return;
- if(!questions.length){tell('Fragenpaket ist nicht verfügbar');return;}
+ if(!questions.length){soundUI('ui_error');tell('Fragenpaket ist nicht verfügbar');return;}
  quiz(g.from,'gate',g.id);
 }
 function questionFigure(q){
@@ -1302,10 +1355,19 @@ function cardTint(q){
 }
 function cardOrnament(q){return '<span class="study-ornament" aria-hidden="true">'+iconImage('card-ornament','',cardTint(q))+'</span>';}
 function quiz(z,reason,gateId=null,question=null){
- if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;const q=question||selectQuestion(z,gateId,reason==='shrine'?z:null);if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return}pending={q,z,reason,gateId};show(`<article class="study-card difficulty-${Math.min(5,Math.max(1,Number(q.difficulty)||1))}" style="--card-tint:${cardTint(q)}">${cardOrnament(q)}<span class="pill" title="Schwierigkeit">✦ ${qEsc(packLibrary.get(save.activePack)?.categories.find(group=>group.id===q.categoryId)?.title||roomTitle(z))} · ${qEsc(q.topic)} · Schwierigkeit ${q.difficulty||1}</span>${reason==='trial'?'<span class="pill">Prüftruhe · '+trial.correct+'/'+trial.target+' richtig · <b id="trial-timer">'+Math.max(0,Math.ceil((trial.deadline-Date.now())/1000))+' s</b></span>'+(trial.lastAnswer===null?'':'<span class="pill trial-result">'+(trial.lastAnswer?'Richtig':'Falsch')+'</span>'):''}<h2>${qEsc(q.prompt)}</h2>${questionFigure(q)}<div class="choices">${q.type==='free-text'?`<label for="freeAnswer">Deine Antwort</label><input id="freeAnswer" autocomplete="off" placeholder="Antwort eingeben" class="answer-field"><button class="primary" id="submitFree">Antwort prüfen</button>`:q.choices.map((c,i)=>`<button class="choice" data-choice="${i}">${String.fromCharCode(65+i)}. ${qEsc(c)}</button>`).join('')}</div><div id="feedback"></div><p class="muted">Quelle: ${qEsc(q.source?.document||'Fragenpaket')}, Folie ${qEsc(q.source?.page||'–')}</p><div class="actions"><button id="leave">${reason==='trial'?'Prüfung abbrechen':reason==='brew'?'Zur Brauerei':reason==='study'?'Zu den Bildkarten':'Später beantworten'}</button></div></article>`,'quiz');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(+b.dataset.choice));if(q.type==='free-text'){const input=$('#freeAnswer');$('#submitFree').onclick=()=>answerText(input.value);input.focus();input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(!e.repeat)answerText(input.value);}}}$('#leave').onclick=reason==='trial'?()=>finishTrial(false):reason==='brew'?()=>finishIngredient(false):reason==='study'?imageCards:close}
+ if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;
+ const q=question||selectQuestion(z,gateId,reason==='shrine'?z:null);
+ if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return;}
+ pending={q,z,reason,gateId};
+ if(reason==='shrine'||reason==='temple'){
+  const site=reason==='shrine'?shrines[z]:templeShrines[gateId];
+  if(site)soundWorld('shrine_open',site,{gain:.82,cooldown:.45});
+ }
+ if(performance.now()-lastUiSound>48)soundUI('learn_card');
+ show(`<article class="study-card difficulty-${Math.min(5,Math.max(1,Number(q.difficulty)||1))}" style="--card-tint:${cardTint(q)}">${cardOrnament(q)}<span class="pill" title="Schwierigkeit">✦ ${qEsc(packLibrary.get(save.activePack)?.categories.find(group=>group.id===q.categoryId)?.title||roomTitle(z))} · ${qEsc(q.topic)} · Schwierigkeit ${q.difficulty||1}</span>${reason==='trial'?'<span class="pill">Prüftruhe · '+trial.correct+'/'+trial.target+' richtig · <b id="trial-timer">'+Math.max(0,Math.ceil((trial.deadline-Date.now())/1000))+' s</b></span>'+(trial.lastAnswer===null?'':'<span class="pill trial-result">'+(trial.lastAnswer?'Richtig':'Falsch')+'</span>'):''}<h2>${qEsc(q.prompt)}</h2>${questionFigure(q)}<div class="choices">${q.type==='free-text'?`<label for="freeAnswer">Deine Antwort</label><input id="freeAnswer" autocomplete="off" placeholder="Antwort eingeben" class="answer-field"><button class="primary" id="submitFree">Antwort prüfen</button>`:q.choices.map((c,i)=>`<button class="choice" data-choice="${i}">${String.fromCharCode(65+i)}. ${qEsc(c)}</button>`).join('')}</div><div id="feedback"></div><p class="muted">Quelle: ${qEsc(q.source?.document||'Fragenpaket')}, Folie ${qEsc(q.source?.page||'–')}</p><div class="actions"><button id="leave">${reason==='trial'?'Prüfung abbrechen':reason==='brew'?'Zur Brauerei':reason==='study'?'Zu den Bildkarten':'Später beantworten'}</button></div></article>`,'quiz');document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>answer(+b.dataset.choice));if(q.type==='free-text'){const input=$('#freeAnswer');$('#submitFree').onclick=()=>answerText(input.value);input.focus();input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(!e.repeat)answerText(input.value);}}}$('#leave').onclick=reason==='trial'?()=>finishTrial(false):reason==='brew'?()=>finishIngredient(false):reason==='study'?imageCards:close}
 function normalizeAnswer(v){return String(v).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
 function editDistance(a,b){const prev=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let last=prev[0];prev[0]=i;for(let j=1;j<=b.length;j++){const tmp=prev[j];prev[j]=Math.min(prev[j]+1,prev[j-1]+1,last+(a[i-1]===b[j-1]?0:1));last=tmp}}return prev[b.length]}
-function answerText(raw){if(!pending||pending.q.type!=='free-text')return;const input=normalizeAnswer(raw);if(!input){tell('Bitte eine Antwort eingeben');return}const ok=pending.q.answers.some(a=>{const target=normalizeAnswer(a),limit=target.length>=22?3:target.length>=10?2:target.length>=6?1:0;return input===target||Math.abs(input.length-target.length)<=limit&&editDistance(input,target)<=limit});answer(ok?1:0)}
+function answerText(raw){if(!pending||pending.q.type!=='free-text')return;const input=normalizeAnswer(raw);if(!input){soundUI('ui_error');tell('Bitte eine Antwort eingeben');return}const ok=pending.q.answers.some(a=>{const target=normalizeAnswer(a),limit=target.length>=22?3:target.length>=10?2:target.length>=6?1:0;return input===target||Math.abs(input.length-target.length)<=limit&&editDistance(input,target)<=limit});answer(ok?1:0)}
 function correctAnswer(q,choice){return q.type==='free-text'?choice===1:choice===q.correctIndex;}
 function recordAnswer(q,ok){
  save.questionCount++;
@@ -1318,6 +1380,7 @@ function recordAnswer(q,ok){
  persist();
 }
 function reviewAnswer(q,choice,ok,status,next){
+ soundUI(ok?'learn_right':'learn_wrong',{priority:3});
  document.querySelectorAll('.choice').forEach(b=>{
   b.disabled=true;
   if(Number(b.dataset.choice)===q.correctIndex)b.classList.add('good');
@@ -1331,6 +1394,7 @@ function reviewAnswer(q,choice,ok,status,next){
    '<button class="review-'+key+'" data-review="'+key+'">'+label+'</button>').join('')+'</div>';
  document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{
   const color=b.dataset.review;
+  soundUI('ui_select');
   save.questionReview[q.id]={color,due:color==='green'?Number.MAX_SAFE_INTEGER:save.questionCount+(color==='red'?5:10)};
   persist();next();
  });
@@ -1358,9 +1422,11 @@ function answer(i){
  if(ok&&reason==='gate'&&gateId){
   (save.gateQuestions[gateId]??=[]).push(q.id);
   save.gateProgress[gateId]=(save.gateProgress[gateId]||0)+1;
-  if(save.gateProgress[gateId]>=sealTarget()){
+  const g=gates.find(g=>g.id===gateId);
+  const opened=save.gateProgress[gateId]>=sealTarget();
+  soundWorld(opened?'gate_open_final':'gate_seal_progress',{x:(g.x+.5)*TILE,y:(g.y+.5)*TILE},{priority:2});
+  if(opened){
    save.gates[gateId]=true;
-   const g=gates.find(g=>g.id===gateId);
    burst((g.x+.5)*TILE,(g.y+.5)*TILE,g.color,45);
    tell('Wissenstor geöffnet!');
   }
@@ -1368,9 +1434,13 @@ function answer(i){
  if(reason!=='study'){
   if(ok&&reason==='enemy'){
    for(const e of enemies)if(e.roomId===z&&Math.hypot(e.x-player.x,e.y-player.y)<220){
-    e.hp-=45;showDamage(e.x,e.y,45,'magic');burst(e.x,e.y,'#d6a2ff',18);
+    e.hp-=45;soundWorld('element_magic_hit',e,{group:'combat-element',cooldown:.10});
+    showDamage(e.x,e.y,45,'magic');burst(e.x,e.y,'#d6a2ff',18);
    }
-  }else if(ok){player.hp=Math.min(maxHP(),player.hp+18);burst(player.x,player.y,'#8df2d2',24);}
+  }else if(ok){
+   const hp=player.hp;player.hp=Math.min(maxHP(),player.hp+18);burst(player.x,player.y,'#8df2d2',24);
+   if(player.hp>hp)soundWorld('element_heal',player,{gain:.48,priority:2});
+  }
   else{player.hp=Math.max(1,player.hp-8);shake=8;}
  }
  recordAnswer(q,ok);
@@ -1384,7 +1454,7 @@ function answer(i){
 }
 function collectCup(){
  if(!cupPoint||save.cupClaimed)return;
- if(save.inventory.length>=30){tell('Inventar voll');return;}
+ if(save.inventory.length>=30){soundUI('ui_error');tell('Inventar voll');return;}
  save.inventory.push(emptyCup('Ruheraum'));save.cupClaimed=true;persist();tell('Leerer Becher aufgenommen');
 }
 function collectBones(index){
@@ -1422,7 +1492,8 @@ function answerTemple(choice){
  recordAnswer(q,ok);
  const status=reward?'Zwei richtige Antworten · +1 Rubin':ok?'Eine von zwei Antworten richtig':'Der Schrein bleibt bis zum nächsten Tod geschlossen.';
  reviewAnswer(q,choice,ok,status,()=>{
-  if(ok&&!reward){templeQuiz(index);return;}
+  if(ok&&!reward){soundWorld('temple_shrine_progress',templeShrines[index],{priority:2});templeQuiz(index);return;}
+  soundWorld(reward?'temple_shrine_success':'temple_shrine_fail',templeShrines[index],{priority:2});
   close();if(reward){const shrine=templeShrines[index];burst(shrine.x,shrine.y,'#ff7a85',23);tell('+1 Rubin');}
  });
 }
@@ -1478,13 +1549,32 @@ function burst(x,y,c,n){if(particles.length>450)particles.splice(0,particles.len
 let combatTime=0,staminaRest=0,levelBannerTimer=0;
 let impactBursts=[],heldAttack=null,combatClock=0,consumeMove=null;
 function startAttack(input){
- if(!paused&&player.attack<=0&&player.dash<=0&&!heldAttack&&!consumeMove&&!save.consumeQueue)heldAttack={input,started:combatClock};
+ if(!paused&&!mdNavigatingToNewCharacter&&player.attack<=0&&player.dash<=0&&!heldAttack&&!consumeMove&&!save.consumeQueue)heldAttack={input,started:combatClock};
 }
 function releaseAttack(input){
  if(heldAttack?.input!==input)return;
  const charged=combatClock-heldAttack.started>=balance.chargeSeconds;
- heldAttack=null;
+ clearHeldAttack();
  strike(charged);
+}
+function clearHeldAttack(){
+ if(!heldAttack)return;
+ heldAttack=null;
+ audio?.stop('hero-charge');
+}
+function updateAttackAudio(){
+ if(!heldAttack)return;
+ const elapsed=combatClock-heldAttack.started;
+ if(!heldAttack.audioStarted&&elapsed>=.17&&elapsed<balance.chargeSeconds){
+  heldAttack.audioStarted=true;
+  const cue=usableWeapon().id==='staff'?'element_magic_charge':'weapon_charge_start';
+  soundWorld(cue,player,{group:'hero-charge',gain:.92});
+ }
+ if(!heldAttack.audioReady&&elapsed>=balance.chargeSeconds){
+  heldAttack.audioReady=true;
+  audio?.stop('hero-charge');
+  soundWorld('weapon_charge_ready',player,{priority:2});
+ }
 }
 function enemyRecovery(e,seconds){
  e.recover=seconds;
@@ -1498,6 +1588,7 @@ function updateLevelNotice(dt){
  if(combatTime>0||!save.levelNotice||levelBannerTimer>0)return;
  banner.hidden=false;banner.textContent='Stufe '+save.levelNotice+' erreicht · L für Attribute';
  levelBannerTimer=2.5;
+ soundWorld('learn_level_up',player,{priority:3});
  impactBursts.push({x:player.x,y:player.y,life:1.12,duration:1.12,kind:'level-rise'});
  burst(player.x,player.y,'#ffcf7d',29);
  save.levelNotice=0;persist();
@@ -1513,7 +1604,7 @@ function updateCombat(dt){
 }
 function spendStamina(cost){
  if(combatTime<=0)return true;
- if(player.stamina<cost)return false;
+ if(player.stamina<cost){soundWorld('hero_exhausted',player,{cooldown:.55,priority:2});return false;}
  player.stamina-=cost;staminaRest=0;
  return true;
 }
@@ -1540,10 +1631,12 @@ function strike(charged=false){
  if(!spendStamina(cost)){tell('Zu wenig Ausdauer');return;}
  player.attackDuration=profile.speed*(charged?1.25:1);
  player.attack=player.attackDuration;
+ soundWorld(swingCue[w.id],player,{priority:2,cooldown:.065});
  const ang=player.dir,split=brewBonus.element?{[brewBonus.element]:Object.values(profile.split).reduce((sum,share)=>sum+share,0)}:profile.split;
  const color=items.damage[Object.keys(split)[0]].color;
  slashes.push({x:player.x,y:player.y,ang,life:.22,color,radius:Math.min(84,w.reach*.76)*brewBonus.reach});
  if(charged){
+  soundWorld('weapon_charge_release',player,{priority:2,gain:.88});
   const duration=.35,distance=Math.min(56,w.reach*.63);
   impactBursts.push({x:player.x+Math.cos(ang)*distance,y:player.y+Math.sin(ang)*distance,angle:ang,
    life:duration,duration,kind:'charged-swing'});
@@ -1568,7 +1661,7 @@ function strike(charged=false){
   }
   if(profile.status==='poison'&&e.hp>0&&!e.poison&&hit.total>0){
    if(foeResistances[e.type].poison===1)showDamage(e.x,e.y-13,0,'poison');
-   else e.poison={untilTick:.72,ticks:3,power:1+(profile.statusLevel-1)*.25,playerHit:true};
+   else applyPoison(e,{untilTick:.72,ticks:3,power:1+(profile.statusLevel-1)*.25,playerHit:true});
   }
   if(hit.total>0){
    const push=enemyRules.knockbackDistance(impact,enemyRules.balance(e.type,e.boss));
@@ -1585,15 +1678,21 @@ function hurtEnemy(e,hit,playerHit=false,critical=''){
    if(critical)save.combatRecord[critical==='critical'?'crits':'counters']++;
   }
   e.hp-=hit.total;e.hit=.2;items.rememberDamage(e,hit);
+  if(playerHit&&hitCue[hit.type])soundWorld(hitCue[hit.type],e,{group:'combat-element',cooldown:.12,gain:critical?.56:.9});
   burst(e.x,e.y,items.damage[hit.type].color,7);
   if(critical){
    const fatal=critical==='fatal',color=fatal?'#ff706f':critical==='counter'?'#9fe9da':'#ffda86',duration=fatal?.58:.38;
+   soundWorld(criticalCue[critical],e,{group:'combat-critical',cooldown:.12,priority:3});
    const kind=fatal?'fatal-hit':critical==='counter'?'counter-hit':'critical-hit';
    impactBursts.push({x:e.x,y:e.y,life:duration,duration,kind});
    burst(e.x,e.y,color,fatal?33:17);shake=Math.max(shake,fatal?14:6);
   }
- }
+ }else if(playerHit)soundWorld('hit_immune',e,{cooldown:.23,gain:.8});
  showDamage(e.x,e.y,hit.total,hit.type,false,hit.total>0?critical:'');
+}
+function applyPoison(target,status){
+ target.poison=status;
+ soundWorld('element_poison_apply',target,{cooldown:.19,priority:2,gain:target===player?1:.8});
 }
 function tickPoison(e,dt){
  e.bleedCooldown=Math.max(0,(e.bleedCooldown||0)-dt);
@@ -1607,7 +1706,7 @@ function tickPoison(e,dt){
  if(e.poison!==status)return;
  status.untilTick+=.72;if(--status.ticks===0)e.poison=null;
 }
-function interact(){if(paused)return;
+function interact(){if(paused||mdNavigatingToNewCharacter)return;
 if(near?.kind==='cup'){collectCup();return;}
 if(near?.kind==='bones'){collectBones(near.i);return;}
 if(near?.kind==='temple'){templeQuiz(near.i);return;}
@@ -1621,6 +1720,7 @@ if(near?.kind==='portal'){enterPortal();return;}if(near?.kind==='merchant'){merc
 save.gold+=gold;player.hp=Math.min(maxHP(),player.hp+12);
 burst(chests[k].x,chests[k].y,'#ffd27d',35);tell('Truhe geöffnet · +'+gold+' Gold');persist()}}else{tell('Hier gibt es nichts zu untersuchen')}}
 window.addEventListener('keydown',e=>{
+ if(mdNavigatingToNewCharacter)return;
  if(paused){navModal(e);return;}
  if(e.target.closest('input,textarea,select,[contenteditable]'))return;
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
@@ -1630,7 +1730,7 @@ window.addEventListener('keydown',e=>{
  if(e.code==='KeyE')interact();
  if(e.code==='KeyJ')journal();
  if(e.code==='KeyQ'){
-  if(e.shiftKey){save.quickActive=(save.quickActive+1)%4;updateQuickBar();persist();}
+  if(e.shiftKey){save.quickActive=(save.quickActive+1)%4;soundUI('ui_select');updateQuickBar();persist();}
   else useQuickSlot();
  }
  if(e.code==='KeyI')inventoryMenu();
@@ -1641,7 +1741,7 @@ window.addEventListener('keydown',e=>{
  if(e.code==='KeyR')navigationMenu();
 });
 window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')releaseAttack('keyboard');});
-window.addEventListener('blur',()=>{for(const key in keys)keys[key]=false;heldAttack=null;});
+window.addEventListener('blur',()=>{for(const key in keys)keys[key]=false;clearHeldAttack();});
 window.addEventListener('pointermove',e=>{
  if(e.target.closest?.('#modalWrap'))return;
  mouse.x=e.clientX;mouse.y=e.clientY;aimMode='mouse';
@@ -1656,7 +1756,7 @@ window.addEventListener('pointerdown',e=>{
  }
 });
 window.addEventListener('pointerup',e=>releaseAttack(e.pointerId));
-window.addEventListener('pointercancel',e=>{if(heldAttack?.input===e.pointerId)heldAttack=null;});
+window.addEventListener('pointercancel',e=>{if(heldAttack?.input===e.pointerId)clearHeldAttack();});
 document.querySelectorAll('[data-key]').forEach(b=>{
  const key=b.dataset.key;
  b.onpointerdown=e=>{e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId);};
@@ -1665,6 +1765,17 @@ document.querySelectorAll('[data-key]').forEach(b=>{
 $('#mobileInteract').onclick=interact;
 $('#mobileNav').onclick=()=>{if(!paused)navigationMenu();};
 $('#attack').onpointerdown=e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);startAttack(e.pointerId);};
+let footstepDistance=32, ambienceClock=0;
+function playFootstep(oldX,oldY) {
+ if(!audio||player.dash>0)return;
+ footstepDistance+=Math.hypot(player.x-oldX,player.y-oldY);
+ if(footstepDistance<47)return;
+ footstepDistance-=47;
+ const tile=terrain[Math.floor(player.y/TILE)]?.[Math.floor(player.x/TILE)];
+ if(tile?.startsWith('bridge-')||outsideAt(player.x,player.y))return;
+ if(furniture.some(p=>p.type==='carpet'&&Math.abs(p.x-player.x)<p.w/2&&Math.abs(p.y-player.y)<p.h/2))return;
+ soundWorld('step_stone',player,{gain:.72,variation:.021,cooldown:.14});
+}
 function update(dt){
  if(mdNavigatingToNewCharacter)return;
  if(aimMode==='mouse'){
@@ -1687,7 +1798,8 @@ function update(dt){
  let dy=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
  const length=Math.hypot(dx,dy)||1;dx/=length;dy/=length;
  if(!consumeMove&&(keys.ShiftLeft||keys.ShiftRight)&&player.dashCooldown<=0&&(dx||dy)&&spendStamina(dashCost())){
-  heldAttack=null;
+  clearHeldAttack();
+  soundWorld('hero_dash',player,{priority:2,rate:load.name==='Schwer'?.84:load.name==='Leicht'?1.13:1});
   player.dash=load.dashTime;player.dashCooldown=.85*brewBonus.dashCooldown*(pickedRarity(usableWeapon())==='mythic'?balance.weaponMythicDash:1);player.dashX=dx;player.dashY=dy;
   player.dashSpeed=load.dashSpeed*brewBonus.dashDistance;burst(player.x,player.y,'#ae94f8',12);
  }
@@ -1699,10 +1811,19 @@ function update(dt){
   if(aimMode==='keyboard')player.dir=Math.atan2(dy,dx);
   const slow=player.webSlow>0||player.grabSlow>0||onWeb();
   const speed=player.speed*brewBonus.speed*load.move*mythicArmorMove()*(consumeMove?.37:heldAttack?.64:1)*(slow?.53:1)*(player.dash>0?(player.dashSpeed??load.dashSpeed):1);
+  const oldX=player.x,oldY=player.y;
   moveActor(player,dx*speed*dt,dy*speed*dt);
+  playFootstep(oldX,oldY);
  }
+ updateAttackAudio();
+ if(pendingWellReward&&Math.hypot(pendingWellReward.x-player.x,pendingWellReward.y-player.y)<155&&
+  soundWorld('world_well_reward',pendingWellReward,{priority:2}))pendingWellReward=null;
  const region=regionAt(player.x,player.y);
  if(region>=0&&!explored.has(region)){explored.add(region);save.explored=[...explored];}
+ if(audio&&templeRegions.size&&(ambienceClock-=dt)<=0){
+  ambienceClock=.08;
+  updateTempleSound(region);
+ }
  updateBrew(dt);
  updateWebs(dt);
  updatePlates(dt);
@@ -1722,6 +1843,8 @@ function update(dt){
   enemies=enemies.filter(e=>e.hp>0);
   dead.forEach(e=>defeated.add(e.id));
   save.defeated=[...defeated];
+  const defeatedElite=dead.find(e=>e.boss);
+  if(enemies.length&&defeatedElite)soundWorld('boss_defeat',defeatedElite,{priority:2,cooldown:.6});
   for(const e of dead){
    save.kills++;
    if(e.type===PRIEST)breakPriest(e);
@@ -1818,6 +1941,9 @@ function updateEnemy(e,dt){
  const range=enemyRules.eyeRange(e.type,e.boss,Math.min(cw,W*TILE),Math.min(ch,H*TILE),angle);
  const line=d<range*1.22&&!gateLineBlocked(e.x,e.y,player.x,player.y);
  const spotted=line&&d<=range;
+ if(spotted&&e.boss&&!e.audioEntered&&d<330){
+  e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
+ }
  e.aggro=spotted?1.4:Math.max(0,(e.aggro||0)-dt);
  const clear=line&&e.aggro>0;
  if(e.type!==SNAKE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))takeDamage(9+(e.boss?5:0),items.foeAttack[e.type]);
@@ -1852,7 +1978,10 @@ function updateEnemy(e,dt){
  }
  if(e.attack<=0&&d<spec.range&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
   e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
-  if(spec.id==='frost')e.frostTargets=frostSites(e);
+  if(spec.id==='frost'){
+   e.frostTargets=frostSites(e);
+   soundWorld('element_frost_cast',e,{priority:2,cooldown:.25});
+  }
   return;
  }
  if(nearActor(e,player,1)||(spec.id==='bow'||spec.id==='crossbow')&&d<spec.range*.72)return;
@@ -1868,6 +1997,8 @@ function executeEnemyAttack(e,spec){
  e.attack=(e.boss?2.25:2.85)-(save.floor-1)*.12;
  const durations={charge:1.1,rift:.74,reap:.36,grab:.38,bite:.25};
  if(durations[spec.id]){
+  const cue=spec.id==='rift'?'element_dark_rift':spec.id==='charge'?'weapon_hammer':spec.id==='reap'?'weapon_greatsword':null;
+  if(cue)soundWorld(cue,e,{gain:.78,priority:2,cooldown:.11});
   e.runDuration=durations[spec.id];
   e.runAttack=e.runDuration;e.track=spec.id==='charge'?.58:0;e.trailTimer=0;e.struck=false;return;
  }
@@ -1894,7 +2025,7 @@ function advanceRush(e,spec,dt,targetAngle){
   e.struck=takeDamage(e.fireSnake?8:damage,e.fireSnake?{fire:1}:dark?{dark:1}:{physical:1});
   if(e.struck&&player.inv<1){
    if(spec.id==='grab'){player.grabSlow=1.4;player.stamina=Math.max(0,player.stamina-18);}
-   if(spec.id==='bite'&&!e.fireSnake&&!player.poison)player.poison={untilTick:.72,ticks:3};
+   if(spec.id==='bite'&&!e.fireSnake&&!player.poison)applyPoison(player,{untilTick:.72,ticks:3});
   }
  }
  if(e.runAttack<=0)enemyRecovery(e,spec.recovery);
@@ -1942,9 +2073,13 @@ function serpentStep(e,target,limit=420){
 function updateEnemyHazards(dt){
  for(const hazard of enemyHazards){
   hazard.life-=dt;hazard.wait-=dt;
+  if(hazard.wait<=0&&hazard.type==='frost'&&!hazard.audioStarted){
+   hazard.audioStarted=true;
+   soundWorld('element_frost_impact',hazard,{group:'frost-zone',gain:.78,cooldown:.17,priority:2});
+  }
   if(hazard.triggered||hazard.wait>0||hazard.life<=0||Math.hypot(hazard.x-player.x,hazard.y-player.y)>hazard.radius)continue;
   if(gateLineBlocked(hazard.x,hazard.y,player.x,player.y))continue;
-  if(takeDamage(hazard.power,{[hazard.type]:1})&&hazard.type==='frost'){
+  if(takeDamage(hazard.power,{[hazard.type]:1},false,enemyDepth,hazard.type==='frost'?'':undefined)&&hazard.type==='frost'){
    player.webSlow=Math.max(player.webSlow||0,1.15);
    hazard.triggered=true;
   }
@@ -2007,6 +2142,7 @@ function updateLion(e,dt){
    if(t>=move.next){
     const swipeAngle=move.angle+(move.swipes%2===0?.22:-.22);
     move.swipes++;move.next+=lionRake.pace;
+    soundWorld('weapon_dagger',e,{group:'lion-rake-air',gain:.65,rate:.86,cooldown:.09});
     move.last={time:t,angle:swipeAngle};
     const reach=lionRake.reach+(e.type===LION?7:0);
     if(d<reach&&Math.cos(angle-swipeAngle)>Math.cos(lionRake.spread)&&!gateLineBlocked(e.x,e.y,player.x,player.y)&&
@@ -2054,6 +2190,10 @@ function updateBat(e,dt){
    return;
   }
   const age=move.age-spec.windup;
+  if(lightning&&!move.audioStarted){
+   move.audioStarted=true;
+   soundWorld('element_lightning_beam',e,{priority:2,cooldown:.26});
+  }
   if(age<move.duration&&age>=move.next){
    move.next+=lightning?.23:.28;
    const forward=dx*Math.cos(e.angle)+dy*Math.sin(e.angle);
@@ -2097,6 +2237,7 @@ function updateBat(e,dt){
   aimEnemy(e,angle);
   e.castLength=spec.range;
   e.batMove={age:0,next:0,duration:lightning?.93:.71};
+  soundWorld(lightning?'element_lightning_charge':'element_fire_cast',e,{priority:2,cooldown:.26});
   return;
  }
  if(d<43){takeDamage(4,{physical:1});return;}
@@ -2115,12 +2256,14 @@ function updateStorm(dt){
    const sites=Array.from({length:7},()=>({x:target.x+rand(-83,83),y:target.y+rand(-66,66)}));
    const point=sites.find(p=>outsideAt(p.x,p.y)?.storm&&valid(p.x,p.y,4,true))??{x:target.x,y:target.y};
    stormStrikes.push({...point,age:0,hit:false});
+   soundWorld('element_lightning_charge',point,{gain:.86,priority:2});
   }
  }
  for(const strike of stormStrikes){
   strike.age+=dt;
   if(strike.age<1||strike.hit)continue;
   strike.hit=true;
+  soundWorld('element_lightning_impact',strike,{group:'hero-element-lightning',cooldown:.23,gain:1.12,priority:3});
   const nearBolt=actor=>outsideAt(actor.x,actor.y)&&Math.hypot(actor.x-strike.x,actor.y-strike.y)<55;
   for(const e of enemies)if(e.hp>0&&nearBolt(e))hurtEnemy(e,items.hit(21+save.floor*7,{lightning:1},foeResistances[e.type]));
   if(nearBolt(player))takeDamage(12,{lightning:1});
@@ -2153,10 +2296,14 @@ function updateBolts(dt){
    if(!approaching&&(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||furnitureBlocked(x,y,2)))return false;
    p.x=x;p.y=y;
    if(approaching)continue;
+   if(!p.audioPassed&&Math.hypot(p.x-player.x,p.y-player.y)<146){
+    p.audioPassed=true;
+    soundWorld('bolt_fly',p,{group:'projectile-pass',cooldown:.09,priority:2,rate:p.type==='trap'?1.19:1});
+   }
    if(player.dash<=0&&Math.hypot(p.x-player.x,p.y-player.y)<13){
     const damage=p.type==='trap'?10:p.type==='bow'?11:16;
     const split=p.type==='trap'?{physical:.70,poison:.30}:p.type==='crossbow'?{physical:.75,dark:.25}:{physical:1};
-    if(takeDamage(damage,split)&&p.type==='trap'&&!player.poison)player.poison={untilTick:.67,ticks:2,power:.55};
+    if(takeDamage(damage,split)&&p.type==='trap'&&!player.poison)applyPoison(player,{untilTick:.67,ticks:2,power:.55});
     return false;
    }
   }
@@ -2178,7 +2325,7 @@ function updateWebs(dt){
   const hit=player.dash<=0&&player.inv<=0&&Math.hypot(x-player.x,y-player.y)<16;
   if(blocked||hit||p.life<=0){
    if(!blocked||valid(p.x,p.y,3))webPatches.push({x:blocked?p.x:x,y:blocked?p.y:y,radius:29,life:7});
-   if(hit){player.webSlow=2.4;if(takeDamage(4,{dark:1})&&player.inv<1&&!player.poison)player.poison={untilTick:.72,ticks:3};}
+   if(hit){player.webSlow=2.4;if(takeDamage(4,{dark:1})&&player.inv<1&&!player.poison)applyPoison(player,{untilTick:.72,ticks:3});}
    return false;
   }
   p.x=x;p.y=y;return true;
@@ -2218,10 +2365,10 @@ function addBleed(amount){
  const duration=.75;
  impactBursts.push({x:player.x,y:player.y,life:duration,duration,kind:'blood-burst'});
  burst(player.x,player.y-8,'#b73c52',20);
- takeDamage(maxHP()*.16,{bleed:1},true,1);
+ takeDamage(maxHP()*.16,{bleed:1},true,1,'element_bleed_hero');
  tell('Blutverlust');
 }
-function takeDamage(amount,split={physical:1},status=false,depthFactor=enemyDepth){
+function takeDamage(amount,split={physical:1},status=false,depthFactor=enemyDepth,audioCue){
  if(inRest(player.x,player.y)||player.dash>0||player.inv>0&&!status||mdNavigatingToNewCharacter)return false;
  const reduction=generalGuard();
  const damage=weatherSplit(amount*depthFactor*(1-reduction)*brewBonus.guard,split,player.x,player.y);
@@ -2233,6 +2380,10 @@ function takeDamage(amount,split={physical:1},status=false,depthFactor=enemyDept
  player.hp=Math.max(0,player.hp-hit.total);if(!status)player.inv=.75;shake=9;
  showDamage(player.x,player.y,hit.total,hit.type,true);burst(player.x,player.y,items.damage[hit.type].color,12);
  if(player.hp<=0)retreatAfterDeath();
+ else{
+  const cue=audioCue??(hit.type==='poison'&&status?'element_poison_tick':hitCue[hit.type]);
+  if(cue)soundWorld(cue,player,{group:'hero-element-'+hit.type,priority:2,cooldown:.23,gain:hit.type==='poison'?.76:.88});
+ }
  return true;
 }
 function retreatAfterDeath(){
@@ -2244,7 +2395,7 @@ function retreatAfterDeath(){
  const depthSeeds=Object.fromEntries(Object.entries(save.depthSeeds).filter(([floor])=>Number(floor)<=depth));
  depthSeeds[depth]=seed;
  writeAndReload({...save,...run.floorState(seed,depth),depthSeeds,hp:maxHP(),xp:0,gold:0,kills:0,
-  inventory:retained,consumeQueue:null,completed:false},true,'Gefallen · Zurück auf Tiefe '+depth);
+  inventory:retained,consumeQueue:null,completed:false},true,'Gefallen · Zurück auf Tiefe '+depth,'hero_death');
 }
 function awakenPortal(lastEnemy){
  const {x,y}=lastEnemy;
@@ -2254,19 +2405,23 @@ function awakenPortal(lastEnemy){
   ||{...shrines[lastEnemy.roomId]};
  burst(save.portal.x,save.portal.y,'#a4cdea',34);
  if(save.floor===LAST_DEPTH){
+  soundUI('floor_victory',{priority:3});
   if(!save.trophies.some(t=>t.packId===save.activePack)){
    save.trophies.push({packId:save.activePack,title:packTitle(),earnedAt:new Date().toISOString()});
   }
   save.completed=true;
   tell('Tiefe 5 bezwungen · Trophäe freigeschaltet');
- }else tell('Ebene geräumt · Ein Portal hat sich geöffnet');
+ }else{
+  soundWorld('floor_portal_spawn',save.portal,{priority:3});
+  tell('Ebene geräumt · Ein Portal hat sich geöffnet');
+ }
 }
 function enterPortal(){
  if(enemies.length||!save.portal||mdNavigatingToNewCharacter)return;
  if(save.floor===LAST_DEPTH){trophyMenu(true);return;}
  const seed=run.differentLayoutSeed(save.dungeonSeed,rooms,gates);
  writeAndReload({...save,...run.floorState(seed,save.floor+1),depthSeeds:{...save.depthSeeds,[save.floor+1]:seed},
-  hp:maxHP(),activeBrew:save.activeBrew,wellOffer:save.wellOffer},true);
+  hp:maxHP(),activeBrew:save.activeBrew,wellOffer:save.wellOffer},true,'','floor_portal_enter');
 }
 function updateSoulPreview(){
  const preview=$('#soulPreview');
@@ -2323,13 +2478,15 @@ function offerToWell(index,it){
   save.inventory.splice(index,0,it);save.wellOffer=null;
   tell('Der Brunnen konnte den Gegenstand nicht sichern.');return false;
  }
- close();burst(well.x,well.y,'#a0f1c4',32);
+ close();soundWorld('world_well_offer',well,{priority:2});burst(well.x,well.y,'#a0f1c4',32);
  tell(itemTitle(it)+' · Bereit auf Tiefe '+save.wellOffer.depth);
  return true;
 }
+let pendingWellReward=null;
 function deliverWellOffer(){
  if(!wellArrival||save.wellOffer?.depth!==save.floor)return;
- dropSoul(wellArrival,save.wellOffer.item);
+ dropSoul(wellArrival,save.wellOffer.item,false);
+ if(audio)pendingWellReward=wellArrival;
  save.wellOffer=null;persist();
 }
 function stockSpecialRooms(){
@@ -2351,6 +2508,28 @@ for(const tile of waterTiles){
  const key=tile.id+'-'+tile.y;
  if(!waterfalls.has(key))waterfalls.set(key,{id:tile.id,y:tile.y,left:tile.x,right:tile.x});
  const span=waterfalls.get(key);span.left=Math.min(span.left,tile.x);span.right=Math.max(span.right,tile.x);
+}
+// Region IDs and water coordinates come from the generated floor.
+const templeRegions=new Set(templeRooms.flatMap(room=>[room.id,room.passage.id]));
+const waterFall=[...waterfalls.values()][0];
+const riverTiles=waterTiles.filter(tile=>tile.type==='clear-river');
+const waterfallPoint=waterFall&&{x:(waterFall.left+waterFall.right+1)*TILE/2,y:(waterFall.y+.5)*TILE};
+const riverLine=riverTiles.length&&{
+ x:(Math.min(...riverTiles.map(tile=>tile.x))+Math.max(...riverTiles.map(tile=>tile.x))+1)*TILE/2,
+ top:(Math.min(...riverTiles.map(tile=>tile.y))+.5)*TILE,
+ bottom:(Math.max(...riverTiles.map(tile=>tile.y))+.5)*TILE
+};
+function waterMix(x,y,radius,level) {
+ const dx=x-player.x,dy=y-player.y;
+ const gain=level*Math.max(0,1-Math.hypot(dx,dy)/radius)**1.65;
+ return {gain,pan:Math.max(-.75,Math.min(.75,dx/325))};
+}
+function updateTempleSound(region) {
+ if(!templeRegions.has(region)){audio.setAmbience({});return;}
+ const mix={jungle:{gain:.8}};
+ if(waterfallPoint)mix.waterfall=waterMix(waterfallPoint.x,waterfallPoint.y,520,.84);
+ if(riverLine)mix.river=waterMix(riverLine.x,Math.max(riverLine.top,Math.min(riverLine.bottom,player.y)),360,.73);
+ audio.setAmbience(mix);
 }
 function drawWater(drawLine){
  for(const {x,y,type,id,vertical} of waterTiles){
@@ -2913,7 +3092,7 @@ class DungeonScene extends Phaser.Scene{
  const webgl=probe.getContext('webgl');
  const renderer=webgl?Phaser.WEBGL:Phaser.CANVAS;
  webgl?.getExtension('WEBGL_lose_context')?.loseContext();
- phaserGame=new Phaser.Game({type:renderer,parent:'phaser-host',width:innerWidth,height:innerHeight,backgroundColor:'#080c18',render:{antialias:false,pixelArt:true,roundPixels:true},fps:{target:60,forceSetTimeOut:false},scene:[DungeonScene],scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});return true;
+ phaserGame=new Phaser.Game({type:renderer,audio:{noAudio:true},parent:'phaser-host',width:innerWidth,height:innerHeight,backgroundColor:'#080c18',render:{antialias:false,pixelArt:true,roundPixels:true},fps:{target:60,forceSetTimeOut:false},scene:[DungeonScene],scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});return true;
  }catch(e){console.warn('Phaser konnte nicht gestartet werden; Canvas-Ersatzrenderer wird verwendet.',e);return false}}
 
 function loop(t){let dt=Math.min(.035,(t-last)/1000||.016);last=t;if(!phaserActive){if(!paused)update(dt);draw()}requestAnimationFrame(loop)}requestAnimationFrame(loop);startPhaser();
@@ -2927,13 +3106,14 @@ function mdButton(id,fn){const b=document.getElementById(id);if(b)b.onclick=fn}
 function packTitle(id=save.activePack){
  return packLibrary.get(id)?.title||(id===DEFAULT_PACK?'KVT III – Die Festung der Vermeidung':'Importierter Fragenpool');
 }
-function writeAndReload(data,resume,message=''){
+function writeAndReload(data,resume,message='',transitionCue){
  try{
   localStorage.setItem(KEY,JSON.stringify(data));
   mdNavigatingToNewCharacter=true;
   if(resume)sessionStorage.setItem(RESUME_KEY,'1');else sessionStorage.removeItem(RESUME_KEY);
   if(message)sessionStorage.setItem(RESUME_KEY+'-message',message);
-  location.reload();
+  if(transitionCue&&soundUI(transitionCue,{priority:4,variation:0}))setTimeout(()=>location.reload(),510);
+  else location.reload();
  }catch(e){
   console.warn('Speichern vor Ebenenwechsel fehlgeschlagen:',e);
   mdNavigatingToNewCharacter=false;
@@ -2994,14 +3174,32 @@ function mdSettings(){
  show('<h2 class="md-title">Einstellungen</h2><section class="md-card settings-card"><h3>Spielanzeige</h3>'+
   '<label><input type="checkbox" id="setting-shake" '+(settings.shake?'checked':'')+'> Bildschirmerschütterung</label>'+
   '<label><input type="checkbox" id="setting-damage" '+(settings.damageNumbers?'checked':'')+'> Schadenszahlen</label></section>'+
+  '<section class="md-card settings-card"><h3>Audio</h3><label for="setting-sfx">Soundeffekte</label>'+
+  '<input type="range" id="setting-sfx" min="0" max="100" step="1" value="'+Math.round(settings.soundVolume*100)+'"> '+
+  '<output id="setting-sfx-value" for="setting-sfx">'+Math.round(settings.soundVolume*100)+' %</output></section>'+
   '<section class="md-card settings-card"><h3>Steuerung</h3><dl>'+controlRows.map(([label,key])=>
    '<div><dt>'+label+'</dt><dd><kbd>'+key+'</kbd></dd></div>').join('')+'</dl></section>'+
   '<div class="actions"><button id="md-back">Zurück</button></div>','settings');
  for(const [id,key] of [['setting-shake','shake'],['setting-damage','damageNumbers']])$('#'+id).onchange=e=>{
   settings[key]=e.target.checked;
-  try{localStorage.setItem(settingsKey,JSON.stringify(settings));}catch{tell('Einstellungen konnten nur für diese Sitzung übernommen werden');}
+  persistSettings();
+ };
+ const slider=$('#setting-sfx');
+ slider.oninput=()=>{
+  settings.soundVolume=slider.valueAsNumber/100;
+  audio?.setVolume(settings.soundVolume);
+  $('#setting-sfx-value').textContent=slider.value+' %';
+ };
+ slider.onchange=()=>{
+  audio?.unlock();
+  soundUI('ui_click',{cooldown:.1});
+  persistSettings();
  };
  mdButton('md-back',backToMenu);
+}
+function persistSettings(){
+ try{localStorage.setItem(settingsKey,JSON.stringify(settings));}
+ catch{tell('Einstellungen konnten nur für diese Sitzung übernommen werden');}
 }
 function navigationMenu(){
  show('<nav class="game-nav" aria-label="Spielnavigation"><h2 class="md-title">Navigation</h2><div class="nav-destinations">'+
