@@ -24,8 +24,9 @@
  let musicVolume = .65, musicScene = null, musicVoice = null;
 
  function prefetch(asset) {
-  if (!asset || asset.download || asset.buffer || performance.now() < (asset.retryAfter ?? 0)) return;
-  asset.download = fetch(asset.url)
+  if (!asset || asset.buffer || performance.now() < (asset.retryAfter ?? 0)) return;
+  if (asset.download) return asset.download;
+  return asset.download = fetch(asset.url)
    .then(response => {
     if (!response.ok) throw Error('Audio: ' + response.status);
     return response.arrayBuffer();
@@ -44,12 +45,13 @@
   param.setTargetAtTime(value, now, seconds);
  }
 
- function decode(asset) {
-  if (!asset || asset.buffer || asset.decoding) return;
+ function decode(asset, decoder = context) {
+  if (!asset || asset.buffer) return;
+  if (asset.decoding) return asset.decoding;
   prefetch(asset);
   if (!asset.download) return;
-  asset.decoding = asset.download.then(bytes => {
-   if (bytes) return new Promise((resolve, reject) => context.decodeAudioData(bytes, resolve, reject));
+  return asset.decoding = asset.download.then(bytes => {
+   if (bytes) return new Promise((resolve, reject) => decoder.decodeAudioData(bytes, resolve, reject));
    return null;
   }).then(decoded => {
    if (decoded) {
@@ -59,7 +61,7 @@
      syncMusic();
     }
    }
-   flushRequests();
+   if (context) flushRequests();
   }).catch(() => {
    asset.retryAfter = performance.now() + 4000;
   }).finally(() => {
@@ -148,6 +150,16 @@
   if (music) ramp(music.gain, musicLevel());
   if (musicVolume) prefetch(musicTracks[musicScene]);
   syncMusic();
+ }
+
+ function prepareMusic(scene) {
+  const asset = musicTracks[scene];
+  const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if (asset?.buffer || asset?.decoding) return asset.decoding;
+  try {
+   if (OfflineContext) return decode(asset, new OfflineContext(2, 1, 44100));
+  } catch {}
+  return prefetch(asset);
  }
 
  function setMusicScene(scene) {
@@ -361,5 +373,5 @@
    if (event.isTrusted && !event.repeat) unlock();
   }, {capture: true, passive: true});
  }
- window.DungeonAudio = {play,setVolume,setPaused,setAmbience,setMusicVolume,setMusicScene,unlock,stop};
+ window.DungeonAudio = {play,setVolume,setPaused,setAmbience,setMusicVolume,setMusicScene,prepareMusic,unlock,stop};
 })();
