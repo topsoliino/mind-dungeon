@@ -434,3 +434,44 @@ button.bad { background:#643730!important; }
  .title-brand h1 { font-size:clamp(49px,12vw,82px); }
 }
 @media(prefers-reduced-motion:reduce) { .title-embers i { animation:none; } }
+
+.weapon-stars { display:flex;flex-wrap:wrap;align-items:flex-end;gap:4px 8px; }
+.damage-star-group { display:grid;gap:3px;min-width:0;color:var(--type); }
+.damage-type-label { font-size:10px;line-height:1; }
+.damage-star-pips { display:flex;gap:2px; }
+.damage-star {
+ display:grid;place-items:center;width:14px;height:15px;border:1px solid color-mix(in srgb,var(--type) 48%,#382926);
+ background:#22191a;font:normal 11px/1 var(--paper);color:var(--type);
+}
+.damage-star.extra { border-color:#e7ba6c;background:#59402b;box-shadow:inset 0 0 4px #f4c26a55; }
+.equipment-filter { display:inline-block;padding:4px 8px;margin:3px 0 7px;color:#e7c28d;border:1px solid #795c3e;font-size:12px; }
+#modal:has(.bat-shop) { width:min(1130px,96vw); }
+.bat-shop .rpg-right>.item-comparison { margin-bottom:9px; }
+
+#modal .study-card {
+ border-color:#a88150;color:#e6d1ad;
+ background:repeating-linear-gradient(75deg,#c1a17a08 0 1px,transparent 1px 5px),linear-gradient(140deg,#38291f,#241917);
+ box-shadow:inset 0 0 0 4px #241916,inset 0 0 0 5px #9e744a90;
+}
+#modal .study-card h2 { color:#f3d49a; }
+#modal .study-card .pill { border-color:#93724c; }
+.study-ornament { display:inline-block;pointer-events:none;vertical-align:middle;width:48px;height:35px;margin-right:7px; }
+.study-ornament img { width:48px;height:48px;position:relative;top:-7px;image-rendering:pixelated; }
+#modal .study-card::before {
+ background:linear-gradient(#bc965e,#bc965e) 0 0/19px 2px,linear-gradient(#bc965e,#bc965e) 0 0/2px 19px,
+ linear-gradient(#bc965e,#bc965e) 100% 100%/19px 2px,linear-gradient(#bc965e,#bc965e) 100% 100%/2px 19px;
+ background-repeat:no-repeat;
+}
+#modal .study-choice { background:linear-gradient(145deg,#382a21,#241916);border-color:#9e7b50; }
+.study-choice .study-ornament { float:right; }
+#modal .ingredient { border:1px solid var(--ingredient-rarity,#e4d4be);box-shadow:inset 0 0 0 2px #201716; }
+#modal .ingredient:hover:not(:disabled) { background:color-mix(in srgb,var(--ingredient-rarity) 17%,#36251d); }
+#modal .ingredient b { color:#eed7ad; }
+
+#bleedMeter:not([hidden]) { width:71%;height:6px;margin:3px auto 0;background:#341921;border:1px solid #a65863;box-shadow:0 0 4px #1e0d13; }
+#bleedMeter>div { width:var(--bleed,0%);height:100%;background:linear-gradient(90deg,#8e334b,#ef7480); }
+#potionTimer:not([hidden]) {
+ width:max-content;min-width:38px;padding:1px 4px;margin:3px auto 0;color:#f3dceb;
+ border:1px solid #a783b2;background:linear-gradient(90deg,#614663 var(--brew-progress),#252031 var(--brew-progress));
+ font:10px var(--paper);text-align:center;text-shadow:0 1px #1f1023;white-space:nowrap;
+}

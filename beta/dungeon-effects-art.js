@@ -65,13 +65,13 @@ window.DungeonEffectsArt = (() => {
    shape([[32,29-size],[34+size,30],[32,32+size],[30-size,30]],'#80b5c1a0');
    shape([[32,31-size],[34+size/2|0,30],[32,31+size],[30-size/2|0,30]],'#fbebbc');
    pixel(31,22,2,17,'#fff2db');
-  }else if(type==='arrow'){
-   rArrow();
-   function rArrow(){
-    pixel(5,30,50,4,'#292420');pixel(6,31,49,2,'#c29566');
-    shape([[49,27],[62,32],[49,37]],'#d9d1b7');pixel(50,31,7,1,'#fff1d4');
-    shape([[3,26],[14,28],[17,32],[14,36],[3,38],[7,32]],'#b49672');
-   }
+  }else if(type==='arrow'||type==='poison-arrow'){
+   const poisonous=type==='poison-arrow';
+   if(poisonous)for(let i=0;i<9;i++)pixel(4+i*3,31+((i*5+frame)%7)-3,3,2,i%2?'#71944daa':'#cadb9270');
+   pixel(5,30,50,4,'#292420');pixel(6,31,49,2,'#c29566');
+   shape([[49,27],[62,32],[49,37]],poisonous?'#9eba68':'#d9d1b7');
+   pixel(50,31,7,1,poisonous?'#dde5a1':'#fff1d4');
+   shape([[3,26],[14,28],[17,32],[14,36],[3,38],[7,32]],'#b49672');
   }else if(type==='web-shot'){
    for(const [x,y] of [[14,23],[22,16],[35,16],[47,23],[48,36],[39,46],[25,47],[16,39]]){
     const dx=x-32,dy=y-32;
@@ -93,6 +93,43 @@ window.DungeonEffectsArt = (() => {
    if(frame<=1)shape([[31,13],[34,26],[45,30],[34,34],[31,44],[28,33],[18,30],[28,27]],bright);
    if(level)for(let i=0;i<5;i++)pixel(21+i*5,51-7*frame-i%3*6,2,8,bright);
    if(fatal&&frame<4){pixel(27-frame*2,29,12+frame*4,3,bright);pixel(31,20-frame*2,2,22+frame*4,bright);}
+  }else if(type==='waterfall-flow'){
+   pixel(0,10,64,47,'#305e5b');pixel(0,49,64,11,'#487973');
+   for(let i=0;i<13;i++){
+    const x=i*5,width=3+(i*7)%7,phase=(frame*7+i*17)%39;
+    const outline=2+i%3;
+    pixel(x,4+i%3,width,48,'#578e85');
+    pixel(x+outline,13,width*.56,35,'#77aca0');
+    pixel(x+outline,12+phase,Math.max(1,width*.36),11,'#c9e9d3');
+    pixel(x,48+i%5,3+i%4,5,'#a4d6c2');
+   }
+   for(let i=0;i<15;i++){
+    const x=(i*11+frame*4)%64,y=50+(i*5+frame)%12;
+    pixel(x,y,4+i%4,1+i%2,i%3?'#d9f1d8':'#7fb19d');
+    if(i%3===0)pixel(x,47-(frame+i)%7,2,2,'#ecf6e6');
+   }
+   pixel(0,7,64,3,'#b1d4b6');
+  }else if(type==='lion-rake'||type==='lion-tell'){
+   const warning=type==='lion-tell';
+   for(let i=0;i<3;i++){
+    const y=17+i*11,shift=frame*2;
+    shape([[2,y+20],[15,y+8],[35,y+1],[57,y-4+shift],[63,y+2+shift],[48,y+6+shift],[27,y+10],[13,y+16]],
+     warning?'#bd8e515e':'#ab654cbd');
+    if(!warning)shape([[10,y+15],[27,y+5],[54,y+shift-1],[59,y+shift],[49,y+shift+4],[27,y+8]],'#ffe0a3');
+   }
+  }else if(['blood-burst','meal-glow','potion-burst','potion-coat'].includes(type)){
+   const blood=type==='blood-burst',meal=type==='meal-glow',coat=type==='potion-coat';
+   const colors=blood?['#8b293f','#d24e61','#f48f84']:meal?['#979c57','#d7c778','#ffdc91']:['#8276b2','#bb9ace','#ead4ed'];
+   for(let i=0;i<(blood?23:15);i++){
+    const a=Math.PI*2*i/(blood?23:15)+frame*.14;
+    const radius=coat?16+i%4:6+frame*4+i%4;
+    const x=32+Math.cos(a)*radius,y=31+Math.sin(a)*radius*(coat?.84:.67)-(coat?(i+frame*2)%8:frame);
+    const size=coat?2:Math.max(1,4-frame/2);
+    if(blood)shape([[x,y-size*2],[x+size,y],[x,y+size],[x-size,y]],colors[i%3]);
+    else{pixel(x,y,1,size+2,colors[i%3]);pixel(x-1,y+1,3,1,colors[i%3]);}
+   }
+   if(!coat&&frame<3)
+    shape([[31,12+frame*4],[37,28],[49,32],[37,35],[31,48],[27,35],[16,32],[27,28]],colors[1]);
   }else if(type==='charge-aura'){
    const full=frame>=4;
    for(let i=0;i<22;i++){
@@ -169,7 +206,7 @@ window.DungeonEffectsArt = (() => {
   }
   return c;
  }
- const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
+ const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
  const frames=Object.fromEntries(types.map(type=>[type,Array.from({length:6},(_,i)=>paint(type,i))]));
  return {frames};
 })();

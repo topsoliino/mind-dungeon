@@ -64,6 +64,30 @@ window.DungeonArt = (() => {
         const x=rnd(58),y=rnd(58);r(x,y,4,3,'#777364');r(x+1,y,3,1,'#a09a7a');
        }
       }
+    }else if(zone===6){
+      const seam=21+variant%5*4;
+      block(r,0,0,seam,37,p,variant);block(r,seam,0,64-seam,37,p,variant+1);
+      block(r,0,37,64,27,p,variant+3);
+      for(let i=0;i<15;i++){
+       const x=rnd(60),y=rnd(62);
+       r(x,y,2+rnd(6),1+rnd(2),['#405341','#627153','#52634a','#6a795b'][rnd(4)]);
+      }
+      if(variant%4!==3){
+       const x=6+rnd(28),y=8+rnd(21);
+       poly([[x,y],[x+2,y],[x+8,y+9],[x+13,y+11],[x+11,y+17],[x+26,y+26],[x+8,y+18],[x+10,y+12],[x+6,y+11]],'#1e342b');
+       r(x+13,y+16,5,1,'#92947b');
+      }
+      if([0,2,5,7,9].includes(variant)){
+       const sx=5+rnd(25),sy=26+rnd(15);
+       poly([[sx-3,sy+11],[sx+4,sy+3],[sx+13,sy],[sx+27,sy+2],[sx+32,sy+14],[sx+25,sy+20],[sx+4,sy+19]],'#293a2c');
+       poly([[sx,sy+11],[sx+9,sy+4],[sx+23,sy+4],[sx+29,sy+13],[sx+23,sy+18],[sx+6,sy+16]],'#594b38');
+       for(let i=0;i<15;i++)r(sx+3+rnd(23),sy+7+rnd(9),1+rnd(3),1,['#806952','#453d31','#a08459'][rnd(3)]);
+       if(variant!==7)for(let i=0;i<3;i++){
+        const px=sx+6+i*8,py=sy+11+(i%2)*3;
+        r(px,py-9-i%2*3,2,12+i%2*3,'#48633b');r(px-3,py-10,4,2,'#6e8747');r(px+2,py-13,5,2,'#92a361');
+        r(px+2,py-7,4,2,'#587b44');r(px-4,py-3,4,2,'#627a41');
+       }
+      }
     }else if(zone===3){
       for(let y=0;y<64;y+=16){
         const split=12+rnd(38);
@@ -519,7 +543,7 @@ window.DungeonArt = (() => {
     spriteCache.set(key,c);return c;
   }
   // Integer-pixel sprite poses. The feet stay anchored while limbs, faces and effects move.
-  function enemyPose(zone,frame){
+  function enemyPose(zone,frame,fireSnake=false){
     const c=surface(),{r,poly}=brush(c),step=frame%4,stage=(frame/4)|0;
     const stride=[-2,0,2,0][step],reach=[0,5,10,4][step];
     const anticipation=[0,1,3,5][step];
@@ -560,11 +584,16 @@ window.DungeonArt = (() => {
      // A low serpentine silhouette, lifted head and a separate strike pose.
      const wave=[0,3,0,-3][step],lift=stage===1?anticipation*2:stage===2?8:0;
      const tail=[[4,42],[11,44+wave],[19,44],[24,38],[33,35-wave],[44,39],[53,36],[57,27-lift],[61,32-lift],[60,42],[51,49],[41,49],[33,45+wave],[25,47],[17,51],[10,48]];
-     poly(tail,'#252822');
-     poly([[7,44],[18,46],[26,40],[35,39-wave],[45,42],[53,40],[57,33-lift],[59,37-lift],[57,44],[48,47],[38,44+wave],[26,44],[17,49]],'#727c54');
-     for(let n=0;n<4;n++)r(19+n*8,43+(n%2?wave:0),3,2,'#afb47c');
-     poly([[51,27-lift],[55,23-lift],[62,23-lift],[64,28-lift],[61,35-lift],[53,35-lift],[50,32-lift]],'#303728');
-     r(54,27-lift,8,5,'#a7a879');r(59,27-lift,2,2,'#f4ce7f');
+     const [edge,scales,spots,crown,face]=fireSnake?
+      ['#3d2228','#ae4b43','#f38555','#622d30','#da6851']:['#252822','#727c54','#afb47c','#303728','#a7a879'];
+     poly(tail,edge);
+     poly([[7,44],[18,46],[26,40],[35,39-wave],[45,42],[53,40],[57,33-lift],[59,37-lift],[57,44],[48,47],[38,44+wave],[26,44],[17,49]],scales);
+     for(let n=0;n<4;n++)r(19+n*8,43+(n%2?wave:0),3,2,spots);
+     poly([[51,27-lift],[55,23-lift],[62,23-lift],[64,28-lift],[61,35-lift],[53,35-lift],[50,32-lift]],crown);
+     r(54,27-lift,8,5,face);r(59,27-lift,2,2,'#f4ce7f');
+     if(fireSnake&&stage===2){
+      r(61,32-lift,3,4,'#ffb651');r(58,35-lift,2,2,'#ffe3a0');r(62,38-lift-step,2,2,'#d76344');
+     }
      if(stage===2){r(59,33-lift,4,2,'#e2d8aa');r(60,36-lift,4,1,'#c88f89');}
     }else if(zone===0){
      // Moss sentinel plants alternating feet, tucks its head, then drives both fists forward.
@@ -635,7 +664,7 @@ window.DungeonArt = (() => {
     return c;
   }
   function actor(type,options={}) {
-    if(type==='foe')return enemyPose(options.zone||0,options.frame||0);
+    if(type==='foe')return enemyPose(options.zone||0,options.frame||0,options.fireSnake);
     const {frame=0,skin='#d4a785',hair='#392b4e',color='#755666',gender='male',armor={}}=options;
     const c=surface(),{r,poly}=brush(c);
     const shape=(p,col)=>poly(p,col);
@@ -664,11 +693,26 @@ window.DungeonArt = (() => {
         shape([[26,40],[39,40],[36,49],[29,50]],'#9b7452');r(29,42,2,6,'#c79b63');
       }
       r(23,38,18,3,'#51362d');r(31,38,4,4,gold);
-      r(17,38,6,6,skin);r(42,37,6,6,skin);
+      r(17,38,6,6,skin);if(frame<3)r(42,37,6,6,skin);
       r(22,11,20,16,ink);r(24,13,16,13,skin);r(23,10,18,6,hair);r(22,15,4,7,hair);r(39,15,4,6,hair);
       r(27,18,3,2,ink);r(35,18,3,2,ink);r(30,23,5,1,'#905d51');
       if(gender==='female'&&!armor.helmet){r(21,18,4,10,hair);r(39,18,5,9,hair);}
       if(armor.helmet){r(22,10,21,7,armor.helmet);r(24,9,16,2,'#ddd5b4');r(22,15,5,9,armor.helmet);r(39,15,4,9,armor.helmet);}
+      if(frame>=3){
+       const drinking=frame>=7,stage=(frame-3)%4;
+       const [hx,hy]=[[43,38],[39,29],[35,23],[41,31]][stage];
+       shape([[43,30],[47,30],[48,hy+5],[hx+3,hy+5],[hx,hy],[42,hy]],'#34252a');
+       shape([[44,32],[45,32],[46,hy+4],[hx+3,hy+4],[hx+1,hy]],armor.chest||skin);
+       r(hx,hy-1,5,5,skin);
+       if(drinking){
+        const tilted=stage===2?3:0;
+        shape([[hx-5,hy-8+tilted],[hx+3,hy-8],[hx+2,hy],[hx-3,hy]],'#604353');
+        r(hx-4,hy-8+tilted,7,2,'#dbc9ad');r(hx-3,hy-5,5,3,'#9976b0');
+       }else{
+        shape([[hx-6,hy-2],[hx-5,hy-7],[hx,hy-8],[hx+2,hy-5],[hx+1,hy]],'#9c6841');
+        r(hx-4,hy-6,4,3,'#eac085');if(stage===2)r(hx-7,hy+1,2,2,'#e2ab62');
+       }
+      }
     }
     return c;
   }
@@ -677,7 +721,21 @@ window.DungeonArt = (() => {
     if(iconCache.has(key))return iconCache.get(key);
     const c=surface(),{r,poly}=brush(c);
     const iron=color||'#9aabad', pale='#d6dcd0';
-    if(type==='rest-cat'){
+    if(type==='card-ornament'){
+      const enamel=color||'#9c8068';
+      const dark='#392923',gold='#b39768',shine='#d6b987';
+      for(const side of [-1,1]){
+       const edge=x=>32+side*x;
+       poly([[edge(0),33],[edge(7),25],[edge(16),22],[edge(28),26],[edge(19),27],[edge(14),31],[edge(6),35]],dark);
+       poly([[edge(1),32],[edge(7),27],[edge(17),24],[edge(27),26],[edge(19),26],[edge(14),29],[edge(5),33]],gold);
+       poly([[edge(7),32],[edge(14),31],[edge(20),33],[edge(24),31],[edge(23),35],[edge(14),36]],enamel);
+       r(edge(26)-1,25,2,2,shine);r(edge(18)-1,21,2,2,gold);
+      }
+      poly([[32,18],[41,29],[39,36],[32,44],[25,36],[23,29]],'#48352b');
+      poly([[32,21],[39,30],[37,36],[32,41],[27,35],[25,30]],shine);
+      poly([[32,24],[37,30],[35,35],[32,38],[28,33]],enamel);
+      r(30,28,3,3,'#e2c398');
+    }else if(type==='rest-cat'){
       const [mode,pose='0']=id.split('-'),n=Number(pose),dark='#24212a',white='#ede2cb',shadeWhite='#c6bda9';
       poly([[14,48],[49,48],[55,52],[42,55],[13,54],[9,51]],'#17121488');
       const face=(x,y,closed)=>{
@@ -790,19 +848,33 @@ window.DungeonArt = (() => {
       poly([[10,40],[8,30-step],[13,28-step],[15,34],[20,38],[19,44]],shadowTone);r(8,27-step,5,4,'#674536');
       poly([[15,34+bob],[26,28+bob],[41,28+bob],[50,37+bob],[47,45+bob],[21,46+bob]],'#3e302b');
       poly([[17,34+bob],[28,30+bob],[40,31+bob],[47,38+bob],[43,43+bob],[20,43+bob]],coat);
-      const front=stage===2?step+4:stage===3&&step%2?5:0;
+      const front=stage===4?[0,13,9,3][step]:stage===2?step+4:stage===3&&step%2?5:0;
       for(const [x,offset] of [[19,0],[28,2],[38,front],[45,front+2]]){
         const y=44+bob+((step+offset)%3);
         r(x+offset,y-4,5,8,'#563c2e');r(x+offset+1,y-4,3,7,shadowTone);r(x+offset,y+3,6,2,'#e6c998');
       }
-      const head=stage===3?step%2:0,hy=26+bob-head;
+      const head=stage===4?[-2,3,1,0][step]:stage===3?step%2:0,hy=26+bob-head;
       if(mane)poly([[34,hy-7],[46,hy-8],[53,hy-1],[57,hy+5],[51,hy+13],[42,hy+15],[32,hy+8],[32,hy]],'#6f4430');
       r(39,hy-5,5,6,shadowTone);r(48,hy-5,5,6,shadowTone);
       poly([[39,hy],[50,hy],[55,hy+5],[53,hy+11],[43,hy+12],[37,hy+7]],coat);
       r(41,hy+4,3,2,'#4b362e');r(47,hy+4,3,2,'#4b362e');r(46,hy+8,6,4,'#f7dca1');r(48,hy+8,3,2,'#654034');
       if(stage===3){r(48,hy+11,5,3,'#6b3430');r(50,hy+11,2,1,'#f5d3ac');}
+      if(stage===4&&step>0){
+       poly([[37,35+bob],[45,34+bob],[54+step,36+step*2],[59,42+step],[56,46+step],[47,42],[38,43]],shadowTone);
+       for(let i=0;i<3;i++)r(55+i*2,42+step+i,2,3,'#f2d9aa');
+      }
     }else if(type==='plate'||type==='bone-pile'){
-      if(type==='plate'){r(12,12,40,41,'#283831');r(15,15,34,34,id==='down'?'#646752':'#879077');r(18,19,28,26,'#596550');r(20,20,24,2,'#809477');r(27,25,8,9,'#9b8861');}
+      if(type==='plate'){
+       const down=id==='down',top=down?28:24;
+       poly([[8,34],[19,17],[46,17],[57,34],[51,45],[13,45]],'#252824');
+       poly([[10,34],[20,20],[45,20],[54,34],[47,42],[16,42]],'#57594d');
+       poly([[14,34],[22,22],[43,22],[50,34],[46,39],[18,39]],'#343c34');
+       poly([[18,35],[24,top],[41,top],[47,35],[43,38],[21,38]],down?'#68644f':'#93917a');
+       r(22,36,22,2,down?'#63553a':'#a68960');r(26,top+1,14,2,down?'#ab7656':'#c0ab7e');
+       for(const [x,y] of [[15,34],[19,39],[44,38],[50,34]]){r(x,y,2,2,'#c2a16d');r(x+1,y+2,1,1,'#32291e');}
+       poly([[31,top+2],[37,top+5],[32,top+10],[27,top+6]],down?'#a96c55':'#626550');
+       r(31,top+4,2,3,down?'#fbaf70':'#cab991');
+      }
       else{
         for(const [x,y] of [[19,31],[32,27],[37,42]]){r(x,y,14,4,'#cabd98');r(x-2,y-1,4,6,'#e1d5b0');r(x+12,y-1,4,6,'#a89978');}
         r(23,38,9,9,'#d4c6a0');r(24,40,2,2,'#5b5548');r(29,40,2,2,'#5b5548');

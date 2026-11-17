@@ -35,7 +35,6 @@ window.DungeonItems = (() => {
  const weapon=(id,rank='common')=>balance.weaponTable[id]?.[rank]||balance.weaponTable.rust.common;
  const armorProfile=(id,rank='common')=>balance.armorTable[id]?.[rank];
  const weaponCrit=(id,rank)=>weapon(id,rank).crit;
- const armorCrit=(id,rank)=>armorProfile(id,rank)?.crit||0;
  function critChance(dexterity,load,weaponBonus,gearBonus){
   return Math.min(1,.05+Math.floor(Math.max(0,dexterity)/2)*.01+(load.ratio<.5?.05:0)+weaponBonus+gearBonus);
  }
@@ -138,5 +137,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,precisionRing,breweryRing,weaponCrit,armorCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();
