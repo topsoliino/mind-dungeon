@@ -267,3 +267,90 @@ button.bad { background:#643730!important; }
 .coin-bones { color:#e1d7bd; }
 .coin-rubies { color:#ff94a0; }
 @media(max-width:760px){#wallet{top:61px;max-width:124px;gap:3px!important;padding:5px 8px;}}
+
+/* Alchemy, study cards, and the merchant's parchment. */
+.study-card {
+ --card-tint:#b9865e;position:relative;padding:clamp(12px,2.5vw,25px);
+ border:1px solid color-mix(in srgb,var(--card-tint) 75%,#423024);
+ background:repeating-linear-gradient(145deg,#c9a77e06 0 1px,transparent 1px 5px),
+  linear-gradient(160deg,color-mix(in srgb,var(--card-tint) 24%,#241814),#201518 68%);
+ box-shadow:inset 0 0 0 4px #231819,inset 0 0 0 5px #c9a77e55;
+}
+.study-card h2 { color:color-mix(in srgb,var(--card-tint) 48%,#ffe3ab);line-height:1.25; }
+.study-card .pill,.study-choice.study-choice { border-color:var(--card-tint); }
+.study-card.difficulty-2 { border:2px solid color-mix(in srgb,var(--card-tint) 72%,#3b2827); }
+.study-card.difficulty-3,.study-card.difficulty-4,.study-card.difficulty-5 {
+ border:3px double var(--card-tint);
+ box-shadow:inset 0 0 0 5px #211615,inset 0 0 0 6px var(--card-tint),inset 0 0 35px #100909c9;
+}
+.study-card.difficulty-3::before,.study-card.difficulty-4::before,.study-card.difficulty-5::before {
+ content:"";position:absolute;inset:11px;pointer-events:none;opacity:.66;
+ background:
+  linear-gradient(var(--card-tint),var(--card-tint)) 0 0/19px 2px,
+  linear-gradient(var(--card-tint),var(--card-tint)) 0 0/2px 19px,
+  linear-gradient(var(--card-tint),var(--card-tint)) 100% 100%/19px 2px,
+  linear-gradient(var(--card-tint),var(--card-tint)) 100% 100%/2px 19px;
+ background-repeat:no-repeat;
+}
+.study-card.difficulty-4,.study-card.difficulty-5 { outline:1px solid #cfa36d;outline-offset:2px; }
+.study-choice.study-choice {
+ background:linear-gradient(130deg,color-mix(in srgb,var(--card-tint) 34%,#211517),#261a18);
+}
+.study-choice.difficulty-3 { border-style:double;border-width:3px; }
+#modal .review-options button { flex:1;min-width:max-content;color:#fff0d7; }
+#modal .review-red { background:#58282b;border-color:#b27062; }
+#modal .review-yellow { background:#544123;border-color:#c3a268; }
+#modal .review-green { background:#2b493c;border-color:#7eaf8f; }
+#modal .review-options button:focus-visible { outline:2px solid #ffe7aa;outline-offset:2px; }
+.brew-duration { display:flex;align-items:center;justify-content:center;gap:8px; }
+.brew-duration span { font-size:13px;color:#e4caa3; }
+.brew-duration button { min-width:32px;padding:5px 8px; }
+
+.damage-number.crit-number,.damage-number.fatal-number { font-family:var(--paper);letter-spacing:.06em;font-weight:900; }
+.damage-number.crit-number { color:#ffe491!important;font-size:21px!important;text-shadow:0 0 12px #ec9849,2px 2px #2d1620; }
+.damage-number.fatal-number { color:#ffd0a1!important;font-size:26px!important;text-shadow:0 0 14px #f26d5a,2px 3px #35131c; }
+.level-notice:not([hidden]) {
+ position:fixed;z-index:8;left:50%;top:19%;transform:translateX(-50%);padding:12px 22px;
+ border:3px double #c8a362;color:#ffdea1;background:linear-gradient(140deg,#3a291cf2,#211716f8);
+ font:700 clamp(14px,2vw,21px) var(--paper);letter-spacing:.09em;text-align:center;box-shadow:0 7px 29px #110a08ad,0 0 29px #e49e3d36;
+ pointer-events:none;animation:ledger-level 2.5s ease both;
+}
+@keyframes ledger-level {
+ 0% { opacity:0;transform:translate(-50%,8px) scale(.9); }
+ 12%,82% { opacity:1;transform:translate(-50%,0) scale(1); }
+ 100% { opacity:0;transform:translate(-50%,-8px); }
+}
+.coin { display:inline-flex;align-items:center;gap:2px; }
+.coin img { width:32px;height:32px;object-fit:contain;image-rendering:pixelated; }
+#wallet { padding:3px 8px; }
+#modal .shop-item .coin img { width:24px;height:24px; }
+#modal .wallet-shop .coin img { width:30px;height:30px; }
+#modal .bat-shop :is(.rpg-left,.rpg-right) {
+ background:repeating-linear-gradient(135deg,#b67e9c07 0 1px,transparent 1px 6px),
+  linear-gradient(155deg,#392637,#201522 58%,#1c111a);
+ border:3px double #8e6678;box-shadow:inset 0 0 24px #100914;
+}
+#modal .bat-shop .rpg-head { flex-wrap:wrap;border-bottom:1px solid #ad828090; }
+.bat-shop-title { display:flex;align-items:center;gap:8px; }
+.bat-shop-title img { width:46px;height:46px;object-fit:contain;image-rendering:pixelated; }
+#modal .bat-shop .rpg-head h2 { margin:0;color:#efd2a1;font-family:var(--paper);letter-spacing:.04em; }
+#modal .bat-shop .shop-item { border-color:#745566;background:linear-gradient(160deg,#3d2b3b,#261925); }
+#modal .bat-shop .shop-item[aria-pressed="true"] { border-color:#dcab7b;box-shadow:inset 0 0 14px #7e526d80; }
+.map-window { max-width:650px;margin:auto;text-align:center; }
+.map-window header { display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:8px;text-align:left; }
+.map-window header h2,.map-window header p { margin:3px 0;color:#f2d29a;font-family:var(--paper); }
+.map-window header img { width:57px;height:57px;image-rendering:pixelated; }
+.map-sheet { position:relative;height:min(45vh,410px);border:6px double #6e4433;overflow:hidden;
+ background:repeating-linear-gradient(45deg,#9a714918 0 1px,transparent 1px 5px),radial-gradient(ellipse,#d5b37a,#aa794d);
+ box-shadow:inset 0 0 24px #664026; }
+.map-area { position:absolute;background:#73534127;border:1px dotted #64423378; }
+.map-area.known { background:#80583140;border:1px solid #6d452c; }
+.map-area.market-area { background:#82475978;border:2px solid #67314d;display:grid;place-items:center; }
+.map-area img { width:38px;height:38px;max-width:110%;max-height:110%;object-fit:contain;image-rendering:pixelated; }
+.map-hero { position:absolute;min-width:7px;min-height:7px;background:#f9d48a;box-shadow:0 0 0 2px #614230;border-radius:50%; }
+.map-compass { position:absolute;bottom:3px;right:8px;color:#68432f;font-size:32px; }
+.map-legend { display:flex;justify-content:center;gap:13px;margin:10px 0;color:#e2c29b;font-size:12px; }
+.map-legend i { display:inline-block;width:7px;height:7px;background:#81583a;margin:0 3px 1px 0; }
+.map-legend .here { background:#f9d48a;border-radius:50%; }
+.map-legend .mark { background:#aa6479; }
+@media(max-width:760px) { #wallet:not([hidden]) { max-width:none; } .coin img { width:26px;height:26px; } }

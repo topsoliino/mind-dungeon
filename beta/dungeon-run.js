@@ -35,6 +35,17 @@ window.DungeonRun = (() => {
   mixed=Math.imul(mixed^(mixed>>>16),0x45d9f3b);
   return ((mixed^(mixed>>>16))>>>0)/4294967296<.4;
  }
+ function longPartitions(room,pick){
+  const {x,y,w,h}=room;
+  const run=(from,to)=>Array.from({length:to-from+1},(_,i)=>from+i);
+  const row=(from,to,dy)=>run(from,to).map(dx=>[x+dx,y+dy]);
+  const col=(from,to,dx)=>run(from,to).map(dy=>[x+dx,y+dy]);
+  const right=w-3,bottom=h-3;
+  if(pick===0)return [...row(2,right,2),...col(3,Math.min(4,bottom-1),right)];
+  if(pick===1)return [...row(2,right,bottom),...col(Math.max(2,bottom-2),bottom-1,2)];
+  if(pick===2)return [...row(2,w-4,2),...row(3,right,bottom)];
+  return [...col(2,bottom,2),...col(3,bottom,right)];
+ }
  function generate(seed,varied=true,revision=5,depth=1,templeAt=0){
   const rng=random(seed);
   const cells=Array.from({length:6},(_,i)=>({col:i%3,row:i/3|0}));
@@ -62,7 +73,7 @@ window.DungeonRun = (() => {
   }
   const cemetery=revision>=6&&cemeteryRoll(seed);
   const temple=revision>=6&&depth===templeAt;
-  const width=temple?92:cemetery?79:W,height=hasRest?H:52;
+  const width=temple?92:cemetery?(revision>=7?82:79):W,height=revision>=7?72:hasRest?H:52;
   const map=Array.from({length:height},()=>Array(width).fill(1));
   const terrain=Array.from({length:height},()=>Array(width).fill(null));
   const style=random(seed^0x9a19ac27);
@@ -79,10 +90,15 @@ window.DungeonRun = (() => {
     const x=sx<0?room.x:room.x+room.w-1,y=sy<0?room.y:room.y+room.h-1;
     for(const [a,b] of [[x,y],[x-sx,y],[x,y-sy]]){map[b][a]=1;regions[b][a]=-1;}
    }
-   if(room.i>0){
+   if(room.i>0||revision>=7){
     const right=style()<.5,x=right?room.x+room.w-3:room.x+2;
     const top=style()<.5,y=top?room.y+2:room.y+room.h-3;
-    if(revision<4){
+    if(revision>=7){
+     const pick=Math.floor(style()*4);
+     for(const [px,py] of longPartitions(room,pick)){
+      map[py][px]=1;terrain[py][px]='partition';
+     }
+    }else if(revision<4){
      for(let i=0;i<2;i++){map[y][x+(right?-i:i)]=1;terrain[y][x+(right?-i:i)]='partition';}
     }else{
      const plan=partitionPlans[Math.floor(style()*partitionPlans.length)];
@@ -119,10 +135,13 @@ window.DungeonRun = (() => {
   }
   const climate=random(seed^0x832a79f1);
   const court=climate()<.5,rain=climate()<.5;
+  const openRng=random(seed^0x51a59b);
+  const courtWide=revision>=7?15+Math.floor(openRng()*2):13;
+  const courtDeep=revision>=7?10+Math.floor(openRng()*3):8;
   const annexes=shuffle([
    {name:'Vorratskammer',key:'pantry',w:7,h:6,theme:3},
    {name:'Brauerei',key:'brewery',w:9,h:7,theme:1},
-   ...(court?[{name:'Hof',key:'court',w:13,h:8,theme:5,rain}]:[])
+   ...(court?[{name:'Hof',key:'court',w:courtWide,h:courtDeep,theme:5,rain,currentOutdoor:true,storm:revision>=7&&rain&&openRng()<.35}]:[])
   ],climate).map((annex,col)=>{
    const parent=rooms.filter(room=>room.cx===9+col*18).sort((a,b)=>b.cy-a.cy)[0];
    const x=parent.cx-(annex.w>>1),y=41+offset,id=9+col*2;
@@ -170,7 +189,17 @@ window.DungeonRun = (() => {
    };
    if(cemetery){
     const path=passage(18,60,52,1,3,true,5);
-    annex(17,'cemetery','Friedhof',61,47,16,13,5,path);
+    const grave=annex(17,'cemetery','Friedhof',61,47,revision>=7?16+Math.floor(openRng()*4):16,revision>=7?13+Math.floor(openRng()*3):13,5,path);
+    grave.currentOutdoor=true;
+    if(revision>=7){grave.rain=rain;grave.storm=rain&&openRng()<.38;}
+    const patio=annexes.find(room=>room.key==='court');
+    if(revision>=7&&patio){
+     const south=67,from=patio.y+patio.h,to=grave.y+grave.h;
+     const connector=[{id:26,x:patio.cx-1,y:from,w:3,h:south-from+3,vertical:false},
+      {id:26,x:patio.cx-1,y:south,w:grave.cx-patio.cx+3,h:3,vertical:true},
+      {id:26,x:grave.cx-1,y:to,w:3,h:south-to+3,vertical:false}];
+     for(const part of connector){Object.assign(part,{theme:5,from:parent.i,outdoors:true,rain,storm:patio.storm||grave.storm});carve(part,26);paths.push(part);}
+    }
    }
    if(temple){
     const entrance=passage(25,60,18,1,3,true,6);
@@ -287,7 +316,7 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:6,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
+   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:7,cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
   return {...floorState(seed,1),templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};

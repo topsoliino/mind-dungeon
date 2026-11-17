@@ -29,12 +29,25 @@ window.DungeonItems = (() => {
  };
  const kinds={weapon:'Waffen',ring:'Ringe',armor:'Rüstung'};
  const merchantRing={id:'merchant',name:'Händlerring',desc:'Ausgerüstet zeigt der Händler je eine zusätzliche Waffe, einen Ring und ein Rüstungsteil.',bonus:'merchant'};
+ const precisionRing={id:'precision',name:'Ring der Präzision',desc:'+8 Prozentpunkte Würfel-Crit-Chance.',bonus:'critical'};
+ const breweryRing={id:'brewer',name:'Ring des Sudmeisters',desc:'Hebt die Seltenheit aller fünf Brauangebote um eine zulässige Stufe an.',bonus:'brewery'};
  const weapons={
   rust:{split:{physical:1}},rapier:{split:{physical:1},status:'bleed'},
   hammer:{split:{physical:.7,lightning:.3}},staff:{split:{magic:.65,frost:.35}},
   blade:{split:{physical:.65,fire:.35}},dagger:{split:{physical:.5,dark:.5},status:'poison'},
   greatsword:{split:{physical:.7,frost:.3}}
  };
+ const weaponCritRates={rust:0,rapier:.04,hammer:.01,staff:.02,blade:.025,dagger:.06,greatsword:.015};
+ const armorCritRates={'hunter-helmet':.025,'hunter-boots':.015,'wanderer-legs':.01,'shadow-helmet':.03,'shadow-boots':.02};
+ const weaponCrit=(id,itemRank='common')=>(weaponCritRates[id]||0)*rarity[itemRank].power;
+ const armorCrit=(id,itemRank='common')=>(armorCritRates[id]||0)*rarity[itemRank].power;
+ function critChance(dexterity,kg,weaponBonus,gearBonus){
+  return Math.min(1,.05+Math.floor(Math.max(0,dexterity)/2)*.01+(kg<50?.05:0)+weaponBonus+gearBonus);
+ }
+ function critMultiplier(stationary,facing,fromEnemy,rolled){
+  const situational=stationary||Math.cos(facing-fromEnemy)<-.54;
+  return (situational?2:1)*(rolled?2:1);
+ }
  const weaponWeights={rust:8,rapier:5,hammer:20,staff:7,blade:11,dagger:3,greatsword:26};
  const armorWeights={wanderer:20,scholar:12,hunter:31,knight:51,shadow:62};
  const weaponWeight=weapon=>Number.isFinite(weapon.kg)&&weapon.kg>0?weapon.kg:weaponWeights[weapon.id]??8;
@@ -88,7 +101,8 @@ window.DungeonItems = (() => {
   {poison:1,frost:-.25},
   {bleed:1,poison:1,magic:.20,lightning:-.40},
   {poison:1,dark:.30,fire:-.40},
-  {physical:.12,fire:-.25,bleed:-.1},{physical:.06,frost:-.22,bleed:-.1}
+  {physical:.12,fire:-.25,bleed:-.1},{physical:.06,frost:-.22,bleed:-.1},
+  {fire:.45,frost:-.35},{lightning:.45,fire:-.30}
  ];
  const foeAttack=[
   {physical:1},{physical:.35,fire:.65},{physical:.75,dark:.25},
@@ -106,8 +120,8 @@ window.DungeonItems = (() => {
  const weapon=id=>weapons[id]||weapons.rust;
  function affinity(piece,itemRank){
   if(!piece)return {};
-  const multiplier=piece.weight*rarity[itemRank].power/7;
-  return Object.fromEntries(Object.entries(armor[piece.set]||{}).map(([type,value])=>[type,value*multiplier]));
+  const factor=rarity[itemRank].power;
+  return Object.fromEntries(Object.entries(armor[piece.set]||{}).map(([type,value])=>[type,value*piece.weight/7*(value>0?factor:1/factor)]));
  }
  function hit(amount,split,resistance){
   const parts=Object.entries(split).map(([type,share])=>({
@@ -122,7 +136,7 @@ window.DungeonItems = (() => {
   actor.dominant=Object.keys(actor.damageTypes).reduce((best,type)=>actor.damageTypes[type]>actor.damageTypes[best]?type:best,hit.type);
  }
  function price(item,depth){
-  const base={weapon:38,ring:32,armor:28,food:7}[item.kind]+Math.max(0,depth-1)*5;
+  const base={weapon:38,ring:32,armor:28,food:7,cup:5,potion:17}[item.kind]+Math.max(0,depth-1)*5;
   return Math.round(base*rarity[rank(item)].value);
  }
  function shop(seed,depth,pools){
@@ -141,7 +155,18 @@ window.DungeonItems = (() => {
     return {...variant,price:price(variant,depth),stock:kind+'-'+i};
    }));
   }
-  return [...picks.map(row=>row[0]),...picks.map(row=>row[1])];
+  const offers=[...picks.map(row=>row[0]),...picks.map(row=>row[1])];
+  state=(Math.imul(state,1664525)+1013904223)>>>0;
+  if(depth>=2&&offers.length&&state%100<38){
+   const index=(state>>>8)%Math.min(3,offers.length),stock=offers[index].stock;
+   const epic={...offers[index],rarity:'epic'};
+   if((state>>>16)%100<55){
+    offers[index]={kind:'cup',id:'cup',rarity:'rare',price:14,currency:'gold',source:'Händler',stock,bundle:3};
+   }else{
+    offers[index]={...epic,price:price(epic,depth)};
+   }
+  }
+  return offers;
  }
- return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,weapon,armor,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,precisionRing,breweryRing,weaponCrit,armorCrit,critChance,critMultiplier,weapon,armor,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();
