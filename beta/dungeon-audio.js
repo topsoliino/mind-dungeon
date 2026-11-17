@@ -1,60 +1,72 @@
 (() => {
  'use strict';
  const bank = window.DungeonSfxBank;
+ const foley = window.DungeonFoleyBank;
  const AudioContext = window.AudioContext || window.webkitAudioContext;
  if (!bank || !AudioContext) return;
 
- const bankUrl = new URL('assets/audio/shadowbound-sfx.mp3?v=1', document.currentScript.src);
+ const scriptUrl = document.currentScript.src;
+ const audioAsset = name => ({url: new URL('assets/audio/' + name + '.mp3?v=1', scriptUrl)});
+ const effects = audioAsset('shadowbound-sfx');
+ const stone = foley && audioAsset('stone-steps');
+ const ambient = Object.fromEntries(['jungle','waterfall','river'].map(name => [name,audioAsset(name)]));
  const maxVoices = 14;
  const heldRequests = [];
  const voices = new Set();
  const lastStarts = new Map();
  const lastVariants = new Map();
- let context, master, world, buffer, download, decoding;
- let retryAfter = 0, volume = .8, paused = true;
+ let context, master, world;
+ let volume = .8, paused = true;
 
- function prefetch() {
-  if (download || buffer || performance.now() < retryAfter) return;
-  download = fetch(bankUrl)
+ function prefetch(asset) {
+  if (!asset || asset.download || asset.buffer || performance.now() < (asset.retryAfter ?? 0)) return;
+  asset.download = fetch(asset.url)
    .then(response => {
-    if (!response.ok) throw Error('Audio-Bank: ' + response.status);
+    if (!response.ok) throw Error('Audio: ' + response.status);
     return response.arrayBuffer();
    })
    .catch(() => {
-    download = null;
-    retryAfter = performance.now() + 4000;
+    asset.download = null;
+    asset.retryAfter = performance.now() + 4000;
     return null;
    });
  }
 
- function ramp(param, value) {
+ function ramp(param, value, seconds = .022) {
   const now = context.currentTime;
-  param.cancelScheduledValues(now);
-  param.setTargetAtTime(value, now, .022);
+  if (param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(now);
+  else param.cancelScheduledValues(now);
+  param.setTargetAtTime(value, now, seconds);
  }
 
- function decode() {
-  prefetch();
-  if (!download || buffer || decoding) return;
-  decoding = download.then(bytes => {
+ function decode(asset) {
+  if (!asset || asset.buffer || asset.decoding) return;
+  prefetch(asset);
+  if (!asset.download) return;
+  asset.decoding = asset.download.then(bytes => {
    if (bytes) return new Promise((resolve, reject) => context.decodeAudioData(bytes, resolve, reject));
    return null;
   }).then(decoded => {
-   buffer = decoded;
+   if (decoded) asset.buffer = decoded;
    flushRequests();
   }).catch(() => {
-   heldRequests.length = 0;
-   download = null;
-   retryAfter = performance.now() + 4000;
+   asset.retryAfter = performance.now() + 4000;
   }).finally(() => {
-   decoding = null;
+   asset.download = null;
+   asset.decoding = null;
   });
  }
 
+ function assetFor(id) {
+  return foley?.[id] ? stone : effects;
+ }
+
  function flushRequests() {
-  if (!buffer || context.state !== 'running') return;
+  if (context.state !== 'running') return;
   for (const request of heldRequests.splice(0)) {
-   if (performance.now() - request.time < 240) play(request.id, request.options);
+   if (performance.now() - request.time >= 240) continue;
+   if (assetFor(request.id).buffer) play(request.id, request.options);
+   else heldRequests.push(request);
   }
  }
 
@@ -81,13 +93,19 @@
    context.addEventListener('statechange', flushRequests);
   }
   if (context.state !== 'running') context.resume().catch(() => {});
-  decode();
+  decode(effects);
+  decode(stone);
  }
 
  function setVolume(value) {
   volume = Math.max(0, Math.min(1, value));
-  if (volume) prefetch();
-  else heldRequests.length = 0;
+  if (volume) {
+   prefetch(effects);
+   prefetch(stone);
+  } else {
+   heldRequests.length = 0;
+   stopAmbience();
+  }
   if (master) ramp(master.gain, document.hidden ? 0 : volume * volume);
  }
 
@@ -102,11 +120,14 @@
  }
 
  function play(id, options = {}) {
-  const clips = bank[id];
+  const clips = foley?.[id] ?? bank[id];
   if (!clips || !context || !volume || document.hidden) return false;
+  const asset = assetFor(id);
+  const buffer = asset.buffer;
   if (!buffer || context.state !== 'running') {
+   decode(asset);
    while (heldRequests.length && performance.now() - heldRequests[0].time >= 240) heldRequests.shift();
-   if ((decoding || buffer) && heldRequests.length < 8) {
+   if ((asset.decoding || buffer) && heldRequests.length < 8) {
     heldRequests.push({id, options, time: performance.now()});
    }
    return false;
@@ -130,7 +151,9 @@
   }
 
   const previous = lastVariants.get(id);
-  const index = clips.length < 2 ? 0 : (Math.floor(Math.random() * (clips.length - 1)) + (previous ?? -1) + 1) % clips.length;
+  const avoidsRepeat = clips.length > 1 && previous !== undefined;
+  const draw = Math.floor(Math.random() * (clips.length - Number(avoidsRepeat)));
+  const index = avoidsRepeat && draw >= previous ? draw + 1 : draw;
   const [offset, duration] = clips[index];
   const speed = rate * (1 + (Math.random() * 2 - 1) * variation);
   const source = context.createBufferSource();
@@ -161,6 +184,64 @@
   return true;
  }
 
+ function startLoop(asset) {
+  const source = context.createBufferSource();
+  source.buffer = asset.buffer;
+  source.loop = true;
+  const fader = context.createGain();
+  fader.gain.value = 0;
+  source.connect(fader);
+  const panner = context.createStereoPanner ? context.createStereoPanner() : null;
+  if (panner) fader.connect(panner).connect(world);
+  else fader.connect(world);
+  source.onended = () => {
+   source.disconnect();
+   fader.disconnect();
+   panner?.disconnect();
+  };
+  source.start();
+  asset.voice = {source,fader,panner,gain:0,pan:0};
+ }
+
+ function stopLoop(asset) {
+  const voice = asset.voice;
+  if (!voice) return;
+  ramp(voice.fader.gain, 0, .025);
+  voice.source.stop(context.currentTime + .14);
+  asset.voice = null;
+ }
+
+ function stopAmbience() {
+  for (const asset of Object.values(ambient)) stopLoop(asset);
+ }
+
+ function setAmbience(mix) {
+  if (!context || !volume || context.state !== 'running' || document.hidden) return;
+  for (const [name,asset] of Object.entries(ambient)) {
+   const {gain = 0, pan = 0} = mix[name] ?? {};
+   const target = gain > .004 ? gain : 0;
+   if (target && !asset.voice) {
+    if (!asset.buffer) {
+     decode(asset);
+     continue;
+    }
+    startLoop(asset);
+   }
+   const voice = asset.voice;
+   if (!voice) continue;
+   if (voice.gain !== target) {
+    ramp(voice.fader.gain, target, target ? .19 : .23);
+    voice.gain = target;
+    voice.silentSince = target ? null : context.currentTime;
+   }
+   if (voice.panner && voice.pan !== pan) {
+    ramp(voice.panner.pan, pan, .15);
+    voice.pan = pan;
+   }
+   if (voice.silentSince != null && context.currentTime - voice.silentSince > 1.2) stopLoop(asset);
+  }
+ }
+
  function stop(group) {
   const now = context?.currentTime ?? 0;
   for (let i = heldRequests.length - 1; i >= 0; i--) {
@@ -180,6 +261,7 @@
   ramp(master.gain, document.hidden ? 0 : volume * volume);
   if (document.hidden) {
    heldRequests.length = 0;
+   stopAmbience();
    for (const voice of voices) voice.source.stop(context.currentTime + .04);
    voices.clear();
   }
@@ -189,5 +271,5 @@
    if (event.isTrusted && !event.repeat) unlock();
   }, {capture: true, passive: true});
  }
- window.DungeonAudio = { play, setVolume, setPaused, unlock, stop };
+ window.DungeonAudio = {play,setVolume,setPaused,setAmbience,unlock,stop};
 })();
