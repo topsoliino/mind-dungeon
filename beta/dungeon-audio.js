@@ -10,13 +10,18 @@
  const effects = audioAsset('shadowbound-sfx');
  const stone = foley && audioAsset('stone-steps');
  const ambient = Object.fromEntries(['jungle','waterfall','river'].map(name => [name,audioAsset(name)]));
+ const musicTracks = {
+  title: {...audioAsset('01_main_theme'), start: .54, end: 232, overlap: 5.5},
+  creator: {...audioAsset('02_character_creation'), start: .18, end: 196.6, overlap: 5.2}
+ };
  const maxVoices = 14;
  const heldRequests = [];
  const voices = new Set();
  const lastStarts = new Map();
  const lastVariants = new Map();
- let context, master, world;
+ let context, master, world, music;
  let volume = .8, paused = true;
+ let musicVolume = .65, musicScene = null, musicVoice = null;
 
  function prefetch(asset) {
   if (!asset || asset.download || asset.buffer || performance.now() < (asset.retryAfter ?? 0)) return;
@@ -47,7 +52,13 @@
    if (bytes) return new Promise((resolve, reject) => context.decodeAudioData(bytes, resolve, reject));
    return null;
   }).then(decoded => {
-   if (decoded) asset.buffer = decoded;
+   if (decoded) {
+    asset.buffer = decoded;
+    if (asset.overlap) {
+     blendMusicLoop(asset);
+     syncMusic();
+    }
+   }
    flushRequests();
   }).catch(() => {
    asset.retryAfter = performance.now() + 4000;
@@ -71,7 +82,7 @@
  }
 
  function unlock() {
-  if (!volume || document.hidden) return;
+  if ((!volume && !musicVolume) || document.hidden) return;
   if (!context) {
    try {
     context = new AudioContext();
@@ -86,15 +97,24 @@
    limiter.release.value = .13;
    master = context.createGain();
    world = context.createGain();
+   music = context.createGain();
    master.gain.value = volume * volume;
    world.gain.value = paused ? .52 : 1;
+   music.gain.value = musicLevel();
    world.connect(master);
+   music.connect(limiter);
    master.connect(limiter).connect(context.destination);
-   context.addEventListener('statechange', flushRequests);
+   context.addEventListener('statechange', () => {
+    flushRequests();
+    syncMusic();
+   });
   }
   if (context.state !== 'running') context.resume().catch(() => {});
-  decode(effects);
-  decode(stone);
+  if (volume) {
+   decode(effects);
+   decode(stone);
+  }
+  syncMusic();
  }
 
  function setVolume(value) {
@@ -117,6 +137,73 @@
     if (heldRequests[i].options.scene === 'world') heldRequests.splice(i, 1);
    }
   }
+ }
+
+ function musicLevel() {
+  return document.hidden ? 0 : .75 * musicVolume * musicVolume;
+ }
+
+ function setMusicVolume(value) {
+  musicVolume = Math.max(0, Math.min(1, value));
+  if (music) ramp(music.gain, musicLevel());
+  if (musicVolume) prefetch(musicTracks[musicScene]);
+  syncMusic();
+ }
+
+ function setMusicScene(scene) {
+  musicScene = scene;
+  if (musicVolume) prefetch(musicTracks[scene]);
+  syncMusic();
+ }
+
+ function blendMusicLoop(asset) {
+  const buffer = asset.buffer;
+  const rate = buffer.sampleRate;
+  const start = Math.min(buffer.length - 1, Math.round(asset.start * rate));
+  const end = Math.min(buffer.length, Math.round(asset.end * rate));
+  const count = Math.min(Math.round(asset.overlap * rate), Math.floor((end - start) / 2));
+  const channels = Array.from({length: buffer.numberOfChannels}, (_, channel) => buffer.getChannelData(channel));
+  // Finish the tail with the opening samples, then wrap to the next sample of the intro.
+  for (let i = 0; count > 1 && i < count; i++) {
+   const angle = Math.PI / 2 * i / (count - 1);
+   const out = Math.cos(angle), incoming = Math.sin(angle);
+   for (const samples of channels) {
+    const tail = end - count + i;
+    samples[tail] = samples[tail] * out + samples[start + i] * incoming;
+   }
+  }
+  asset.offset = start / rate;
+  asset.loopStart = (start + (count > 1 ? count : 0)) / rate;
+  asset.loopEnd = end / rate;
+ }
+
+ function syncMusic() {
+  const asset = musicVolume ? musicTracks[musicScene] : null;
+  if (musicVoice && musicVoice.asset !== asset) {
+   ramp(musicVoice.fader.gain, 0, .16);
+   musicVoice.source.stop(context.currentTime + .85);
+   musicVoice = null;
+  }
+  if (!asset || musicVoice || document.hidden || context?.state !== 'running') return;
+  if (!asset.buffer) {
+   decode(asset);
+   return;
+  }
+  const source = context.createBufferSource();
+  const fader = context.createGain();
+  source.buffer = asset.buffer;
+  source.loop = true;
+  source.loopStart = asset.loopStart;
+  source.loopEnd = asset.loopEnd;
+  fader.gain.value = 0;
+  source.connect(fader).connect(music);
+  source.onended = () => {
+   source.disconnect();
+   fader.disconnect();
+  };
+  musicVoice = {asset,source,fader};
+  source.start(0, asset.offset);
+  ramp(fader.gain, 1, .16);
  }
 
  function play(id, options = {}) {
@@ -259,11 +346,14 @@
  document.addEventListener('visibilitychange', () => {
   if (!master) return;
   ramp(master.gain, document.hidden ? 0 : volume * volume);
+  ramp(music.gain, musicLevel());
   if (document.hidden) {
    heldRequests.length = 0;
    stopAmbience();
    for (const voice of voices) voice.source.stop(context.currentTime + .04);
    voices.clear();
+  } else {
+   syncMusic();
   }
  });
  for (const type of ['pointerdown', 'pointerup', 'touchend', 'keydown', 'click']) {
@@ -271,5 +361,5 @@
    if (event.isTrusted && !event.repeat) unlock();
   }, {capture: true, passive: true});
  }
- window.DungeonAudio = {play,setVolume,setPaused,setAmbience,unlock,stop};
+ window.DungeonAudio = {play,setVolume,setPaused,setAmbience,setMusicVolume,setMusicScene,unlock,stop};
 })();
