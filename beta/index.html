@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=16"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=16"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=16"></script><script src="beta/dungeon-items.js?v=16"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=16"></script><script src="beta/dungeon-effects-art.js?v=16"></script><script src="beta/dungeon-art.js?v=16"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=2"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=17"></head><body><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=16"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=16"></script><script src="beta/dungeon-items.js?v=16"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=16"></script><script src="beta/dungeon-effects-art.js?v=16"></script><script src="beta/dungeon-art.js?v=16"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=2"></script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -134,6 +134,7 @@ const cupPoint=rest&&save.floor<5?pointIn(rest,-1.65,.2):null;
 const restCat=rest&&{...pointIn(rest,2.65,.4),mode:'idle',age:0,duration:2,flip:false,target:null};
 const well=rest&&pointIn(rest,3.4,-2.1);
 const wellUse=well&&{x:well.x,y:well.y+44};
+const glossaryStand=rest&&pointIn(rest,2.85,2.12);
 const wellArrival=rest&&pointIn(rest,-2.5,2.35);
 const inRest=(x,y)=>Boolean(rest&&regionAt(x,y)===rest.id);
 let catHeartUntil=0;
@@ -229,7 +230,17 @@ function valid(x,y,r=12,ignoreSeals=false,feet=false){
 }
 const HERO_RADIUS=14;
 const player={dash:0,dashCooldown:0,dashX:0,dashY:0,x:save.x??spawn.x,y:save.y??spawn.y,hp:Math.max(1,save.hp),max:100,speed:178,dir:0,attack:0,inv:0,walk:0};
-const ATTRS={vigor:['Vitalität (Vigor)','Maximale Lebenspunkte'],attunement:['Zauberei (Attunement)','Fokusenergie für besondere Angriffe'],endurance:['Kondition (Endurance)','Ausdauer für Angriffe und Ausweichen'],vitality:['Belastung (Vitality)','Pro Punkt +3 Basis-Knockback und +2 kg Traglast'],strength:['Stärke (Strength)','Schwere Waffen'],dexterity:['Geschicklichkeit (Dexterity)','Schnelle Waffen'],intelligence:['Intelligenz (Intelligence)','Arkane Waffen'],faith:['Glaube (Faith)','Geweihte Waffen'],luck:['Glück (Luck)','Beute und Skalierung für bestimmte Waffen']};
+const ATTRS={
+ vigor:['Vitalität','Jeder Punkt gibt dir 3 zusätzliche maximale Lebenspunkte.'],
+ attunement:['Zauberei','Jeder Punkt erhöht den Fokuswert um 4. Zauberei verstärkt Waffen, die damit skalieren, etwa den Neuronenstab.'],
+ endurance:['Kondition','Jeder Punkt gibt 2 Ausdauer vor dem Einfluss der Ausrüstungslast. Kondition beschleunigt auch die Regeneration und kann den Waffenschaden erhöhen, etwa beim Großschwert.'],
+ vitality:['Belastung','Jeder Punkt bringt 2 kg zusätzliche Traglast und 3 Punkte Basis-Knockback. Ab 50 % deiner Traglast gilt die Ausrüstung als mittel, ab 100 % als schwer.'],
+ strength:['Stärke','Je zwei Punkte geben 1 Knockback. Stärke ist Voraussetzung für manche schwere Waffen und erhöht bei passender Skalierung den Schaden.'],
+ dexterity:['Geschicklichkeit','Je zwei Punkte erhöhen die Chance auf einen Zufalls-Crit um einen Prozentpunkt. Manche schnelle Waffen setzen Geschicklichkeit voraus und skalieren damit.'],
+ intelligence:['Intelligenz','Intelligenz ist Voraussetzung für manche arkane Waffen und erhöht ihren Schaden, wenn sie damit skalieren.'],
+ faith:['Glaube','Glaube ist Voraussetzung für manche geweihte Waffen und erhöht ihren Schaden, wenn sie damit skalieren.'],
+ luck:['Glück','Glück erhöht den Attributsbonus von Waffen mit Glück-Skalierung, etwa Präzisionsrapier und Schattenmesser.']
+};
 let WEAPONS=[{id:'rust',name:'Rostige Klinge',base:17,reach:88,speed:.34,stamina:18,scale:{strength:.35,dexterity:.2},desc:'Ein zuverlässiges altes Schwert.'},{id:'rapier',name:'Präzisionsrapier',base:14,reach:105,speed:.21,stamina:12,scale:{dexterity:.95,luck:.12},desc:'Schnelle Stiche und präzise Konter.'},{id:'hammer',name:'Gedankenhammer',base:27,reach:78,speed:.55,stamina:29,scale:{strength:1.1,vitality:.12},desc:'Langsam, aber wuchtig.'},{id:'staff',name:'Neuronenstab',base:18,reach:118,speed:.39,stamina:21,scale:{intelligence:1.05,attunement:.3},desc:'Arkane Energie in einem Stab gebündelt.'},{id:'blade',name:'Klinge des Mitgefühls',base:19,reach:100,speed:.31,stamina:18,scale:{faith:.9,dexterity:.2},desc:'Geweihte Klinge für achtsame Krieger.'},{id:'dagger',name:'Schattenmesser',base:11,reach:67,speed:.16,stamina:9,scale:{dexterity:.75,luck:.75},desc:'Rasante Treffer mit hohem Krit-Potenzial.'},{id:'greatsword',name:'Expositionsgroßschwert',base:35,reach:113,speed:.66,stamina:36,scale:{strength:1.25,endurance:.18},desc:'Hoher Schaden und großer Schwungradius.'}];
 let RINGS=[{id:'hunter',name:'Ring des Jägers',desc:'+18 % Schaden mit schnellen Waffen.',bonus:'fast'},{id:'bulwark',name:'Ring des Bollwerks',desc:'12 % weniger erlittenen Schaden.',bonus:'guard'},{id:'scholar',name:'Ring des Gelehrten',desc:'+22 % Schaden mit Intelligenz-Waffen.',bonus:'arcane'},{id:'faith',name:'Ring der Zuversicht',desc:'Nach jedem Treffer 3 Lebenspunkte heilen (maximal).',bonus:'heal'},{id:'luck',name:'Ring der Entdeckung',desc:'Bessere Beutechancen.',bonus:'loot'},{id:'dodge',name:'Ring des Ausweichens',desc:'Ausweichen kostet weniger Ausdauer.',bonus:'dodge'}];
 save.level=save.level||1;save.attributes=save.attributes||Object.fromEntries(Object.keys(ATTRS).map(k=>[k,10]));save.inventory=save.inventory||[{kind:'weapon',id:'rust'}];save.equipment=save.equipment||{weapon:'rust',rings:[null,null]};save.pendingLevels=save.pendingLevels||0;save.enemyTier=save.enemyTier||1;save.playtime=save.playtime||0;
@@ -285,26 +296,25 @@ function weaponDamage(w=weaponById(save.equipment.weapon),rank=pickedRarity(w)){
 function xpRequired(){return 60+save.level*38+save.level*save.level*5}
 function grantXP(n){save.xp+=n;while(save.xp>=xpRequired()){save.xp-=xpRequired();save.level++;save.pendingLevels++;player.hp=Math.min(maxHP(),player.hp+22);save.levelNotice=save.level}persist()}
 const attributeIcons={vigor:'♥',attunement:'✧',endurance:'ϟ',vitality:'⬡',strength:'⚒',dexterity:'➶',intelligence:'✦',faith:'☀',luck:'◇'};
-function attributeName(key){return ATTRS[key][0].split(' (')[0];}
+function attributeName(key){return ATTRS[key][0];}
 function scalingRule({points,step}){
  return '+'+points+' Schaden je '+(step===1?'Attributpunkt':step+' Attributpunkte');
 }
-function attributeCards(attributes,weapon,editable=false){
- const scaling=new Map(items.weaponScaling(weapon,attributes,editable?pickedRarity(weapon):'common').map(entry=>[entry.attribute,entry]));
- return '<div class="ritual-grid">'+Object.entries(ATTRS).map(([key,[,desc]])=>{
-  const current=attributes[key],gain=scaling.get(key);
-  const start=editable?'<button data-stat="'+key+'">':'<div class="ritual-attribute">';
-  return start+'<span class="ritual-icon" aria-hidden="true">'+attributeIcons[key]+'</span><span><b>'+qEsc(attributeName(key))+'</b><small>'+qEsc(desc)+'</small>'+
-   (gain?'<small class="ritual-gain" title="'+scalingRule(gain)+'">'+gain.grade+' · +'+gain.bonus+' Schaden'+
-    (editable?(gain.nextGain?' (+'+gain.nextGain+' beim nächsten Punkt)':' (nächster Punkt: +0)'):'')+'</small>':'')+
-   '</span><span class="ritual-value">'+current+(editable?' <span>→</span> '+(current+1):'')+'</span>'+(editable?'</button>':'</div>');
- }).join('')+'</div>';
+function attributeStats(attributes){
+ return Object.keys(ATTRS).map(key=>[attributeName(key),attributes[key],key]);
+}
+function openAttributeGlossary(){
+ const chapters=Object.entries(ATTRS).map(([key,[name,description]])=>
+  '<div><dt><span aria-hidden="true">'+attributeIcons[key]+'</span> '+qEsc(name)+'</dt><dd>'+qEsc(description)+'</dd></div>'
+ ).join('');
+ show('<section class="attribute-glossary"><h2 class="md-title">Attributglossar</h2><dl>'+chapters+
+  '</dl><button id="glossary-close">Schließen</button></section>','glossary');
+ mdButton('glossary-close',close);
 }
 function levelMenu(selected){
  if(!save.pendingLevels)return;
- const w=weaponById(save.equipment.weapon);
- show('<section class="level-ritual"><div class="ritual-header"><div class="ritual-emblem" aria-hidden="true">✦</div><div><span class="md-kicker">Chronik des Wanderers</span><h2 class="md-title">Stufe '+save.level+'</h2><p>'+save.pendingLevels+' freie Attributpunkte</p></div></div>'+
-  attributeCards(save.attributes,w,true)+'<div class="actions"><button id="later">Später</button></div></section>','level');
+ show('<section class="level-ritual"><header class="ritual-header"><h2 class="md-title">Stufe '+save.level+'</h2><p>'+save.pendingLevels+' freie Attributpunkte</p></header>'+
+  statusRows(attributeStats(save.attributes),true)+'<div class="actions"><button id="later">Später</button></div></section>','level');
  document.querySelectorAll('[data-stat]').forEach(b=>b.onclick=()=>{
   if(!save.pendingLevels)return;
   const key=b.dataset.stat;
@@ -424,7 +434,7 @@ function weaponRequirements(id){
  const requirements=Object.entries(items.requirements[id]||{});
  if(!requirements.length)return '';
  return '<p class="item-requirements">Voraussetzung: '+requirements.map(([stat,value])=>{
-  const label=ATTRS[stat][0].split(' (')[0];
+  const label=attributeName(stat);
   return '<span class="'+(save.attributes[stat]<value?'item-malus':'')+'">'+qEsc(label)+' '+value+'</span>';
  }).join(' · ')+'</p>';
 }
@@ -835,6 +845,7 @@ if(rest){
  const decor=[['campfire',0,0],['bench',-1.65,.2],['bench',1.65,.2],['statue',0,-2.7],['torch',-3,-2.5],['torch',2.15,-2.7],
   ['round-table',-3.55,1.42],['dresser',4.72,1.6],['armor-rack',-4.88,-.65],['well',3.4,-2.1]];
  for(const [type,dx,dy] of decor)furniture.push({type,...pointIn(rest,dx,dy),zone:rest.theme,...FURNITURE[type]});
+ furniture.push({type:'lectern',...glossaryStand,zone:rest.theme,...FURNITURE.lectern});
 }
 const annexAccents={pantry:[['dresser',1.3,4.5],['round-table',5.4,4.35]],brewery:[['display',7.6,3.19],['dresser',1.55,3.1]],
  court:[...(save.layoutRevision<4?[['fence',3.8,1.6],['fence',9,1.6]]:[]),['statue',10.2,4.5]],rest:[]};
@@ -1112,7 +1123,9 @@ let mdNavigatingToNewCharacter=false;function persist(){if(mdNavigatingToNewChar
  save.quickSlots=slots;if(!paused)updateQuickBar();return true;
 }setInterval(()=>{persist()},12000);
 function tell(t){$('#notice').textContent=t;$('#notice').style.opacity=1;noticeUntil=performance.now()+2100}
+let unmountTitleGlow=null;
 function show(content,type='menu'){
+ unmountTitleGlow?.();unmountTitleGlow=null;
  if(!paused&&type!=='quiz'&&performance.now()-lastUiSound>48)soundUI('ui_open');
  audio?.setPaused(true);
  $('#hud').hidden=true;$('#xpHud').hidden=true;$('#quickBar').hidden=true;$('#wallet').hidden=true;
@@ -1130,6 +1143,7 @@ function show(content,type='menu'){
 function resumeGame(){atTitle=false;close();}
 function close(){
  if(atTitle){mdTitle();return;}
+ unmountTitleGlow?.();unmountTitleGlow=null;
  if(paused&&performance.now()-lastUiSound>48)soundUI('ui_close');
  audio?.setPaused(false);
  paused=false;modalType='';pending=null;$('#modalWrap').style.display='none';$('#modalWrap').dataset.screen='';
@@ -1143,7 +1157,7 @@ function close(){
 }
 function navModal(e){
  if(e.target?.matches?.('input,textarea,select,[contenteditable]')&&e.code!=='Escape')return;
- const gameMenus=['pause','navigation','status','inventory','equipment','quick','settings','journal','packs','trophies','saves','account','level'];
+ const gameMenus=['pause','navigation','status','inventory','equipment','quick','settings','journal','packs','trophies','saves','account','level','glossary'];
  if(e.code==='KeyP'&&!atTitle&&gameMenus.includes(modalType)){
   e.preventDefault();if(!e.repeat){if(modalType==='pause')close();else pauseMenu();}return;
  }
@@ -1711,6 +1725,7 @@ if(near?.kind==='cup'){collectCup();return;}
 if(near?.kind==='bones'){collectBones(near.i);return;}
 if(near?.kind==='temple'){templeQuiz(near.i);return;}
 if(near?.kind==='well'){wellMenu();return;}
+if(near?.kind==='glossary'){openAttributeGlossary();return;}
 if(near?.kind==='cat'&&restCat&&Math.hypot(restCat.x-player.x,restCat.y-player.y)<71){petCat();return;}
 if(near?.kind==='brewery'){breweryMenu();return;}
 if(near?.kind==='soul'){claimSoul(near.i);return;}
@@ -1858,6 +1873,10 @@ function update(dt){
  }
 for(const d of dust)d.life-=dt;while(dust.length&&dust[0].life<=0)dust.shift();for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt}particles=particles.filter(p=>p.life>0);slashes.forEach(z=>z.life-=dt);slashes=slashes.filter(z=>z.life>0);
 near=null;let best=95;
+if(glossaryStand&&inRest(player.x,player.y)){
+ const distance=Math.hypot(glossaryStand.x-player.x,glossaryStand.y-player.y);
+ if(distance<72&&reachableInteraction(glossaryStand)){near={kind:'glossary'};best=distance;}
+}
 if(regionAt(player.x,player.y)===labRoom.id&&Math.hypot(lab.x-player.x,lab.y-player.y)<88){near={kind:'brewery'};best=88;}
 for(const [kind,loc] of [['merchant',merchant],['map',mapPickup],...(restCat?[['cat',restCat],['well',wellUse]]:[])]){if(kind==='map'&&save.merchantMapFound)continue;const d=Math.hypot(loc.x-player.x,loc.y-player.y);if(d<best&&reachableInteraction(loc)){best=d;near={kind}}}gates.forEach((g,i)=>{if(save.gates[g.id])return;const d=Math.hypot((g.x+.5)*TILE-player.x,(g.y+.5)*TILE-player.y);if(d<best&&(regionAt(player.x,player.y)===g.corridorId||reachableInteraction(gateApproach(g)))){best=d;near={kind:'gate',i}}});shrines.forEach(z=>{if((save.altarUses[z.i]||0)>=2)return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:'shrine',i:z.i}}});chests.forEach((z,i)=>{const challenge=i===trialIndex&&!save.opened.includes(i);if(save.opened.includes(i)||challenge&&save.trials[i])return;let d=Math.hypot(z.x-player.x,z.y-player.y);if(d<best&&reachableInteraction(z)){best=d;near={kind:challenge?'trial':'chest',i}}});if(cupPoint&&!save.cupClaimed){
  const d=Math.hypot(cupPoint.x-player.x,cupPoint.y-player.y);
@@ -1882,7 +1901,7 @@ $('#stamina').hidden=combatTime<=0;
 $('#stamina').setAttribute('aria-valuenow',Math.ceil(player.stamina));$('#stamina').setAttribute('aria-valuemax',maxStamina());
 $('#xpnum').textContent=save.xp+'/'+xpRequired()+' XP';$('#statline').textContent='Stufe '+save.level;updateWallet();
 $('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+(annexByRegion.get(region)?.name||(annexPassages.get(region)?.theme===6?'Tempel · Verbindung':roomTitle(area())));$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${enemies.length} Gegner auf dieser Ebene${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}`;if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
-const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=near&&({brewery:'Am Labortisch brauen',soul:'Seelenball aufnehmen',cabinet:'Schrank durchsuchen',trial:'Prüftruhe untersuchen',portal:save.floor===LAST_DEPTH?'Lauf abschließen':'Portal zur nächsten Tiefe',gate:'Siegel prüfen',shrine:'Wissen prüfen · '+(near?.kind==='shrine'?2-(save.altarUses[near.i]||0):2)+' übrig',chest:'Truhe öffnen',merchant:'Händlerstand öffnen',cat:'Katze streicheln',well:'Magischer Brunnen',cup:'Becher von der Bank nehmen',bones:'Knochen aufheben',temple:'Dschungelschrein · Schwierigkeit 3',map:'Händlerkarte aufnehmen'})[near.kind];
+const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=near&&({brewery:'Am Labortisch brauen',soul:'Seelenball aufnehmen',cabinet:'Schrank durchsuchen',trial:'Prüftruhe untersuchen',portal:save.floor===LAST_DEPTH?'Lauf abschließen':'Portal zur nächsten Tiefe',gate:'Siegel prüfen',shrine:'Wissen prüfen · '+(near?.kind==='shrine'?2-(save.altarUses[near.i]||0):2)+' übrig',chest:'Truhe öffnen',merchant:'Händlerstand öffnen',cat:'Katze streicheln',well:'Magischer Brunnen',glossary:'Attributglossar lesen',cup:'Becher von der Bank nehmen',bones:'Knochen aufheben',temple:'Dschungelschrein · Schwierigkeit 3',map:'Händlerkarte aufnehmen'})[near.kind];
 prompt.hidden=!hint||paused;$('#mobileInteract').hidden=!hint||paused;if(hint&&prompt.dataset.hint!==hint){prompt.dataset.hint=hint;prompt.textContent=(matchMedia('(pointer:coarse)').matches?'':'[ E ] ')+hint;}
 }
 function gateApproach(g){
@@ -3209,8 +3228,12 @@ function navigationMenu(){
  mdButton('nav-equip',()=>equipmentMenu());mdButton('nav-inv',()=>inventoryMenu());mdButton('nav-status',statusMenu);
  mdButton('nav-pause',pauseMenu);mdButton('nav-close',close);
 }
-function statusRows(rows){
- return '<dl>'+rows.map(([label,value])=>'<div><dt>'+qEsc(label)+'</dt><dd>'+qEsc(value)+'</dd></div>').join('')+'</dl>';
+function statusRows(rows,editable=false){
+ return '<dl class="status-rows">'+rows.map(([label,value,key])=>{
+  const control=editable?'<button class="attribute-increase" data-stat="'+key+'" aria-label="'+
+   qEsc(label+' von '+value+' auf '+(value+1)+' steigern')+'">+</button>':'';
+  return '<div><dt>'+qEsc(label)+'</dt><dd>'+qEsc(value)+control+'</dd></div>';
+ }).join('')+'</dl>';
 }
 function statusMenu(){
  const hero=save.character,w=usableWeapon(),rank=pickedRarity(w),load=equipmentLoad(),gear=gearResistance(),base=damageBreakdown(w,rank);
@@ -3223,7 +3246,7 @@ function statusMenu(){
  show('<section class="status-dossier"><header class="status-header"><div class="md-portrait" id="status-portrait"></div>'+
   '<div><h2>'+qEsc(hero?.name||'Unbenannter Wanderer')+'</h2><p>'+qEsc(hero?.className||'Wanderer')+' · '+qEsc(w.name)+'</p></div>'+
   '<div class="status-level"><strong>'+save.level+'</strong><span>Gesamtstufe</span></div></header>'+
-  '<div class="status-grid"><section><h3>Attribute</h3>'+statusRows(Object.keys(ATTRS).map(key=>[attributeName(key),save.attributes[key]]))+
+  '<div class="status-grid"><section><h3>Attribute</h3>'+statusRows(attributeStats(save.attributes))+
   '<p>'+save.pendingLevels+' freie Punkte</p></section><section><h3>Kampf</h3>'+statusRows([
    ['Leben',num(player.hp)+' / '+maxHP()],['Ausdauer',maxStamina()],['Angriffsschaden',num(weaponDamage(w,rank)*brewBonus.damage)],
    ['Grundschaden / Attributsbonus',base.base+' / +'+base.bonus],['Crit-Chance',pct(critChance(w,rank))],
@@ -3255,7 +3278,7 @@ function mdTitle(){
  atTitle=true;
  const hero=save.character;
  const embers=Array.from({length:22},(_,i)=>'<i style="--x:'+((i*67+11)%100)+'%;--drift:'+((i*13)%71-35)+'px;--delay:-'+(i*1.83%15).toFixed(1)+'s;--duration:'+(11+i%7)+'s"></i>').join('');
- show('<main class="title-view"><div class="title-embers" aria-hidden="true">'+embers+'</div><div class="title-content">'+
+ show('<main class="title-view"><canvas class="title-glow" aria-hidden="true" hidden></canvas><div class="title-embers" aria-hidden="true">'+embers+'</div><div class="title-content">'+
   '<header class="title-brand"><h1>Mind Dungeon</h1><p>Shadowbound</p></header>'+
   '<div class="title-body"><div class="title-save"><div class="md-portrait" id="md-title-portrait"></div><div><b>'+
   mdEscape(hero?.name||'Unbenannter Wanderer')+'</b><p>'+mdEscape(hero?.className||'Noch keine Klasse')+
@@ -3264,6 +3287,7 @@ function mdTitle(){
   '<button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-saves">Spielstände</button>'+
   '<button id="md-journal">Lernjournal</button><button id="md-settings">Einstellungen</button><button id="md-login">Konto / Cloud</button>'+
   '</div></div></div></main>','title');
+ unmountTitleGlow=window.DungeonTitle?.mount($('.title-glow'))??null;
  mountPortrait($('#md-title-portrait'),hero,save.equipment.weapon,equippedArmorColors());
  mdButton('md-continue',()=>{if(save.completed){trophyMenu(true);return;}resumeGame();if(save.pendingLevels)setTimeout(()=>{if(!paused)levelMenu();},300);});
  mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-packs',()=>packMenu());
@@ -3277,14 +3301,32 @@ function classArmor(c){
 }
 function mdCreator(){
 const classes=mdClasses.length?mdClasses:MD_FALLBACK_CLASSES;
-show('<div class="md-kicker">Ein neues Vermächtnis</div><h2 class="md-title">Charakter erschaffen</h2><label class="md-field">Name<input id="md-name" maxlength="24" placeholder="Name deines Helden" value="Wanderer"></label><div class="md-layout"><div><label class="md-field">Geschlecht<select id="md-gender"><option value="male">Männlich</option><option value="female">Weiblich</option></select></label><label class="md-field">Gewandfarbe<input type="color" id="md-color" value="#7652a9"></label><label class="md-field">Hautfarbe<input type="color" id="md-skin" value="#d4a785"></label><label class="md-field">Haarfarbe<input type="color" id="md-hair" value="#392b4e"></label></div><div class="md-card"><div class="md-kicker">Vorschau</div><div id="md-preview" class="md-portrait" style="margin:10px auto"></div></div></div><h3>Startklasse</h3><div class="md-layout">'+classes.map((c,i)=>'<button class="md-card md-class '+(!i?'active':'')+'" data-md-class="'+i+'"><h3>'+iconImage('weapon',weaponArtId(c.weapon_id)).replace('<img ','<img class="class-glyph" ')+mdEscape(c.name_de)+'</h3><p>'+mdEscape(c.description_de)+'</p><small>'+mdEscape(weaponById(c.weapon_id).name)+' · '+mdEscape(ringById(c.starting_item_id)?.name||'Startgegenstand')+'</small></button>').join('')+'</div><div id="md-class-stats" class="md-card"></div><p class="md-warning">Ein neuer Charakter ersetzt den aktuellen lokalen Spielstand. Bestehende Cloud-Spielstände bleiben erhalten, bis du einen Slot überschreibst.</p><div class="md-actions"><button class="primary" id="md-begin">Charakter erstellen</button><button id="md-back">Zurück</button></div>','creator');
+show('<section class="character-creator"><h2 class="md-title">Charakter erschaffen</h2>'+
+ '<div class="creator-layout"><div class="creator-options">'+
+ '<div class="creator-appearance"><div>'+
+ '<label class="md-field">Name<input id="md-name" maxlength="24" placeholder="Name deines Helden" value="Wanderer"></label>'+
+ '<label class="md-field">Geschlecht<select id="md-gender"><option value="male">Männlich</option><option value="female">Weiblich</option></select></label>'+
+ '<div class="creator-colors"><label class="md-field">Gewand<input type="color" id="md-color" value="#7652a9"></label>'+
+ '<label class="md-field">Haut<input type="color" id="md-skin" value="#d4a785"></label>'+
+ '<label class="md-field">Haare<input type="color" id="md-hair" value="#392b4e"></label></div></div>'+
+ '<div id="md-preview" class="md-portrait" role="img" aria-label="Charaktervorschau"></div></div>'+
+ '<h3>Startklasse</h3><div class="creator-classes">'+classes.map((c,i)=>
+  '<button class="md-class" data-md-class="'+i+'" aria-pressed="'+(i===0)+'"><b>'+
+  iconImage('weapon',weaponArtId(c.weapon_id)).replace('<img ','<img class="class-glyph" ')+mdEscape(c.name_de)+'</b>'+
+  '<small>'+mdEscape(c.description_de)+'</small></button>'
+ ).join('')+'</div></div>'+
+ '<section id="md-class-stats" class="creator-status"></section></div>'+
+ '<p class="md-warning">Ein neuer Charakter ersetzt den aktuellen lokalen Spielstand. Bestehende Cloud-Spielstände bleiben erhalten, bis du einen Slot überschreibst.</p>'+
+ '<div class="md-actions"><button class="primary" id="md-begin">Charakter erstellen</button><button id="md-back">Zurück</button></div></section>','creator');
 let selected=0;
 function drawClass(){
  const c=classes[selected],kit=ARMOR_SETS.find(set=>set.id===classKits[c.id]);
- document.querySelectorAll('[data-md-class]').forEach((b,i)=>b.classList.toggle('active',i===selected));
- document.getElementById('md-class-stats').innerHTML='<h3>'+mdEscape(c.name_de)+'</h3><small>'+
-  (kit?'Startausrüstung · '+mdEscape(kit.name)+'-Set':'Startausrüstung · Leinenkleidung, ohne Rüstung')+'</small>'+
-  attributeCards(classAttributes(c),weaponById(c.weapon_id));
+ document.querySelectorAll('[data-md-class]').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===selected)));
+ document.getElementById('md-class-stats').innerHTML='<div class="creator-class-heading"><h3>'+mdEscape(c.name_de)+
+  '</h3><span>Stufe 1</span></div>'+statusRows(attributeStats(classAttributes(c)))+
+  '<h3>Startausrüstung</h3><ul><li>'+mdEscape(weaponById(c.weapon_id).name)+'</li>'+
+  (c.starting_item_id?'<li>'+mdEscape(ringById(c.starting_item_id)?.name||'Startgegenstand')+'</li>':'')+
+  '<li>'+mdEscape(kit?kit.name+'-Set':'Leinenkleidung')+'</li></ul>';
 }
 document.querySelectorAll('[data-md-class]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.mdClass);drawClass();updatePreview()});drawClass();
 function updatePreview(){
