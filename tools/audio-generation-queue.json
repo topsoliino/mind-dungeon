@@ -1,0 +1,651 @@
+{
+  "source": "Mind Dungeon Soundübergabe, worksheet ElevenLabs",
+  "takes_per_cue": 1,
+  "cues": [
+    {
+      "cue": "bow_draw",
+      "name": "Bogen · Sehne spannen",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One medieval wooden bow being drawn quickly, a brief rising wood-and-string tension creak, then held. Dry isolated close Foley. No release, arrow, impact, breath or ambience.",
+      "note": "Wind-up des Skelett-Bogenschützen."
+    },
+    {
+      "cue": "bow_release",
+      "name": "Bogen · Schuss",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One medieval bowstring releasing a shot, light taut snap and a short natural string tail. Close dry Foley. No bow draw, projectile whistle, target hit, voice or ambience.",
+      "note": "Bei Erzeugung des Pfeils, getrennt von dessen Flug."
+    },
+    {
+      "cue": "crossbow_release",
+      "name": "Armbrust · Schuss",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One medieval crossbow release, sharp heavy mechanical clack followed by a short taut string snap. Dry close Foley. No drawing, projectile travel, impact, voice or reverb.",
+      "note": "Bei Erzeugung des Armbrustbolzens."
+    },
+    {
+      "cue": "element_fire_cone",
+      "name": "Feueratem · anhaltender Kegel",
+      "priority": "P1",
+      "duration_seconds": 0.8,
+      "loop": false,
+      "prompt": "One continuous pressurized flame breath burst that widens quickly and cuts off after about 0.7 seconds. Dense turbulent flame with a natural turbulent body. Isolated and dry, no creature voice, wind-up, explosion, target hit or music.",
+      "note": "Feuerfledermaus, einmal pro Kegel; Aufnahme auf 0,71 s abstimmen."
+    },
+    {
+      "cue": "enemy_spider_web",
+      "name": "Spinne · Netzabschuss",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One large spider abruptly ejecting a sticky silk strand, a short organic wet snap and tiny pressure release. Dry isolated near source. No target impact, footsteps, voice or ambience.",
+      "note": "Bei fireWeb, klar erkennbarer kurzer Ausstoß."
+    },
+    {
+      "cue": "enemy_spider_web_land",
+      "name": "Spinne · Netz landet",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small mass of wet sticky silk hitting and adhering to rough stone. A short muted slap with a tacky edge. Close dry Foley, no web launch, peeling, voice or music.",
+      "note": "Klebrigen Lappen kurz auf Fliese fallen lassen, löst sich danach nicht sofort."
+    },
+    {
+      "cue": "enemy_skeleton_rattle",
+      "name": "Skelett · Bewegung/Knochenklappern",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short movement of loosely connected dry bones, light hollow clacks with a brittle texture. Close dry Foley, no armor jingle, voice, heavy collapse, footsteps or music.",
+      "note": "Trockene Holzstücke oder Knochenattrappen kurz gegeneinander klappern lassen."
+    },
+    {
+      "cue": "snake_slither",
+      "name": "Schlange · Schlängeln",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short pass of a low snake body slithering over dry leaves and fine grit. Soft uneven close rustle, organic and subtle. No hiss, strike, footsteps or environmental bed.",
+      "note": "Geflochtenes Seil langsam über trockene Blätter oder rauen Stoff ziehen."
+    },
+    {
+      "cue": "lion_paw",
+      "name": "Löwe/Löwin · Pfote und Landung",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One large padded big-cat paw contacting compact soil and stone, soft but heavy, close dry Foley. No claws, voice or second step. For the heavier takes change the contact into one stronger landing.",
+      "note": "Flache gepolsterte Hand auf Erde/Stein, nacheinander mit verschiedenen Gewichten."
+    },
+    {
+      "cue": "bat_wings",
+      "name": "Feuer-/Sturmfledermaus · Flügel",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One large bat wing flap, thin tight leathery membrane snapping softly through air. Close isolated natural Foley. No animal call or background. Include a couple of short two-flap takes with separate transients.",
+      "note": "Dünnes Leder oder dichtes Tuch kurz schlagen, ohne Klatschen der Hände."
+    },
+    {
+      "cue": "bat_voice",
+      "name": "Feuer-/Sturmfledermaus · Klicks/Schrei",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One audible large bat echolocation click cluster, dry close natural animal sound, no wing flap or magic. For separate warning takes replace the clicks with one short sharp bat screech in an audible range.",
+      "note": "Zwei kurze Klickgruppen, zwei etwas längere Warnschreie."
+    },
+    {
+      "cue": "gate_stone_motion",
+      "name": "Wissenstor · Steingeräusch",
+      "priority": "P1",
+      "duration_seconds": 1.3,
+      "loop": false,
+      "prompt": "One heavy ancient stone slab sliding open. Slow forceful stone-on-stone grind with a single firm short end stop, close dry Foley. No magic, chains, voices, debris collapse, long reverb or music.",
+      "note": "Außen hörbare Basis beim Öffnen. Aus einer Datei Teilstücke für Verriegelung ableiten."
+    },
+    {
+      "cue": "chest_latch",
+      "name": "Truhe · Riegel öffnet",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small old iron latch unlocking on a wooden chest, short dry metal scrape and clack. Close isolated source, no lid, coins, keys jingling or ambience.",
+      "note": "Kleine Holzschachtel mit Metallverschluss, einzeln öffnen."
+    },
+    {
+      "cue": "chest_lid",
+      "name": "Truhe · Holzdeckel und Scharnier",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One solid old wooden chest lid swings open on a slightly squeaky hinge and stops. Short restrained creak, dry close mic. No latch click, content, heavy slam or music.",
+      "note": "Holzdeckel öffnen, leichtes Quietschen/Knarzen und Stopp."
+    },
+    {
+      "cue": "loot_gold",
+      "name": "Goldmünzen",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small group of medieval metal coins falling onto wood or into a soft pouch, dry close Foley with a short natural tail. No loot chime, cloth bed, voice or music. Include single-coin and small handful variants.",
+      "note": "Einzelne Münze und kleine Gruppen auf Holz oder in Stoffbeutel."
+    },
+    {
+      "cue": "brew_pour",
+      "name": "Brauerei · Trank abfüllen",
+      "priority": "P1",
+      "duration_seconds": 0.6,
+      "loop": false,
+      "prompt": "One small serving of liquid poured from a ceramic jug into a ceramic cup. Close natural spill-free pour with a distinct clean start, brief stream and stop. No talking, kettle, ice or music.",
+      "note": "Kurzes Gießen aus kleinem Krug in Keramikbecher."
+    },
+    {
+      "cue": "brew_drink",
+      "name": "Trank · Schluck",
+      "priority": "P1",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One quick subtle human swallow of water from a cup. Dry close perspective, natural and restrained. No long gulp sequence, exaggerated mouth sounds, breath, words or room noise.",
+      "note": "Ein natürlicher, kurzer Schluck Wasser ohne Schmatzen oder Sprache."
+    },
+    {
+      "cue": "amb_jungle_calls",
+      "name": "Entfernte Dschungelrufe",
+      "priority": "P2",
+      "duration_seconds": 1.1,
+      "loop": false,
+      "prompt": "One brief, distant nocturnal animal call in a tropical forest, heard across the trees. Soft and uncanny, physically realistic, with a natural decay. Isolate the call without an insect bed, music or a second call. Vary the species and direction between takes.",
+      "note": "Vorhof und Löwenhof, selten und räumlich verteilt."
+    },
+    {
+      "cue": "amb_jungle_leaf",
+      "name": "Nahes Blattwerk",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "A single close brush through fresh broad tropical leaves and fine twigs, gentle movement and natural texture. Dry close microphone, one pass only, no footsteps, wind, wildlife or music.",
+      "note": "Frische Blätter und Zweige sanft in verschiedene Richtungen streifen."
+    },
+    {
+      "cue": "amb_cave_drip",
+      "name": "Einzelne Wassertropfen",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One isolated water droplet falling from a low ceiling and striking damp stone with a soft, brief tail. Close perspective, no other drips or background. Make a few takes with the droplet landing in a tiny shallow puddle instead.",
+      "note": "Je ein Tropfen auf Stein oder in flaches Wasser."
+    },
+    {
+      "cue": "amb_torch",
+      "name": "Fackel und Feuerstelle",
+      "priority": "P2",
+      "duration_seconds": 6,
+      "loop": true,
+      "prompt": "One small steady wooden torch or hearth flame, close perspective, soft fire texture and occasional tiny pops. Fixed distance and seamless loop. No wind gusts, room bed, large fire or music.",
+      "note": "Räumliches leises Knistern an sichtbaren Feuerquellen."
+    },
+    {
+      "cue": "amb_court",
+      "name": "Hof bei trockenem Wetter",
+      "priority": "P2",
+      "duration_seconds": 8,
+      "loop": true,
+      "prompt": "Quiet enclosed medieval stone courtyard at night, steady light wind and very sparse natural leaves. Gentle stereo field, subtle, dark and believable. Seamless loop without rain, bells, animals, footsteps, voices or music.",
+      "note": "Außenkulisse bei trockenem Hof, auch als Basis am Friedhof."
+    },
+    {
+      "cue": "amb_cemetery",
+      "name": "Friedhof · einzelne Ferngeräusche",
+      "priority": "P2",
+      "duration_seconds": 0.9,
+      "loop": false,
+      "prompt": "One distant nocturnal bird call in an enclosed stone cemetery, natural and quiet with a soft tail. Isolated without an ambience bed or music. For a separate take, replace the bird with one dry branch creak under light wind.",
+      "note": "Seltene entfernte Akzente am Friedhof."
+    },
+    {
+      "cue": "amb_thunder_far",
+      "name": "Entfernter Donner",
+      "priority": "P2",
+      "duration_seconds": 2.1,
+      "loop": false,
+      "prompt": "One distant natural thunder rumble behind stone walls, deep rolling texture and a slow believable decay with no close crack. Isolated, no rain, ambience, music or second strike.",
+      "note": "Sparsame Wetterakzente im Gewitter."
+    },
+    {
+      "cue": "amb_brewery",
+      "name": "Brauerei · Kesselblubbern",
+      "priority": "P2",
+      "duration_seconds": 5,
+      "loop": true,
+      "prompt": "A small iron cauldron of liquid simmering gently, isolated close perspective and irregular soft bubbles. Fixed level, seamless loop. No fire underneath, voices, pouring, large pops or music.",
+      "note": "Leiser Emitter am Brautisch."
+    },
+    {
+      "cue": "amb_well",
+      "name": "Magischer Brunnen · leises Wasser",
+      "priority": "P2",
+      "duration_seconds": 5,
+      "loop": true,
+      "prompt": "A small stream trickling steadily into a stone well basin, close and contained. Thin continuous liquid with soft ripples, no waterfall, room tone, magic or music. Seamless loop at a fixed perspective.",
+      "note": "Kontinuierliches kleines Rinnsal in Schale, möglichst gleichmäßig."
+    },
+    {
+      "cue": "step_rubble",
+      "name": "Stiefelschritt · Kies und Schutt",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One boot footstep on loose small gravel and temple rubble, rough crunch with a tiny tail of shifting pebbles. Dry close mic. No second step, impact effect or background.",
+      "note": "Kleine Kiessteine unter einem Schuh, kurzer Nachriesel."
+    },
+    {
+      "cue": "step_wet",
+      "name": "Stiefelschritt · nasser Stein/Pfütze",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One leather boot stepping into a very shallow puddle on rough stone. Small short water splash and grounded sole contact, close and realistic. No second step, rain bed or large splash. Generate both softer and firmer variants.",
+      "note": "Mit Schuh in sehr flache Pfütze treten, auch zwei dezentere Varianten."
+    },
+    {
+      "cue": "step_bridge_creak",
+      "name": "Holzbrücke · Knarzen",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "A single wooden bridge plank creaking briefly under weight, old dry timber stressed and then settling. Close isolated mechanical sound, no clear foot contact, breaking wood, flowing water or ambience.",
+      "note": "Brett sicher belasten, langsam knarzen lassen, ohne Schritte."
+    },
+    {
+      "cue": "hero_effort",
+      "name": "Held · Anstrengungsatem",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short human exertion exhale on exerting weight in a dark medieval action game, restrained and natural. Close dry voice, no words, screaming, footsteps or cloth. Produce lighter and heavier takes and vary vocal register.",
+      "note": "Kurze Ausatmer, ohne Wörter, unterschiedliche Intensität."
+    },
+    {
+      "cue": "crossbow_windup",
+      "name": "Armbrust · Mechanik",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short mechanical crossbow tension motion locking into a catch. Old wood and dull metal, close dry Foley. No firing, flight, repeated winding sequence or ambience.",
+      "note": "Wind-up des Armbrust-Zombies."
+    },
+    {
+      "cue": "enemy_charger_voice",
+      "name": "Anstürmer · Drohlaut und Antritt",
+      "priority": "P2",
+      "duration_seconds": 0.55,
+      "loop": false,
+      "prompt": "One low strained humanoid exertion grunt from an armored figure just before starting a charge. Wordless, dark and physically natural, close dry mic. No footfalls, armor rattle, charging movement, shouting or music.",
+      "note": "Klarer tiefer Wind-up vor dem Ansturm."
+    },
+    {
+      "cue": "enemy_priest_voice",
+      "name": "Priester · Ankündigung",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short breathy guttural warning exhale from a masked occult figure, close and restrained, organic texture, no words or singing. Dry voice source only, no magic, steps, room reverb or music.",
+      "note": "Vor dunklem Rissangriff; kurze heisere Intonation."
+    },
+    {
+      "cue": "enemy_spider_steps",
+      "name": "Spinne · Beine über Stein",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "A short group of irregular dry chitin leg taps from a large spider crossing rough stone. Close, light and unsettling. No voice, web spray, insect swarm, ambience or music.",
+      "note": "Fingernägel oder kleine Hölzchen unregelmäßig auf Stein tippen."
+    },
+    {
+      "cue": "enemy_spider_voice",
+      "name": "Spinne · Abwehr/Klicklaut",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One restrained cluster of oversized arachnid mandible clicks, crisp, dry and organic. Close mic with very short decay. No footsteps, hiss bed, scream, silk or ambience.",
+      "note": "Kurzer Warn- oder Schmerzlaut."
+    },
+    {
+      "cue": "enemy_spider_web_slow",
+      "name": "Spinne · klebriger Schritt im Netz",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One sticky web under a boot briefly stretching and peeling from stone. Short wet tack and soft tension without a second footstep. Close dry Foley, no voice or ambience.",
+      "note": "Feuchten Stoff langsam von Fliese lösen."
+    },
+    {
+      "cue": "enemy_skeleton_death",
+      "name": "Skelett · Knochen fallen auseinander",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "A loose bundle of dry bones collapsing onto stone once, first contact followed by a few quiet scattered clacks. Close dry Foley, no scream, heavy cinematic boom or ambience.",
+      "note": "Trockene Holzstücke als Gruppe auf Stein fallen lassen."
+    },
+    {
+      "cue": "enemy_frost_voice",
+      "name": "Frostgeist · verhallter Hauch",
+      "priority": "P2",
+      "duration_seconds": 0.7,
+      "loop": false,
+      "prompt": "One cold hollow wordless exhale, airy and organic like a very quiet distant specter. Clean dry source, no added reverb, wind bed, musical tone, ice break or other effect.",
+      "note": "Rohstimme für Wahrnehmen und Auflösung, Effekte kommen im Schnitt dazu."
+    },
+    {
+      "cue": "enemy_zombie_voice",
+      "name": "Zombie · Erkennen und Greifen",
+      "priority": "P2",
+      "duration_seconds": 0.55,
+      "loop": false,
+      "prompt": "One breathy strained groan from an undead humanoid noticing a target, low and organic, close dry throat sound. Wordless and isolated. For aggressive variants use one shorter strained grunt at the start of a grab. No footsteps, music or impacts.",
+      "note": "Für Nahkampf und Armbrust. Zwei Ächzer, zwei aggressive kurze Grunzer."
+    },
+    {
+      "cue": "enemy_zombie_pain",
+      "name": "Zombie · Schmerz und Tod",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short pained throat grunt from an undead humanoid, close dry recording. No words, impacts or music. For two death variations use a slightly longer failing breath rather than a second grunt.",
+      "note": "Zwei kurze Treffergrunzer und zwei längere ausatmende Todeslaute."
+    },
+    {
+      "cue": "enemy_zombie_move",
+      "name": "Zombie · Schritte/Schleifen",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short heavy boot scuff dragging over rough stone with an uneven shuffling stop. Close dry recording, no follow-up step, grunt, metal or room tone.",
+      "note": "Schuh kurz über Stein ziehen, nachschleppender Schritt."
+    },
+    {
+      "cue": "snake_death",
+      "name": "Schlange · kurzer Abwehrlaut/Tod",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short distressed snake hiss losing strength and trailing off naturally. Close, isolated and realistic. No strike, body impact, room reverb or other effect.",
+      "note": "Abklingendes Fauchen, kleines Fallen kann separat folgen."
+    },
+    {
+      "cue": "lion_pain",
+      "name": "Löwe/Löwin · Trefferlaut",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short restrained adult lion pain grunt, rough and close, dry realistic source. No human voice, hit, full roar or ambience. Generate two lower male lion and two lighter adult lioness versions.",
+      "note": "Kurze Reaktion; zwei helle und zwei dunkle Takes."
+    },
+    {
+      "cue": "lion_death",
+      "name": "Löwe/Löwin · Todeslaut",
+      "priority": "P2",
+      "duration_seconds": 0.7,
+      "loop": false,
+      "prompt": "One rough weakened lion breath trailing off in a natural final exhale, restrained and close. Dry isolated animal voice, no fall, roar, impact or music. Generate one male lion version and one quieter lioness version.",
+      "note": "Je ein längerer ausatmender Take; Fall separat."
+    },
+    {
+      "cue": "bat_pain",
+      "name": "Feuer-/Sturmfledermaus · Schmerz/Tod",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One brief rough audible bat distress squeak from a large bat, dry close source, natural and wordless. No wings, impact or flame. For one variant soften it into a slightly longer fading death exhale.",
+      "note": "Zwei Trefferstimmen und ein Todeslaut für beide Varianten."
+    },
+    {
+      "cue": "temple_plate_reset",
+      "name": "Druckplatte · Rückstellung",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One stone pressure plate lifting a small distance and clicking back into place, light stone scrape and a short dry reset click. Close isolated, no trap release, steps or ambience.",
+      "note": "Steinteil leise aus einer Position lösen, kurzes Rückklicken."
+    },
+    {
+      "cue": "cabinet_search",
+      "name": "Schrank/Bücherregal durchsuchen",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One quick search motion in an old wooden cabinet, short drawer slide and restrained paper or book movement. Close dry roomless Foley. No coins or voices. For separate variations isolate just the drawer or just one book moved.",
+      "note": "Holzschublade und ein einzelnes Papier-/Buchgeräusch; Varianten getrennt."
+    },
+    {
+      "cue": "map_pickup",
+      "name": "Händlerkarte aufheben/entfalten",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One piece of thick dry parchment being lifted and unfolded once, clean slow rustle with a crisp fold. Close isolated Foley, no footsteps, writing, wings or menu tone.",
+      "note": "Trockenes stärkeres Papier einmal entfalten."
+    },
+    {
+      "cue": "rest_cat_purr",
+      "name": "Katze · Schnurren",
+      "priority": "P2",
+      "duration_seconds": 4,
+      "loop": true,
+      "prompt": "One relaxed domestic cat purring softly at fixed close range. Natural steady little rumble, no meow, clothing, room noise or music. Seamless loop.",
+      "note": "Kurzer gleichmäßiger Schnurr-Loop bei Nähe oder Streicheln."
+    },
+    {
+      "cue": "rest_cat_meow",
+      "name": "Katze · Streicheln",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One soft domestic cat greeting trill or short affectionate meow. Dry close natural voice, gentle and relaxed, no continuous purr or background.",
+      "note": "Seltener kurzer Laut bei Interaktion im Ruheraum."
+    },
+    {
+      "cue": "merchant_bat",
+      "name": "Fledermaushändler · Begrüßung",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short friendly inquiring chirp from a large fictional bat merchant, organic audible bat-like chirp, restrained and close. Wordless, no wings, magic, giggle, music or ambience.",
+      "note": "Ein kurzer freundlicher Laut pro Händlerbesuch."
+    },
+    {
+      "cue": "loot_ruby",
+      "name": "Rubin · Stein/Kristall",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small faceted gemstone placed on ancient wood, a short hard bright clink with a tiny real resonance. Dry close Foley, no magical sparkle, coins or music.",
+      "note": "Ein Glassteinchen/kleines Mineral vorsichtig auf Holz absetzen."
+    },
+    {
+      "cue": "loot_cup",
+      "name": "Leerer Becher · aufnehmen/abstellen",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small unglazed ceramic cup being lifted from or placed onto wood, single short dull contact, close and dry. No water, glass, voice or distraction. Export lifts and placements as separate takes.",
+      "note": "Kleinen Keramikbecher einmal aufnehmen bzw. mit kurzen Varianten abstellen."
+    },
+    {
+      "cue": "loot_ring",
+      "name": "Ring an-/ablegen",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small plain metal ring lightly placed on leather or briefly touching another ring. Tiny short clink, close dry Foley, no chains, coins or chime.",
+      "note": "Einen Ring auf Leder/Holz ablegen oder an einen zweiten Ring tippen."
+    },
+    {
+      "cue": "brew_ingredient",
+      "name": "Brauerei · Zutat in Kessel",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small dried herb or solid ingredient dropped into a cauldron, short light tap and a tiny natural splash. Close dry Foley, no simmering bed or magic. For separate variations generate a single liquid drop rather than a herb.",
+      "note": "Kräuter/kleinen Gegenstand und einzelne Flüssigkeitstropfen getrennt in eine Schale geben."
+    },
+    {
+      "cue": "brew_stir",
+      "name": "Brauerei · umrühren",
+      "priority": "P2",
+      "duration_seconds": 0.55,
+      "loop": false,
+      "prompt": "One slow pass of a wooden spoon stirring a small bowl of liquid, slight fluid swirl and one gentle rim touch. Close dry Foley. No continuous bubbling, cooking room, voice or music.",
+      "note": "Holzlöffel einmal in Schale mit wenig Wasser führen, leicht am Rand anstoßen."
+    },
+    {
+      "cue": "food_glucose",
+      "name": "Essen · Traubenzucker",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small dry crisp bite into a firm dextrose tablet, a short compact granular crack. Close dry Foley, no packaging, talking, repeated chewing or music.",
+      "note": "Leiser trockener Knack eines kleinen harten Lebensmittels."
+    },
+    {
+      "cue": "food_banana",
+      "name": "Essen · Banane/weiche Nahrung",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short soft bite into a piece of banana, quiet dry close Foley with minimal mouth noise. No repeated chewing, swallowing, wrapping, voice or music.",
+      "note": "Ein kurzer weicher Biss, ohne langes Kauen."
+    },
+    {
+      "cue": "food_bread",
+      "name": "Essen · Brot",
+      "priority": "P2",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One short bite into a dry bread crust, subtle papery crack and soft interior, close dry and natural. No long chewing, bag rustle, swallowing or ambience.",
+      "note": "Ein Stück Brot brechen oder in Kruste beißen."
+    },
+    {
+      "cue": "rest_cat_pet",
+      "name": "Katze · Streicheln, Stoff/Fell",
+      "priority": "P3 optional",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One quiet hand stroke across short soft fur, barely audible close dry Foley. No cat voice, purr, cloth movement or ambience.",
+      "note": "Über Fellimitat langsam streichen."
+    },
+    {
+      "cue": "brew_glass",
+      "name": "Trankgefäß · kleines Glasgeräusch",
+      "priority": "P3 optional",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One tiny glass potion bottle being picked up or set down on wood, short natural brittle clink. Close dry source. No liquid, magic, shattered glass or music.",
+      "note": "Kleine Glasflasche vorsichtig aufnehmen, absetzen oder verschließen."
+    },
+    {
+      "cue": "hero_dash",
+      "name": "Ausweichschritt",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One sudden short forward dodge dash: forceful airy cloth swish, leather gear flick, muted boot push-off. Dry close-mic practical Foley, crisp decay. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "weapon_swing_light",
+      "name": "Leichter Schwertschwung",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One quick plain steel sword slash through the air, airy tapered swish with a slight metallic edge. Dry practical Foley, no impact. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "weapon_thrust",
+      "name": "Degenstoß",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "Single very quick straight rapier thrust, narrow high air zip and tiny handguard movement. Dry close-mic Foley, no impact. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "weapon_dagger",
+      "name": "Dolchhieb",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One small sharp dagger flick through air. Thin close swish and almost no tail. Dry practical Foley, no impact. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "weapon_hammer",
+      "name": "Hammerschlag in die Luft",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One heavy war hammer swung through air with low weight and a soft leather shift. A tight back-to-front whoomph. Dry, no impact. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "weapon_staff",
+      "name": "Stabschlag",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One wooden quarterstaff swinging briskly, hollow woody air movement and a faint grip scrape. Dry practical Foley, no impact. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "weapon_blade",
+      "name": "Klingenhieb",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One swift medium sword cut with a bright, full swish and restrained rough steel edge. Dry close foley, no impact. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "weapon_greatsword",
+      "name": "Zweihänderschwung",
+      "priority": "Ersatz",
+      "duration_seconds": 0.55,
+      "loop": false,
+      "prompt": "One huge two-handed steel sword cut, low air displacement rising to a sharp fast edge. Short dry practical swish, no impact. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "weapon_charge_release",
+      "name": "Aufgeladener Hieb",
+      "priority": "Ersatz",
+      "duration_seconds": 0.55,
+      "loop": false,
+      "prompt": "Short heavy fantasy melee release, one pressure crack with a sweeping low air transient. Dry layered Foley, no music or impact. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "hit_crit",
+      "name": "Kritischer Treffer",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One concise fantasy critical impact. Sharp tempered metal snap over a compact cloth-wrapped punch, with a tiny bright tail. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "hit_counter",
+      "name": "Kontertreffer",
+      "priority": "Ersatz",
+      "duration_seconds": 0.5,
+      "loop": false,
+      "prompt": "One fast perfect-counter contact, restrained steel deflection and dry decisive knock in one motion. No second hit. No speech, music, long reverb or background noise."
+    },
+    {
+      "cue": "hit_fatal",
+      "name": "Fataler Treffer",
+      "priority": "Ersatz",
+      "duration_seconds": 0.65,
+      "loop": false,
+      "prompt": "One powerful finishing impact. Hard metal crunch, short low body thump, crisp stop. Close gritty fantasy game Foley, no gore. No speech, music, long reverb or background noise."
+    }
+  ]
+}

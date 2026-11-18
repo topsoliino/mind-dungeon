@@ -62,5 +62,11 @@ window.DungeonEnemies = (() => {
   return Math.floor(e.phase*(e.moving?11:3))%4;
  }
  const PRIEST=1,ZOMBIE=5,SNAKE=6,ARCHER=7,CROSSBOW=8,LION=9,LIONESS=10,BAT=11,STORM_BAT=12;
- return {attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT};
+ function physicalImpactCue(type,weapon){
+  if(type===3||type===ARCHER)return 'hit_bone';
+  if(type===0||type===PRIEST)return 'hit_metal';
+  if(type===4)return 'hit_stone';
+  return ['blade','dagger','rapier','greatsword'].includes(weapon)?'hit_cut':'hit_body';
+ }
+ return {physicalImpactCue,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT};
 })();

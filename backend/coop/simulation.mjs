@@ -29,7 +29,7 @@ export class Simulation{
    moveActor:(e,dx,dy)=>this.move(e,dx,dy),nearActor,regionKnown:region=>this.explored.has(region),
    takeDamage:(p,...args)=>this.hurtPlayer(p,...args),maxHP,
    applyPoison:(p,opts)=>this.poison(p,opts),addBleed:(p,n)=>this.bleed(p,n),
-   soundWorld:(cue,pos)=>{this.emit('sound',{cue,x:pos.x,y:pos.y});return true;},
+   soundWorld:(cue,pos,mix)=>this.sound(cue,pos,mix),
    burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),coopActors:()=>this.activePlayers(),
    enemyEncounterReady:e=>this.currentTarget!==null&&this.canTarget(e,this.currentTarget),
    rand:(a,b)=>a+this.random()*(b-a)
@@ -110,6 +110,7 @@ export class Simulation{
   this.events.push({seq:++this.eventId,kind,to,...data});
   if(this.events.length>96)this.events.shift();
  }
+ sound(cue,{x,y},mix){this.emit('sound',{cue,x:round(x),y:round(y),mix});return true;}
  move(actor,dx,dy){
   const hero=Boolean(actor.seat),others=hero?this.enemies:this.players;
   const clear=(x,y,other)=>{
@@ -272,10 +273,15 @@ export class Simulation{
    this.shots.push({x:p.x,y:p.y,angle:p.dir,left:reach,speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
    return true;
   }
+  let targetHit=false;
   for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
    if(e.hp>0&&this.canTarget(e,p)&&gap(e,p)<reach+(e.size-1)*10&&Math.cos(angle-p.dir)>.25&&
-     !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y))this.weaponHit(e,hit,angle);
+     !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;this.weaponHit(e,hit,angle);}
+  }
+  if(!targetHit){
+   const contact=this.floor.weaponImpact(p.x,p.y,p.dir,reach);
+   if(contact)this.sound(contact.cue,contact,{gain:.67,priority:2});
   }
   return true;
  }
@@ -296,7 +302,7 @@ export class Simulation{
   const crit=counter?charged?'fatal':'counter':rolled?'critical':'';
   const wet=this.floor.inRain(p.x,p.y)||this.floor.inRain(e.x,e.y);
   const hit=items.hit(amount*balance.hitMultiplier(charged,counter,rolled,w.critFactor),wet&&split.fire?{...split,fire:split.fire*.55}:split,this.resistances[e.type]);
-  this.hurtEnemy(e,hit,p,crit);
+  this.hurtEnemy(e,hit,p,crit,w.id);
   if(!hit.total)return;
   if(counter)e.counterUntil=0;
   const knock=foes.knockbackDistance(attack.impact,foes.balance(e.type,e.boss))*(w.projectile?.67:1);
@@ -307,14 +313,14 @@ export class Simulation{
   if(e.hp>0&&w.status==='poison'&&this.resistances[e.type].poison!==1&&!e.poison)this.poison(e,{untilTick:.72,ticks:3,power:1+(w.statusLevel-1)*.25,owner:p});
   if(p.equipment.rings.includes('faith'))p.hp=Math.min(maxHP(p),p.hp+3);
  }
- hurtEnemy(e,hit,p,critical=''){
+ hurtEnemy(e,hit,p,critical='',weapon){
   if(e.hp<=0)return;
   const n=Math.min(e.hp,hit.total);
   if(n>0){
    e.hp-=n;e.dominant=hit.type;e.hit=.22;
    if(p){p.combatRecord.dealt+=n;if(critical)p.combatRecord[critical==='critical'?'crits':'counters']++;p.revision++;}
   }
-  this.emit('hit',{x:round(e.x),y:round(e.y),value:n,type:hit.type,critical});
+  this.emit('hit',{x:round(e.x),y:round(e.y),value:n,type:hit.type,critical,enemyType:e.type,weapon});
  }
  hurtPlayer(p,n,split={physical:1},status=false,depth=foes.depthFactor(this.state.floor),cue){
   if(!p.online||p.inv>0&&!status||p.dash>0||this.floor.inRest(p.x,p.y))return false;
@@ -323,8 +329,8 @@ export class Simulation{
   if(hit.total<=0)return false;
   const taken=Math.min(p.hp,hit.total);p.hp-=taken;p.combatRecord.taken+=taken;p.revision++;
   if(!status)p.inv=.75;
-  p.dominant=hit.type;this.emit('hit',{seat:p.seat,x:round(p.x),y:round(p.y),value:taken,type:hit.type,cue});
-  if(p.hp<=0){p.combatRecord.deaths++;if(p.trial)this.actions.finishTrial(p,false);this.resetAtRest(p);this.emit('death',{seat:p.seat});}
+  p.dominant=hit.type;this.emit('hit',{seat:p.seat,x:round(p.x),y:round(p.y),value:taken,type:hit.type,cue,pain:!status&&p.hp>0});
+  if(p.hp<=0){this.sound('hero_fall',p,{priority:4,gain:.85});p.combatRecord.deaths++;if(p.trial)this.actions.finishTrial(p,false);this.resetAtRest(p);this.emit('death',{seat:p.seat});}
   return true;
  }
  poison(actor,opts){actor.poison={...opts};}

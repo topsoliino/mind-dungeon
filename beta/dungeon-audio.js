@@ -2,6 +2,7 @@
  'use strict';
  const bank = window.DungeonSfxBank;
  const foley = window.DungeonFoleyBank;
+ const packages = window.DungeonPackageBank;
  const AudioContext = window.AudioContext || window.webkitAudioContext;
  if (!bank || !AudioContext) return;
 
@@ -9,7 +10,11 @@
  const audioAsset = name => ({url: new URL('assets/audio/' + name + '.mp3?v=1', scriptUrl)});
  const effects = audioAsset('shadowbound-sfx');
  const stone = foley && audioAsset('stone-steps');
+ const packSfx = packages && audioAsset('pack-sfx');
  const ambient = Object.fromEntries(['jungle','waterfall','river'].map(name => [name,audioAsset(name)]));
+ for (const name of ['amb_dungeon','amb_rain']) {
+  ambient[name] = {...audioAsset(name), start: 0, end: 30, overlap: .8};
+ }
  const musicTracks = {
   title: {...audioAsset('01_main_theme'), start: .54, end: 232, overlap: 5.5},
   creator: {...audioAsset('02_character_creation'), start: .18, end: 196.6, overlap: 5.2}
@@ -57,7 +62,7 @@
    if (decoded) {
     asset.buffer = decoded;
     if (asset.overlap) {
-     blendMusicLoop(asset);
+     blendLoop(asset);
      syncMusic();
     }
    }
@@ -71,7 +76,7 @@
  }
 
  function assetFor(id) {
-  return foley?.[id] ? stone : effects;
+  return packages?.[id] ? packSfx : foley?.[id] ? stone : effects;
  }
 
  function flushRequests() {
@@ -115,6 +120,7 @@
   if (volume) {
    decode(effects);
    decode(stone);
+   decode(packSfx);
   }
   syncMusic();
  }
@@ -124,6 +130,7 @@
   if (volume) {
    prefetch(effects);
    prefetch(stone);
+   prefetch(packSfx);
   } else {
    heldRequests.length = 0;
    stopAmbience();
@@ -168,7 +175,7 @@
   syncMusic();
  }
 
- function blendMusicLoop(asset) {
+ function blendLoop(asset) {
   const buffer = asset.buffer;
   const rate = buffer.sampleRate;
   const start = Math.min(buffer.length - 1, Math.round(asset.start * rate));
@@ -219,7 +226,7 @@
  }
 
  function play(id, options = {}) {
-  const clips = foley?.[id] ?? bank[id];
+  const clips = packages?.[id] ?? foley?.[id] ?? bank[id];
   if (!clips || !context || !volume || document.hidden) return false;
   const asset = assetFor(id);
   const buffer = asset.buffer;
@@ -287,6 +294,7 @@
   const source = context.createBufferSource();
   source.buffer = asset.buffer;
   source.loop = true;
+  if (asset.loopEnd) {source.loopStart = asset.loopStart;source.loopEnd = asset.loopEnd;}
   const fader = context.createGain();
   fader.gain.value = 0;
   source.connect(fader);
@@ -298,7 +306,7 @@
    fader.disconnect();
    panner?.disconnect();
   };
-  source.start();
+  source.start(0, asset.offset ?? 0);
   asset.voice = {source,fader,panner,gain:0,pan:0};
  }
 

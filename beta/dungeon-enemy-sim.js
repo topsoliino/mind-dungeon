@@ -85,6 +85,7 @@ function updateEnemy(e,dt){
  }
  if(e.attack<=0&&d<spec.range&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
   e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
+  if(spec.id==='bite')soundWorld('snake_hiss',e,{priority:2,cooldown:.14});
   if(spec.id==='frost'){
    e.frostTargets=frostSites(e);
    soundWorld('element_frost_cast',e,{priority:2,cooldown:.25});
@@ -105,6 +106,7 @@ function executeEnemyAttack(e,spec){
  const durations={charge:1.1,rift:.74,reap:.36,grab:.38,bite:.25};
  if(durations[spec.id]){
   const cue=spec.id==='rift'?'element_dark_rift':spec.id==='charge'?'weapon_hammer':spec.id==='reap'?'weapon_greatsword':null;
+  if(spec.id==='bite')soundWorld('snake_bite',e,{priority:2,cooldown:.14});
   if(cue)soundWorld(cue,e,{gain:.78,priority:2,cooldown:.11});
   e.runDuration=durations[spec.id];
   e.runAttack=e.runDuration;e.track=spec.id==='charge'?.58:0;e.trailTimer=0;e.struck=false;return;
@@ -205,6 +207,7 @@ function updatePlates(dt){
   if(pressed&&!p.pressed&&!p.cooldown){
    p.timer=.27;p.cooldown=1.7;
    burst(p.x,p.y,'#d9b788',7);
+   soundWorld('temple_plate_press',p,{priority:2,cooldown:.13});
   }
   p.pressed=pressed;
   if(p.timer<=0)continue;
@@ -212,6 +215,7 @@ function updatePlates(dt){
   if(p.timer>0)continue;
   const left=p.angle===0;
   const from=p.origin.x+(left?-260:260);
+  soundWorld('temple_trap_release',p.origin,{priority:3,cooldown:.12});
   const speed=940;
   state.bolts.push({x:from,y:p.y,angle:p.angle,speed,life:Math.abs(from-p.origin.x)/speed+1.15,type:'trap',entryX:p.origin.x});
  }
@@ -231,13 +235,14 @@ function updateLion(e,dt){
   if(move.age<move.windup)return;
   const t=move.age-move.windup;
   if(move.kind==='leap'&&t<.35){
+   if(!move.audioStarted){move.audioStarted=true;soundWorld('lion_leap',e,{priority:2,cooldown:.17});}
    moveEnemy(e,Math.cos(move.angle)*270*dt,Math.sin(move.angle)*270*dt);
    if(!move.landed&&nearActor(e,player,11)&&damageActive(e.type===LION?16:13,{physical:1}))move.landed=true;
   }else if(move.kind==='rake'&&t<lionRake.duration){
    if(t>=move.next){
     const swipeAngle=move.angle+(move.swipes%2===0?.22:-.22);
     move.swipes++;move.next+=lionRake.pace;
-    soundWorld('weapon_dagger',e,{group:'lion-rake-air',gain:.65,rate:.86,cooldown:.09});
+    soundWorld('lion_claw_source',e,{group:'lion-rake',gain:.71,cooldown:.115});
     move.last={time:t,angle:swipeAngle};
     const reach=lionRake.reach+(e.type===LION?7:0);
     if(d<reach&&Math.cos(angle-swipeAngle)>Math.cos(lionRake.spread)&&!gateLineBlocked(e.x,e.y,player.x,player.y)&&
@@ -245,6 +250,7 @@ function updateLion(e,dt){
    }
   }else if(move.kind==='roar'&&!move.called){
    move.called=true;e.roarCooldown=8;
+   soundWorld('lion_roar',e,{priority:3,cooldown:.50});
    const ally=nearestLion(e);
    if(ally){ally.called=9;ally.aggro=9;ally.alerted=true;}
    burst(e.x,e.y,'#e2b472',23);
@@ -256,6 +262,7 @@ function updateLion(e,dt){
  if(e.attack<=0&&clear&&d<spec.range){
   const kind=d<lionRake.reach&&Math.random()<.66?'rake':!e.roarCooldown&&nearestLion(e)&&Math.random()<.4?'roar':'leap';
   aimEnemy(e,angle);
+  soundWorld('lion_growl',e,{priority:2,gain:.77,cooldown:.26});
   e.lionMove={kind,age:0,angle,windup:kind==='roar'?.65:spec.windup,duration:kind==='roar'?.42:kind==='rake'?lionRake.duration:.35,next:.055,swipes:0};
   return;
  }

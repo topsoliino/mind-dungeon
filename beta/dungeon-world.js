@@ -60,6 +60,10 @@ const FURNITURE={
 };
 const furniture=[];
 let solidTiles=null;
+const stoneProps=new Set(['sarcophagus','crystal','statue','grave','jungle-shrine','rubble','well']);
+const woodProps=new Set(['table','chair','bookcase','cabinet','barrel','lectern','tree','pine','birch','roots',
+ 'provisions','alchemy','banquet','market','round-table','banquet-long','fence','fence-end','weapon-rack',
+ 'armor-rack','shelf','display','dresser','bench','basket','straw-bed']);
 const reducedDepth=new Set(['cabinet','bookcase','shelf','dresser','display','weapon-rack','armor-rack','statue']);
 function furnitureBlocked(x,y,rx=12,ry=rx){
  const candidates=solidTiles&&rx<=40&&ry<=40?solidTiles.get(Math.floor(y/TILE)*W+Math.floor(x/TILE))??[]:furniture;
@@ -68,6 +72,19 @@ function furnitureBlocked(x,y,rx=12,ry=rx){
   const inset=reducedDepth.has(p.type)?Math.min(7,p.h*.24):0;
   return Math.abs(x-p.x)<p.w/2+rx&&Math.abs(y-p.y-inset)<p.h/2-inset+ry;
  });
+}
+function weaponImpact(x,y,angle,reach){
+ const dx=Math.cos(angle),dy=Math.sin(angle);
+ for(let step=12;step<=reach;step+=6){
+  const px=x+step*dx,py=y+step*dy;
+  if(wall(px,py)||gateBlocked(px,py))return {x:px,y:py,cue:'hit_stone'};
+  if(furnitureBlocked(px,py,2)){
+   const prop=furniture.find(p=>p.solid&&Math.abs(px-p.x)<p.w/2+2&&Math.abs(py-p.y)<p.h/2+2);
+   const cue=stoneProps.has(prop?.type)?'hit_stone':woodProps.has(prop?.type)?'hit_wood':null;
+   return cue?{x:px,y:py,cue}:null;
+  }
+ }
+ return null;
 }
 function footWall(x,y){
  const tx=Math.floor(x/TILE),ty=Math.floor(y/TILE);
@@ -344,7 +361,7 @@ return {
  paths,H,W,annexByRegion,annexPassages,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,
- regionAt,gateLineBlocked,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,
+ regionAt,gateLineBlocked,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint
 };

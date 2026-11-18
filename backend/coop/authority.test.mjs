@@ -263,3 +263,20 @@ test('a saved party resumes after server replacement and reunites without reroll
  await wait(()=>returning.latest?.floor===2);
  assert.deepEqual(returning.latest.you.slice(0,2),alone);
 });
+
+test('temple trap audio follows the plate and projectile launch separately',()=>{
+ const player=makePlayer(1,null,defaultPack);
+ player.online=true;
+ const seed=193;
+ const sim=new Simulation(seed,[player],{},run.templeDepth(seed));
+ const plate=sim.floor.pressurePlates[0];
+ assert.ok(plate);
+ Object.assign(player,{x:plate.x,y:plate.y});
+ sim.ai.moveFrom(.03,player,0,960,640);
+ assert.deepEqual(sim.events.filter(e=>e.kind==='sound').map(e=>e.cue),['temple_plate_press']);
+ sim.ai.moveFrom(.27,player,.27,960,640);
+ const launch=sim.events.find(e=>e.cue==='temple_trap_release');
+ assert.ok(launch);
+ assert.equal(launch.x,Math.round(plate.origin.x*10)/10);
+ assert.equal(launch.y,Math.round(plate.origin.y*10)/10);
+});
