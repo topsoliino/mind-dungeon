@@ -49,7 +49,8 @@ function updateEnemy(e,dt){
   e.batMove=null;e.lionMove=null;e.called=0;
   return;
  }
- if(floor.layerAt(e.x,e.y)!==floor.layerAt(player.x,player.y)){
+ if(floor.layerAt(e.x,e.y)!==floor.layerAt(player.x,player.y)&&
+    !(floor.stairConnected(e,player)&&!gateLineBlocked(e.x,e.y,player.x,player.y))){
   if(e.veilPhase)updateOrc(e,dt,false);
   else{e.phase+=dt;e.aggro=Math.max(0,(e.aggro||0)-dt);}
   const stairs=floor.stairsFor(e,player);

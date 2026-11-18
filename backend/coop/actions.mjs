@@ -4,7 +4,7 @@ import {run,items,foes,brewing,expedition,pools,item,cup,TILE,gap,maxHP,prepareP
 const fail=message=>{throw new Error(message);};
 const index=(list,i)=>Number.isInteger(i)&&i>=0?list[i]:undefined;
 const heal=(p,n)=>{p.hp=Math.min(maxHP(p),p.hp+n);};
-const personalFields=['inventory','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','questionSeen','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil'];
+const personalFields=['inventory','consumeQueue','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','questionSeen','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil'];
 export function personal(p){
  return {revision:p.revision,character:p.appearance,...Object.fromEntries(personalFields.map(key=>[key,p[key]]))};
 }
@@ -216,8 +216,9 @@ export function actions(sim){
     p.inventory.splice(data.index,1);
     return {item:it,notice:'Alle übrigen Truhen im Lauf sind jetzt Prüftruhen.'};
    }
-   if(p.consume||!['food','potion'].includes(it.kind)||it.kind==='food'&&p.hp>=maxHP(p))fail('Du kannst das gerade nicht verwenden.');
-   p.inventory.splice(data.index,1);p.consume={item:it,start:sim.clock,end:sim.clock+(it.kind==='food'?.69:.82)};
+   if(!['food','potion'].includes(it.kind)||it.kind==='food'&&(!items.food[it.id]||!items.foodNeeded(p,maxHP(p),p.consumeQueue??[],p.mods.food))||
+      it.kind==='potion'&&(p.consume?.item.kind==='potion'||p.consumeQueue?.some(item=>item.kind==='potion')))fail('Du kannst das gerade nicht verwenden.');
+   sim.queueConsumable(p,it);
   }
   preparePlayer(p);p.stamina=Math.min(p.stamina,p.staminaMax);
   return {item:it};
@@ -276,6 +277,11 @@ export function actions(sim){
    case 'answer':result=answer(p,data);break;
    case 'review':result=review(p,data);break;
    case 'equip':case 'unequip':case 'consume':case 'drop':result=inventory(p,kind,data);break;
+   case 'quick-food':{
+    const it=items.chooseFood(p.inventory,items.foodNeeded(p,maxHP(p),p.consumeQueue??[],p.mods.food),p.mods.food);
+    if(!it)fail('Du hast kein Essen dabei.');
+    sim.queueConsumable(p,it);result={item:it};break;
+   }
    case 'level':{
     if(!p.pendingLevels||!stats.includes(data.attribute))fail('Kein freier Attributpunkt verfügbar.');
     p.pendingLevels--;p.attributes[data.attribute]++;if(data.attribute==='vigor')heal(p,3);preparePlayer(p);result={};break;

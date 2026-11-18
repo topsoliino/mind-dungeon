@@ -24,6 +24,37 @@ window.DungeonItems = (() => {
   bread:{name:'Brot',heal:23},
   chicken:{name:'Hühnchen',heal:34}
  };
+ const foodSeconds=1.5,damageDelay=1;
+ const foodPower=(item,multiplier)=>Math.round((food[item.id]?.heal??0)*multiplier);
+ function foodNeeded(actor,max,queue,multiplier){
+  return Math.max(0,max-actor.hp+(actor.damageQueue??[]).reduce((sum,hit)=>sum+hit.amount,0)-
+   queue.reduce((sum,item)=>sum+(item.kind==='food'?foodPower(item,multiplier):0),0));
+ }
+ function chooseFood(inventory,missing,multiplier){
+  const choices=inventory.filter(it=>it.kind==='food'&&Object.hasOwn(food,it.id)).sort((a,b)=>foodPower(a,multiplier)-foodPower(b,multiplier));
+  return choices.find(it=>foodPower(it,multiplier)>=missing)??choices.at(-1);
+ }
+ function eatMeal(actor,max,item,multiplier){
+  const power=foodPower(item,multiplier),healed=Math.min(Math.max(0,max-actor.hp),power);
+  actor.hp+=healed;
+  let spare=power-healed;
+  for(const hit of actor.damageQueue??[]){
+   const saved=Math.min(hit.amount,spare);
+   hit.amount-=saved;spare-=saved;
+   if(spare<=0)break;
+  }
+  return {healed,buffered:power-healed-spare};
+ }
+ function queueDamage(actor,hit){
+  (actor.damageQueue??=[]).push({amount:hit.total,type:hit.type,remaining:damageDelay});
+ }
+ function takeDueDamage(actor,dt){
+  const queue=actor.damageQueue;
+  if(!queue?.length)return [];
+  for(const hit of queue)hit.remaining-=dt;
+  const next=queue.findIndex(hit=>hit.remaining>1e-7);
+  return queue.splice(0,next<0?queue.length:next);
+ }
  const requirements={
   rapier:{dexterity:11},hammer:{strength:12},staff:{intelligence:11},bow:{dexterity:11},
   blade:{faith:11},dagger:{dexterity:11},greatsword:{strength:13,endurance:11}
@@ -72,6 +103,13 @@ window.DungeonItems = (() => {
   return perks;
  }
  const arrowRange=(weapon,armor)=>weapon.projectile==='arrow'?1+(armorPerks(armor).arrowReach??0):1;
+ function meleeHit(weapon,dx,dy,aim,reach,size=1){
+  const forward=dx*Math.cos(aim)+dy*Math.sin(aim);
+  if(weapon.thrust)return forward>0&&forward<reach+(size-1)*10&&
+   Math.abs(dy*Math.cos(aim)-dx*Math.sin(aim))<weapon.thrust+6*size;
+  const distance=Math.hypot(dx,dy);
+  return distance<reach+(size-1)*10&&(!distance||forward>distance*weapon.sweep);
+ }
  const dashCooldown=armor=>1-(armorPerks(armor).dashCooldown??0);
  const healThreshold=.20,healTarget=.40;
  function armorCooldown(actor,key){
@@ -87,14 +125,17 @@ window.DungeonItems = (() => {
   startArmorCooldown(actor,'heal',heal-healBoost);
   return max*healTarget;
  }
- function resolveArmorHit(actor,armor,hp,max,damage,status){
+ function blockArmorHit(actor,armor,status){
   if(!status&&armorCooldown(actor,'block')===0){
    const {block,blockBoost=0}=armorPerks(armor);
    if(block){
     startArmorCooldown(actor,'block',block-blockBoost);
-    return {hp,taken:0,proc:'block'};
+    return true;
    }
   }
+  return false;
+ }
+ function resolveArmorDamage(actor,armor,hp,max,damage){
   const taken=Math.min(hp,damage),damaged=hp-taken;
   const recovered=recoverWithArmor(actor,armor,damaged,max);
   return {hp:recovered,taken,proc:recovered>damaged?'heal':null};
@@ -240,5 +281,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,heightRing,madnessRing,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,dashCooldown,armorCooldown,recoverWithArmor,resolveArmorHit,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodNeeded,chooseFood,eatMeal,queueDamage,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

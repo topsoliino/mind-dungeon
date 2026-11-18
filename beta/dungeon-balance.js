@@ -16,6 +16,7 @@
   blade:{kg:11,reach:100,grades:{faith:'C',dexterity:'E'},elements:{fire:1},rare:{grades:{faith:'B'}},epic:{crit:2},legendary:{grades:{faith:'A',dexterity:'D'}}},
   dagger:{kg:3,reach:67,grades:{dexterity:'D',luck:'E'},elements:{dark:1},status:'poison',rare:{grades:{luck:'D'}},epic:{grades:{dexterity:'C'},statusLevel:2},legendary:{grades:{dexterity:'B'},crit:1,critDamage:1}},
   greatsword:{kg:28,reach:113,grades:{strength:'C',endurance:'E'},rare:{grades:{strength:'B'}},epic:{reserve:5},legendary:{extra:{frost:1},reserve:0}},
+  spear:{kg:9,reach:128,thrust:13,grades:{strength:'D',dexterity:'D'},rare:{grades:{dexterity:'C'}},legendary:{crit:3}},
   'farm-scythe':{kg:10,reach:111,grades:{dexterity:'D',strength:'E'},status:'bleed',sweep:.05},
   'dark-scythe':{kg:16,reach:121,grades:{dexterity:'D',faith:'D'},primary:'dark',elements:{physical:1},sweep:-.05},
   'great-scythe':{kg:30,reach:130,grades:{strength:'C'},sweep:-.38,impact:20}
@@ -110,7 +111,7 @@
   const speed=Number((.16+kg*.014+rangeCost*.0018).toFixed(2));
   const stamina=Math.round(5+.75*kg+.14*rangeCost);
   return {id,rank,kg,reach,projectile,speed,stamina,base,grades,split,stars:distribution,extraStars:{...extra},status,statusLevel,crit:crit/100,critFactor:2+critDamage/10,
-   sweep:spec.sweep??.25,impact:Math.round(kg*1.35+4)+(spec.impact??0),malus:rank==='mythic',cost:{...summarize(),base},budget:budgets[rank]};
+   sweep:spec.sweep??.25,thrust:spec.thrust,impact:Math.round(kg*1.35+4)+(spec.impact??0),malus:rank==='mythic',cost:{...summarize(),base},budget:budgets[rank]};
  }
  function buildArmor(set,slot,rank){
   const {kg:totalKg,affinities,effects}=armorSets[set],{share,maxKg}=armorSlots[slot];

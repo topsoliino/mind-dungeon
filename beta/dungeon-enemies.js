@@ -80,17 +80,18 @@ window.DungeonEnemies = (() => {
   if(type===SKELETON||type===ARCHER)return 'hit_bone';
   if(type===0||type===PRIEST)return 'hit_metal';
   if(type===4)return 'hit_stone';
-  return ['blade','dagger','rapier','greatsword'].includes(weapon)||weapon?.endsWith('-scythe')?'hit_cut':'hit_body';
+  return ['blade','dagger','rapier','greatsword','spear'].includes(weapon)||weapon?.endsWith('-scythe')?'hit_cut':'hit_body';
  }
  const entryGrace=.4,chaseSeconds=7;
  function encounterReady(enemy,hero,floor,grace){
   const region=floor.regionAt(hero.x,hero.y);
   if(region<0||floor.inRest(hero.x,hero.y))return false;
+  const distance=Math.hypot(hero.x-enemy.x,hero.y-enemy.y);
+  if(distance<420&&floor.stairConnected(enemy,hero)&&!floor.gateLineBlocked(enemy.x,enemy.y,hero.x,hero.y))return true;
   if(floor.layerAt(enemy.x,enemy.y)!==floor.layerAt(hero.x,hero.y)){
    const stairs=floor.stairsFor(enemy,hero);
    return Boolean(enemy.aggro>0&&stairs&&Math.hypot(enemy.x-stairs.x,enemy.y-stairs.y)<480);
   }
-  const distance=Math.hypot(hero.x-enemy.x,hero.y-enemy.y);
   if(enemy.aggro>0&&distance<960)return true;
   return grace<=0&&(region===floor.regionAt(enemy.x,enemy.y)||
    enemy.alerted===true&&distance<550&&!floor.gateLineBlocked(enemy.x,enemy.y,hero.x,hero.y));
