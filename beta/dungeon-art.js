@@ -147,37 +147,39 @@ window.DungeonArt = (() => {
       r(2,y+2,split-4,2,'#767984');r(split+2,y+2,59-split,2,'#717683');
       for(let i=0;i<5;i++)r(3+rng(58),y+5+rng(7),1+rng(4),1,'#7a7d866e');
      }
-    }else if(type.startsWith('sewer-')){
-     r(0,0,64,64,type==='sewer-pool'?'#244b4b':'#1c464d');
-     for(let i=0;i<65;i++)r(rng(64),rng(64),3+rng(11),1+rng(3),['#254b46','#32615e','#38524b','#38716a'][rng(4)]);
-     for(let i=0;i<7;i++){const x=rng(58),y=rng(58);r(x,y,3,2,'#527f71');r(x+1,y+2,2,1,'#305351');}
-    }else if(type==='abyss'||type==='river'||type==='clear-river'||type==='waterfall'){
-     const clear=type==='clear-river'||type==='waterfall',river=type!=='abyss';
-     r(0,0,64,64,clear?'#235557':river?'#182e37':'#11151e');
-     for(let i=0;i<42;i++){
-      const x=rng(64),y=rng(64),w=2+rng(15);
-      const palette=clear?['#2e7776','#448b83','#69a79a']:river?['#223d48','#2e4e57','#42737c']:['#1b2230','#262938','#343344'];
-      r(x,y,w,1+rng(3),palette[rng(3)]);
+    }else if(type==='abyss'){
+     r(0,0,64,64,'#11151e');
+     for(let i=0;i<42;i++)r(rng(64),rng(64),2+rng(15),1+rng(3),['#1b2230','#262938','#343344'][rng(3)]);
+    }else if(type.startsWith('sewer-')||type==='river'||type==='clear-river'||type==='waterfall'){
+     const sewer=type.startsWith('sewer-'),temple=type==='clear-river'||type==='waterfall';
+     const palette=sewer?['#254b46','#32615e','#38524b','#38716a']:
+      temple?['#203e43','#264e51','#2b5050','#386460']:['#1a333e','#24424c','#294952','#335b63'];
+     r(0,0,64,64,sewer?(type==='sewer-pool'?'#244b4b':'#1c464d'):temple?'#1c393e':'#152b37');
+     for(let i=0;i<65;i++)r(rng(64),rng(64),3+rng(11),1+rng(3),palette[rng(4)]);
+     for(let i=0;i<7;i++){
+      const x=rng(58),y=rng(58);
+      r(x,y,3,2,sewer?'#527f71':'#416966');r(x+1,y+2,2,1,palette[1]);
      }
      if(type==='waterfall'){r(0,0,64,7,'#606e59');r(0,7,64,3,'#829075');}
-     if(river)for(let i=0;i<8;i++){
-      const x=rng(57),y=rng(61);
-      r(x,y,5+rng(10),1,'#83a8a697');r(x+4,y+1,3,1,'#4a7a86');
-     }
     }else{
      if(type==='bridge-y'){const ctx=c.getContext('2d');ctx.translate(64,0);ctx.rotate(Math.PI/2);}
-     r(0,0,64,64,'#282324');
-     for(let y=0;y<64;y+=12){
-      r(0,y+1,64,10,y%24?'#735339':'#674934');
-      r(0,y+2,64,2,'#a27248');r(0,y+9,64,2,'#4e372b');
-      for(let i=0;i<4;i++){r(rng(59),y+4+rng(4),4+rng(8),1,'#906347');}
+     r(0,0,64,64,'#252021');
+     const plank=['#775039','#825a42','#8c6146','#6d4b39','#91684b'];
+     const cuts=[0,11+rng(4),24+rng(3),36+rng(5),51+rng(3),64];
+     for(let i=0;i<cuts.length-1;i++){
+      const x=cuts[i],w=cuts[i+1]-x-1;
+      r(x,0,w,64,plank[rng(plank.length)]);
+      r(x,0,1,64,'#be9264');r(x+w-2,0,2,64,'#52392c');
+      for(let grain=0;grain<8;grain++)r(x+2+rng(w-4),rng(62),1,3+rng(25),grain%2?'#452d2560':'#d4a17652');
+      const knot=x+2+rng(w-4),y=12+rng(41);
+      r(knot,y,2,6,'#523428');r(knot-1,y+2,1,3,'#c08e60');
+      for(const end of [5,56]){r(x+2,end,w-4,2,'#463327');r(x+2,end-1,2,1,'#c39364');}
      }
-     for(const y of [5,57]){r(0,y,64,3,'#b18957');for(const x of [8,30,53])r(x,y,2,2,'#2e2622');}
     }
     terrainCache.set(key,c);return c;
   }
   function world(map,zoneAt,lights,seed,terrain) {
-    const rnd=random(seed),chunkSize=16,chunks=[];
+    const rnd=random(seed),chunkSize=16,chunks=[],fx=window.DungeonStrataFx;
     const tiles=map.map((row,y)=>row.map((value,x)=>{
       const v=rnd(12),surfaceType=terrain?.[y]?.[x];
       if(value===0||surfaceType==='partition')return {v,open:value===0,surfaceType};
@@ -197,7 +199,12 @@ window.DungeonArt = (() => {
         const zone=zoneAt(x,y);
         const image=surfaceType&&surfaceType!=='partition'?terrainTile(surfaceType,v):
          open||surfaceType==='partition'?floor(zone,v):wall(zone,mask,v%4);
-        g.drawImage(image,x*SIZE,y*SIZE);
+        const px=x*SIZE,py=y*SIZE;
+        if(fx?.isSewer(surfaceType)){
+         g.drawImage(floor(zone,v),px,py);
+         g.save();fx.shorePath(g,px,py,SIZE,fx.shoreline(terrain,x,y));g.clip();
+         g.drawImage(image,px,py);g.restore();
+        }else g.drawImage(image,px,py);
       }
       g.beginPath();
       for(const p of cells)if(p.open)g.rect(p.x*SIZE,p.y*SIZE,SIZE,SIZE);

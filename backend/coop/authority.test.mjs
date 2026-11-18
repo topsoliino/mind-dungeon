@@ -32,6 +32,83 @@ function arena(sim,p){
 }
 const choice=q=>q.type==='free-text'?q.answers[0]:q.correctIndices??q.correctIndex;
 
+test('nearby gates and wooden doors are visible from the approach while their passage blocks sight',()=>{
+ const {sim}=game();
+ const g=sim.floor.gates[0];
+ const gate={x:(g.x+.5)*TILE,y:(g.y+.5)*TILE,vertical:g.vertical,span:4.2*TILE,face:.54*TILE};
+ const door={...sim.floor.doors[0],face:12};
+ for(const site of [gate,door]){
+  const point=distance=>({x:site.x+(site.vertical?distance:0),y:site.y+(site.vertical?0:distance)});
+  const from=point(-70),behind=point(70);
+  assert.ok(sim.floor.barrierVisible(from,site));
+  assert.ok(sim.floor.barrierVisible(behind,site));
+  assert.equal(sim.floor.barrierVisible(point(-290),site),false);
+  assert.ok(sim.floor.gateLineBlocked(from.x,from.y,behind.x,behind.y));
+ }
+});
+
+test('water beside both bridges drops the hero while sewer water remains walkable',()=>{
+ const {host,sim}=game(193,undefined,run.templeDepth(193));
+ sim.enemies=[];
+ for(const type of ['river','clear-river']){
+  const {terrain}=sim.floor;
+  const y=terrain.findIndex((row,i)=>row.some((cell,x)=>cell===type&&terrain[i+1]?.[x]==='bridge-x'));
+  const x=terrain[y].findIndex((cell,i)=>cell===type&&terrain[y+1][i]==='bridge-x');
+  const start={x:(x+.5)*TILE,y:(y+1.5)*TILE};
+  assert.ok(sim.floor.abyssAt(start.x,start.y-TILE));
+  Object.assign(host,start,{inv:0,hp:maxHP(host)});
+  host.equipment.rings[0]='height';
+  assert.ok(sim.move(host,0,-TILE));
+  assert.equal(sim.floor.abyssAt(host.x,host.y),false);
+  host.equipment.rings[0]=null;
+  assert.equal(sim.move(host,0,-TILE),false);
+  assert.ok(sim.events.some(e=>e.kind==='death'&&e.cause==='fall'));
+ }
+ const sewer=game(193,undefined,run.sewerDepth(193)).sim.floor;
+ const y=sewer.terrain.findIndex(row=>row.includes('sewer-pool'));
+ const x=sewer.terrain[y].indexOf('sewer-pool');
+ assert.equal(sewer.abyssAt((x+.5)*TILE,(y+.5)*TILE),false);
+});
+
+test('new seeds vary the deck and room topics while due cards return after their review interval',()=>{
+ const qs=defaultPack.questions;
+ const progress={questionSeen:{},questionReview:{},questionCount:0};
+ const order=seed=>run.orderQuestions(qs,progress,seed).map(q=>q.id);
+ assert.deepEqual(order(193),order(193));
+ assert.notDeepEqual(order(193),order(311));
+ const topics=seed=>run.roomTopics(defaultPack,1,seed).flatMap(room=>room.map(g=>g.activeSubcategory.id));
+ assert.notDeepEqual(topics(193),topics(311));
+ const [red,yellow,green,local]=qs;
+ progress.questionReview={[red.id]:{color:'red',due:6},[yellow.id]:{color:'yellow',due:11},[green.id]:{color:'green',due:0}};
+ progress.questionCount=5;
+ assert.equal(run.nextQuestion(qs,[local],[],progress,193).id,local.id);
+ progress.questionCount=6;
+ assert.equal(run.nextQuestion(qs,[local],[],progress,193).id,red.id);
+ progress.questionCount=11;
+ assert.equal(run.nextQuestion(qs,[local],[red.id],progress,193).id,yellow.id);
+ assert.ok(!order(193).includes(green.id));
+});
+
+test('legacy combination cards become independently selectable and keep their grading on reconnect',()=>{
+ const q={id:'combination',type:'single-choice',topic:'Test',prompt:'Welche Aussagen stimmen? (1) Aussage A. (2) Aussage B. (3) Aussage C. (4) Aussage D. Wähle die vollständige Kombination.',
+  choices:['1 und 2','2 und 4','Nur 2','Alle vier'],correctIndex:1,explanation:'Richtig sind 2 und 4. Erklärung.'};
+ const pack=run.validatePack({questions:[q]});
+ const source=pack.questions[0];
+ assert.equal(source.type,'multiple-choice');
+ assert.equal(source.prompt,'Welche Aussagen stimmen?');
+ assert.equal(source.explanation,'Erklärung.');
+ assert.deepEqual([...source.correctIndices],[1,3]);
+ const {host,sim}=game();
+ host.pack=pack;Object.assign(host,sim.floor.shrines[0]);
+ const quiz=sim.actions.dispatch(host,'quiz',{reason:'shrine',index:0});
+ assert.ok(new Set(Array.from({length:8},(_,seed)=>run.shuffleOptions(source,seed).join())).size>1);
+ const restored=Simulation.loadPlayer(JSON.parse(JSON.stringify(Simulation.savePlayer(host))),pack);
+ const selected=Array.from(quiz.question.choices).flatMap((option,i)=>['Aussage B.','Aussage D.'].includes(option)?[i]:[]);
+ assert.deepEqual([...restored.quiz.q.correctIndices],selected);
+ assert.deepEqual([...restored.quiz.q.choices],[...quiz.question.choices]);
+ assert.equal(sim.actions.dispatch(restored,'answer',{quiz:quiz.quiz,choice:selected}).ok,true);
+});
+
 test('server enforces combat inputs and line of sight, grants paired drops and prevents double pickup',()=>{
  const {host,guest,sim}=game();
  const target=arena(sim,host);

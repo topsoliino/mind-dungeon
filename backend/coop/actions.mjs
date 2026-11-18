@@ -4,7 +4,7 @@ import {run,items,foes,brewing,expedition,pools,item,cup,TILE,gap,maxHP,prepareP
 const fail=message=>{throw new Error(message);};
 const index=(list,i)=>Number.isInteger(i)&&i>=0?list[i]:undefined;
 const heal=(p,n)=>{p.hp=Math.min(maxHP(p),p.hp+n);};
-const personalFields=['inventory','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil'];
+const personalFields=['inventory','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','questionSeen','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil'];
 export function personal(p){
  return {revision:p.revision,character:p.appearance,...Object.fromEntries(personalFields.map(key=>[key,p[key]]))};
 }
@@ -61,23 +61,25 @@ export function actions(sim){
   }else if(reason==='trial'){
    if(!items.isTrial(p,i,floor.trialIndex)||p.opened.includes(i)||p.trials[i]&&p.trials[i]!=='started'||p.trial&&p.trial.index!==i)fail('Diese Prüftruhe wurde bereits geöffnet.');
    live(p,index(floor.chests,i),104);
-   p.trial??={index:i,deadline:sim.clock+40,correct:0,target:Math.min(3,options.length),used:[],passed:false};
-   p.trials[i]='started';exclude=p.trial.used;
+   exclude=p.trial?.used??[];
   }else if(reason==='study'){
    options=options.filter(q=>q.id===i&&q.image);
   }else fail('Unbekanntes Quiz.');
   if(!options.length)fail('In diesem Fragenpaket gibt es keine passende Frage.');
-  const due=q=>(p.questionReview[q.id]?.due??-1)<=p.questionCount;
-  const topical=(run.roomTopics(p.pack,floorNumber())[zone]??[]).flatMap(group=>group.questions);
-  const local=(reason==='gate'||reason==='shrine')&&topical.length?topical:options;
-  let eligible=local.filter(q=>!exclude.includes(q.id)&&due(q));
-  if(!eligible.length&&reason!=='shrine')eligible=options.filter(q=>!exclude.includes(q.id));
-  if(!eligible.length&&(reason==='gate'||reason==='shrine'&&local.every(q=>exclude.includes(q.id))))eligible=local.filter(due);
-  if(!eligible.length&&reason==='gate')eligible=options;
-  if(!eligible.length)fail('Es sind gerade keine weiteren Fragen verfügbar.');
-  eligible.sort((a,b)=>(p.solved[a.id]??0)-(p.solved[b.id]??0));
-  const q=eligible[Math.floor(sim.random()*Math.min(3,eligible.length))];
-  p.quiz={id:randomUUID(),q,reason,i,answered:false};p.chargeStart=null;p.dash=0;
+  const topical=reason==='gate'||reason==='shrine'?(run.roomTopics(p.pack,floorNumber(),sim.seed)[zone]??[]).flatMap(group=>group.questions):[];
+  const trialDeck=reason==='trial'?run.orderQuestions(options.filter(q=>!exclude.includes(q.id)),p,sim.seed):null;
+  const source=reason==='study'?options[0]:trialDeck?trialDeck[0]:run.nextQuestion(options,topical,exclude,p,sim.seed);
+  if(!source&&reason==='gate'){
+   sim.state.gates[i]=true;
+   return {notice:'Wissenstor geöffnet · keine fällige unbenutzte Lernkarte'};
+  }
+  if(!source)fail('Es sind gerade keine weiteren Fragen verfügbar.');
+  if(reason==='trial'&&!p.trial){
+   p.trial={index:i,deadline:sim.clock+40,correct:0,target:Math.min(3,trialDeck.length),used:[],passed:false};
+   p.trials[i]='started';
+  }
+  const order=run.shuffleOptions(source),q=run.presentQuestion(source,order);
+  p.quiz={id:randomUUID(),q,order,reason,i,answered:false};p.chargeStart=null;p.dash=0;
   return publicQuiz(p);
  }
  function publicQuiz(p){
@@ -89,6 +91,7 @@ export function actions(sim){
  }
  function xp(p,q,ok){
   p.questionCount++;
+  (p.questionSeen??={})[q.id]=p.questionCount;
   if(ok){
    p.solved[q.id]=(p.solved[q.id]??0)+1;p.xp+=p.solved[q.id]>1?5:15+(q.difficulty||1)*5;
    while(p.xp>=xpRequired(p.level)){p.xp-=xpRequired(p.level);p.level++;p.pendingLevels++;heal(p,22);}

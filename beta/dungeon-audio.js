@@ -237,7 +237,7 @@
    return false;
   }
   const { scene, gain = 1, pan = 0, priority = 1, cooldown = .045,
-          group = id, rate = 1, variation = .033, delay = 0 } = options;
+          group = id, rate = 1, variation = .033, delay = 0, lowpass = 0 } = options;
   if (gain <= .015) return false;
   const now = context.currentTime;
   if (now - (lastStarts.get(group) ?? -Infinity) < cooldown) return false;
@@ -265,7 +265,13 @@
   source.playbackRate.value = speed;
   const fader = context.createGain();
   fader.gain.value = gain * (.96 + Math.random() * .08);
-  source.connect(fader);
+  const filter = lowpass ? context.createBiquadFilter() : null;
+  if (filter) {
+   filter.type = 'lowpass';
+   filter.frequency.value = lowpass;
+   filter.Q.value = .4;
+   source.connect(filter).connect(fader);
+  } else source.connect(fader);
   const bus = scene === 'world' ? world : master;
   const panner = pan && context.createStereoPanner ? context.createStereoPanner() : null;
   if (panner) {
@@ -278,6 +284,7 @@
   source.onended = () => {
    voices.delete(voice);
    source.disconnect();
+   filter?.disconnect();
    fader.disconnect();
    panner?.disconnect();
   };

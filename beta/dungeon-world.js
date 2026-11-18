@@ -69,7 +69,11 @@ function resolveAccess(site,correct){
  if(save.accessByDepth)(save.accessByDepth[save.floor+'-'+save.dungeonSeed]??={})[site.seal]=state;
  return state;
 }
-const abyssAt=(x,y)=>save.layoutRevision>=9&&terrain[Math.floor(y/TILE)]?.[Math.floor(x/TILE)]==='abyss';
+const dropTerrain=new Set(['abyss','river','clear-river','waterfall']);
+function abyssAt(x,y){
+ const row=Math.floor(y/TILE),col=Math.floor(x/TILE);
+ return map[row]?.[col]===1&&dropTerrain.has(terrain[row]?.[col]);
+}
 const hailAt=(x,y)=>Boolean(outsideAt(x,y)?.hail);
 function doorAt(x,y,radius=0){
  return doors.find(d=>doorHP(d)>0&&(d.vertical?Math.abs(x-d.x)<9+radius&&Math.abs(y-d.y)<d.span/2:
@@ -109,6 +113,17 @@ function pulseReaches(pulse,actor){
   !gateLineBlocked(pulse.x,pulse.y,actor.x,actor.y);
 }
 function gateLineBlocked(x1,y1,x2,y2){const n=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/12));for(let i=0;i<=n;i++){const t=i/n,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(gateBlocked(x,y)||wall(x,y)||doorAt(x,y))return true}return false}
+function barrierVisible(actor,barrier){
+ const {x,y,vertical,span,face}=barrier;
+ if(layerAt(actor.x,actor.y)!==layerAt(x,y))return false;
+ const normal=vertical?actor.x-x:actor.y-y;
+ const tangent=vertical?actor.y-y:actor.x-x;
+ const edge=span/2-8,nearest=Math.max(-edge,Math.min(edge,tangent));
+ if(Math.hypot(normal,tangent-nearest)>232)return false;
+ const front=Math.sign(normal||1)*Math.min(Math.abs(normal),face);
+ return [nearest,0,-edge/2,edge/2].some(offset=>!gateLineBlocked(actor.x,actor.y,
+  x+(vertical?front:offset),y+(vertical?offset:front)));
+}
 function gateBlocked(x,y){return gates.some(g=>!save.gates[g.id]&&(g.vertical?Math.abs(x/TILE-(g.x+.5))<.52&&Math.abs(y/TILE-(g.y+.5))<2.1:Math.abs(y/TILE-(g.y+.5))<.52&&Math.abs(x/TILE-(g.x+.5))<2.1))}
 function wall(x,y){const i=Math.floor(x/TILE),j=Math.floor(y/TILE);return i<0||j<0||i>=W||j>=H||map[j][i]===1}
 
@@ -489,7 +504,7 @@ return {
  paths,H,W,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,
- regionAt,layerAt,layerForRegion,links,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
+ regionAt,layerAt,layerForRegion,links,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition
 };

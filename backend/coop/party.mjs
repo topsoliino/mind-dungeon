@@ -51,10 +51,13 @@ export function restoreParty(code,saved){
  const {seed,mode}=meta;
  const room={code,seed,mode,members:new Map(),floors:new Map(),seen:Date.now(),revision,dirty:false};
  const bySeat=new Map();
+ let hostSource;
  meta.members.forEach(({id,seat},i)=>{
-  const pack=mode==='same'&&i===1?bySeat.get(1).pack:meta.decks[i]??defaultPack;
+  const source=mode==='same'&&i===1?hostSource:meta.decks[i]??defaultPack;
+  if(i===0)hostSource=source;
+  const pack=source===defaultPack?source:run.validatePack(source);
   const {player:stored,floor,awayAt}=state.members[i];
-  const player=Simulation.loadPlayer(stored,pack);
+  const player=Simulation.loadPlayer(stored,pack,source);
   const member={id,seat,pack,floor,awayAt,player};
   room.members.set(id,member);bySeat.set(seat,member);
  });

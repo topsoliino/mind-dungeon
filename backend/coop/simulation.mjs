@@ -40,8 +40,15 @@ export class Simulation{
   const {pack,input,online,mods,load,weapon,resistance,chargeStart,poison,quiz,...state}=p;
   return {...state,poison:savePoison(poison),quiz:quiz?{...quiz,q:quiz.q.id}:null};
  }
- static loadPlayer(state,pack){
-  const quiz=state.quiz&&{...state.quiz,q:pack.questions.find(q=>q.id===state.quiz.q)};
+ static loadPlayer(state,pack,previousPack=pack){
+  const stored=state.quiz;
+  let quiz=null;
+  if(stored){
+   const q=pack.questions.find(q=>q.id===stored.q);
+   const previous=previousPack.questions.find(q=>q.id===stored.q);
+   const legacyQuestion=stored.legacyQuestion??(!stored.order&&q?.type!==previous?.type?previous:undefined);
+   quiz={...stored,legacyQuestion,q:legacyQuestion??run.presentQuestion(q,stored.order)};
+  }
   const p={...state,pack,quiz:quiz?.q?quiz:null,input:idleInput(),online:false,chargeStart:null};
   preparePlayer(p);
   return p;

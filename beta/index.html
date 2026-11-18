@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=21"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=1"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=2"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-strata.js?v=2"></script><script src="beta/dungeon-strata-fx.js?v=1"></script><script src="beta/dungeon-run.js?v=19"></script><script src="beta/dungeon-world.js?v=5"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=18"></script><script src="beta/dungeon-items.js?v=20"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=20"></script><script src="beta/dungeon-enemy-sim.js?v=7"></script><script src="beta/dungeon-effects-art.js?v=19"></script><script src="beta/dungeon-art.js?v=22"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=6"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=21"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=1"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=2"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-strata.js?v=2"></script><script src="beta/dungeon-strata-fx.js?v=2"></script><script src="beta/dungeon-run.js?v=20"></script><script src="beta/dungeon-world.js?v=6"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=18"></script><script src="beta/dungeon-items.js?v=20"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=20"></script><script src="beta/dungeon-enemy-sim.js?v=7"></script><script src="beta/dungeon-effects-art.js?v=19"></script><script src="beta/dungeon-art.js?v=23"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=7"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -130,7 +130,7 @@ let brewBonus=brewing.bonuses(save.activeBrew);
 let questions=[],lessonRooms=[];
 function usePack(pack){
  questions=pack?.questions||[];
- lessonRooms=run.roomTopics(pack,save.floor);
+ lessonRooms=run.roomTopics(pack,save.floor,save.templeRunSeed??save.dungeonSeed);
 }
 function roomTitle(index){
  return lessonRooms[index]?.map(group=>group.activeSubcategory.title).join(' / ')||'Kammer '+(index+1);
@@ -830,16 +830,16 @@ function useTrialCharm(item){
 }
 const isTrialChest=index=>items.isTrial(save,index,trialIndex);
 function offerTrial(index){
- if(save.trials[index]||!questions.length){tell('Keine Prüfung verfügbar');return;}
- const target=Math.min(3,questions.length);
+ const target=Math.min(3,questionDeck(questions).length);
+ if(save.trials[index]||!target){tell('Keine Prüfung verfügbar');return;}
  soundUI('trial_open');
  show('<h2>Versiegelte Prüftruhe</h2><p>Beantworte '+target+' Fragen in '+trialSeconds+' Sekunden richtig. Bei einem Fehlschlag löst die Truhe einen Hinterhalt aus.</p><div class="actions"><button class="primary" id="beginTrial">Prüfung starten</button><button id="leaveTrial">Später</button></div>','trial-offer');
  mdButton('leaveTrial',close);
  mdButton('beginTrial',()=>beginTrial(index,target));
 }
 function beginTrial(index,target){
- if(trial||save.trials[index]||!questions.length)return;
- trial={index,target,correct:0,deadline:Date.now()+trialSeconds*1000,queue:run.shuffle([...questions],Math.random),timer:null,lastAnswer:null};
+ if(trial||save.trials[index])return;
+ trial={index,target,correct:0,deadline:Date.now()+trialSeconds*1000,used:[],timer:null,lastAnswer:null};
  soundUI('trial_start');
  // A reload or closed tab cannot turn the wager back into an unused chest.
  save.trials[index]='started';persist();
@@ -855,8 +855,10 @@ function beginTrial(index,target){
 }
 function nextTrialQuestion(){
  if(!trial)return;
- if(Date.now()>=trial.deadline||!trial.queue.length){finishTrial(false);return;}
- quiz(trial.index,'trial',null,trial.queue.shift());
+ const [q]=questionDeck(questions,trial.used);
+ if(Date.now()>=trial.deadline||!q){finishTrial(false);return;}
+ trial.used.push(q.id);
+ quiz(trial.index,'trial',null,q);
 }
 function makeAmbush(index){
  const chest=chests[index],positions=[];
@@ -1045,26 +1047,14 @@ function tileZone(x,y){
  return zone;
 }
 function area(){return tileZone(Math.floor(player.x/TILE),Math.floor(player.y/TILE));}
+function questionDeck(pool,excluded=[]){
+ return run.orderQuestions(pool.filter(q=>!excluded.includes(q.id)),save,save.templeRunSeed??save.dungeonSeed);
+}
 function selectQuestion(zone,gateId,altarIndex=null){
  const altarSeen=altarIndex==null?[]:save.altarQuestions[altarIndex]||[];
  const exclusions=gateId?save.gateQuestions[gateId]||[]:altarSeen;
- const due=q=>(save.questionReview[q.id]?.due??-1)<=save.questionCount;
  const local=(lessonRooms[zone]||[]).flatMap(group=>group.questions);
- const candidates=local.length?local:questions;
- const fresh=q=>!exclusions.includes(q.id);
- let pool=candidates.filter(q=>fresh(q)&&due(q));
- if(gateId&&!pool.length)pool=questions.filter(q=>fresh(q)&&due(q));
- if(gateId&&!pool.length)pool=questions.filter(fresh);
- if(gateId&&!pool.length)pool=questions.slice();
- // Very small imported rooms can still use their altar twice.
- if(!pool.length&&altarIndex!=null&&candidates.length<=altarSeen.length)
-  pool=candidates.filter(due);
- if(!pool.length)return null;
- const picture=altarIndex!=null&&pool.find(q=>q.image&&!save.solved[q.id]&&!save.questionReview[q.id]);
- if(picture)return picture;
- pool.sort((a,b)=>(save.solved[a.id]||0)-(save.solved[b.id]||0)
-     ||(save.questionReview[a.id]?.due??-1)-(save.questionReview[b.id]?.due??-1));
- return pool[Math.floor(Math.random()*Math.min(3,pool.length))];
+ return run.nextQuestion(questions,local,exclusions,save,save.templeRunSeed??save.dungeonSeed)??null;
 }
 const sealTarget=()=>Math.min(2,questions.length);
 let pending=null,brewQuestion=null,queuedAltar=null;
@@ -1114,11 +1104,10 @@ function addIngredient(effect){
  if(authorityMode){startAuthorityQuiz('brew',effect.id);return;}
  const draft=brewing.entries(save.brewEffects);
  if(draft.length>=3||draft.some(entry=>entry.id===effect.id))return;
- const eligible=effect.questions.filter(q=>!save.questionReview[q.id]||save.questionReview[q.id].due<=save.questionCount);
- const pool=eligible.length?eligible:effect.questions;
- if(!pool.length)return;
+ const [question]=questionDeck(effect.questions);
+ if(!question){tell('Für diese Zutat ist gerade keine Lernkarte fällig.');return;}
  brewQuestion={effect};
- quiz(area(),'brew',null,pool[Math.floor(Math.random()*pool.length)]);
+ quiz(area(),'brew',null,question);
 }
 function finishIngredient(ok){
  if(!brewQuestion)return;
@@ -1192,7 +1181,16 @@ function updateBrew(dt){
 function gateQuiz(g){
  if(save.gates[g.id])return;
  if(!questions.length){soundUI('ui_error');tell('Fragenpaket ist nicht verfügbar');return;}
- quiz(g.from,'gate',g.id);
+ const question=selectQuestion(g.from,g.id);
+ if(question){quiz(g.from,'gate',g.id,question);return;}
+ close();openKnowledgeGate(g);persist();tell('Wissenstor geöffnet · keine Lernkarte fällig');
+}
+function openKnowledgeGate(g){
+ const point={x:(g.x+.5)*TILE,y:(g.y+.5)*TILE};
+ soundWorld('gate_stone_motion',point,{gain:.68,priority:2});
+ save.gates[g.id]=true;
+ if(coopRoom&&!coopHost)coopRelay?.send('gate',{id:g.id});
+ burst(point.x,point.y,g.color,45);
 }
 function questionFigure(q){
  if(!q.image)return '';
@@ -1209,7 +1207,8 @@ function cardOrnament(q){return '<span class="study-ornament" aria-hidden="true"
 function quiz(z,reason,gateId=null,question=null){
  if(authorityMode&&reason==='study'){startAuthorityQuiz('study',question?.id);return;}
  if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;
- const q=question||selectQuestion(z,gateId,reason==='shrine'?z:null);
+ const source=question||selectQuestion(z,gateId,reason==='shrine'?z:null);
+ const q=reason==='server'?source:source&&run.presentQuestion(source,run.shuffleOptions(source));
  if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return;}
  pending={q,z,reason,gateId,coopKey:coopRoom?coopAPI.token():null};
  if(reason==='shrine'||reason==='temple'){
@@ -1258,6 +1257,7 @@ function correctAnswer(q,choice){
 }
 function recordAnswer(q,ok){
  save.questionCount++;
+ (save.questionSeen??={})[q.id]=save.questionCount;
  if(ok){
   save.solved[q.id]=(save.solved[q.id]||0)+1;
   grantXP(save.solved[q.id]>1?5:15+(q.difficulty||1)*5);
@@ -1327,10 +1327,7 @@ function answer(i){
   const opened=save.gateProgress[gateId]>=sealTarget();
   soundWorld(opened?'gate_open_final':'gate_seal_progress',{x:(g.x+.5)*TILE,y:(g.y+.5)*TILE},{priority:2});
   if(opened){
-   soundWorld('gate_stone_motion',{x:(g.x+.5)*TILE,y:(g.y+.5)*TILE},{gain:.68,priority:2});
-   save.gates[gateId]=true;
-   if(coopRoom&&!coopHost)coopRelay?.send('gate',{id:gateId});
-   burst((g.x+.5)*TILE,(g.y+.5)*TILE,g.color,45);
+   openKnowledgeGate(g);
    tell('Wissenstor geöffnet!');
   }
  }
@@ -1372,12 +1369,12 @@ function templeQuiz(index){
  const state=save.templeAttempts[index]??={correct:0,seen:[]};
  const matching=questions.filter(q=>q.difficulty===3);
  if(matching.length<2){tell('Dieser Schrein braucht zwei Lernkarten mit Schwierigkeit 3.');return;}
- const enough=matching.filter(q=>!state.seen.includes(q.id));
+ const enough=questionDeck(matching,state.seen);
  const seenElsewhere=new Set(Object.values(save.templeAttempts).flatMap(attempt=>attempt.seen));
  const fresh=enough.filter(q=>!seenElsewhere.has(q.id));
  const pool=fresh.length?fresh:enough;
- if(!pool.length)return;
- const question=pool[Math.floor(Math.random()*pool.length)];
+ if(enough.length<2-state.correct){close();tell('Für diesen Schrein sind gerade zu wenige Lernkarten fällig.');return;}
+ const question=pool[0];
  quiz(area(),'temple',index,question);
 }
 function answerTemple(choice){
@@ -1730,7 +1727,7 @@ if(near?.kind==='access'){
  const site=world.accessSite(player,near.i);
  if(!site)return;
  if(world.accessState(site)==='blocked'){tell('Dieser Weg ist dauerhaft versiegelt');return;}
- quiz(area(),'access',near.i,selectQuestion(area())??questions[0]);return;
+ quiz(area(),'access',near.i,selectQuestion(area()));return;
 }
 if(near?.kind==='strata'){
  const link=world.nearestLink(player,near.i);
@@ -1817,12 +1814,14 @@ function playFootstep(oldX,oldY) {
  const rubble=!bridge&&rubbleProps.some(p=>Math.hypot(p.x-player.x,p.y-player.y)<31);
  const step=bridge?'step_wood':rubble?'step_rubble':outsideAt(player.x,player.y)?'step_earth':'step_stone';
  if(furniture.some(p=>p.type==='carpet'&&Math.abs(p.x-player.x)<p.w/2&&Math.abs(p.y-player.y)<p.h/2))return;
- soundWorld(step,player,{gain:.68,variation:.021,cooldown:.14});
- if(bridge&&stepCount%3===0)soundWorld('step_bridge_creak',player,{gain:.28,cooldown:.5});
- if(++stepCount%2===0){
-  const coat=save.equipment.armor?.chest??'';
-  const gear=/^(knight|bastion)-/.test(coat)?'gear_mail':/^(hunter|wanderer|pathfinder|windstep)-/.test(coat)?'gear_leather':'gear_cloth';
-  soundWorld(gear,player,{gain:.24,variation:.065,cooldown:.24,group:'gear-motion'});
+ soundWorld(step,player,{gain:.38,variation:.021,cooldown:.14});
+ if(++stepCount%3===0&&bridge)soundWorld('step_bridge_creak',player,{gain:.14,cooldown:.5});
+ const coat=save.equipment.armor?.chest??'';
+ if(/^(knight|bastion)-/.test(coat)){
+  if(stepCount%4===0)soundWorld('gear_mail',player,{gain:.12,rate:.8,lowpass:1250,cooldown:.5,group:'gear-motion'});
+ }else if(stepCount%2===0){
+  const gear=/^(hunter|wanderer|pathfinder|windstep)-/.test(coat)?'gear_leather':'gear_cloth';
+  soundWorld(gear,player,{gain:.13,variation:.065,cooldown:.24,group:'gear-motion'});
  }
 }
 function update(dt){
@@ -2320,19 +2319,6 @@ function updateWorldSound(region) {
  if(well&&region===rest.id)mix.amb_well=waterMix(well.x,well.y,150,.44);
  audio.setAmbience(mix);
 }
-function drawWater(drawLine){
- for(const {x,y,type,id,vertical} of waterTiles){
-  if(type==='waterfall'||!explored.has(id))continue;
-  if(Math.abs((x+.5)*TILE-player.x)>cw/2+TILE||Math.abs((y+.5)*TILE-player.y)>ch/2+TILE)continue;
-  const clear=type!=='river';
-  for(let i=0;i<5;i++){
-   const across=4+(i*13+x*7+y*11)%(TILE-7),phase=(frame*(clear?28:18)+(i*23+x*11+y*3))%TILE;
-   const length=6+(i*3)%9,blend=.32+(i%3)*.065;
-   if(vertical)drawLine(x*TILE+across,y*TILE+phase,x*TILE+across+1,y*TILE+Math.min(TILE-1,phase+length),clear?'#96dfc7':'#74acb5',blend);
-   else drawLine(x*TILE+phase,y*TILE+across,x*TILE+Math.min(TILE-1,phase+length),y*TILE+across,'#74acb5',blend);
-  }
- }
-}
 function drawWaterArcs(drawLine){
  for(const arc of waterArcs){
   if(!regionVisibleAt(arc.x,arc.y))continue;
@@ -2588,7 +2574,7 @@ const drawLine=(x,y,ex,ey,color,alpha)=>{
 };
 drawCombatEffects(drawCanvasEffect,true);
 drawWebHazards((x,y)=>drawWorldImage(s,{x,y,bitmap:webGroundBitmap}));
-const layers=scenery.filter(o=>!o.ground&&o.visible()&&regionVisibleAt(o.x,o.y));
+const layers=scenery.filter(o=>!o.ground&&!o.barrier&&o.visible()&&regionVisibleAt(o.x,o.y));
 for(const e of enemies)if(regionVisibleAt(e.x,e.y))layers.push({x:e.x,y:e.y,draw:()=>drawCanvasFoe(e)});
 layers.push({x:player.x,y:player.y+(vault?55:0),draw:drawCanvasHero});
 const avatar=visibleCoopPeer();
@@ -2608,12 +2594,13 @@ for(const d of dust){s.globalAlpha=d.life*.43;s.fillStyle='#9c896a';s.fillRect(M
 for(const p of particles){s.globalAlpha=Math.min(1,p.life/.5);s.fillStyle=p.c;s.beginPath();s.arc(p.x,p.y,p.r,0,TAU);s.fill()}s.globalAlpha=1;
 if(player.dash>0){s.strokeStyle='#d8bd82';s.lineWidth=2;s.beginPath();s.arc(player.x,player.y,25,0,TAU);s.stroke()}
 drawCombatEffects(drawCanvasEffect,false);
-drawWater(drawLine);
 drawTempleAttacks(drawLine);
  drawWaterArcs(drawLine);
 drawFireAtmosphere((x,y,w,h,color,alpha)=>{s.globalAlpha=alpha;s.fillStyle=color;s.fillRect(Math.round(x),Math.round(y),w,h);});
 s.globalAlpha=1;
 drawFog((x,y,w,h,alpha)=>{s.globalAlpha=alpha;s.fillStyle='#101212';s.fillRect(x,y,w,h);});
+s.globalAlpha=1;
+for(const o of barriers)if(barrierOnScreen(o))drawWorldImage(s,o);
 drawWeather(drawLine,cam.x-offsetX,cam.y-offsetY);s.globalAlpha=1;
 s.setTransform(1,0,0,1,0,0);
 displayContext.drawImage(scene,0,0); }
@@ -2649,14 +2636,17 @@ function drawFireAtmosphere(draw){
  }
 }
 const dungeonGround=art.world(map,tileZone,sceneLights.map(p=>({...p,x:p.x/PIXEL_SCALE,y:p.y/PIXEL_SCALE,radius:p.radius/PIXEL_SCALE})),furnishingSeed,terrain);
-const strataFx=world.links.length?window.DungeonStrataFx.create():null;
-const sewerWater=terrain.flatMap((row,y)=>row.flatMap((type,x)=>type?.startsWith('sewer-')?[{type,x,y}]:[]));
+const waterFx=window.DungeonStrataFx;
+const surfaceWater=[...waterTiles,...terrain.flatMap((row,y)=>row.flatMap((type,x)=>waterFx.isSewer(type)?
+ [{type,x,y,id:regions[y][x],vertical:type==='sewer-flow-y',edges:waterFx.shoreline(terrain,x,y)}]:[]))];
+const strataFx=surfaceWater.length||world.links.length?waterFx.create():null;
 function drawStrataSurface(x,y){
  if(!strataFx)return null;
  strataFx.collect(player,0,frame,world.waterAt);
  strataFx.collect(visibleCoopPeer(),1,frame,world.waterAt);
  const inView=(px,py,m)=>px>=x-m&&px<=x+cw+m&&py>=y-m&&py<=y+ch+m;
- const water=world.layerForRegion(heroRegion)===-1?sewerWater.filter(p=>inView((p.x+.5)*TILE,(p.y+.5)*TILE,TILE)):[];
+ const layer=world.layerForRegion(heroRegion);
+ const water=surfaceWater.filter(p=>world.layerForRegion(p.id)===layer&&inView((p.x+.5)*TILE,(p.y+.5)*TILE,TILE));
  const lights=sceneLights.filter(p=>inView(p.x,p.y,p.radius)&&regionVisibleAt(p.x,p.y));
  return strataFx.render(x,y,cw,ch,frame,water,lights,TILE);
 }
@@ -2708,7 +2698,7 @@ const mapFrames=Array.from({length:8},(_,i)=>art.icon('map',String(i)));
 const scenery=[
  ...partitions,
  ...world.links.map(p=>({...p,key:'strata-'+p.kind,bitmap:art.icon(p.kind),visible:always,ground:true})),
- ...world.doors.map(p=>({...p,key:p.id,bitmap:art.woodenDoor(p.vertical,p.span),
+ ...world.doors.map(p=>({...p,barrier:true,face:12,key:p.id,bitmap:art.woodenDoor(p.vertical,p.span),
   alternate:art.woodenDoor(p.vertical,p.span,true),changed:()=>world.doorHP(p)<p.hp,visible:()=>world.doorHP(p)>0})),
  portalPosition,
  ...furniture.map(furnishingScenery),
@@ -2716,7 +2706,8 @@ const scenery=[
  ...pressurePlates.map(p=>({...p,key:'pressure-plate',bitmap:art.icon('plate'),alternate:art.icon('plate','down'),changed:()=>p.pressed||p.timer>0,visible:always,ground:true})),
  ...(cupPoint?[{...cupPoint,y:cupPoint.y-14,key:'rest-cup',bitmap:art.icon('cup'),scale:.48,visible:()=>!save.cupClaimed}]:[]),
  ...bonePiles.map(p=>({...p,key:'bone-pile',bitmap:art.icon('bone-pile'),scale:.83,visible:()=>!save.boneClaims[p.id]})),
- ...gates.map((g,i)=>({x:(g.x+.5)*TILE,y:(g.y+.5)*TILE,key:'gate-'+i,bitmap:art.gate(g.vertical,g.color),visible:()=>!save.gates[g.id]})),
+ ...gates.map((g,i)=>({x:(g.x+.5)*TILE,y:(g.y+.5)*TILE,vertical:g.vertical,span:4.2*TILE,face:.54*TILE,
+  barrier:true,key:'gate-'+i,bitmap:art.gate(g.vertical,g.color),visible:()=>!save.gates[g.id]})),
  ...chests.map((p,i)=>({...p,key:'chest-'+i,bitmap:art.icon('chest'),
   frames:['','trial','open'].map(id=>art.icon('chest',id)),
   pose:()=>save.opened.includes(i)||save.trials[i]?2:isTrialChest(i)?1:0,visible:always})),
@@ -2727,6 +2718,8 @@ const scenery=[
  ...(catScenery?[catScenery]:[]),
  {...mapPickup,key:'map',bitmap:mapFrames[0],frames:mapFrames,pose:()=>Math.floor(frame*3)%8,scale:.72,ground:true,visible:()=>!save.merchantMapFound}
 ];
+const barriers=scenery.filter(o=>o.barrier);
+const barrierOnScreen=o=>o.visible()&&world.barrierVisible(player,o);
 function drawFog(fill){
  if(fogCacheRevision!==fogRevision){
   fogCacheRevision=fogRevision;fogSpans=[];
@@ -2920,7 +2913,7 @@ class DungeonScene extends Phaser.Scene{
     if(o.alternate&&!this.textures.exists(o.key+'-open'))this.textures.addCanvas(o.key+'-open',o.alternate);
     return this.add.image(o.x,o.y,o.key).setScale(PIXEL_SCALE*(o.scale||1))
      .setOrigin(o.ox==null?.5:o.ox/o.bitmap.width,o.oy==null?.5:o.oy/o.bitmap.height)
-     .setVisible(o.visible()).setDepth(o.ground?1:o.y);
+     .setVisible(o.barrier?barrierOnScreen(o):o.visible()).setDepth(o.barrier?H*TILE+2.25:o.ground?1:o.y);
    });
    heroBitmaps.forEach((bitmap,i)=>this.textures.addCanvas('hero-'+i,bitmap));
    vaultBitmaps.forEach((bitmap,i)=>this.textures.addCanvas('vault-'+i,bitmap));
@@ -2997,7 +2990,7 @@ class DungeonScene extends Phaser.Scene{
      .setPosition(e.x,e.y+lift).setDepth(e.y).setRotation(e.type===SNAKE?e.angle:0).setFlipX((e.type===ARCHER||e.type===CROSSBOW||e.type===FROST_CROSSBOW||e.type===EAGLE||e.type===RAT||e.type===ELECTRO_RAT||isLion(e))&&Math.cos(e.angle)<0).setAlpha(e.emerge>0?.5:1).setTint(e.hit>0?0xffb49a:0xffffff);
    }
    for(const [i,o] of scenery.entries()){
-    this.scenery[i].setVisible(o.visible()&&regionVisibleAt(o.x,o.y));
+    this.scenery[i].setVisible(o.barrier?barrierOnScreen(o):o.visible()&&regionVisibleAt(o.x,o.y));
     if(o===portalPosition)this.scenery[i].setPosition(o.x,o.y).setDepth(o.y).setAlpha(.86+.14*Math.sin(frame*5));
     if(o.frames)this.scenery[i].setTexture(o.key+'-frame-'+o.pose());
     if(o===catScenery)this.scenery[i].setPosition(o.x,o.y).setDepth(o.y).setFlipX(o.flip());
@@ -3012,7 +3005,6 @@ class DungeonScene extends Phaser.Scene{
    for(let i=webIndex;i<this.webSprites.length;i++)this.webSprites[i].setVisible(false);
    for(const d of dust){this.fx.fillStyle(0x9c896a,d.life*.43);this.fx.fillRect(Math.round(d.x),Math.round(d.y),3,2);}
    const drawLine=(x,y,ex,ey,color,alpha)=>this.fx.lineStyle(2,Number('0x'+color.slice(1)),alpha).lineBetween(x,y,ex,ey);
-   drawWater(drawLine);
    this.weatherFx.clear();
    drawWeather((x,y,ex,ey,color,alpha)=>this.weatherFx.lineStyle(2,Number('0x'+color.slice(1)),alpha).lineBetween(x,y,ex,ey));
    drawTempleAttacks(drawLine);
@@ -4077,7 +4069,7 @@ function authorityQuizDisplay(packet){
 }
 async function startAuthorityQuiz(reason,index){
  const response=await serverAction('quiz',{reason,index});
- if(response)authorityQuizDisplay(response);
+ if(response?.question)authorityQuizDisplay(response);
 }
 async function answerAuthority(value){
  if(!pending?.serverQuiz||pending.answered)return;
