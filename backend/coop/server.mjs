@@ -74,7 +74,7 @@ export function createCoopServer({auth=supabaseAuth(),origins=[allowedDefault],m
   const sim=getFloor(room,member);
   return {type:'lobby',code:room.code,seat,mode:room.mode,
    ready:members.length===2&&members.every(m=>m.ws?.readyState===WebSocket.OPEN),
-   started:Boolean(sim&&(!store||room.revision>0)),floor:member.floor??1,seed:sim?.state.dungeonSeed??room.seed,runSeed:room.seed,
+   started:Boolean(sim&&(!store||room.revision>0)),floor:member.floor??1,seed:sim?.state.dungeonSeed??room.seed,runSeed:room.seed,layoutRevision:sim?.state.layoutRevision,
    peerOnline:peer?.ws?.readyState===WebSocket.OPEN,peerFloor:peer?.floor??null,checkpoints:Boolean(store)};
  }
  function broadcastLobby(room){

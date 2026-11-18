@@ -23,7 +23,7 @@ export function createProjection(){
  const enemies=new Map();
  return (sim,p,force=false)=>{
   if(floor!==sim.state.floor){force=true;floor=sim.state.floor;enemies.clear();event=sim.eventId;}
-  const base={type:'frame',...(force?{reset:true,yourQuiz:sim.actions.publicQuiz(p)}:{}),floor,seed:sim.state.dungeonSeed,clock:q(sim.clock),remaining:sim.enemies.length,you:motion(p,sim.clock)};
+  const base={type:'frame',...(force?{reset:true,yourQuiz:sim.actions.publicQuiz(p)}:{}),floor,seed:sim.state.dungeonSeed,layoutRevision:sim.state.layoutRevision,clock:q(sim.clock),remaining:sim.enemies.length,you:motion(p,sim.clock)};
   const peer=sim.players.find(o=>o!==p);
   base.peer=peer?.online?motion(peer,sim.clock):null;
   if(peer&&peer.online&&(force||peerRevision!==peer.revision)){
@@ -49,7 +49,7 @@ export function createProjection(){
   for(const id of enemies.keys())if(!next.has(id)){enemies.delete(id);removed.push(id);}
   if(force||changed.length)base.enemies=changed;
   if(removed.length)base.removed=removed;
-  const scene={explored:[...sim.explored],gates:sim.state.gates,portal:sim.portal,completed:sim.completed,gateProgress:sim.state.gateProgress};
+  const scene={explored:[...sim.explored],gates:sim.state.gates,doors:sim.state.doors??{},portal:sim.portal,completed:sim.completed,gateProgress:sim.state.gateProgress};
   const sceneKey=JSON.stringify(scene);
   if(force||sceneKey!==staticState){staticState=sceneKey;Object.assign(base,scene);}
   const loot=[...sim.orbs.values()].filter(o=>(!o.seat||o.seat===p.seat)&&currentRegion(p,o));

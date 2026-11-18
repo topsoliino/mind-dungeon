@@ -198,6 +198,12 @@ export function actions(sim){
  }
  function interact(p,kind,i){
   const f=sim.floor;
+  if(kind==='strata'){
+   const link=f.nearestLink(p,i);
+   if(!link||p.consume||p.vault||p.travelLock>0)fail('Dieser Übergang ist gerade nicht erreichbar.');
+   sim.travel(p,link);
+   return {link:link.kind};
+  }
   if(kind==='merchant'){live(p,f.merchant);return {stock:stock(p)};}
   if(kind==='brewery'){live(p,f.lab);return {};}
   if(kind==='well'){live(p,f.wellUse);return {};}
