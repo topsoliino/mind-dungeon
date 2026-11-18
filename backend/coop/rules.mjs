@@ -9,7 +9,7 @@ for(const file of ['strata','run','balance','items','enemies','brewing','expedit
 export const {DungeonRun:run,DungeonBalance:balance,DungeonItems:items,DungeonEnemies:foes,
  DungeonWorld:geometry,DungeonBrewing:brewing,DungeonExpedition:expedition,DungeonEnemySim:enemySim}=worldContext.window;
 export const defaultPack=run.validatePack(JSON.parse(readFileSync(new URL('../../questions/kvt3.json',import.meta.url),'utf8')));
-export const {TILE,HERO_RADIUS}=geometry;
+export const {TILE,HERO_RADIUS,fallSeconds}=geometry;
 export const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 export const gap=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export const remaining=(value,dt)=>Math.max(0,(value||0)-dt);

@@ -1,4 +1,4 @@
-/* Fixed-resolution pixel frames for ground effects, cast tells and impacts. */
+/* Cached frames for ground effects, cast tells and impacts. */
 window.DungeonEffectsArt = (() => {
  'use strict';
  function paint(type,frame){
@@ -161,7 +161,7 @@ window.DungeonEffectsArt = (() => {
     frame<3?'#e7a764b8':'#c5875c75');
    shape([[13,15+offset],[29,11],[48,16],[58,29],[55,37],[38,50],[47,33],[43,22],[28,16]],'#fff0b9');
    for(let i=0;i<7;i++)pixel(28+i*4,18+(i*19+frame*7)%32,2,2,'#ffe6a8');
-  }else if(['bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'].includes(type)){
+  }else if(['bat-warning','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'].includes(type)){
    const ice=type==='bat-beam'||type==='bat-lightning-warning'||type.startsWith('storm');
    const tone=ice?'#78bfe9':'#df804b',hot=ice?'#d9f5ff':'#ffe2a4';
    if(type==='storm-mark'){
@@ -182,27 +182,6 @@ window.DungeonEffectsArt = (() => {
     for(let x=4+frame%3;x<62;x+=6){
      const spread=Math.round(x*.32);
      pixel(x,31-spread,4,1,'#e5a266ac');pixel(x,31+spread,4,1,'#e5a266ac');
-    }
-   }else if(type==='bat-flame'){
-    const glow=ctx.createRadialGradient(30,31,1,30,31,30);
-    glow.addColorStop(0,'#ff9e395c');glow.addColorStop(.57,'#d64a292b');glow.addColorStop(1,'#8f302000');
-    ctx.fillStyle=glow;ctx.fillRect(0,3,64,58);
-    for(let i=0;i<20;i++){
-     const travel=(i*17+frame*9)%62,x=2+travel,spread=2+travel*.1;
-     const drift=Math.sin(i*2.13+frame*.65)*(3+travel*.36),y=32+drift;
-     const curl=(i%2?1:-1)*spread*.76;
-     shape([[x-8,y],[x-2,y-spread],[x+5,y-spread*.65],[x+13,y+curl],[x+5,y+spread],[x-2,y+spread*.55]],
-      travel>37?'#9d3c32b8':'#e26132e9');
-     shape([[x-5,y],[x+1,y-spread*.56],[x+9,y+curl*.68],[x+2,y+spread*.44]],travel>37?'#e87543ec':'#ffad54');
-     if(travel<38&&i%2===0)shape([[x-2,y],[x+2,y-1],[x+7,y+curl*.38],[x+2,y+2]],'#ffe8ab');
-    }
-    shape([[0,30],[8,27],[18,29],[24,31],[13,35],[4,34],[0,33]],'#ffbe68');
-    shape([[0,31],[6,29],[14,31],[6,33],[0,33]],'#fff5cc');
-    for(let i=0;i<18;i++){
-     const x=13+(i*19+frame*7)%54,drift=(i%2?1:-1)*(4+x*.36+(frame+i)%8);
-     const color=i%4===0?'#ffdaa0':i%3?'#eb784ac4':'#7e372b9e';
-     pixel(x-2,32+drift,3+i%3,1,color);
-     if(i%4===0)pixel(x,31+drift,2,3,'#fff3d3');
     }
    }else{
     const arc=(points,color,width)=>{
@@ -257,6 +236,65 @@ window.DungeonEffectsArt = (() => {
   return c;
  }
  const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','frost-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
- const frames=Object.fromEntries(types.map(type=>[type,Array.from({length:6},(_,i)=>paint(type,i))]));
+ const flameFrames=24;
+ const spread=t=>4+t*52;
+ const emberSeeds=Array.from({length:32},(_,i)=>({phase:(i*.61803399)%1,side:Math.sin(i*53.17),turn:i*2.9}));
+ function paintFlame(frame){
+  const canvas=document.createElement('canvas');canvas.width=192;canvas.height=144;
+  const g=canvas.getContext('2d'),phase=frame/flameFrames,turn=phase*Math.PI*2,mid=72;
+  for(let i=0;i<10;i++){
+   const p=(phase+i*.37)%1,x=72+p*113,y=mid+Math.sin(turn+i*1.4)*spread(p)*.65-8*p;
+   const radius=13+p*30,smoke=g.createRadialGradient(x,y,0,x,y,radius);
+   smoke.addColorStop(0,'rgba(94,65,56,'+(.19*Math.sin(Math.PI*p))+')');
+   smoke.addColorStop(1,'rgba(51,36,44,0)');
+   g.fillStyle=smoke;g.fillRect(x-radius,y-radius,radius*2,radius*2);
+  }
+  function tongue(lane,length,shape,stops){
+   const offset=t=>lane*spread(t)*.72+Math.sin(turn*2+t*9+lane*4)*spread(t)*.29;
+   const tipY=mid+offset(1),bellyY=mid+offset(.58);
+   const heat=g.createLinearGradient(0,mid,length,tipY);
+   for(const [at,color] of stops)heat.addColorStop(at,color);
+   g.fillStyle=heat;
+   g.beginPath();g.moveTo(1,mid-2);
+   g.bezierCurveTo(length*.19,mid-6,length*.42,bellyY-shape,length*.66,bellyY-shape*.72);
+   g.bezierCurveTo(length*.83,bellyY-shape*.62,length*.92,tipY+shape*.24,length,tipY);
+   g.bezierCurveTo(length*.86,tipY+shape*.72,length*.72,bellyY-shape*.02,length*.59,bellyY+shape*.48);
+   g.bezierCurveTo(length*.39,bellyY+shape*.38,length*.22,mid+7,1,mid+2);
+   g.fill();
+  }
+  for(let i=0;i<8;i++){
+   const lane=(i-3.5)/3.7,wave=Math.sin(turn*2+i*2.2),length=149+(i%3)*12+wave*12;
+   tongue(lane,length,12+(i%3)*4,[
+    [0,'#ffe19ca0'],[.19,'#ffc2609b'],[.48,'#f77a2a85'],[.72,'#cc442562'],[.9,'#9e31234a'],[1,'#a42f2300']
+   ]);
+  }
+  g.globalCompositeOperation='lighter';
+  for(let i=0;i<4;i++){
+   const lane=(i-1.5)*.35,length=95+i*14+Math.cos(turn*2+i*1.7)*11;
+   tongue(lane,length,6+i*2,[
+    [0,'#fff5da86'],[.20,'#ffe8a864'],[.47,'#ffc04a64'],[.76,'#f7661e49'],[1,'#f24f1600']
+   ]);
+  }
+  const image=g.getImageData(0,0,192,144),pixels=image.data;
+  for(let y=0;y<144;y++)for(let x=0;x<192;x++){
+   const i=(y*192+x)*4;
+   if(!pixels[i+3])continue;
+   const flow=x*.064-turn*3,twist=y*.24+x*.05+Math.sin(flow)*1.3;
+   const density=.5+.31*Math.sin(twist)+.19*Math.sin(x*.16-y*.41-turn*4);
+   const breakup=Math.min(1,Math.max(0,(x-18)/148));
+   pixels[i+3]*=1-breakup*(1-density)*.79;
+   pixels[i+1]*=.84+.16*density;
+  }
+  g.putImageData(image,0,0);
+  for(const {phase:seed,side,turn:curl} of emberSeeds){
+   const age=(phase+seed)%1,x=26+age*159,y=mid+side*spread(age)+Math.sin(turn*2+curl)*age*9;
+   const alpha=Math.sin(Math.PI*age)*(.7-age*.35),size=1.15-age*.55;
+   g.strokeStyle='rgba(255,149,66,'+alpha*.63+')';g.lineWidth=size;
+   g.beginPath();g.moveTo(x-4-age*6,y+side*2);g.lineTo(x,y);g.stroke();
+   g.fillStyle='rgba(255,213,124,'+alpha+')';g.fillRect(x,y,size+1,size);
+  }
+  return canvas;
+ }
+ const frames=Object.fromEntries(types.map(type=>[type,type==='bat-flame'?Array.from({length:flameFrames},(_,i)=>paintFlame(i)):Array.from({length:6},(_,i)=>paint(type,i))]));
  return {frames};
 })();

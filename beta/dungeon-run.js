@@ -399,7 +399,7 @@ window.DungeonRun = (() => {
    defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:10,cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
-  return {...floorState(seed,1),trialCharmActive:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionSeen:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};
+  return {...floorState(seed,1),trialCharmActive:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionSeen:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{},damageHistory:[],damageQueue:[],fall:null,deathRecap:null};
  }
  const runFields=[...Object.keys(freshRun(0))];
  function snapshot(save){

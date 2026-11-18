@@ -1002,7 +1002,7 @@ window.DungeonArt = (() => {
   function icon(type,id='',color='') {
     const key=[type,id,color].join('/');
     if(iconCache.has(key))return iconCache.get(key);
-    const c=surface(),{r,poly}=brush(c);
+    const c=surface(),{g,r,poly}=brush(c);
     const iron=color||'#9aabad', pale='#d6dcd0';
     if(type==='card-ornament'){
       const enamel=color||'#9c8068';
@@ -1287,7 +1287,10 @@ window.DungeonArt = (() => {
          [x(13),27+lift*.4],[x(9),34]],cloth);
         poly([[x(8),28],[x(15),17+lift],[x(17-tuck),29+lift*.6],[x(13),27+lift*.4]],body);
         poly([[x(15),15+lift],[x(tip-1),y],[x(23-tuck),y+1],[x(16),18+lift]],rim);
-        if(stage===1||stage===2)r(x(17+step*2),y+step%2,2,1,shock?'#c2e3ff':'#ef9b59');
+        if(!shock){
+          poly([[x(7),29],[x(15),17+lift],[x(16),19+lift],[x(10),32]],'#48282f');
+          poly([[x(14),20+lift],[x(21-tuck),y+3],[x(19-tuck),y+3],[x(15),22+lift]],'#9e5a51');
+        }else if(stage===1||stage===2)r(x(17+step*2),y+step%2,2,1,'#c2e3ff');
       }
       poly([[22,22+crouch],[22,13+crouch],[27,17+crouch],[30,21+crouch],[36,20+crouch],[41,13+crouch],
        [42,26+crouch],[40,39],[34,46],[27,43],[23,36]],base);
@@ -1295,7 +1298,13 @@ window.DungeonArt = (() => {
       for(const x of [26,35])r(x,27+crouch,4,2,shock?'#c7efff':'#ffe0a7');
       r(29,32+crouch,7,stage===2?7:2,'#241827');
       if(stage!==3){r(29,33+crouch,1,3,'#dfceb3');r(35,33+crouch,1,3,'#dfceb3');}
-      if(stage===1||stage===2){
+      if(!shock&&stage===2){
+        const jaw=39+crouch+step%2;
+        poly([[25,31+crouch],[39,31+crouch],[39,jaw-3],[35,jaw+2],[29,jaw+2],[25,jaw-3]],'#4c292a');
+        poly([[27,32+crouch],[37,32+crouch],[35,jaw],[30,jaw],[27,jaw-2]],'#9a3829');
+        poly([[28,33+crouch],[36,33+crouch],[35,jaw-1],[30,jaw-1]],'#e67937');
+        r(30,34+crouch,4,2,'#ffc36b');r(29,32+crouch,1,3,'#edc394');r(35,32+crouch,1,3,'#edc394');
+      }else if(stage===1||stage===2){
         const glow=shock?'#a8e8ff':'#ff9356';
         r(31,34+crouch,2+step%2,step%2+1,glow);
         if(stage===2){r(29,35+crouch,7,3,glow);r(31,36+crouch,3,2,'#fff1ba');}
@@ -1353,6 +1362,16 @@ window.DungeonArt = (() => {
         poly([[32,3],[36,14],[33,23],[28,19],[27,14]],'#b9c3cb');
         poly([[32,4],[33,18],[30,21],[29,15]],'#eff0e2');
         r(28,24,8,3,'#9f8a63');r(30,38,4,8,'#594958');r(31,39,2,5,'#b39e86');
+      }else if(id==='farm-scythe'){
+        poly([[34,15],[38,16],[27,61],[24,60]],'#352b27');
+        poly([[35,17],[37,17],[26,58],[25,58]],'#a78258');
+        const steel=g.createLinearGradient(0,5,0,26);
+        steel.addColorStop(0,'#66727b');steel.addColorStop(.46,'#9da7a8');steel.addColorStop(.7,'#ddd9c7');steel.addColorStop(1,'#605e5d');
+        g.fillStyle=steel;g.beginPath();g.moveTo(32,17);g.bezierCurveTo(39,7,54,5,62,21);
+        g.bezierCurveTo(51,13,43,13,37,24);g.quadraticCurveTo(32,23,32,17);g.fill();
+        g.lineWidth=1;g.strokeStyle='#eee9d8';g.beginPath();g.moveTo(37,23);
+        g.bezierCurveTo(43,13,51,13,61,20);g.stroke();
+        r(33,20,6,3,'#716456');r(34,20,2,1,'#cab398');
       }else if(id.endsWith('-scythe')){
         const heavy=id==='great-scythe',dark=id==='dark-scythe';
         poly([[33,10],[37,11],[31,61],[27,61]],'#30242b');

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import test from 'node:test';
 import {WebSocket} from 'ws';
-import {run,geometry,defaultPack,makePlayer,items,foes,brewing,TILE,gap,maxHP,preparePlayer,pools} from './rules.mjs';
+import {run,geometry,defaultPack,makePlayer,items,foes,brewing,TILE,fallSeconds,gap,maxHP,preparePlayer,pools} from './rules.mjs';
 import {Simulation} from './simulation.mjs';
 import {actions} from './actions.mjs';
 import {createCoopServer} from './server.mjs';
@@ -34,6 +34,37 @@ const choice=q=>q.type==='free-text'?q.answers[0]:q.correctIndices??q.correctInd
 function settleHits(sim,p){
  for(const hit of items.takeDueDamage(p,1))if(sim.settleDamage(p,hit))break;
 }
+
+test('the private death recap keeps the five latest damaging actions, actual losses and the card state',()=>{
+ const {host,guest,sim}=game();
+ arena(sim,host);sim.enemies=[];
+ Object.assign(host,{resistance:{},guard:1,inv:0,gold:40,bones:3,rubies:2,xp:19});
+ const [done,later,paused]=host.pack.questions;
+ host.solved[done.id]=1;host.questionCount=3;
+ host.questionReview[later.id]={color:'red',due:8};host.questionReview[paused.id]={color:'green',due:100};
+ for(let i=1;i<=5;i++){
+  sim.hurtPlayer(host,i,{fire:1},true,1,undefined,undefined,{source:'Feuerfledermaus',action:'Feueratem '+i});
+  settleHits(sim,host);
+ }
+ sim.hurtPlayer(host,500,{physical:1},true,1,undefined,undefined,{source:'Skelett',action:'Sensenhieb'});
+ settleHits(sim,host);
+ const recap=host.deathRecap;
+ assert.equal(recap.history.length,5);
+ assert.equal(recap.history[0].action,'Feueratem 2');
+ assert.equal(recap.fatal.source,'Skelett');
+ assert.equal(recap.fatal.action,'Sensenhieb');
+ assert.deepEqual({...recap.losses},{gold:0,bones:0,rubies:0,xp:0});
+ assert.equal(recap.learning.solved,1);
+ assert.equal(recap.learning.later,1);
+ assert.equal(recap.learning.retired,1);
+ assert.equal(recap.learning.answered,3);
+ assert.equal(sim.events.at(-1).to,host.seat);
+ assert.equal(guest.deathRecap,undefined);
+ const restored=Simulation.loadPlayer(JSON.parse(JSON.stringify(Simulation.savePlayer(host))),defaultPack);
+ assert.equal(restored.deathRecap.fatal.source,'Skelett');
+ sim.actions.dispatch(host,'dismiss-death',{});
+ assert.equal(host.deathRecap,null);
+});
 
 test('stair landings stay in one combat area and an unalerted foe can attack across the layer boundary',()=>{
  const {host,sim}=game(103);
@@ -78,7 +109,7 @@ test('quick food absorbs pending damage, chooses the smallest sufficient portion
  assert.equal(host.hp,hp);
  sim.step(.92);
  assert.equal(host.hp,hp);
- const warning=createProjection()(sim,host).you.at(-1);
+ const warning=createProjection()(sim,host).you.at(-2);
  assert.equal(warning[0].type,'frost');
  assert.equal(sim.actions.dispatch(host,'quick-food',{}).item.id,'bread');
  assert.equal(host.consume.end-host.consume.start,1.5);
@@ -231,6 +262,7 @@ test('water beside both bridges drops the hero while sewer water remains walkabl
   assert.equal(sim.floor.abyssAt(host.x,host.y),false);
   host.equipment.rings[0]=null;
   assert.equal(sim.move(host,0,-TILE),false);
+  sim.stepPlayer(host,fallSeconds);
   assert.ok(sim.events.some(e=>e.kind==='death'&&e.cause==='fall'));
  }
  const sewer=game(193,undefined,run.sewerDepth(193)).sim.floor;
@@ -600,7 +632,7 @@ test('a run has exactly one sewer and can generate all four tower heights',()=>{
  assert.deepEqual([...heights].sort(),[1,2,3,4]);
 });
 
-test('the Ring der Höhe brakes at a cliff, but an eagle can knock its wearer to instant death',()=>{
+test('the hero can return from the lip, and an eagle can defeat the Ring der Höhe with knockback',()=>{
  const {host,guest,sim}=game(-731389592,9);
  const roof=sim.floor.roof;
  assert.ok(roof.hail);
@@ -608,9 +640,20 @@ test('the Ring der Höhe brakes at a cliff, but an eagle can knock its wearer to
  const full=maxHP(host);
  Object.assign(host,lip,{hp:full,inv:0});
  sim.enemies=[];
+ assert.equal(sim.move(host,-24,0),true);
+ assert.ok(sim.floor.abyssAt(host.x,host.y));
+ assert.equal(sim.floor.pastLedge(host.x,host.y),false);
+ assert.equal(sim.move(host,24,0),true);
  assert.equal(sim.move(host,-55,0),false);
+ assert.equal(host.combatRecord.deaths,0);
+ assert.equal(host.fall.remaining,fallSeconds);
+ assert.equal(createProjection()(sim,host).you.at(-1),0);
+ sim.stepPlayer(host,fallSeconds*.5);
+ assert.equal(createProjection()(sim,host).you.at(-1),.5);
+ sim.stepPlayer(host,fallSeconds*.5);
  assert.equal(host.combatRecord.deaths,1);
  assert.equal(sim.events.at(-1).cause,'fall');
+ sim.actions.dispatch(host,'dismiss-death',{});
  Object.assign(host,lip,{hp:full,inv:0});
  host.equipment.rings[0]='height';
  assert.equal(sim.move(host,-55,0),true);
@@ -621,8 +664,12 @@ test('the Ring der Höhe brakes at a cliff, but an eagle can knock its wearer to
   phase:0,hit:0,attack:10,windup:0,angle:Math.PI,runAttack:.65,runDuration:.65};
  sim.enemies=[eagle];sim.currentTarget=host;
  sim.ai.act(eagle,.025,host,0,1180,760);
+ assert.equal(host.fall.origin.source,'Adler');
+ assert.equal(host.combatRecord.deaths,1);
+ sim.stepPlayer(host,fallSeconds);
  assert.equal(host.combatRecord.deaths,2);
  assert.equal(sim.events.at(-1).cause,'fall');
+ assert.equal(sim.events.at(-1).recap.fatal.source,'Adler');
 });
 
 test('hail amplifies frost and armbrust-ice zombies fire frost bolts',()=>{

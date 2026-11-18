@@ -1,7 +1,7 @@
 (root=>{
 root.DungeonWorld=(()=>{
 'use strict';
-const TILE=48,HERO_RADIUS=14;
+const TILE=48,HERO_RADIUS=14,fallSeconds=.85;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 function build(run,save){
 const furnishingSeed=save.dungeonSeed;
@@ -88,6 +88,10 @@ const dropTerrain=new Set(['abyss','river','clear-river','waterfall']);
 function abyssAt(x,y){
  const row=Math.floor(y/TILE),col=Math.floor(x/TILE);
  return map[row]?.[col]===1&&dropTerrain.has(terrain[row]?.[col]);
+}
+function pastLedge(x,y){
+ const margin=TILE*.28;
+ return abyssAt(x,y)&&[-margin,margin].every(dx=>[-margin,margin].every(dy=>abyssAt(x+dx,y+dy)));
 }
 const hailAt=(x,y)=>Boolean(outsideAt(x,y)?.hail);
 function doorAt(x,y,radius=0){
@@ -532,7 +536,7 @@ return {
  paths,H,W,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,
- regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
+ regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition
 };
@@ -665,6 +669,6 @@ if(floor.crypt){
 }
 return enemies;
 }
-return {TILE,HERO_RADIUS,build,spawnEnemies};
+return {TILE,HERO_RADIUS,fallSeconds,build,spawnEnemies};
 })();
 })(typeof window==='undefined'?globalThis:window);
