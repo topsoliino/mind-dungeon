@@ -2,8 +2,8 @@ import {run,defaultPack,makePlayer} from './rules.mjs';
 import {Simulation} from './simulation.mjs';
 import {actions} from './actions.mjs';
 
-function createFloor(room,depth,seed,players=[]){
- const sim=new Simulation(room.seed,players,{},depth,seed);
+function createFloor(room,depth,seed,players=[],layoutRevision){
+ const sim=new Simulation(room.seed,players,{layoutRevision},depth,seed);
  sim.actions=actions(sim);
  room.floors.set(depth,sim);
  return sim;
@@ -61,7 +61,7 @@ export function restoreParty(code,saved){
  for(const savedFloor of state.floors){
   const {floor,dungeonSeed}=savedFloor.state;
   const players=[...room.members.values()].filter(m=>m.floor===floor).map(m=>m.player);
-  createFloor(room,floor,dungeonSeed).restore(savedFloor,players,bySeat);
+  createFloor(room,floor,dungeonSeed,[],savedFloor.state.layoutRevision??7).restore(savedFloor,players,bySeat);
  }
  return room;
 }

@@ -139,7 +139,11 @@ window.DungeonArt = (() => {
     const key=type+variant;
     if(terrainCache.has(key))return terrainCache.get(key);
     const c=surface(),{r,poly}=brush(c),rng=random(variant+31);
-    if(type==='abyss'||type==='river'||type==='clear-river'||type==='waterfall'){
+    if(type.startsWith('sewer-')){
+     r(0,0,64,64,type==='sewer-pool'?'#244b4b':'#1c464d');
+     for(let i=0;i<65;i++)r(rng(64),rng(64),3+rng(11),1+rng(3),['#254b46','#32615e','#38524b','#38716a'][rng(4)]);
+     for(let i=0;i<7;i++){const x=rng(58),y=rng(58);r(x,y,3,2,'#527f71');r(x+1,y+2,2,1,'#305351');}
+    }else if(type==='abyss'||type==='river'||type==='clear-river'||type==='waterfall'){
      const clear=type==='clear-river'||type==='waterfall',river=type!=='abyss';
      r(0,0,64,64,clear?'#235557':river?'#182e37':'#11151e');
      for(let i=0;i<42;i++){
@@ -165,30 +169,40 @@ window.DungeonArt = (() => {
     terrainCache.set(key,c);return c;
   }
   function world(map,zoneAt,lights,seed,terrain) {
-    const c=surface(map[0].length*SIZE,map.length*SIZE),{g,r}=brush(c);
-    r(0,0,c.width,c.height,'#101212');
-    const rnd=random(seed);
-    for(let y=0;y<map.length;y++) for(let x=0;x<map[y].length;x++){
-      const z=zoneAt(x,y),v=rnd(12);
-      const surfaceType=terrain?.[y]?.[x];
-      if(surfaceType==='partition'){g.drawImage(floor(z,v),x*SIZE,y*SIZE);continue;}
-      if(surfaceType){g.drawImage(terrainTile(surfaceType,v),x*SIZE,y*SIZE);continue;}
-      if(map[y][x]===0){g.drawImage(floor(z,v),x*SIZE,y*SIZE);continue;}
+    const rnd=random(seed),chunkSize=16,chunks=[];
+    const tiles=map.map((row,y)=>row.map((value,x)=>{
+      const v=rnd(12),surfaceType=terrain?.[y]?.[x];
+      if(value===0||surfaceType==='partition')return {v,open:value===0,surfaceType};
+      if(surfaceType)return {v,surfaceType};
       const mask=(map[y-1]?.[x]===0?1:0)|(map[y]?.[x+1]===0?2:0)|(map[y+1]?.[x]===0?4:0)|(map[y]?.[x-1]===0?8:0);
-      if(mask)g.drawImage(wall(z,mask,v%4),x*SIZE,y*SIZE);
+      return mask?{v,mask}:null;
+    }));
+    for(let top=0;top<map.length;top+=chunkSize)for(let left=0;left<map[0].length;left+=chunkSize){
+      const bottom=Math.min(top+chunkSize,map.length),right=Math.min(left+chunkSize,map[0].length);
+      const cells=[];
+      for(let y=top;y<bottom;y++)for(let x=left;x<right;x++)if(tiles[y][x])cells.push({x,y,...tiles[y][x]});
+      if(!cells.length)continue;
+      const x0=left*SIZE,y0=top*SIZE,c=surface((right-left)*SIZE,(bottom-top)*SIZE),{g,r}=brush(c);
+      r(0,0,c.width,c.height,'#101212');
+      g.translate(-x0,-y0);
+      for(const {x,y,v,mask,open,surfaceType} of cells){
+        const zone=zoneAt(x,y);
+        const image=surfaceType&&surfaceType!=='partition'?terrainTile(surfaceType,v):
+         open||surfaceType==='partition'?floor(zone,v):wall(zone,mask,v%4);
+        g.drawImage(image,x*SIZE,y*SIZE);
+      }
+      g.beginPath();
+      for(const p of cells)if(p.open)g.rect(p.x*SIZE,p.y*SIZE,SIZE,SIZE);
+      g.clip();g.globalCompositeOperation='screen';
+      for(const {x,y,zone,radius,power} of lights){
+        if(x+radius<x0||x-radius>x0+c.width||y+radius<y0||y-radius>y0+c.height)continue;
+        const light=g.createRadialGradient(x,y,3,x,y,radius),color=stone[zone].light;
+        light.addColorStop(0,color+power);light.addColorStop(.34,color+'36');light.addColorStop(1,color+'00');
+        g.fillStyle=light;g.fillRect(x-radius,y-radius,radius*2,radius*2);
+      }
+      chunks.push({x:x0,y:y0,bitmap:c});
     }
-    // Keep the pools of light inside their rooms and retain the wall fronts.
-    g.save();g.beginPath();
-    for(let y=0;y<map.length;y++)for(let x=0;x<map[y].length;x++)if(map[y][x]===0)g.rect(x*SIZE,y*SIZE,SIZE,SIZE);
-    g.clip();
-    g.globalCompositeOperation='screen';
-    for(const {x,y,zone,radius,power} of lights){
-      const light=g.createRadialGradient(x,y,3,x,y,radius),color=stone[zone].light;
-      light.addColorStop(0,color+power);light.addColorStop(.34,color+'36');light.addColorStop(1,color+'00');
-      g.fillStyle=light;g.fillRect(x-radius,y-radius,radius*2,radius*2);
-    }
-    g.restore();
-    return c;
+    return chunks;
   }
   function partition(zone=0,ends=3){
     const key='partition-'+zone+'-'+ends;
@@ -591,6 +605,26 @@ window.DungeonArt = (() => {
     const crouch=stage===1?anticipation:stage===2?-2:stage===3?3-step:Math.abs(stride);
     const y=n=>n+crouch;
     poly([[10,51],[18,47],[48,47],[55,52],[49,56],[14,56]],'#100d13a8');
+    if(zone===13||zone===14){
+     const large=zone===14,bob=stage===2?-2:Math.abs(stride)%3,cx=large?29:32;
+     poly([[19,43],[10,43],[6,38],[4,40],[10,46],[19,48]],'#a77b72');
+     poly([[13,39+bob],[19,28+bob],[33,26+bob],[44,32+bob],[45,44],[20,48]],'#261f25');
+     poly([[15,39+bob],[21,30+bob],[33,28+bob],[42,34+bob],[42,42],[21,45]],large?'#626373':'#87695e');
+     for(const x of [20,35]){r(x,42+stride%3,6,7,'#423640');r(x+1,48+stride%3,7,2,'#a68779');}
+     poly([[cx-1,30+bob],[cx+4,23+bob],[cx+12,24+bob],[cx+17,31+bob],[cx+23,34+bob],[cx+22,40+bob],[cx+10,42+bob],[cx+3,37+bob]],'#59464b');
+     r(cx+4,22+bob,7,7,'#93716e');r(cx+5,23+bob,4,4,'#be8391');
+     r(cx+13,30+bob,3,2,large?'#9bf2ff':'#f7c495');r(cx+21,34+bob,3,3,'#322331');
+     if(stage===2||!large){r(cx+20,39+bob,3,3,'#eee4bc');r(cx+15,40+bob,2,2,'#e2ce9c');}
+     if(large){
+      const tip=stage===2?57:stage===1?48:51;
+      r(19,22+bob,16,9,'#414653');r(20,23+bob,12,6,'#627783');r(23,24+bob,4,4,'#85c3bf');
+      poly([[30,37],[35,36],[tip+3,14],[tip+5,16],[37,39],[31,41]],'#4e4148');
+      poly([[34,36],[tip+3,15],[tip+4,17],[36,38]],'#c4a76f');
+      poly([[tip,17],[tip+3,11],[tip+8,13],[tip+6,18]],stage===1||stage===2?'#cafcff':'#69a9bf');
+      if(stage===2){r(tip-5,13,6,2,'#7eeaff');r(tip-3,7,2,5,'#b2f5ff');}
+     }
+     return c;
+    }
     if(zone===7||zone===8){
      const bow=zone===7,body=enemyPose(bow?3:5,stage===0?frame:4);
      c.getContext('2d').drawImage(body,0,0);
@@ -1102,6 +1136,20 @@ window.DungeonArt = (() => {
       r(25,33,7,1,'#7b6556');r(28,36,8,1,'#7b6556');r(36,32,7,1,'#7b6556');
       r(39,31,3,3,'#824b43');r(40,31,1,1,glint?'#ffca83':'#bd7962');
       if(glint===2){r(42,30,2,1,'#e9bf7e');r(43,29,1,3,'#e9bf7e');}
+    }else if(type==='stairs'||type==='ladder'){
+      poly([[9,39],[15,19],[48,17],[57,41],[49,52],[16,53]],'#151921');
+      if(type==='stairs'){
+       for(let i=0;i<5;i++){
+        const x=14+i*3,y=44-i*5,w=37-i*4;
+        r(x,y,w,6,'#524e54');r(x,y,w,2,'#ada18c');r(x+3,y+3,w-6,1,'#6c6370');
+       }
+       r(13,46,3,5,'#927b64');r(49,46,3,5,'#927b64');
+      }else{
+       poly([[16,20],[49,20],[51,44],[17,46]],'#283a3c');
+       r(20,16,5,31,'#b28156');r(40,16,5,31,'#b28156');
+       for(let y=21;y<45;y+=6){r(24,y,17,3,'#d4a577');r(25,y+2,16,1,'#806044');}
+       r(21,16,2,30,'#d1a575');r(41,16,2,30,'#d1a575');
+      }
     }else if(type==='ground-bones'){
       const bones=id==='3'?[[18,34,-4],[25,38,3],[31,30,-2]]:[[23,35,-4]];
       poly([[14,39],[24,32],[45,32],[50,38],[40,43],[20,44]],'#18151999');
@@ -1251,11 +1299,29 @@ window.DungeonArt = (() => {
     g.drawImage(icon('seal','',color),111,1,50,50);
     return c;
   }
+  function woodenDoor(vertical,span,damaged=false){
+    const length=Math.round(span*64/48);
+    const c=surface(vertical?29:length,vertical?length:29);
+    const {g,r}=brush(c);
+    if(vertical){g.translate(29,0);g.rotate(Math.PI/2);}
+    r(0,2,length,25,'#1c1418');r(1,4,length-2,19,'#6c4635');
+    for(let x=2;x<length-3;x+=11){
+     r(x,5,8,16,x%2?'#967154':'#835a40');
+     r(x,5,1,16,'#b98b62');
+    }
+    for(const y of [6,17]){
+     r(3,y,length-6,3,'#37343b');r(3,y,length-6,1,'#7b7370');
+     for(let x=6;x<length-4;x+=14)r(x,y+1,2,2,'#d0a269');
+    }
+    r(length/2-4,11,8,6,'#b18a54');r(length/2-1,13,3,3,'#342828');
+    if(damaged)for(let i=0;i<5;i++)r(length*.42+i*5,10+i%3*3,5,2,'#352323');
+    return c;
+  }
   const urls=new Map();
   function url(type,id,color){
     const key=[type,id,color].join('/');
     if(!urls.has(key))urls.set(key,icon(type,id,color).toDataURL());
     return urls.get(key);
   }
-  return {world,furniture,partition,actor,icon,gate,url};
+  return {world,furniture,partition,actor,icon,gate,woodenDoor,url};
 })();

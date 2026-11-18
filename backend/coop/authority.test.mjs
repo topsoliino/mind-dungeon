@@ -8,7 +8,7 @@ import {actions} from './actions.mjs';
 import {createCoopServer} from './server.mjs';
 import {createProjection} from './network.mjs';
 import {checkpointConflict} from './checkpoints.mjs';
-import {startParty,getFloor,advanceParty,partyState,partyMetadata} from './party.mjs';
+import {startParty,getFloor,advanceParty,partyState,partyMetadata,restoreParty} from './party.mjs';
 
 function game(seed=193){
  const host=makePlayer(1,{name:'Host',classId:'guardian'},defaultPack);
@@ -222,6 +222,108 @@ test('a merchant stall fits against a wall and leaves a reachable customer appro
   assert.ok(floor.canReachSpawn(floor.merchant.x,floor.merchant.y));
   assert.ok(floor.furniture.some(p=>p.type==='market'));
  }
+});
+
+test('players use ladders and stairs, but alerted enemies only navigate stairs',()=>{
+ const {host,guest,sim}=game(193);
+ const floor=sim.floor,stairs=floor.links.find(s=>s.id==='upper-stairs-0');
+ const ladder=floor.links.find(s=>s.id==='sewer-ladder-west-0');
+ Object.assign(host,{x:stairs.x,y:stairs.y});
+ sim.actions.dispatch(host,'interact',{kind:'strata',index:stairs.id});
+ assert.equal(floor.layerAt(host.x,host.y),1);
+ assert.throws(()=>sim.actions.dispatch(host,'interact',{kind:'strata',index:'upper-stairs-1'}),/nicht erreichbar/);
+ Object.assign(guest,{x:ladder.x,y:ladder.y});
+ sim.actions.dispatch(guest,'interact',{kind:'strata',index:ladder.id});
+ assert.equal(floor.layerAt(guest.x,guest.y),-1);
+ const chaser={id:'stair-chaser',x:stairs.x,y:stairs.y,type:foes.SKELETON,roomId:0,hp:100,max:100,size:1,phase:0,hit:0,attack:8,angle:0};
+ const leftBehind={...chaser,id:'ladder-chaser',x:ladder.x,y:ladder.y};
+ foes.alert(chaser);foes.alert(leftBehind);
+ assert.equal(sim.canTarget(leftBehind,guest),false);
+ sim.enemies=[chaser];sim.step(1/30);
+ assert.equal(floor.layerAt(chaser.x,chaser.y),1);
+ assert.equal(floor.layerAt(leftBehind.x,leftBehind.y),0);
+});
+
+test('closed wood blocks arrows and movement until projectile and melee damage destroy it',()=>{
+ const {host,guest,sim}=game(193);
+ const floor=sim.floor,door=floor.doors.find(d=>d.id==='upper-door');
+ const from={x:door.x-65,y:door.y},behind={x:door.x+48,y:door.y};
+ const enemy={...behind,id:'behind-door',type:foes.SKELETON,roomId:0,hp:100,max:100,size:1};
+ sim.enemies=[enemy];Object.assign(guest,from,{damage:12});
+ assert.ok(floor.gateLineBlocked(from.x,from.y,behind.x,behind.y));
+ assert.equal(floor.valid(door.x,door.y,14),false);
+ assert.ok(sim.charge(guest,0));assert.ok(sim.attack(guest,0));
+ sim.updateShots(.5);
+ assert.equal(enemy.hp,100);assert.equal(floor.doorHP(door),door.hp-12);
+ Object.assign(host,{...from,x:door.x-42,damage:door.hp,inv:0});
+ assert.ok(sim.charge(host,0));assert.ok(sim.attack(host,0));
+ assert.equal(enemy.hp,100);
+ assert.equal(floor.doorHP(door),0);
+ assert.equal(floor.valid(door.x,door.y,14),true);
+ assert.equal(floor.gateLineBlocked(from.x,from.y,behind.x,behind.y),false);
+ const frame=createProjection()(sim,host);
+ assert.equal(frame.doors[door.id],0);
+});
+
+test('sewer water amplifies electricity and a live weapon sends a second pulse across the channel',()=>{
+ const {host,guest,sim}=game(193);
+ const {floor}=sim;
+ const pool=floor.terrain.flatMap((row,y)=>row.flatMap((t,x)=>t==='sewer-pool'?[{x:(x+.5)*TILE,y:(y+.5)*TILE}]:[]))[0];
+ assert.ok(pool);
+ assert.ok(floor.terrain.some(row=>row.some(t=>t?.startsWith('sewer-flow'))));
+ assert.ok(sim.enemies.some(e=>e.type===foes.RAT));
+ assert.ok(sim.enemies.some(e=>e.type===foes.ELECTRO_RAT));
+ const max=maxHP(host),damage=20;
+ Object.assign(host,{resistance:{},guard:1,hp:max,inv:0});
+ arena(sim,host);
+ sim.hurtPlayer(host,damage,{lightning:1},true,1);
+ assert.equal(max-host.hp,20);
+ Object.assign(host,pool,{hp:max,inv:0});
+ sim.hurtPlayer(host,damage,{lightning:1},true,1);
+ assert.equal(max-host.hp,27);
+ Object.assign(guest,pool,{resistance:{},guard:1,inv:0});
+ const before=guest.hp;
+ host.mods.element='lightning';host.damage=30;
+ assert.ok(sim.charge(host,0));assert.ok(sim.attack(host,0));
+ assert.ok(guest.hp<before);
+ assert.equal(sim.effects.waterArcs.length,1);
+ assert.equal(items.enemyRarity(.21,1,true),'rare');
+ assert.equal(items.enemyRarity(.21,1,false),null);
+});
+
+test('small rats build bleed and an electrode rat discharges electricity in water',()=>{
+ const {host,guest,sim}=game(193);
+ const floor=sim.floor;
+ const spots=floor.terrain.flatMap((row,y)=>row.flatMap((t,x)=>t==='sewer-pool'?
+  [{x:(x+.5)*TILE,y:(y+.5)*TILE}]:[]));
+ const water=spots.find(p=>floor.waterAt(p.x+25,p.y)&&!floor.gateLineBlocked(p.x,p.y,p.x+25,p.y));
+ assert.ok(water);
+ guest.online=false;
+ Object.assign(host,water,{guard:1,resistance:{},inv:0,entryGrace:0});
+ const rat={x:water.x+25,y:water.y,id:'sewer-proof',type:foes.RAT,hp:100,max:100,size:1,
+  roomId:0,phase:0,hit:0,attack:1,windup:.005,angle:Math.PI};
+ sim.enemies=[rat];sim.currentTarget=host;
+ sim.ai.act(rat,.03,host,0,1180,760);
+ assert.equal(host.bleed,31);
+ assert.equal(sim.effects.waterArcs.length,0);
+ Object.assign(rat,{type:foes.ELECTRO_RAT,windup:.005,runAttack:0});
+ host.inv=0;
+ const before=host.hp;
+ sim.ai.act(rat,.03,host,0,1180,760);
+ assert.ok(host.hp<before);
+ assert.equal(sim.effects.waterArcs.length,1);
+ assert.equal(host.bleed,31);
+});
+
+test('revision-seven checkpoints reconstruct their original flat floor',()=>{
+ const member={id:'host',seat:1,pack:defaultPack,player:makePlayer(1,null,defaultPack),floor:1,ws:{}};
+ const sim=new Simulation(193,[member.player],{layoutRevision:7});
+ const room={seed:193,mode:'same',members:new Map([[member.id,member]]),floors:new Map([[1,sim]])};
+ const saved=JSON.parse(JSON.stringify({meta:partyMetadata(room),state:partyState(room),revision:1}));
+ const restored=restoreParty('ABCDEF01',saved),floor=restored.floors.get(1);
+ assert.equal(floor.state.layoutRevision,7);
+ assert.equal(floor.floor.links.length,0);
+ assert.equal(floor.floor.W,sim.floor.W);
 });
 
 test('shared layouts, private questions and server-graded answers',()=>{

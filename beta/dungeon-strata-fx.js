@@ -1,0 +1,132 @@
+window.DungeonStrataFx=(()=>{
+ 'use strict';
+ const vertex=`
+ attribute vec3 aWorld;attribute vec2 aLocal;
+ uniform vec4 uView;
+ varying vec2 vWorld,vLocal;varying float vType;
+ void main(){
+  vec2 p=(aWorld.xy-uView.xy)/uView.zw;
+  gl_Position=vec4(p.x*2.0-1.0,1.0-p.y*2.0,0.0,1.0);
+  vWorld=aWorld.xy;vLocal=aLocal;vType=aWorld.z;
+ }`;
+ const fragment=`
+ precision highp float;
+ uniform float uTime;
+ uniform vec3 uRipples[8];
+ varying vec2 vWorld,vLocal;varying float vType;
+ void main(){
+  if(vType>2.5){
+   float d=length(vLocal*2.0-1.0);
+   float flicker=.91+.09*sin(uTime*9.0+vWorld.x*.02)*cos(uTime*6.0+vWorld.y*.02);
+   gl_FragColor=vec4(.97,.65,.29,pow(max(0.0,1.0-d),2.8)*.31*flicker);
+   return;
+  }
+  vec2 p=mod(vWorld,1536.0);
+  float flow=(vType<.5)?0.0:uTime*28.0;
+  vec2 uv=(vType>1.5)?p.yx:p.xy;
+  float wave=sin((uv.x-flow)*.14+sin(uv.y*.11)*1.8);
+  float crossWave=sin(uv.y*.21-uv.x*.07+uTime*.8);
+  float caustic=smoothstep(.92,1.66,wave*.87+crossWave*.72);
+  float ring=0.0;
+  if(flow==0.0)for(int i=0;i<8;i++){
+   vec3 splash=uRipples[i];
+   float age=splash.z;
+   float distanceFromRing=length(vWorld-splash.xy)-age*78.0;
+   if(age>=0.0&&age<.78){
+    ring+=exp(-abs(distanceFromRing)*.47)*max(0.0,1.0-age/.78);
+   }
+  }
+  gl_FragColor=vec4(.40+.34*ring,.83+.16*ring,.78+.20*ring,.12+.24*caustic+.43*min(1.0,ring));
+ }`;
+ function create(){
+  const canvas=document.createElement('canvas');
+  const gpu=document.createElement('canvas');
+  const ctx=canvas.getContext('2d');
+  let gl=null,program,buffer,position,local,view,time,ripples;
+  try{
+   gl=gpu.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:false,depth:false});
+   if(gl){
+    const compile=(kind,source)=>{
+     const shader=gl.createShader(kind);gl.shaderSource(shader,source);gl.compileShader(shader);
+     if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(shader));
+     return shader;
+    };
+    program=gl.createProgram();
+    gl.attachShader(program,compile(gl.VERTEX_SHADER,vertex));
+    gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fragment));
+    gl.linkProgram(program);
+    if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));
+    buffer=gl.createBuffer();
+    position=gl.getAttribLocation(program,'aWorld');local=gl.getAttribLocation(program,'aLocal');
+    view=gl.getUniformLocation(program,'uView');time=gl.getUniformLocation(program,'uTime');
+    ripples=gl.getUniformLocation(program,'uRipples[0]');
+   }
+  }catch{gl=null;}
+  const steps=[],last=new Map();
+  function collect(actor,key,t,waterAt){
+   if(!actor||waterAt(actor.x,actor.y)!=='sewer-pool'){last.delete(key);return;}
+   const before=last.get(key);
+   if(!before||Math.hypot(actor.x-before.x,actor.y-before.y)>17){
+    const step={x:actor.x,y:actor.y,t};
+    last.set(key,step);steps.push(step);
+    if(steps.length>8)steps.shift();
+   }
+  }
+  function render(x,y,w,h,t,tiles,lights,tileSize){
+   const width=Math.max(1,Math.ceil(w/2)),height=Math.max(1,Math.ceil(h/2));
+   if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,width,height);
+   if(gl&&!gl.isContextLost()){
+    if(gpu.width!==width||gpu.height!==height){gpu.width=width;gpu.height=height;}
+    gl.viewport(0,0,width,height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+    const vertices=[];
+    function quad(px,py,size,type){
+     for(const [u,v] of [[0,0],[1,0],[0,1],[0,1],[1,0],[1,1]])vertices.push(px+u*size,py+v*size,type,u,v);
+    }
+    for(const tile of tiles)quad(tile.x*tileSize,tile.y*tileSize,tileSize,tile.type==='sewer-pool'?0:tile.type==='sewer-flow-x'?1:2);
+    for(const light of lights)quad(light.x-light.radius,light.y-light.radius,light.radius*2,3);
+    gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,3,gl.FLOAT,false,20,0);
+    gl.enableVertexAttribArray(local);gl.vertexAttribPointer(local,2,gl.FLOAT,false,20,12);
+    gl.uniform4f(view,x,y,w,h);gl.uniform1f(time,t%1024);
+    const data=new Float32Array(24).fill(-1);
+    steps.forEach((p,i)=>data.set([p.x,p.y,t-p.t],i*3));
+    gl.uniform3fv(ripples,data);gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawArrays(gl.TRIANGLES,0,vertices.length/5);
+    ctx.drawImage(gpu,0,0);
+   }else{
+    ctx.setTransform(width/w,0,0,height/h,-x*width/w,-y*height/h);
+    for(const tile of tiles){
+     const tx=tile.x*tileSize,ty=tile.y*tileSize;
+     ctx.save();ctx.beginPath();ctx.rect(tx,ty,tileSize,tileSize);ctx.clip();
+     ctx.strokeStyle='#90cfbd';ctx.lineWidth=2;
+     if(tile.type==='sewer-pool'){
+      for(const step of steps){
+       const age=t-step.t;
+       if(age>=.78)continue;
+       ctx.globalAlpha=.55*(1-age/.78);ctx.beginPath();ctx.arc(step.x,step.y,age*78,0,Math.PI*2);ctx.stroke();
+      }
+     }else{
+      ctx.globalAlpha=.43;ctx.beginPath();
+      for(let i=0;i<4;i++){
+       const z=(t*28+i*15+tile.x*5+tile.y*13)%tileSize,o=6+i*11;
+       if(tile.type==='sewer-flow-x'){ctx.moveTo(tx+z,ty+o);ctx.lineTo(tx+z+16,ty+o);}
+       else{ctx.moveTo(tx+o,ty+z);ctx.lineTo(tx+o,ty+z+16);}
+      }
+      ctx.stroke();
+     }
+     ctx.restore();
+    }
+    for(const light of lights){
+     const g=ctx.createRadialGradient(light.x,light.y,0,light.x,light.y,light.radius);
+     g.addColorStop(0,'rgba(248,169,74,'+(.22+.03*Math.sin(t*8+light.x))+')');
+     g.addColorStop(1,'rgba(248,169,74,0)');ctx.fillStyle=g;
+     ctx.fillRect(light.x-light.radius,light.y-light.radius,2*light.radius,2*light.radius);
+    }
+   }
+   return canvas;
+  }
+  return {canvas,collect,render,get shader(){return Boolean(gl&&!gl.isContextLost());}};
+ }
+ return {create};
+})();

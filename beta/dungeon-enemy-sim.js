@@ -2,9 +2,9 @@
 'use strict';
 function create(api){
  const {enemyRules,items,balance,save,state,floor,getEnemies,moveActor,actorRadius,nearActor,takeDamage,applyPoison,addBleed,
-  soundWorld,burst,hurtEnemy,coopActors,enemyEncounterReady,rand}=api;
+  soundWorld,burst,hurtEnemy,shockWater,coopActors,enemyEncounterReady,rand}=api;
  const {W,H,rooms,regionAt,inRest,outsideAt,pointIn,valid,furnitureBlocked,gateLineBlocked,gateBlocked,wall,pressurePlates}=floor;
- const {SNAKE,LION,LIONESS,BAT,STORM_BAT}=enemyRules;
+ const {SNAKE,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT}=enemyRules;
  const isBat=e=>e.type===BAT||e.type===STORM_BAT,isLion=e=>e.type===LION||e.type===LIONESS;
  const movementCue={lion:'lion_paw',lioness:'lion_paw','bat-fire':'bat_wings','bat-lightning':'bat_wings'};
  const windupCue={rift:'enemy_priest_voice',bow:'bow_draw',bite:'snake_hiss'};
@@ -20,6 +20,7 @@ function create(api){
  };
  function moveFrom(dt,actor,clock,width,height){
   player=actor;combatClock=clock;cw=width;ch=height;
+  state.waterArcs=(state.waterArcs??[]).filter(arc=>(arc.life-=dt)>0);
   updateWebs(dt);updatePlates(dt);updateStorm(dt);updateBolts(dt);updateEnemyHazards(dt);
  }
  function act(e,dt,actor,clock,width,height){
@@ -48,6 +49,16 @@ function updateEnemy(e,dt){
   e.batMove=null;e.lionMove=null;e.called=0;
   return;
  }
+ if(floor.layerAt(e.x,e.y)!==floor.layerAt(player.x,player.y)){
+  const stairs=floor.stairsFor(e,player);
+  e.windup=0;e.runAttack=0;e.moving=false;e.phase+=dt;
+  e.aggro=Math.max(0,(e.aggro||0)-dt);
+  if(!stairs)return;
+  if(Math.hypot(e.x-stairs.x,e.y-stairs.y)<23){
+   Object.assign(e,stairs.exit);e.route=null;e.routeGoal=null;
+  }else pursue(e,dt,Math.max(76,enemyRules.attacks[e.type].speed),!gateLineBlocked(e.x,e.y,stairs.x,stairs.y),stairs);
+  return;
+ }
  if(isBat(e)){updateBat(e,dt);return;}
  if(isLion(e)){updateLion(e,dt);return;}
  const spec=enemyRules.attacks[e.type];
@@ -63,10 +74,10 @@ function updateEnemy(e,dt){
   e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
  }
  const clear=line&&e.aggro>0;
- if(e.type!==SNAKE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))damageActive(9+(e.boss?5:0),items.foeAttack[e.type]);
+ if(e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))damageActive(9+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.runAttack>0){
   if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'){advanceRush(e,spec,dt,angle);return;}
-  if(['web','frost','bow','crossbow'].includes(spec.id)){
+  if(['web','frost','bow','crossbow','electrode','rat-bite'].includes(spec.id)){
    e.runAttack=Math.max(0,e.runAttack-dt);
    if(!e.runAttack)recover(e,spec.recovery);
    return;
@@ -105,6 +116,20 @@ function updateEnemy(e,dt){
 }
 function executeEnemyAttack(e,spec){
  e.attack=(e.boss?2.25:2.85)-(save.floor-1)*.12;
+ if(e.type===RAT||e.type===ELECTRO_RAT){
+  const electric=e.type===ELECTRO_RAT,amount=electric?16:7;
+  const split=electric?{physical:.3,lightning:.7}:{physical:1};
+  const dx=player.x-e.x,dy=player.y-e.y;
+  const hit=Math.hypot(dx,dy)<spec.range+11&&Math.cos(Math.atan2(dy,dx)-e.angle)>.5&&
+   !gateLineBlocked(e.x,e.y,player.x,player.y);
+  if(hit&&damageActive(amount,split)&&!electric)bleedActive(31);
+  if(electric){
+   soundWorld('element_lightning_charge',e,{gain:.66,priority:2,cooldown:.17});
+   shockWater(e,hit?player:null,split,amount,e);
+  }
+  e.runDuration=e.runAttack=.28;
+  return;
+ }
  const durations={charge:1.1,rift:.74,reap:.36,grab:.38,bite:.25};
  if(durations[spec.id]){
   const cue=spec.id==='rift'?'element_dark_rift':spec.id==='charge'?'weapon_hammer':spec.id==='reap'?'weapon_greatsword':null;

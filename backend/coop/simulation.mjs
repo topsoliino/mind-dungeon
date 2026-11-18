@@ -2,8 +2,8 @@ import {randomUUID} from 'node:crypto';
 import {run,balance,items,foes,geometry,enemySim,TILE,HERO_RADIUS,round,clamp,gap,remaining,normalAngle,maxHP,preparePlayer,selectLoot,cup,pools} from './rules.mjs';
 
 const vaultable=new Set(['barrel','table','round-table','banquet','banquet-long','bench','chair','basket','straw-bed']);
-const effectKinds=['bolts','enemyHazards','webShots','webPatches','stormStrikes'];
-const radius=e=>e.seat?HERO_RADIUS:e.type===foes.SNAKE||e.type>=foes.BAT?8:e.boss?19:14;
+const effectKinds=['bolts','enemyHazards','webShots','webPatches','stormStrikes','waterArcs'];
+const radius=e=>e.seat?HERO_RADIUS:e.type===foes.SNAKE||[foes.BAT,foes.STORM_BAT,foes.RAT].includes(e.type)?8:e.boss?19:14;
 const nearActor=(a,b,extra=0)=>Math.abs(a.x-b.x)<radius(a)+radius(b)+extra&&Math.abs(a.y-b.y)<radius(a)+radius(b)+extra;
 const clampInput=value=>Number.isFinite(value)?clamp(value,-1,1):0;
 const idleInput=()=>({seq:-1,x:0,y:0,aim:0,blocked:false,at:-Infinity});
@@ -11,12 +11,13 @@ const savePoison=poison=>poison?{...poison,owner:poison.owner?.seat??null}:null;
 const loadPoison=(poison,members)=>poison?{...poison,owner:members.get(poison.owner)?.player}:null;
 
 export class Simulation{
- constructor(seed,players,{random=Math.random,id=randomUUID}={},depth=1,layoutSeed=seed){
+ constructor(seed,players,{random=Math.random,id=randomUUID,layoutRevision}={},depth=1,layoutSeed=seed){
   this.random=random;this.id=id;this.players=players;this.clock=0;this.tickId=0;this.events=[];this.currentTarget=null;this.eventId=0;
-  this.seed=seed;this.startFloor(layoutSeed,depth);
+  this.seed=seed;this.startFloor(layoutSeed,depth,layoutRevision);
  }
- startFloor(seed,floor){
+ startFloor(seed,floor,layoutRevision){
   this.state={...run.floorState(seed,floor),templeDepth:run.templeDepth(this.seed)};
+  if(layoutRevision)this.state.layoutRevision=layoutRevision;
   this.floor=geometry.build(run,this.state);
   this.difficulty=this.activePlayers().length===2?1:.5;
   this.enemies=geometry.spawnEnemies(run,foes,this.state,this.floor,this.difficulty===1);
@@ -30,7 +31,7 @@ export class Simulation{
    takeDamage:(p,...args)=>this.hurtPlayer(p,...args),maxHP,
    applyPoison:(p,opts)=>this.poison(p,opts),addBleed:(p,n)=>this.bleed(p,n),
    soundWorld:(cue,pos,mix)=>this.sound(cue,pos,mix),
-   burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),coopActors:()=>this.activePlayers(),
+   burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),shockWater:(...args)=>this.shockWater(...args),coopActors:()=>this.activePlayers(),
    enemyEncounterReady:()=>this.currentTarget!==null,
    rand:(a,b)=>a+this.random()*(b-a)
   });
@@ -91,7 +92,7 @@ export class Simulation{
   const x=this.floor.valid(spawn.x+offset,spawn.y,HERO_RADIUS,false,true)?spawn.x+offset:spawn.x;
   Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,attackDuration:.4,walk:0,
    moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,
-   combat:0,staminaRest:0,entryGrace:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null});
+   combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null});
   p.input={seq:p.input.seq,x:0,y:0,aim:0,blocked:false,at:-Infinity};
   if(newFloor){
    Object.assign(p,{opened:[],searched:[],altarUses:{},altarQuestions:{},gateQuestions:{},boneClaims:{},rubyClaims:{},templeAttempts:{},trials:{},
@@ -125,6 +126,27 @@ export class Simulation{
    const x=actor.x+dx/steps,y=actor.y+dy/steps;
    if(dx&&pass(x,actor.y))actor.x=x;
    if(dy&&pass(actor.x,y))actor.y=y;
+  }
+ }
+ travel(p,link){
+  Object.assign(p,link.exit,{dash:0,moving:false,inv:.45,vault:null,chargeStart:null,travelLock:.48});
+  p.input={...idleInput(),seq:p.input.seq};
+  this.emit('travel',{seat:p.seat,x:p.x,y:p.y,link:link.kind});
+ }
+ hitDoor(door,attack){
+  const hp=this.floor.strikeDoor(attack.amount*(attack.charged?1.5:1),door);
+  this.emit('door',{x:door.x,y:door.y,id:door.id,hp});
+ }
+ shockWater(origin,impact,split,amount,owner){
+  const pulse=this.floor.waterPulse(origin,impact,split,amount);
+  if(!pulse)return;
+  this.effects.waterArcs.push(pulse);
+  this.sound('element_lightning_beam',pulse,{priority:2,gain:.56});
+  for(const p of this.activePlayers())if(p!==owner&&this.floor.pulseReaches(pulse,p)){
+   this.hurtPlayer(p,pulse.power,{lightning:1},true,1);
+  }
+  for(const e of this.enemies)if(e!==owner&&e.hp>0&&this.floor.pulseReaches(pulse,e)){
+   this.hurtEnemy(e,items.hit(pulse.power,{lightning:1},this.resistances[e.type]),owner?.seat?owner:null);
   }
  }
  control(p,input){
@@ -176,7 +198,7 @@ export class Simulation{
   }
  }
  stepPlayer(p,dt){
-  for(const key of ['inv','attack','dash','dashCooldown','webSlow','grabSlow','bleedGrace','entryGrace'])p[key]=remaining(p[key],dt);
+  for(const key of ['inv','attack','dash','dashCooldown','webSlow','grabSlow','bleedGrace','entryGrace','travelLock'])p[key]=remaining(p[key],dt);
   if(!p.bleedGrace)p.bleed=remaining(p.bleed,dt*14);
   if(p.activeBrew){
    p.activeBrew.remaining=remaining(p.activeBrew.remaining,dt);
@@ -283,16 +305,20 @@ export class Simulation{
   if(this.floor.inRest(p.x,p.y))return true;
   const hit={p,w,charged,amount:p.damage,crit:p.crit,impact:p.impact,split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
   if(w.projectile){
-   this.shots.push({x:p.x,y:p.y,angle:p.dir,left:reach,speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
+   this.shots.push({x:p.x,y:p.y,origin:{x:p.x,y:p.y},angle:p.dir,left:reach,speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
    return true;
   }
-  let targetHit=false;
+  let targetHit=false,impact=null;
+  const door=this.floor.doorAhead(p.x,p.y,p.dir,reach);
+  if(door)impact=door;
   for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
    if(e.hp>0&&gap(e,p)<reach+(e.size-1)*10&&Math.cos(angle-p.dir)>.25&&
-     !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;this.weaponHit(e,hit,angle);}
+     !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;impact??={x:e.x,y:e.y};this.weaponHit(e,hit,angle);}
   }
-  if(!targetHit){
+  if(door)this.hitDoor(door,hit);
+  this.shockWater(p,impact,hit.split,hit.amount,p);
+  if(!targetHit&&!door){
    const contact=this.floor.weaponImpact(p.x,p.y,p.dir,reach);
    if(contact)this.sound(contact.cue,contact,{gain:.67,priority:2});
   }
@@ -301,14 +327,18 @@ export class Simulation{
  updateShots(dt){
   this.shots=this.shots.filter(shot=>{
    const distance=Math.min(shot.left,shot.speed*dt),steps=Math.max(1,Math.ceil(distance/6)),stride=distance/steps;
+   const shock=(impact=shot)=>{if(shot.hit)this.shockWater(shot.origin??shot.hit.p,impact,shot.hit.split,shot.hit.amount,shot.hit.p);};
    for(let i=0;i<steps;i++){
     shot.x+=Math.cos(shot.angle)*stride;shot.y+=Math.sin(shot.angle)*stride;
-    if(this.floor.wall(shot.x,shot.y)||this.floor.gateBlocked(shot.x,shot.y))return false;
+    if(this.floor.wall(shot.x,shot.y)||this.floor.gateBlocked(shot.x,shot.y)){shock();return false;}
+    const door=this.floor.doorAt(shot.x,shot.y);
+    if(door){if(shot.hit)this.hitDoor(door,shot.hit);shock();return false;}
     const enemy=this.enemies.find(e=>e.hp>0&&gap(e,shot)<radius(e)+5&&
      !this.floor.gateLineBlocked(shot.x,shot.y,e.x,e.y));
-    if(enemy){this.weaponHit(enemy,shot.hit,shot.angle);return false;}
+    if(enemy){const impact={x:enemy.x,y:enemy.y};this.weaponHit(enemy,shot.hit,shot.angle);shock(impact);return false;}
    }
-   return (shot.left-=distance)>0;
+   if((shot.left-=distance)>0)return true;
+   shock();return false;
   });
  }
  weaponHit(e,attack,angle){
@@ -339,7 +369,8 @@ export class Simulation{
  hurtPlayer(p,n,split={physical:1},status=false,depth=foes.depthFactor(this.state.floor),cue){
   if(!p.online||p.inv>0&&!status||p.dash>0||this.floor.inRest(p.x,p.y))return false;
   const wet=this.floor.inRain(p.x,p.y)&&split.fire;
-  const hit=items.hit(n*depth*p.guard,wet?{...split,fire:split.fire*.55}:split,p.resistance);
+  const wetSplit=this.floor.waterLightning(wet?{...split,fire:split.fire*.55}:split,p.x,p.y);
+  const hit=items.hit(n*depth*p.guard,wetSplit,p.resistance);
   if(hit.total<=0)return false;
   const {hp,taken,proc}=items.resolveArmorHit(p,p.equipment.armor,p.hp,maxHP(p),hit.total,status);
   const location={seat:p.seat,x:round(p.x),y:round(p.y)};
@@ -389,7 +420,12 @@ export class Simulation{
     this.drop(pos,make(),p.seat);
    }
   };
-  if(e.type!==foes.SNAKE&&items.enemyRarity(this.random(),this.state.floor))spawnPair(()=>selectLoot(items.enemyRarity(this.random()*.18,this.state.floor),this.state.floor,this.random));
+  const sewer=this.floor.layerAt(e.x,e.y)===-1;
+  const rank=e.type===foes.SNAKE?null:items.enemyRarity(this.random(),this.state.floor,sewer);
+  if(rank)spawnPair(()=>{
+   const drop=selectLoot(rank,this.state.floor,this.random);
+   return sewer?{...drop,source:'Kanalisation'}:drop;
+  });
   if(this.random()<.015)spawnPair(()=>cup('Gegnerbeute · Koop'));
   const bones=foes.boneDrop(e,this.random);
   if(bones)spawnPair(()=>bones,this.floor.boneDropPosition(e));

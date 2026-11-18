@@ -44,7 +44,11 @@ window.DungeonRun = (() => {
   if(pick===0)return [...row(2,right,2),...col(3,Math.min(4,bottom-1),right)];
   if(pick===1)return [...row(2,right,bottom),...col(Math.max(2,bottom-2),bottom-1,2)];
   if(pick===2)return [...row(2,w-4,2),...row(3,right,bottom)];
-  return [...col(2,bottom,2),...col(3,bottom,right)];
+  if(pick===3)return [...col(2,bottom,2),...col(3,bottom,right)];
+  if(pick===4)return [...row(2,4,2),...col(3,4,4),...row(w-5,right,bottom)];
+  if(pick===5)return [...row(2,5,bottom),...row(w-6,right,2)];
+  if(pick===6)return [...col(2,4,right),...row(right-2,right,4),...col(bottom-1,bottom,2)];
+  return [...row(2,4,2),...col(bottom-1,bottom,right)];
  }
  function generate(seed,varied=true,revision=5,depth=1,templeAt=0){
   const rng=random(seed);
@@ -94,7 +98,7 @@ window.DungeonRun = (() => {
     const right=style()<.5,x=right?room.x+room.w-3:room.x+2;
     const top=style()<.5,y=top?room.y+2:room.y+room.h-3;
     if(revision>=7){
-     const pick=Math.floor(style()*4);
+     const pick=Math.floor(style()*(revision>=8?8:4));
      for(const [px,py] of longPartitions(room,pick)){
       map[py][px]=1;terrain[py][px]='partition';
      }
@@ -214,7 +218,8 @@ window.DungeonRun = (() => {
     }
    }
   }
-  return {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths};
+  const base={rooms,corridors,map,regions,gates,annexes,terrain,rest,paths};
+  return revision>=8?window.DungeonStrata.extend(base,seed,depth,random,shuffle):base;
 
  }
  function differentLayoutSeed(seed,rooms,gates){
@@ -322,8 +327,8 @@ window.DungeonRun = (() => {
   });
  }
  function floorState(seed,depth){
-  return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:7,cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
+  return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},doors:{},gateProgress:{},gateQuestions:{},opened:[],
+   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:8,cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
   return {...floorState(seed,1),templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};

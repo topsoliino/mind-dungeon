@@ -141,7 +141,8 @@ window.DungeonItems = (() => {
   {bleed:1,poison:1,magic:.20,lightning:-.40},
   {poison:1,dark:.30,fire:-.40},
   {physical:.12,fire:-.25,bleed:-.1},{physical:.06,frost:-.22,bleed:-.1},
-  {fire:.45,frost:-.35},{lightning:.45,fire:-.30}
+  {fire:.45,frost:-.35},{lightning:.45,fire:-.30},
+  {fire:-.22,bleed:-.12},{lightning:.48,frost:-.16}
  ];
  const foeAttack=[
   {physical:1},{physical:.35,fire:.65},{physical:.75,dark:.25},
@@ -149,7 +150,15 @@ window.DungeonItems = (() => {
  ];
  function rank(item){return rarity[item?.rarity]?item.rarity:'common';}
  function key(item){return [item.kind,item.id,rank(item)].join('/');}
- function enemyRarity(roll,depth){
+ function enemyRarity(roll,depth,sewer=false){
+  if(sewer){
+   if(roll<.10)return 'common';
+   if(roll<.29)return 'rare';
+   if(roll<.33)return 'epic';
+   if(roll<.342)return 'legendary';
+   if(roll<.348&&depth>=3)return 'mythic';
+   return null;
+  }
   if(roll<.13)return 'common';
   if(roll<.165)return 'rare';
   if(roll<.178)return depth>=3?'mythic':'epic';
