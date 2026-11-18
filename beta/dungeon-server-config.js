@@ -1,2 +1,2 @@
-// Set the exact HTTPS origin issued by our Render service after provisioning.
-window.MindDungeonCoopOrigin='';
+// Authoritative co-op endpoint on Render.
+window.MindDungeonCoopOrigin='https://mind-dungeon-coop.onrender.com';
