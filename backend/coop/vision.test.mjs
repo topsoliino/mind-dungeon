@@ -11,7 +11,7 @@ const center=(x,y)=>({x:(x+.5)*TILE,y:(y+.5)*TILE});
 function looks(view,x,y){const p=center(x,y);return view.sees(p.x,p.y);}
 function knows(view,x,y){const p=center(x,y);return view.remembers(p.x,p.y);}
 
-test('the start chamber reveals a long hall up to its door while bends and the far side stay hidden',()=>{
+function hallWithDoor(){
  const W=19,H=13,map=Array.from({length:H},()=>Array(W).fill(1)),regions=map.map(row=>row.map(()=>-1));
  function carve(left,top,right,bottom,id){
   for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){
@@ -22,9 +22,13 @@ test('the start chamber reveals a long hall up to its door while bends and the f
  carve(7,5,17,5,2);
  carve(11,6,11,10,2);
  const world={W,H,map,regions,stairs:[],rest:{id:1},rooms:[],isPassage:id=>id===2,abyssAt:()=>false,layerForRegion:()=>0};
- let closed=true;
- const door={floorCells:[5*W+14],visible:()=>closed};
+ const door={...center(14,5),vertical:true,span:TILE,face:12,floorCells:[5*W+14],closed:true,visible(){return this.closed;}};
  const view=vision.create(world,TILE,[door],[],new Set([1]));
+ return {world,door,view};
+}
+
+test('the start chamber reveals a long hall up to its door while bends and the far side stay hidden',()=>{
+ const {world,door,view}=hallWithDoor();
  assert.ok(knows(view,13,5));
  assert.equal(knows(view,11,9),false);
  assert.equal(knows(view,16,5),false);
@@ -35,16 +39,35 @@ test('the start chamber reveals a long hall up to its door while bends and the f
  view.update(center(11,6),1280,768);
  assert.ok(looks(view,11,9));
  assert.ok(knows(view,13,5));
- closed=false;
+ door.closed=false;
  view.update(center(11,5),1280,768);
  assert.ok(looks(view,16,5));
  assert.equal(view.barrierVisible(door),false);
- closed=true;view.update(center(11,5),1280,768);
+ door.closed=true;view.update(center(11,5),1280,768);
  assert.ok(knows(view,16,5));
  assert.equal(looks(view,16,5),false);
  const remembered=vision.create(world,TILE,[door],view.seenTiles,new Set([1]));
  assert.ok(knows(remembered,11,9));
  assert.ok(knows(remembered,16,5));
+});
+
+test('a closed door blocks sight from both sides even when the observer shares its tile',()=>{
+ for(const side of [-1,1]){
+  const {door,view}=hallWithDoor();
+  const observer={x:door.x+side*20,y:door.y};
+  const near=14+side,far=14-side;
+  view.update(observer,1280,768);
+  assert.ok(view.barrierVisible(door));
+  assert.ok(knows(view,14,5));
+  assert.ok(looks(view,near,5));
+  assert.equal(looks(view,far,5),false);
+  assert.equal(view.sees(door.x-side*20,door.y),false);
+  if(side<0)assert.equal(knows(view,far,5),false);
+  door.closed=false;
+  view.update(observer,1280,768);
+  assert.ok(looks(view,far,5));
+  assert.ok(knows(view,far,5));
+ }
 });
 
 test('the starter stairs stay visible from a side passage and only the ascent hides the unseen upper landing',()=>{
