@@ -138,7 +138,7 @@ export class Simulation{
    if(dx&&pass(x,actor.y))actor.x=x;
    if(dy&&pass(actor.x,y))actor.y=y;
    if(canFall&&this.floor.pastLedge(actor.x,actor.y)){
-    actor.fall={remaining:fallSeconds,origin};
+    actor.fall={remaining:fallSeconds,origin,heading:Math.atan2(dy,dx)};
     actor.attack=0;actor.dash=0;actor.chargeStart=null;actor.moving=false;
     this.sound('hero_fall',actor,{priority:4,gain:.85});
     return false;
@@ -179,7 +179,7 @@ export class Simulation{
   return true;
  }
  canTarget(e,p){
-  return p.online&&foes.encounterReady(e,p,this.floor,p.entryGrace??0);
+  return p.online&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&foes.encounterReady(e,p,this.floor,p.entryGrace??0);
  }
  isWeb(p){
   return !this.floor.inRest(p.x,p.y)&&(this.floor.furniture.some(o=>o.type==='web'&&Math.abs(o.x-p.x)<o.w/2+9&&Math.abs(o.y-p.y)<o.h/2+9)||

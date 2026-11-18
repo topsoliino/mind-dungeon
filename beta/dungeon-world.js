@@ -56,6 +56,15 @@ function stairConnected(a,b){
  const ar=regionAt(a.x,a.y),br=regionAt(b.x,b.y);
  return stairsNear(a).some(s=>s.regions.has(br))||stairsNear(b).some(s=>s.regions.has(ar));
 }
+function stairCrestClosed(stair,observer,explored){
+ const row=observer.y/TILE;
+ if(explored.has(stair.roomIds[1])||row<=stair.y+1.25)return false;
+ return layerAt(observer.x,observer.y)<stair.upper||row<=stair.y+stair.h+1.65;
+}
+function hiddenByStairCrest(observer,target,explored){
+ const region=regionAt(target.x,target.y);
+ return stairsNear(observer).some(stair=>stair.roomIds[1]===region&&stairCrestClosed(stair,observer,explored));
+}
 const cryptAltar=crypt&&pointIn(crypt,2,0);
 const links=linkTiles.flatMap(({id,kind,a,b,seal})=>[[a,b],[b,a]].map(([from,to],side)=>({
  ...tileCenter(from),id:id+'-'+side,kind,seal,layer:layerForRegion(regions[from.y][from.x]),exit:tileCenter(to)
@@ -536,7 +545,7 @@ return {
  paths,H,W,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,
- regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
+ regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition
 };

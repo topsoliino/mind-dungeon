@@ -109,7 +109,7 @@ test('quick food absorbs pending damage, chooses the smallest sufficient portion
  assert.equal(host.hp,hp);
  sim.step(.92);
  assert.equal(host.hp,hp);
- const warning=createProjection()(sim,host).you.at(-2);
+ const warning=createProjection()(sim,host).you.at(-3);
  assert.equal(warning[0].type,'frost');
  assert.equal(sim.actions.dispatch(host,'quick-food',{}).item.id,'bread');
  assert.equal(host.consume.end-host.consume.start,1.5);
@@ -262,6 +262,7 @@ test('water beside both bridges drops the hero while sewer water remains walkabl
   assert.equal(sim.floor.abyssAt(host.x,host.y),false);
   host.equipment.rings[0]=null;
   assert.equal(sim.move(host,0,-TILE),false);
+  assert.equal(createProjection()(sim,host).you.at(-1),-Math.PI/2);
   sim.stepPlayer(host,fallSeconds);
   assert.ok(sim.events.some(e=>e.kind==='death'&&e.cause==='fall'));
  }
@@ -647,9 +648,9 @@ test('the hero can return from the lip, and an eagle can defeat the Ring der Hö
  assert.equal(sim.move(host,-55,0),false);
  assert.equal(host.combatRecord.deaths,0);
  assert.equal(host.fall.remaining,fallSeconds);
- assert.equal(createProjection()(sim,host).you.at(-1),0);
+ assert.equal(createProjection()(sim,host).you.at(-2),0);
  sim.stepPlayer(host,fallSeconds*.5);
- assert.equal(createProjection()(sim,host).you.at(-1),.5);
+ assert.equal(createProjection()(sim,host).you.at(-2),.5);
  sim.stepPlayer(host,fallSeconds*.5);
  assert.equal(host.combatRecord.deaths,1);
  assert.equal(sim.events.at(-1).cause,'fall');

@@ -12,6 +12,24 @@ window.DungeonStrataFx=(()=>{
   ctx.roundRect(x+left*inset,y+top*inset,size-(left+right)*inset,size-(top+bottom)*inset,
    [left*top*radius,right*top*radius,right*bottom*radius,left*bottom*radius]);
  }
+ // Repeatable water frames are uploaded once and placed at world coordinates.
+ // Bridges and temples do not need the interactive sewer ripple surface.
+ function riverAnimation(tileSize){
+  const tiles=6,pixels=tileSize/2,size=pixels*tiles,count=12,cycle=Math.PI*2;
+  const make=vertical=>Array.from({length:count},(_,i)=>{
+   const canvas=document.createElement('canvas');canvas.width=canvas.height=size;
+   const ctx=canvas.getContext('2d'),image=ctx.createImageData(size,size),pace=i/count*cycle;
+   for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const u=(vertical?y:x)/size*cycle,v=(vertical?x:y)/size*cycle;
+    const caustic=Math.max(0,Math.sin(u*6-pace+Math.sin(v*4)*1.7)*.86+Math.sin(v*7-u*2+pace)*.72-.73);
+    const index=(y*size+x)*4;
+    image.data[index]=77;image.data[index+1]=153;image.data[index+2]=160;
+    image.data[index+3]=12+Math.round(caustic*61);
+   }
+   ctx.putImageData(image,0,0);return canvas;
+  });
+  return {tiles,pixels,count,frames:[make(false),make(true)]};
+ }
  const vertex=`
  attribute vec3 aWorld;attribute vec2 aLocal;attribute vec4 aEdges;
  uniform vec4 uView;
@@ -153,5 +171,5 @@ window.DungeonStrataFx=(()=>{
   }
   return {canvas,collect,render,get shader(){return Boolean(gl&&!gl.isContextLost());}};
  }
- return {create,isSewer,shoreline,shorePath};
+ return {create,isSewer,shoreline,shorePath,riverAnimation};
 })();
