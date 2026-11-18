@@ -20,12 +20,12 @@ export const normalAngle=angle=>Math.atan2(Math.sin(angle),Math.cos(angle));
 export const slotOf=id=>id.split('-').at(-1);
 export const stats=['vigor','attunement','endurance','vitality','strength','dexterity','intelligence','faith','luck'];
 const classes={
- guardian:['Wächter','rust','bulwark','knight',{vigor:14,endurance:12,strength:12,vitality:12}],
- duelist:['Duellant','rapier','hunter','wanderer',{dexterity:15,endurance:12}],
- scholar:['Gelehrter','staff','scholar','scholar',{intelligence:15,attunement:15}],
- pilgrim:['Pilger','blade','faith','hunter',{faith:15,vigor:11}],
- archer:['Pfadschütze','bow','dodge','hunter',{dexterity:15,endurance:13,vigor:11,strength:8}],
- shadow:['Schattenläufer','dagger','luck',null,{dexterity:15,luck:15}]
+ guardian:['Wächter','rust','bulwark',{vigor:14,endurance:12,strength:12,vitality:12}],
+ duelist:['Duellant','rapier','hunter',{dexterity:15,endurance:12}],
+ scholar:['Gelehrter','staff','scholar',{intelligence:15,attunement:15}],
+ pilgrim:['Pilger','blade','faith',{faith:15,vigor:11}],
+ archer:['Pfadschütze','bow','dodge',{dexterity:15,endurance:13,vigor:11,strength:8}],
+ shadow:['Schattenläufer','dagger','luck',{dexterity:15,luck:15}]
 };
 export const item=(kind,id,rarity='common',source='Koop')=>({kind,id,rarity,source});
 export const pools={
@@ -36,13 +36,13 @@ export const pools={
 export const cup=source=>item('cup','cup','rare',source);
 export function makePlayer(seat,character,pack){
  const chosen=Object.hasOwn(classes,character?.classId)?character.classId:'guardian';
- const [className,weapon,ring,armorSet,boosts]=classes[chosen];
+ const [className,weapon,ring,boosts]=classes[chosen];
  const attributes={...Object.fromEntries(stats.map(key=>[key,10])),...boosts};
  const color=(key,fallback)=>typeof character?.[key]==='string'&&/^#[a-f0-9]{6}$/i.test(character[key])?character[key]:fallback;
  const appearance={name:typeof character?.name==='string'?character.name.trim().slice(0,24)||'Wanderer':'Wanderer',
   classId:chosen,className,gender:character?.gender==='female'?'female':'male',
   color:color('color','#7652a9'),skin:color('skin','#d4a785'),hair:color('hair','#392b4e')};
- const armor=armorSet?Object.fromEntries(['helmet','chest','legs','boots'].map(slot=>[slot,armorSet+'-'+slot])):{};
+ const armor=items.startingArmor(chosen);
  const inventory=[item('weapon',weapon),item('ring',ring),...Object.values(armor).map(id=>item('armor',id))];
  const p={seat,appearance,pack,attributes,inventory,equipment:{weapon,weaponRarity:'common',armor,armorRarities:{},rings:[ring,null],ringRarities:{}},
   xp:0,level:1,pendingLevels:0,gold:0,bones:0,rubies:0,kills:0,solved:{},questionCount:0,questionReview:{},activeBrew:null,
@@ -51,6 +51,7 @@ export function makePlayer(seat,character,pack){
  return p;
 }
 export function preparePlayer(p){
+ p.armorCooldowns??={};
  p.mods=brewing.bonuses(p.activeBrew);
  const {weapon,weaponRarity,armor,armorRarities,rings,ringRarities}=p.equipment;
  p.weapon=weapon?items.weapon(weapon,weaponRarity):null;

@@ -22,7 +22,19 @@
   scholar:{kg:12,affinities:{magic:30,lightning:13,physical:-15}},
   hunter:{kg:31,affinities:{poison:36,bleed:18,fire:-18}},
   knight:{kg:51,affinities:{physical:28,fire:22,lightning:-28}},
-  shadow:{kg:62,affinities:{dark:40,frost:21,magic:-24}}
+  shadow:{kg:62,affinities:{dark:40,frost:21,magic:-24}},
+  pathfinder:{kg:23,affinities:{physical:19,poison:16,fire:-14},effects:{
+   helmet:{key:'arrowReach',value:.06,cost:6},chest:{key:'arrowReach',value:.06,cost:6}
+  }},
+  bastion:{kg:55,affinities:{physical:35,lightning:14,magic:-22},effects:{
+   chest:{key:'block',value:90,cost:12},helmet:{key:'blockBoost',value:30,cost:7}
+  }},
+  emberheart:{kg:36,affinities:{fire:28,dark:17,frost:-21},effects:{
+   chest:{key:'heal',value:240,cost:12},legs:{key:'healBoost',value:60,cost:7}
+  }},
+  windstep:{kg:17,affinities:{lightning:24,frost:16,physical:-15},effects:{
+   boots:{key:'dashCooldown',value:.15,cost:8},legs:{key:'dashCooldown',value:.10,cost:6}
+  }}
  };
  const armorSlots={helmet:{share:1,maxKg:10},chest:{share:3,maxKg:27},legs:{share:2,maxKg:18},boots:{share:1,maxKg:10}};
  const weaponMythicDash=1.2,armorMythicMove=.97;
@@ -98,7 +110,8 @@
    impact:Math.round(kg*1.35+4),malus:rank==='mythic',cost:{...summarize(),base},budget:budgets[rank]};
  }
  function buildArmor(set,slot,rank){
-  const {kg:totalKg,affinities}=armorSets[set],{share,maxKg}=armorSlots[slot];
+  const {kg:totalKg,affinities,effects}=armorSets[set],{share,maxKg}=armorSlots[slot];
+  const effect=effects?.[slot],perk=effect?.cost??0;
   const kg=Math.round(totalKg*share/7*2)/2,id=set+'-'+slot;
   const step=Math.min(3,ranks.indexOf(rank));
   const base=Object.fromEntries(Object.entries(affinities).map(([type,pct])=>[type,Math.round(pct*share/7)]));
@@ -110,7 +123,7 @@
    const relief=Math.min(step,Math.max(0,-pct-1));
    stats[type]=(pct+relief)/100;recovery+=relief;
   }
-  const affinityBudget=budgets[rank]-weight-recovery;
+  const affinityBudget=budgets[rank]-weight-recovery-perk;
   assert(affinityBudget>=0,id,'armor budget exceeded');
   let left=affinityBudget;
   const totalWeight=positive.reduce((sum,[,points])=>sum+points,0);
@@ -118,7 +131,7 @@
    const allocated=i===positive.length-1?left:Math.floor(affinityBudget*points/totalWeight);
    left-=allocated;stats[type]=allocated*.5/100;
   }
-  return {id,rank,kg,stats,malus:rank==='mythic',cost:{weight,affinities:affinityBudget,recovery},budget:budgets[rank]};
+  return {id,rank,kg,stats,effect,malus:rank==='mythic',cost:{weight,affinities:affinityBudget,recovery,...(perk?{perk}:{})},budget:budgets[rank]};
  }
  const weaponTable=Object.fromEntries(Object.entries(weapons).map(([id,spec])=>[id,Object.fromEntries(ranks.map(rank=>[rank,buildWeapon(id,rank,spec)]))]));
  const armorTable=Object.fromEntries(Object.keys(armorSets).flatMap(set=>Object.keys(armorSlots).map(slot=>
