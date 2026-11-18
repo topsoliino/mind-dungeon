@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=19"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=17"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=17"></script><script src="beta/dungeon-items.js?v=17"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=16"></script><script src="beta/dungeon-effects-art.js?v=18"></script><script src="beta/dungeon-art.js?v=18"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=4"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=20"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=17"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=17"></script><script src="beta/dungeon-items.js?v=17"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=16"></script><script src="beta/dungeon-effects-art.js?v=18"></script><script src="beta/dungeon-art.js?v=18"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=4"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -70,6 +70,13 @@ let mdSession=null;
 try{mdSession=JSON.parse(localStorage.getItem(MD_AUTH_KEY)||'null');}catch{}
 const accountId=mdSession?.user?.id??null;
 const saveStorageKey=accountId?KEY+'-account-'+accountId:KEY;
+const coopAPI=window.DungeonCoop;
+const coopRoom=coopAPI?.read(accountId)??null,coopHost=coopRoom?.seat===1;
+function saveRun(data){
+ const text=JSON.stringify(data);
+ if(coopRoom)sessionStorage.setItem(coopAPI.key(coopRoom),text);
+ else localStorage.setItem(saveStorageKey,text);
+}
 if(accountId&&!localStorage.getItem(KEY+'-account-migration')&&!localStorage.getItem(saveStorageKey)){
  const legacy=localStorage.getItem(KEY);
  if(legacy)try{
@@ -78,7 +85,7 @@ if(accountId&&!localStorage.getItem(KEY+'-account-migration')&&!localStorage.get
   localStorage.removeItem(KEY);
  }catch{}
 }
-const raw=localStorage.getItem(saveStorageKey);
+const raw=coopRoom?sessionStorage.getItem(coopAPI.key(coopRoom)):localStorage.getItem(saveStorageKey);
 let save={hp:100,xp:0,gold:0,kills:0,packs:[]};
 try{if(raw)Object.assign(save,JSON.parse(raw));}catch(e){console.warn('Spielstand ist ungültig',e);}
 const packLibrary=new Map();
@@ -248,7 +255,8 @@ function valid(x,y,r=12,ignoreSeals=false,feet=false){
  return !furnitureBlocked(x,y,feet?9:r,feet?6:r);
 }
 const HERO_RADIUS=14;
-const player={dash:0,dashCooldown:0,dashX:0,dashY:0,x:save.x??spawn.x,y:save.y??spawn.y,hp:Math.max(1,save.hp),max:100,speed:178,dir:0,attack:0,inv:0,walk:0,moving:false,back:false};
+let player={dash:0,dashCooldown:0,dashX:0,dashY:0,x:save.x??(coopRoom?.seat===2?spawn.x+37:spawn.x),y:save.y??spawn.y,hp:Math.max(1,save.hp),max:100,speed:178,dir:0,attack:0,inv:0,walk:0,moving:false,back:false};
+const realHero=player;
 const ATTRS={
  vigor:['Vitalität','Jeder Punkt gibt dir 3 zusätzliche maximale Lebenspunkte.'],
  attunement:['Zauberei','Jeder Punkt erhöht den Fokuswert um 4. Zauberei verstärkt Waffen, die damit skalieren, etwa den Neuronenstab.'],
@@ -546,12 +554,18 @@ function inventoryMenu(filter='all',page=0,selected,target=null){
   '<div class="rpg-grid">'+entries.map(({it,index})=>'<button class="rpg-cell'+(isEquipped(it)?' equipped':'')+'" data-item="'+index+'" aria-pressed="'+(selection?.index===index)+'" title="'+qEsc(itemTitle(it))+'" aria-label="'+qEsc(itemTitle(it))+'">'+itemTile(it)+(isEquipped(it)?'<span class="count">E</span>':'')+'</button>').join('')+'</div>'+
   '<div class="ledger-actions">'+(pages>1?'<button id="bagPrev" '+(page===0?'disabled':'')+' aria-label="Vorherige Seite">‹</button><small>'+(page+1)+'/'+pages+'</small><button id="bagNext" '+(page+1>=pages?'disabled':'')+' aria-label="Nächste Seite">›</button>':'')+
   '<button id="toGear">Ausrüstung</button><button id="closeInv">Schließen</button></div></section>'+
-  '<aside class="rpg-right"><div id="rpgInspect"></div><button class="primary" id="md-equip-selected">Ausrüsten</button><button id="md-quick-selected">Zur Schnellauswahl</button>'+
+  '<aside class="rpg-right"><div id="rpgInspect"></div><button class="primary" id="md-equip-selected">Ausrüsten</button><button id="md-quick-selected">Zur Schnellauswahl</button><button id="md-drop-selected">Ablegen</button>'+
   (save.consumeQueue.length?'<small class="muted" role="status">Vorgemerkt zum Verzehr · '+save.consumeQueue.length+'</small>':'')+'</aside></div>','inventory');
  const inspect=it=>{
   $('#rpgInspect').innerHTML=itemComparison(it);
   const shortcut=$('#md-quick-selected');shortcut.disabled=!it||it.kind==='cup';
   shortcut.onclick=()=>quickSelect(it);
+  const drop=$('#md-drop-selected');drop.disabled=!it||atTitle;
+  drop.onclick=async()=>{
+   drop.disabled=true;const index=save.inventory.indexOf(it);
+   await dropInventoryItem(it);
+   if(modalType==='inventory')inventoryMenu(filter,page,Math.min(index,save.inventory.length-1),target);
+  };
   const button=$('#md-equip-selected'),food=it?.kind==='food',potion=it?.kind==='potion';
   button.textContent=food?'Essen':potion?'Trinken':'Ausrüsten';
   button.disabled=!it||it.kind==='cup'||(food?!canQueueFood():potion?save.consumeQueue.some(queued=>queued.kind==='potion'):isEquipped(it)||it.kind==='weapon'&&unmetRequirements(it.id).length>0);
@@ -618,18 +632,19 @@ function dropSoul(pos,it,announce=true){
  burst(x,y,items.rarity[items.rank(it)].color,13);
  if(announce)soundWorld('loot_soul_spawn',pos,{gain:.68,cooldown:.16});
 }
-function claimSoul(index){
+function claimSoul(orb){
  if(save.inventory.length>=30){soundUI('ui_error');tell('Inventar voll');return;}
- const orb=save.souls[index];if(!orb)return;
+ if(!orb)return;
+ if(orb.id){if(coopRemoteLoot.some(current=>current.id===orb.id))takeCoopOrb(orb);return;}
+ const index=save.souls.indexOf(orb);if(index<0)return;
  save.inventory.push(orb.item);save.souls.splice(index,1);persist();
- const rank=items.rank(orb.item);
- soundUI(rank==='common'?'loot_soul_pick':rank==='rare'?'loot_rare':rank==='epic'?'loot_epic':'loot_exalted');
- tell('Aufgehoben · '+itemTitle(orb.item));
+ showPickedSoul(orb.item);
 }
 const rand=(a,b)=>a+Math.random()*(b-a);let enemies=[],particles=[],slashes=[],webShots=[],webPatches=[],enemyHazards=[],deathBursts=[],bolts=[],altarBursts=[];const dust=[];let moveClock=0;
 
 const furnishingSeed=save.dungeonSeed;
 const enemyDepth=enemyRules.depthFactor(save.floor);
+const enemyHealth=(type,boss)=>Math.max(1,Math.round(enemyRules.health(type,boss,save.floor)*(coopRoom?1:.5)));
 const foeResistances=items.foes.map(profile=>enemyRules.resistances(profile,save.floor));
 const merchantRandom=run.random(furnishingSeed^0x7157be6a);
 const merchantRoomId=1+Math.floor(merchantRandom()*4),merchantZone=zones[merchantRoomId];
@@ -977,8 +992,10 @@ function updateFog(dt){
  }
 }
 function enemyEncounterReady(e){
- if(entryGrace||heroRegion<0||!explored.has(heroRegion)||inRest(player.x,player.y))return false;
  const region=regionAt(e.x,e.y);
+ if(coopHost&&player===remoteHero){const remoteRegion=regionAt(player.x,player.y);
+  return Boolean(player.ready&&player.hp>0&&(region===remoteRegion||e.alerted&&explored.has(region)));}
+ if(entryGrace||heroRegion<0||!explored.has(heroRegion)||inRest(player.x,player.y))return false;
  return explored.has(region)&&(region===heroRegion||e.alerted);
 }
 const rangedRandom=run.random(furnishingSeed^0xc48ff2a3);
@@ -1002,7 +1019,7 @@ for(const room of rooms){
   const ranged=rangedRandom()<.34;
   const type=ranged&&melee===3?ARCHER:ranged&&melee===ZOMBIE?CROSSBOW:melee;
   const boss=k===0&&roomId!==0;
-  const max=enemyRules.health(type,boss,save.floor);
+  const max=enemyHealth(type,boss);
   const phase=encounterRandom()*6,attack=1.2+encounterRandom()*1.8;
   if(!defeated.has(id))enemies.push({...pos,id,type,roomId,hp:max,max,boss,size:boss?1.3:1,phase,
    hit:0,attack,windup:0,angle:0});
@@ -1013,14 +1030,14 @@ function spawnAmbush(ambush){
  ambush.positions.forEach((p,i)=>{
   const id='ambush-'+ambush.index+'-'+i;
   if(defeated.has(id))return;
-  const max=enemyRules.health(p.type,false,save.floor);
+  const max=enemyHealth(p.type,false);
   enemies.push({...p,id,roomId:ambush.index,type:p.type,hp:max,max,size:.93,phase:i,hit:0,attack:1.4+i*.45,windup:0,angle:0});
  });
 }
 for(const ambush of save.ambushes)spawnAmbush(ambush);
 function addSerpent(spawn){
  if(defeated.has(spawn.id))return;
- const max=enemyRules.health(SNAKE,false,save.floor);
+ const max=enemyHealth(SNAKE,false);
  enemies.push({...spawn,type:SNAKE,hp:max,max,size:.57,phase:0,hit:0,attack:.5,windup:0,emerge:.28});
 }
 for(const spawn of save.serpents)addSerpent(spawn);
@@ -1053,7 +1070,7 @@ function stockTempleEnemies(){
     regionAt(p.x,p.y)===room.id&&canReachSpawn(p.x,p.y)&&valid(p.x,p.y,type===SNAKE?8:18,true)&&
     enemies.every(e=>Math.hypot(e.x-p.x,e.y-p.y)>40));
    if(!pos)continue;
-   const max=enemyRules.health(type,false,save.floor);
+   const max=enemyHealth(type,false);
    const fireSnake=type===SNAKE&&(entrance&&i===0||run.random(furnishingSeed^(room.id*719+i*9007))()<.37);
    enemies.push({...pos,id,type,fireSnake,roomId:0,size:type===SNAKE?.58:type===LION?1.19:1.06,hp:max,max,phase:i,attack:1.4+i*.3,hit:0,angle:0,windup:0});
   }
@@ -1080,7 +1097,7 @@ function stockOutdoorEnemies(){
   for(let i=0;i<count&&points.length;i++){
    const pos=i<pack?points.shift():points.pop(),id='garden-'+room.id+'-'+i;
    const type=i<pack?(rng()<.35?STORM_BAT:BAT):residents[i-pack];
-   const max=enemyRules.health(type,false,save.floor),phase=rng()*TAU,attack=1+rng();
+   const max=enemyHealth(type,false),phase=rng()*TAU,attack=1+rng();
    if(!defeated.has(id))enemies.push({...pos,id,type,roomId:0,hp:max,max,size:i<pack?.72:type===SNAKE?.58:1.04,phase,attack,hit:0,windup:0,angle:0});
   }
  }
@@ -1131,6 +1148,10 @@ function makeAmbush(index){
  const ambush={index,positions};save.ambushes.push(ambush);spawnAmbush(ambush);
  if(enemies.length)save.portal=null;
 }
+function addCoopAmbush(index){
+ if(!chests[index]||save.ambushes.some(ambush=>ambush.index===index))return;
+ makeAmbush(index);
+}
 function finishTrial(passed,restoring=false){
  const index=trial?.index??trialIndex;
  if(!trial&&!restoring)return;
@@ -1145,7 +1166,10 @@ function finishTrial(passed,restoring=false){
    {id:'merchant',kind:'ring',rarity:'rare',source};
   dropSoul(position,prize,false);
   dropSoul({x:position.x+17,y:position.y},lootChoice(save.floor>=3?'legendary':'rare',source),false);
- }else makeAmbush(index);
+ }else if(coopRoom&&!coopHost){
+  if(coopRelay)coopRelay.send('ambush',{index});else save.coopTrialAmbush=index;
+ }
+ else addCoopAmbush(index);
  persist();
  if(!restoring){
   soundUI(passed?'trial_win':'trial_fail',{priority:3});
@@ -1187,11 +1211,11 @@ function clearAccountSession(){
 }
 async function mdRest(path,options={},authenticated=true){if(!mdConfig)throw Error('Supabase ist noch nicht konfiguriert');if(authenticated){if(!mdSession)throw Error('Bitte zuerst anmelden');if(Date.now()>mdSession.expires_at-60000)await mdRefresh()}const r=await fetch(mdConfig.url+'/rest/v1/'+path,{...options,headers:{apikey:mdConfig.publishableKey,...(authenticated?{Authorization:'Bearer '+mdSession.access_token}:{}),...(options?.headers||{})}});if(!r.ok)throw Error('Datenbankfehler '+r.status+': '+(await r.text()).slice(0,160));if(r.status===204)return null;const t=await r.text();return t?JSON.parse(t):null}
 async function mdAuth(action,email,password){if(!mdConfig)mdConfig=MD_PUBLIC_CONFIG;const url=action==='register'?'/auth/v1/signup?redirect_to='+encodeURIComponent('https://topsoliino.github.io/mind-dungeon/beta/'):'/auth/v1/token?grant_type=password';const r=await fetch(mdConfig.url+url,{method:'POST',headers:{apikey:mdConfig.publishableKey,'Content-Type':'application/json'},body:JSON.stringify({email,password})});const d=await r.json();if(!r.ok)throw Error(d.msg||d.error_description||d.message||'Anmeldung fehlgeschlagen');if(d.access_token)mdSetSession(d);return !!d.access_token}
-async function syncSave(){if(!mdSession||saveBusy)return;saveBusy=true;try{await mdRest('character_saves?on_conflict=user_id,slot',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:mdSession.user.id,slot:mdSlot,data:{...save,packs:undefined,hp:player.hp,x:player.x,y:player.y,playtime:save.playtime},updated_at:new Date().toISOString()})})}catch(err){console.warn('Cloud-Speichern fehlgeschlagen:',err.message);throw err}finally{saveBusy=false}}
+async function syncSave(){if(coopRoom||!mdSession||saveBusy)return;saveBusy=true;try{await mdRest('character_saves?on_conflict=user_id,slot',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:mdSession.user.id,slot:mdSlot,data:{...save,packs:undefined,hp:player.hp,x:player.x,y:player.y,playtime:save.playtime},updated_at:new Date().toISOString()})})}catch(err){console.warn('Cloud-Speichern fehlgeschlagen:',err.message);throw err}finally{saveBusy=false}}
 let mdNavigatingToNewCharacter=false;function persist(){if(mdNavigatingToNewCharacter)return;
  const slots=save.quickSlots.map((key,i)=>slotItem(i)?key:null);
  save.hp=player.hp;save.x=vault?.start.x??player.x;save.y=vault?.start.y??player.y;
- try{localStorage.setItem(saveStorageKey,JSON.stringify({...save,quickSlots:slots}));}
+ try{saveRun({...save,quickSlots:slots});}
  catch(err){console.warn('Lokaler Spielstand konnte nicht gespeichert werden',err);return false;}
  save.quickSlots=slots;if(!paused)updateQuickBar();return true;
 }setInterval(()=>{persist()},12000);
@@ -1200,7 +1224,8 @@ let unmountTitleGlow=null;
 function show(content,type='menu'){
  unmountTitleGlow?.();unmountTitleGlow=null;
  if(!paused&&type!=='quiz'&&performance.now()-lastUiSound>48)soundUI('ui_open');
- const live=type==='quiz'&&!atTitle;
+ const live=!atTitle&&(type==='quiz'||type==='coop-watch'||Boolean(coopRoom));
+ if(type==='quiz')player.dash=0;
  audio?.setPaused(!live);
  audio?.setMusicScene(type==='title'||type==='creator'?type:null);
  $('#hud').hidden=!live;$('#xpHud').hidden=!live;$('#quickBar').hidden=!live;$('#wallet').hidden=!live;
@@ -1210,6 +1235,7 @@ function show(content,type='menu'){
  const selector=previous?.id?'#'+CSS.escape(previous.id):null;
  paused=!live;clearHeldAttack();modalType=type;
  for(const key in keys)keys[key]=false;
+ if(coopRoom)$('#coop-watch').hidden=true;
  $('#dungeonPrompt').hidden=true;$('#soulPreview').hidden=true;$('#mobileInteract').hidden=true;
  panel.innerHTML=content;$('#modalWrap').dataset.screen=type;$('#modalWrap').classList.toggle('live-quiz',live);$('#modalWrap').style.display='flex';
  if(type==='quiz'){panel.querySelector('.choice')?.focus();return;}
@@ -1225,6 +1251,7 @@ function close(){
  audio?.setMusicScene(null);
  paused=false;modalType='';pending=null;$('#modalWrap').style.display='none';$('#modalWrap').dataset.screen='';
  $('#hud').hidden=false;$('#xpHud').hidden=false;$('#wallet').hidden=false;updateWallet();updateQuickBar();
+ if(coopRoom)updateCoopAltars();
  if(queuedAltar!==null){
   soundWorld('shrine_spent',shrines[queuedAltar],{priority:2});
   altarBursts.push({...shrines[queuedAltar],life:1.12});queuedAltar=null;
@@ -1246,6 +1273,7 @@ function navModal(e){
  }
  if(e.code==='Escape'){
   e.preventDefault();
+  if(modalType==='coop-wait'){leaveWaitingRoom();return;}
   if(trial)finishTrial(trial.passed===true);
   else if(pending?.reason==='study')imageCards();
   else if(brewQuestion)finishIngredient(brewQuestion.answered===true);
@@ -1389,7 +1417,7 @@ function usePotion(it){
 }
 function updateConsumption(dt){
  if(paused)return;
- if(!vault&&!consumeMove&&save.consumeQueue.length&&player.attack<=0&&player.dash<=0){
+ if(!modalType&&!vault&&!consumeMove&&save.consumeQueue.length&&player.attack<=0&&player.dash<=0){
   const it=save.consumeQueue[0];
   clearHeldAttack();
   consumeMove={it,age:0,length:it.kind==='food'?.69:.82};
@@ -1449,7 +1477,7 @@ function quiz(z,reason,gateId=null,question=null){
  if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;
  const q=question||selectQuestion(z,gateId,reason==='shrine'?z:null);
  if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return;}
- pending={q,z,reason,gateId};
+ pending={q,z,reason,gateId,coopKey:coopRoom?coopAPI.token():null};
  if(reason==='shrine'||reason==='temple'){
   const site=reason==='shrine'?shrines[z]:templeShrines[gateId];
   if(site)soundWorld('shrine_open',site,{gain:.82,cooldown:.45});
@@ -1473,6 +1501,7 @@ function quiz(z,reason,gateId=null,question=null){
   if(!multiple){answer(index);return;}
   if(selected.has(index)){selected.delete(index);button.setAttribute('aria-pressed','false');}
   else if(selected.size<count){selected.add(index);button.setAttribute('aria-pressed','true');}
+  pending.coopPicks=[...selected];
   $('#selected-count').textContent=selected.size+' / '+count+' gewählt';
   $('#submitMultiple').disabled=selected.size!==count;
  });
@@ -1506,6 +1535,10 @@ function recordAnswer(q,ok){
 function reviewAnswer(q,choice,ok,status,next){
  soundUI(ok?'learn_right':'learn_wrong',{priority:3});
  const correct=q.correctIndices??[q.correctIndex],picked=Array.isArray(choice)?choice:[choice];
+ if(coopRoom&&pending){
+  pending.coopPicks=q.type==='free-text'?[]:picked;
+  pending.coopFeedback={status,text:q.explanation.slice(0,2200)};
+ }
  document.querySelectorAll('.choice').forEach(b=>{
   b.disabled=true;
   const index=Number(b.dataset.choice);
@@ -1544,7 +1577,7 @@ function answer(i){
  }
  if(reason==='shrine'){
   (save.altarQuestions[z]??=[]).push(q.id);
-  if((save.altarUses[z]=(save.altarUses[z]||0)+1)===2)queuedAltar=z;
+  if((save.altarUses[z]=(save.altarUses[z]||0)+1)===2&&!coopRoom)queuedAltar=z;
  }
  if(ok&&reason==='gate'&&gateId){
   (save.gateQuestions[gateId]??=[]).push(q.id);
@@ -1554,6 +1587,7 @@ function answer(i){
   soundWorld(opened?'gate_open_final':'gate_seal_progress',{x:(g.x+.5)*TILE,y:(g.y+.5)*TILE},{priority:2});
   if(opened){
    save.gates[gateId]=true;
+   if(coopRoom&&!coopHost)coopRelay?.send('gate',{id:gateId});
    burst((g.x+.5)*TILE,(g.y+.5)*TILE,g.color,45);
    tell('Wissenstor geöffnet!');
   }
@@ -1680,7 +1714,7 @@ let combatTime=0,staminaRest=0,levelBannerTimer=0;
 let heroShots=[];
 let impactBursts=[],heldAttack=null,combatClock=0,consumeMove=null,vault=null;
 function startAttack(input){
- if(!paused&&!mdNavigatingToNewCharacter&&!vault&&player.attack<=0&&player.dash<=0&&!heldAttack&&!consumeMove&&!save.consumeQueue.length)heldAttack={input,started:combatClock};
+ if(!modalType&&!paused&&!mdNavigatingToNewCharacter&&!vault&&player.attack<=0&&player.dash<=0&&!heldAttack&&!consumeMove&&!save.consumeQueue.length)heldAttack={input,started:combatClock};
 }
 function releaseAttack(input){
  if(heldAttack?.input!==input)return;
@@ -1754,7 +1788,7 @@ function weatherSplit(amount,split,x,y){
  return {amount:amount*total,split:Object.fromEntries(Object.entries(adjusted).map(([type,value])=>[type,value/total]))};
 }
 function strike(charged=false){
- if(paused||vault||player.attack>0||player.dash>0||consumeMove||save.consumeQueue.length)return;
+ if(modalType||!save.equipment.weapon||paused||vault||player.attack>0||player.dash>0||consumeMove||save.consumeQueue.length)return;
  updateCombat(0);
  const w=usableWeapon(),rank=pickedRarity(w),profile=items.weapon(w.id,rank);
  const cost=Math.round(profile.stamina*(charged?1.28:1)*brewBonus.cost);
@@ -1765,7 +1799,7 @@ function strike(charged=false){
  soundWorld(swingCue[w.id],player,{priority:2,cooldown:.065});
  const ang=player.dir,split=brewBonus.element?{[brewBonus.element]:Object.values(profile.split).reduce((sum,share)=>sum+share,0)}:profile.split;
  const color=items.damage[Object.keys(split)[0]].color;
- const attack={charged,profile,impact,rollChance,split,amount:weaponDamage(w,rank)*brewBonus.damage};
+ const attack={charged,profile,impact,rollChance,split,rarity:rank,amount:weaponDamage(w,rank)*brewBonus.damage};
  if(profile.projectile){
   const speed=(profile.projectile==='arrow'?490:345)*(charged?1.23:1);
   heroShots.push({...attack,x:player.x,y:player.y,angle:ang,speed,remaining:profile.reach*brewBonus.reach});
@@ -1787,29 +1821,36 @@ function strike(charged=false){
   applyWeaponHit(e,attack,a);
  }
 }
-function applyWeaponHit(e,{charged,profile,impact,rollChance,split,amount},angle){
+function applyWeaponHit(e,attack,angle,fromPeer=false){
+ if(coopRoom&&!coopHost){
+  coopRelay?.send('hit',{target:e.id,angle,from:{x:e.x,y:e.y},attack});
+  return;
+ }
+ const {charged,profile,impact,rollChance,split,amount}=attack;
  const counter=e.counterUntil>combatClock,rolled=!counter&&Math.random()<rollChance;
  const multiplier=balance.hitMultiplier(charged,counter,rolled,profile.critFactor);
  const wet=inRain(player.x,player.y)?player:e;
  const damage=weatherSplit(amount*multiplier,split,wet.x,wet.y);
  const hit=items.hit(damage.amount,damage.split,foeResistances[e.type]);
  const critical=counter?(charged?'fatal':'counter'):rolled?'critical':'';
- hurtEnemy(e,hit,true,critical);
+ const dealt=Math.min(e.hp,hit.total);
+ hurtEnemy(e,hit,!fromPeer,critical);
+ if(fromPeer&&dealt>0)coopRelay?.send('hurt',{credit:dealt,critical});
  if(counter&&hit.total>0)e.counterUntil=0;
  if(profile.status==='bleed'&&e.hp>0&&(e.bleedCooldown||0)<=0&&hit.total>0){
   e.bleedCooldown=3;
   const bleedRatio=.08+(profile.statusLevel-1)*.02;
-  hurtEnemy(e,items.hit(e.max*bleedRatio,{bleed:1},foeResistances[e.type]),true);
+  hurtEnemy(e,items.hit(e.max*bleedRatio,{bleed:1},foeResistances[e.type]),!fromPeer);
  }
  if(profile.status==='poison'&&e.hp>0&&!e.poison&&hit.total>0){
   if(foeResistances[e.type].poison===1)showDamage(e.x,e.y-13,0,'poison');
-  else applyPoison(e,{untilTick:.72,ticks:3,power:1+(profile.statusLevel-1)*.25,playerHit:true});
+  else applyPoison(e,{untilTick:.72,ticks:3,power:1+(profile.statusLevel-1)*.25,playerHit:!fromPeer});
  }
  if(hit.total>0){
   const push=enemyRules.knockbackDistance(impact,enemyRules.balance(e.type,e.boss));
   if(push){const distance=push*(profile.projectile ? .67 : 1);moveActor(e,Math.cos(angle)*distance,Math.sin(angle)*distance);}
   shake=Math.max(shake,push>=20?6:4);
-  if(hasRing('faith'))player.hp=Math.min(maxHP(),player.hp+3);
+  if(!fromPeer&&hasRing('faith'))player.hp=Math.min(maxHP(),player.hp+3);
  }
 }
 function updateHeroShots(dt){
@@ -1849,6 +1890,7 @@ function hurtEnemy(e,hit,playerHit=false,critical=''){
 }
 function applyPoison(target,status){
  target.poison=status;
+ if(coopHost&&target===remoteHero){coopRelay?.send('hurt',{poison:status});return;}
  soundWorld('element_poison_apply',target,{cooldown:.19,priority:2,gain:target===player?1:.8});
 }
 function tickPoison(e,dt){
@@ -1863,7 +1905,7 @@ function tickPoison(e,dt){
  if(e.poison!==status)return;
  status.untilTick+=.72;if(--status.ticks===0)e.poison=null;
 }
-function interact(){if(modalType||paused||mdNavigatingToNewCharacter)return;
+function interact(){if(modalType||paused||vault||consumeMove||mdNavigatingToNewCharacter)return;
 if(near?.kind==='cup'){collectCup();return;}
 if(near?.kind==='bones'){collectBones(near.i);return;}
 if(near?.kind==='temple'){templeQuiz(near.i);return;}
@@ -1871,7 +1913,7 @@ if(near?.kind==='well'){wellMenu();return;}
 if(near?.kind==='glossary'){openAttributeGlossary();return;}
 if(near?.kind==='cat'&&restCat&&Math.hypot(restCat.x-player.x,restCat.y-player.y)<71){petCat();return;}
 if(near?.kind==='brewery'){breweryMenu();return;}
-if(near?.kind==='soul'){claimSoul(near.i);return;}
+if(near?.kind==='soul'){claimSoul(near.orb);return;}
 if(near?.kind==='cabinet'){searchCabinet(near.i);return;}
 if(near?.kind==='trial'){offerTrial(near.i);return;}
 if(near?.kind==='portal'){enterPortal();return;}if(near?.kind==='merchant'){merchantMenu();return}if(near?.kind==='map'){save.merchantMapFound=true;persist();dungeonMapMenu();return}if(near?.kind==='gate'){gateQuiz(gates[near.i]);return}if(near?.kind==='shrine')quiz(near.i,'shrine');else if(near?.kind==='chest'){const k=near.i;if(!save.opened.includes(k)){save.opened.push(k);const gold=22+Math.floor(run.random(save.dungeonSeed^(k*10631+31))()*15)+save.floor*4;
@@ -1879,18 +1921,14 @@ save.gold+=gold;player.hp=Math.min(maxHP(),player.hp+12);
 burst(chests[k].x,chests[k].y,'#ffd27d',35);tell('Truhe geöffnet · +'+gold+' Gold');persist()}}else{tell('Hier gibt es nichts zu untersuchen')}}
 window.addEventListener('keydown',e=>{
  if(mdNavigatingToNewCharacter)return;
- if(modalType){
-  const steer=!paused&&modalType==='quiz'&&!e.target?.matches?.('input,textarea,select,[contenteditable]')&&
-   (e.code.startsWith('Arrow')||e.code==='ShiftLeft'||e.code==='ShiftRight');
-  if(steer){e.preventDefault();keys[e.code]=true;}else navModal(e);
-  return;
- }
+ if(modalType){navModal(e);return;}
  if(e.target.closest('input,textarea,select,[contenteditable]'))return;
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
  keys[e.code]=true;
  if(e.repeat)return;
  if(e.code==='Space'&&!tryVault())startAttack('keyboard');
  if(e.code==='KeyE')interact();
+ if(e.code==='KeyY'&&coopRoom)watchCoopQuiz();
  if(e.code==='KeyJ')journal();
  if(e.code==='KeyQ'){
   if(e.shiftKey){save.quickActive=(save.quickActive+1)%4;soundUI('ui_select');updateQuickBar();persist();}
@@ -1906,7 +1944,7 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')releaseAttack('keyboard');});
 window.addEventListener('blur',()=>{for(const key in keys)keys[key]=false;clearHeldAttack();});
 window.addEventListener('pointermove',e=>{
- if(e.target.closest?.('#modalWrap'))return;
+ if(modalType||e.target.closest?.('#modalWrap'))return;
  mouse.x=e.clientX;mouse.y=e.clientY;aimMode='mouse';
  const rect=$('#phaser-host').getBoundingClientRect();
  const px=phaserActive?window.__mindPhaserCameraX??cam.x:cam.x;
@@ -1914,7 +1952,7 @@ window.addEventListener('pointermove',e=>{
  player.dir=Math.atan2(py+mouse.y-rect.top-player.y,px+mouse.x-rect.left-player.x);
 });
 window.addEventListener('pointerdown',e=>{
- if(e.pointerType==='mouse'&&e.button===0&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
+ if(e.pointerType==='mouse'&&e.button===0&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
   aimMode='mouse';startAttack(e.pointerId);
  }
 });
@@ -1922,11 +1960,11 @@ window.addEventListener('pointerup',e=>releaseAttack(e.pointerId));
 window.addEventListener('pointercancel',e=>{if(heldAttack?.input===e.pointerId)clearHeldAttack();});
 document.querySelectorAll('[data-key]').forEach(b=>{
  const key=b.dataset.key;
- b.onpointerdown=e=>{e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId);};
+ b.onpointerdown=e=>{if(modalType)return;e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId);};
  b.onpointerup=b.onpointercancel=()=>keys[key]=false;
 });
 $('#mobileInteract').onclick=interact;
-$('#mobileNav').onclick=()=>{if(!paused)navigationMenu();};
+$('#mobileNav').onclick=()=>{if(!paused&&!modalType)navigationMenu();};
 $('#attack').onpointerdown=e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);startAttack(e.pointerId);};
 let footstepDistance=32, ambienceClock=0;
 function playFootstep(oldX,oldY) {
@@ -1941,7 +1979,7 @@ function playFootstep(oldX,oldY) {
 }
 function update(dt){
  if(mdNavigatingToNewCharacter)return;
- if(aimMode==='mouse'){
+ if(!modalType&&aimMode==='mouse'){
   const mx=(phaserActive?(window.__mindPhaserCameraX??cam.x):cam.x)+mouse.x;
   const my=(phaserActive?(window.__mindPhaserCameraY??cam.y):cam.y)+mouse.y;
   player.dir=Math.atan2(my-player.y,mx-player.x);
@@ -1992,19 +2030,30 @@ function update(dt){
   updateTempleSound(region);
  }
  updateBrew(dt);
- updateWebs(dt);
- updatePlates(dt);
- updateStorm(dt);
- updateBolts(dt);
+ interpolateCoop(dt);
+ if(!coopRoom||coopHost&&coopConnected){
+  updateWebs(dt);updatePlates(dt);
+  const outdoor=coopHost&&coopPeer&&outsideAt(remoteHero.x,remoteHero.y)?.storm&&!outsideAt(player.x,player.y)?.storm;
+  if(outdoor)asHero(remoteHero,()=>updateStorm(dt));else updateStorm(dt);
+  updateBolts(dt);updateEnemyHazards(dt);
+ }
  updateHeroShots(dt);
  if(mdNavigatingToNewCharacter)return;
  altarBursts=altarBursts.filter(effect=>(effect.life-=dt)>0);
  impactBursts=impactBursts.filter(effect=>(effect.life-=dt)>0);
- updateEnemyHazards(dt);
  for(const effect of deathBursts)effect.life-=dt;
  deathBursts=deathBursts.filter(effect=>effect.life>0);
  tickPoison(player,dt);
- for(const e of enemies)if(e.hp>0){tickPoison(e,dt);if(e.hp>0)updateEnemy(e,dt);}
+ if(!coopRoom||coopHost&&coopConnected){
+  remoteHero.inv=Math.max(0,remoteHero.inv-dt);
+  if(remoteHero.poison&&(remoteHero.poison.hold=(remoteHero.poison.hold??2.8)-dt)<=0)remoteHero.poison=null;
+  for(const e of enemies)if(e.hp>0){
+   tickPoison(e,dt);if(e.hp<=0)continue;
+   const usePeer=coopHost&&coopPeer&&asHero(remoteHero,()=>enemyEncounterReady(e))&&
+    (!enemyEncounterReady(e)||Math.hypot(e.x-remoteHero.x,e.y-remoteHero.y)+12<Math.hypot(e.x-player.x,e.y-player.y));
+   if(usePeer)asHero(remoteHero,()=>updateEnemy(e,dt));else updateEnemy(e,dt);
+  }
+ }
  if(mdNavigatingToNewCharacter)return;
  const dead=enemies.filter(e=>e.hp<=0);
  if(dead.length){
@@ -2016,9 +2065,12 @@ function update(dt){
   for(const e of dead){
    save.kills++;
    if(e.type===PRIEST)breakPriest(e);
-   const rarity=e.type===SNAKE?null:items.enemyRarity(Math.random(),save.floor);
-   if(Math.random()<.015)dropSoul(e,emptyCup('Gegnerbeute'));
-   if(rarity)dropSoul(e,lootChoice(rarity,'Gegner · Tiefe '+save.floor));
+   if(coopRoom)coopEnemyLoot(e);
+   else{
+    const rarity=e.type===SNAKE?null:items.enemyRarity(Math.random(),save.floor);
+    if(Math.random()<.015)dropSoul(e,emptyCup('Gegnerbeute'));
+    if(rarity)dropSoul(e,lootChoice(rarity,'Gegner · Tiefe '+save.floor));
+   }
   }
   if(enemies.length)tell(dead.length+' Gegner besiegt');
   else awakenPortal(dead[dead.length-1]);
@@ -2048,7 +2100,7 @@ templeShrines.forEach((p,i)=>{
 cabinets.forEach((p,i)=>{if(save.searched.includes(i))return;
  const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,72)&&reachableInteraction(p)){best=d;near={kind:'cabinet',i};}
 });
-save.souls.forEach((p,i)=>{const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,62)&&reachableInteraction(p)){best=d;near={kind:'soul',i};}});
+localAndNetworkSouls().forEach(p=>{const d=Math.hypot(p.x-player.x,p.y-player.y);if(d<Math.min(best,62)&&reachableInteraction(p)){best=d;near={kind:'soul',orb:p};}});
 if(save.portal&&near?.kind!=='soul'&&Math.hypot(save.portal.x-player.x,save.portal.y-player.y)<65&&reachableInteraction(save.portal))near={kind:'portal'};$('#healthfill').style.setProperty('--hurt',items.damage[player.dominant]?.color||'#c77462');$('#healthfill').style.width=(100*player.hp/maxHP())+'%';$('#staminafill').style.width=(100*player.stamina/maxStamina())+'%';$('#xpfill').style.width=(100*save.xp/xpRequired())+'%';$('#health').setAttribute('aria-valuenow',Math.ceil(player.hp));$('#health').setAttribute('aria-valuemax',maxHP());
 $('#stamina').hidden=combatTime<=0;
 $('#stamina').setAttribute('aria-valuenow',Math.ceil(player.stamina));$('#stamina').setAttribute('aria-valuemax',maxStamina());
@@ -2303,11 +2355,17 @@ function updateEnemyHazards(dt){
    hazard.audioStarted=true;
    soundWorld('element_frost_impact',hazard,{group:'frost-zone',gain:.78,cooldown:.17,priority:2});
   }
-  if(hazard.triggered||hazard.wait>0||hazard.life<=0||Math.hypot(hazard.x-player.x,hazard.y-player.y)>hazard.radius)continue;
-  if(gateLineBlocked(hazard.x,hazard.y,player.x,player.y))continue;
-  if(takeDamage(hazard.power,{[hazard.type]:1},false,enemyDepth,hazard.type==='frost'?'':undefined)&&hazard.type==='frost'){
-   player.webSlow=Math.max(player.webSlow||0,1.15);
-   hazard.triggered=true;
+  if(hazard.wait>0||hazard.life<=0)continue;
+  for(const [index,hero] of coopActors().entries()){
+   if(index===0?hazard.triggered:hazard.peerTriggered)continue;
+   if(Math.hypot(hazard.x-hero.x,hazard.y-hero.y)>hazard.radius||gateLineBlocked(hazard.x,hazard.y,hero.x,hero.y))continue;
+   asHero(hero,()=>{
+    if(hazard.type==='frost'&&hero===remoteHero)hero.webSlow=Math.max(hero.webSlow||0,1.15);
+    if(takeDamage(hazard.power,{[hazard.type]:1},false,enemyDepth,hazard.type==='frost'?'':undefined)&&hazard.type==='frost'){
+     if(hero!==remoteHero)hero.webSlow=Math.max(hero.webSlow||0,1.15);
+     if(index===0)hazard.triggered=true;else hazard.peerTriggered=true;
+    }
+   });
   }
  }
  enemyHazards=enemyHazards.filter(h=>h.life>0);
@@ -2330,7 +2388,7 @@ const pressurePlates=templeRooms.flatMap(room=>{
 });
 function updatePlates(dt){
  for(const p of pressurePlates){
-  const pressed=Math.abs(p.x-player.x)<17&&Math.abs(p.y-player.y)<17;
+  const pressed=coopActors().some(hero=>Math.abs(p.x-hero.x)<17&&Math.abs(p.y-hero.y)<17);
   p.cooldown=Math.max(0,p.cooldown-dt);
   if(pressed&&!p.pressed&&!p.cooldown){
    p.timer=.27;p.cooldown=1.7;
@@ -2492,7 +2550,7 @@ function updateStorm(dt){
   soundWorld('element_lightning_impact',strike,{group:'hero-element-lightning',cooldown:.23,gain:1.12,priority:3});
   const nearBolt=actor=>outsideAt(actor.x,actor.y)&&Math.hypot(actor.x-strike.x,actor.y-strike.y)<55;
   for(const e of enemies)if(e.hp>0&&nearBolt(e))hurtEnemy(e,items.hit(21+save.floor*7,{lightning:1},foeResistances[e.type]));
-  if(nearBolt(player))takeDamage(12,{lightning:1});
+  for(const actor of coopActors())if(nearBolt(actor))asHero(actor,()=>takeDamage(12,{lightning:1}));
   burst(strike.x,strike.y,'#c2dcff',24);
  }
  stormStrikes=stormStrikes.filter(strike=>strike.age<1.45);
@@ -2526,10 +2584,11 @@ function updateBolts(dt){
     p.audioPassed=true;
     soundWorld('bolt_fly',p,{group:'projectile-pass',cooldown:.09,priority:2,rate:p.type==='trap'?1.19:1});
    }
-   if(player.dash<=0&&Math.hypot(p.x-player.x,p.y-player.y)<13){
+   const target=coopActors().find(hero=>hero.dash<=0&&Math.hypot(p.x-hero.x,p.y-hero.y)<13);
+   if(target){
     const damage=p.type==='trap'?10:p.type==='bow'?11:16;
     const split=p.type==='trap'?{physical:.70,poison:.30}:p.type==='crossbow'?{physical:.75,dark:.25}:{physical:1};
-    if(takeDamage(damage,split)&&p.type==='trap'&&!player.poison)applyPoison(player,{untilTick:.67,ticks:2,power:.55});
+    asHero(target,()=>{if(takeDamage(damage,split)&&p.type==='trap'&&!player.poison)applyPoison(player,{untilTick:.67,ticks:2,power:.55});});
     return false;
    }
   }
@@ -2548,10 +2607,10 @@ function updateWebs(dt){
   const x=p.x+p.vx*dt,y=p.y+p.vy*dt;
   if(inRest(x,y))return false;
   const blocked=gateLineBlocked(p.x,p.y,x,y)||furnitureBlocked(x,y,2);
-  const hit=player.dash<=0&&player.inv<=0&&Math.hypot(x-player.x,y-player.y)<16;
+  const hit=coopActors().find(hero=>hero.dash<=0&&hero.inv<=0&&Math.hypot(x-hero.x,y-hero.y)<16);
   if(blocked||hit||p.life<=0){
    if(!blocked||valid(p.x,p.y,3))webPatches.push({x:blocked?p.x:x,y:blocked?p.y:y,radius:29,life:7});
-   if(hit){player.webSlow=2.4;if(takeDamage(4,{dark:1})&&player.inv<1&&!player.poison)applyPoison(player,{untilTick:.72,ticks:3});}
+   if(hit)asHero(hit,()=>{player.webSlow=2.4;if(takeDamage(4,{dark:1})&&player.inv<1&&!player.poison)applyPoison(player,{untilTick:.72,ticks:3});});
    return false;
   }
   p.x=x;p.y=y;return true;
@@ -2584,6 +2643,7 @@ function gearResistance(){
 }
 function generalGuard(){return hasRing('bulwark')?.12:0;}
 function addBleed(amount){
+ if(coopHost&&player===remoteHero){coopRelay?.send('hurt',{bleed:amount});return;}
  player.bleed=Math.min(100,(player.bleed||0)+amount);
  player.bleedGrace=2.4;
  if(player.bleed<100)return;
@@ -2596,6 +2656,11 @@ function addBleed(amount){
 }
 function takeDamage(amount,split={physical:1},status=false,depthFactor=enemyDepth,audioCue){
  if(inRest(player.x,player.y)||player.dash>0||player.inv>0&&!status||mdNavigatingToNewCharacter)return false;
+ if(coopHost&&player===remoteHero){
+  const slow=player.webSlow||0;player.webSlow=0;
+  if(!status)player.inv=.75;
+  coopRelay?.send('hurt',{amount,split,status,depthFactor,audioCue,slow});return true;
+ }
  const reduction=generalGuard();
  const damage=weatherSplit(amount*depthFactor*(1-reduction)*brewBonus.guard,split,player.x,player.y);
  const hit=items.hit(damage.amount,damage.split,gearResistance());
@@ -2614,6 +2679,12 @@ function takeDamage(amount,split={physical:1},status=false,depthFactor=enemyDept
 }
 function retreatAfterDeath(){
  save.combatRecord.deaths++;
+ if(coopRoom){
+  if(trial)finishTrial(false);else close();
+  Object.assign(player,spawn,{hp:maxHP(),poison:null,bleed:0,dash:0,inv:1.4,webSlow:0,grabSlow:0});
+  vault=null;clearHeldAttack();
+  soundUI('hero_death',{priority:4});tell('Gefallen · Zurück im Ruheraum');persist();return;
+ }
  const depth=Math.max(1,save.floor-1);
  const seed=depth===save.floor?save.dungeonSeed:save.depthSeeds[depth]??run.freshSeed();
  const gear=gearItems();
@@ -2644,14 +2715,16 @@ function awakenPortal(lastEnemy){
 }
 function enterPortal(){
  if(enemies.length||!save.portal||mdNavigatingToNewCharacter)return;
- if(save.floor===LAST_DEPTH){trophyMenu(true);return;}
+ if(save.floor===LAST_DEPTH){if(coopRoom)showCoopVictory();else trophyMenu(true);return;}
+ if(coopRoom){advanceCoop();return;}
  const seed=run.differentLayoutSeed(save.dungeonSeed,rooms,gates);
  writeAndReload({...save,...run.floorState(seed,save.floor+1),depthSeeds:{...save.depthSeeds,[save.floor+1]:seed},
   hp:maxHP(),activeBrew:save.activeBrew,wellOffer:save.wellOffer},true,'','floor_portal_enter');
 }
 function updateSoulPreview(){
  const preview=$('#soulPreview');
- const orb=save.souls.filter(p=>Math.hypot(p.x-player.x,p.y-player.y)<102&&reachableInteraction(p))
+ if(modalType){preview.hidden=true;return;}
+ const orb=localAndNetworkSouls().filter(p=>Math.hypot(p.x-player.x,p.y-player.y)<102&&reachableInteraction(p))
   .sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];
  preview.hidden=!orb;
  if(!orb)return;
@@ -2663,7 +2736,7 @@ function updateSoulPreview(){
 }
 function damageColor(type){return Number('0x'+(items.damage[type]?.color||'#c87e64').slice(1));}
 function drawSouls(draw){
- for(const {x,y,item,phase} of save.souls){
+ for(const {x,y,item,phase} of localAndNetworkSouls()){
   if(!regionVisibleAt(x,y))continue;
   const clock=frame+phase,bob=Math.sin(clock*3);
   draw(x,y-11+bob*5,items.rank(item),Math.floor(clock*8)%6);
@@ -2910,7 +2983,47 @@ function drawCanvasEffect(type,pose,x,y,width,height,angle,alpha){
  s.save();s.translate(Math.round(x),Math.round(y));s.rotate(angle);s.globalAlpha=alpha;
  s.drawImage(effectArt.frames[type][pose],-width/2,-height/2,width,height);s.restore();
 }
+function visibleCoopPeer(){
+ const avatar=coopPeerVisible;
+ return avatar&&regionVisibleAt(avatar.x,avatar.y)?avatar:null;
+}
+let peerArtKey='',peerArtwork=null;
+function peerBitmap(avatar){
+ const pose=Math.max(0,Math.min(17,Number(avatar.frame)|0));
+ const armor=avatar.armor&&typeof avatar.armor==='object'?avatar.armor:{};
+ const look=avatar.appearance&&typeof avatar.appearance==='object'?avatar.appearance:{};
+ const key=JSON.stringify([pose,look,armor,avatar.lift>0]);
+ if(peerArtKey!==key){
+  peerArtKey=key;
+  peerArtwork=art.actor('hero',{...look,armor:spriteArmor(armor),back:pose>=backHeroIndex,
+   frame:pose>=backHeroIndex?pose-backHeroIndex:pose,groundShadow:!avatar.lift});
+ }
+ return peerArtwork;
+}
+function peerWeaponPose(avatar){
+ if(!avatar.weapon)return null;
+ const id=weaponArtId(avatar.weapon),aim=Number(avatar.dir)||0,side=Math.cos(aim)<0?-1:1;
+ return {id,x:avatar.x+side*13,y:avatar.y-2-(avatar.lift||0),angle:id==='bow'?aim:aim+Math.PI/2,
+  grip:(gripHeights[id]??50)/64,depth:avatar.y+(Math.sin(aim)<-.38?-.5:.5)};
+}
+function drawCanvasPeer(avatar){
+ const pose=peerWeaponPose(avatar);
+ const hero=()=>s.drawImage(peerBitmap(avatar),avatar.x-37,avatar.y-48-(avatar.lift||0),74,74);
+ if(!pose||pose.depth>=avatar.y)hero();
+ if(!pose)return;
+ s.save();s.translate(pose.x,pose.y);s.rotate(pose.angle);
+ s.drawImage(weaponBitmap(pose.id),-29,-58*pose.grip,58,58);s.restore();
+ if(pose.depth<avatar.y)hero();
+}
 function positionWorldHUD(scrollX,scrollY){
+ if(coopRoom){
+  const avatar=visibleCoopPeer(),tag=$('#coop-peer-tag');
+  tag.hidden=!avatar||atTitle;
+  if(avatar){
+   tag.textContent=(avatar.name||'Mitspieler')+' · '+Math.ceil(avatar.hp)+' LP';
+   tag.style.left=Math.round(avatar.x-scrollX)+'px';tag.style.top=Math.round(avatar.y-scrollY-53-(avatar.lift||0))+'px';
+  }
+ }
  const hud=$('#hud');
  hud.style.left=Math.round(player.x-scrollX)+'px';
  hud.style.top=Math.round(player.y-scrollY-54)+'px';
@@ -2957,6 +3070,8 @@ drawWebHazards((x,y)=>drawWorldImage(s,{x,y,bitmap:webGroundBitmap}));
 const layers=scenery.filter(o=>!o.ground&&o.visible()&&regionVisibleAt(o.x,o.y));
 for(const e of enemies)if(regionVisibleAt(e.x,e.y))layers.push({x:e.x,y:e.y,draw:()=>drawCanvasFoe(e)});
 layers.push({x:player.x,y:player.y+(vault?55:0),draw:drawCanvasHero});
+const avatar=visibleCoopPeer();
+if(avatar)layers.push({x:avatar.x,y:avatar.y,draw:()=>drawCanvasPeer(avatar)});
 layers.sort((a,b)=>a.y-b.y);
 for(const entry of layers){
  if(Math.abs(entry.x-player.x)>cw/2+130||Math.abs(entry.y-player.y)>ch/2+130)continue;
@@ -3063,7 +3178,7 @@ const scenery=[
  ...bonePiles.map(p=>({...p,key:'bone-pile',bitmap:art.icon('bone-pile'),scale:.83,visible:()=>!save.boneClaims[p.id]})),
  ...gates.map((g,i)=>({x:(g.x+.5)*TILE,y:(g.y+.5)*TILE,key:'gate-'+i,bitmap:art.gate(g.vertical,g.color),visible:()=>!save.gates[g.id]})),
  ...chests.map((p,i)=>({...p,key:i===trialIndex?'trial-chest':'chest',bitmap:art.icon('chest',i===trialIndex?'trial':''),alternate:art.icon('chest','open'),changed:()=>save.opened.includes(i)||Boolean(save.trials[i]),visible:always})),
- ...shrines.map(p=>({...p,key:'shrine-'+p.i,bitmap:art.icon('shrine','',themes[p.i].glow),visible:()=>!(save.altarUses[p.i]>=2)||queuedAltar===p.i||altarBursts.some(effect=>effect.i===p.i&&effect.life>.91)})),
+ ...shrines.map(p=>({...p,key:'shrine-'+p.i,bitmap:art.icon('shrine','',themes[p.i].glow),visible:()=>!altarFullyUsed(p.i)||altarQuestionOpen(p.i)||queuedAltar===p.i||altarBursts.some(effect=>effect.i===p.i&&effect.life>.91)})),
  {x:save.layoutRevision>=2?market.x:merchant.x,y:save.layoutRevision>=2?market.y-20:merchant.y,
  key:'bat-merchant',bitmap:animatedMerchant[0],frames:animatedMerchant,pose:()=>Math.floor(frame*4.1)%8,scale:1.91,visible:always},
  ...(catScenery?[catScenery]:[]),
@@ -3217,7 +3332,7 @@ function drawCanvasHero(){
  if(vault){
   s.fillStyle='#100d1380';s.beginPath();s.ellipse(player.x,player.y+14,19,7,0,0,TAU);s.fill();
  }
- if(consumeMove){hero();s.restore();return;}
+ if(consumeMove||!save.equipment.weapon){hero();s.restore();return;}
  if(pose.depth>player.y+(vault?55:0))hero();
  s.save();s.globalAlpha=alpha;s.translate(pose.x,pose.y);s.rotate(pose.angle);
  s.drawImage(weaponBitmap(pose.id),-29,-58*pose.grip,58,58);s.restore();
@@ -3264,6 +3379,12 @@ class DungeonScene extends Phaser.Scene{
    for(const id of weaponArtIds)this.textures.addCanvas('weapon-'+id,weaponBitmap(id));
    this.hero=this.add.image(player.x,player.y,'hero-0').setOrigin(.5,48/74).setDisplaySize(74,74);
    this.weapon=this.add.image(player.x,player.y,'weapon-'+weaponArtId(save.equipment.weapon)).setDisplaySize(58,58);
+   if(coopRoom){
+    this.peerTexture=document.createElement('canvas');this.peerTexture.width=this.peerTexture.height=64;
+    this.textures.addCanvas('coop-peer',this.peerTexture);
+    this.peer=this.add.image(0,0,'coop-peer').setOrigin(.5,48/74).setDisplaySize(74,74).setVisible(false);
+    this.peerWeapon=this.add.image(0,0,'weapon-rust').setDisplaySize(58,58).setVisible(false);
+   }
    this.foes=[];this.soulSprites=[];this.combatSprites=[];
    for(const [type,frames] of Object.entries(effectArt.frames)){
     frames.forEach((bitmap,i)=>this.textures.addCanvas('combat-'+type+'-'+i,bitmap));
@@ -3286,8 +3407,23 @@ class DungeonScene extends Phaser.Scene{
    this.hero.setTexture((vault?'vault-':'hero-')+heroFrame()).setPosition(player.x,player.y-(vault?.lift??0)).setDepth(player.y+(vault?55:0))
     .setAlpha(heroAlpha());
    const pose=weaponPose();
-   this.weapon.setVisible(!consumeMove).setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
+   this.weapon.setVisible(!consumeMove&&Boolean(save.equipment.weapon)).setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
     .setPosition(pose.x,pose.y).setRotation(pose.angle).setDepth(pose.depth).setAlpha(heroAlpha());
+   if(this.peer){
+    const avatar=visibleCoopPeer(),pose=avatar&&peerWeaponPose(avatar);
+    this.peer.setVisible(Boolean(avatar));this.peerWeapon.setVisible(Boolean(pose));
+    if(avatar){
+     const bitmap=peerBitmap(avatar);
+     if(this.peerBitmap!==bitmap){
+      const painter=this.peerTexture.getContext('2d');
+      painter.clearRect(0,0,64,64);painter.drawImage(bitmap,0,0);
+      this.peerBitmap=bitmap;this.textures.get('coop-peer').refresh();
+     }
+     this.peer.setPosition(avatar.x,avatar.y-(avatar.lift||0)).setDepth(avatar.y);
+    }
+    if(pose)this.peerWeapon.setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
+     .setPosition(pose.x,pose.y).setRotation(pose.angle).setDepth(pose.depth);
+   }
    const quake=settings.shake?shake:0;
    this.cameras.main.x=rand(-quake,quake);this.cameras.main.y=rand(-quake,quake);
    window.__mindPhaserCameraX=this.cameras.main.scrollX-this.cameras.main.x;
@@ -3376,7 +3512,7 @@ function packTitle(id=save.activePack){
 }
 function writeAndReload(data,resume,message='',transitionCue){
  try{
-  localStorage.setItem(saveStorageKey,JSON.stringify(data));
+  saveRun(data);
   mdNavigatingToNewCharacter=true;
   if(resume)sessionStorage.setItem(RESUME_KEY,'1');else sessionStorage.removeItem(RESUME_KEY);
   if(message)sessionStorage.setItem(RESUME_KEY+'-message',message);
@@ -3404,7 +3540,7 @@ async function writeAccountPacks(rows,policy='merge-duplicates'){
 }
 let packSync=null;
 async function syncAccountPacks(legacy=[]){
- if(!accountId||mdSession?.user?.id!==accountId)return;
+ if(coopRoom||!accountId||mdSession?.user?.id!==accountId)return;
  if(packSync)await packSync;
  const task=(async()=>{
   const rows=await mdRest('question_packs?select=pack_id,data&order=pack_id.asc');
@@ -3472,6 +3608,7 @@ function switchPack(packId,restart=false){
  writeAndReload({...save,...state,hp:maxHP(),activePack:packId,runs:archived.filter(r=>r.packId!==packId)},!state.completed);
 }
 function packMenu(status=''){
+ if(coopRoom){tell('Fragenpakete kannst du nach der Koop-Runde wechseln.');return;}
  const ids=[DEFAULT_PACK,...save.packs.map(p=>p.packId)];
  show('<h2 class="md-title">Fragenpakete</h2><p>Jeder Fragenpool besitzt einen eigenen Dungeon-Fortschritt. Dein Charakter und seine Ausrüstung reisen mit.</p>'
   +'<p class="muted">'+(accountId?'Importe werden für dieses Konto synchronisiert.':'Importe bleiben lokal in diesem Browser.')+'</p>'
@@ -3507,7 +3644,7 @@ function trophyMenu(victory=false){
 const controlRows=[
  ['Bewegen','W A S D / Pfeiltasten'],['Zielen','Maus / F für Tastatur-Zielen'],['Angriff / aufladen','Linksklick oder Leertaste antippen / halten'],['Klettern / Springen','Leertaste vor einem niedrigen Hindernis'],['Ausweichen','Umschalt + Richtung'],
  ['Interagieren','E'],['Inventar / Ausrüstung','I / C'],['Leveln / Lernjournal','L / J'],['Schnellplatz benutzen','Q'],['Schnellplatz wechseln','Umschalt + Q'],
- ['Antworten und Menüs','W / S und Enter · Pfeiltasten zum Bewegen im Quiz'],['Pause / Navigation / Zurück','P / R / Esc']
+ ['Antworten und Menüs','W / S und Enter'],['Koop-Frage ansehen','Y'],['Pause / Navigation / Zurück','P / R / Esc']
 ];
 function backToMenu(){if(atTitle)mdTitle();else pauseMenu();}
 function mdSettings(){
@@ -3602,7 +3739,7 @@ function pauseMenu(){
   '<button id="pause-quit">Beenden</button></div></section>','pause');
  mdButton('pause-continue',close);mdButton('pause-nav',navigationMenu);mdButton('pause-journal',journal);
  mdButton('pause-settings',mdSettings);
- mdButton('pause-quit',()=>{if(persist())mdTitle();else tell('Spielstand konnte nicht gespeichert werden.');});
+ mdButton('pause-quit',()=>{if(coopRoom){exitCoop();return;}if(persist())mdTitle();else tell('Spielstand konnte nicht gespeichert werden.');});
 }
 function mdTitle(){
  atTitle=true;
@@ -3614,13 +3751,13 @@ function mdTitle(){
   mdEscape(hero?.name||'Unbenannter Wanderer')+'</b><p>'+mdEscape(hero?.className||'Noch keine Klasse')+
   ' · Stufe '+save.level+'</p></div></div><div class="title-actions">'+
   '<button class="primary" id="md-continue">Fortsetzen</button><button id="md-create">Neuer Charakter</button>'+
-  '<button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-saves">Spielstände</button>'+
+  '<button id="md-coop">Online-Koop</button><button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-saves">Spielstände</button>'+
   '<button id="md-journal">Lernjournal</button><button id="md-settings">Einstellungen</button><button id="md-login">Konto / Cloud</button>'+
   '</div></div></div></main>','title');
  unmountTitleGlow=window.DungeonTitle?.mount($('.title-glow'))??null;
  mountPortrait($('#md-title-portrait'),hero,save.equipment.weapon,equippedArmorColors());
  mdButton('md-continue',()=>{if(save.completed){trophyMenu(true);return;}resumeGame();if(save.pendingLevels)setTimeout(()=>{if(!paused&&!modalType)levelMenu();},300);});
- mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-packs',()=>packMenu());
+ mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-coop',coopLobby);mdButton('md-packs',()=>packMenu());
  mdButton('md-trophies',()=>trophyMenu());mdButton('md-journal',journal);mdButton('md-saves',mdSaves);mdButton('md-login',mdAccount);
 }
 const classKits={guardian:'knight',duelist:'wanderer',scholar:'scholar',pilgrim:'hunter',archer:'hunter'};
@@ -3706,16 +3843,403 @@ async function mdHandleEmailConfirmation(){
   return {ok:true};
  }catch(e){return {error:e.message}}
 }
-const resume=sessionStorage.getItem(RESUME_KEY)==='1';
+/* The relay only shares the other seat's current state. The host simulates the dungeon. */
+let waitingRoom=null,lobbyTimer=null,lobbyBusy=false,coopRelay=null,coopPeer=null,coopPeerVisible=null,
+ coopRemoteLoot=[],coopConnected=false,coopTransferBusy=false,coopFinished=false,coopTransition=false,coopAdvanceBusy=false,coopMissing=0;
+const remoteHero={x:0,y:0,hp:0,dash:0,inv:0,bleed:0,webSlow:0,grabSlow:0};
+const callCoop=(action,code='',data={})=>mdRest('rpc/mind_coop',{method:'POST',
+ headers:{'Content-Type':'application/json'},body:JSON.stringify({p_action:action,p_code:code,p_data:data}),
+ signal:AbortSignal.timeout(6500)});
+function leaveCoopRun(message='Koop verlassen'){
+ if(!coopRoom||coopTransition)return;
+ coopTransition=true;
+ coopRelay?.stop();coopAPI.forget();sessionStorage.removeItem(coopAPI.key(coopRoom));
+ sessionStorage.removeItem(RESUME_KEY);
+ sessionStorage.setItem(RESUME_KEY+'-message',message);
+ mdNavigatingToNewCharacter=true;location.reload();
+}
+async function exitCoop(){
+ if(!coopRoom)return;
+ try{await callCoop('leave',coopRoom.code);}catch{}
+ leaveCoopRun();
+}
+function clearLobbyTimer(){
+ if(lobbyTimer!==null)clearInterval(lobbyTimer);
+ lobbyTimer=null;
+}
+function coopLobby(message=''){
+ if(coopRoom)return;
+ if(!accountId||!mdSession){
+  show('<h2 class="md-title">Online-Koop</h2><p>Melde dich an, um mit einer zweiten Person zu spielen.</p><div class="actions"><button id="coop-login">Zum Spielerkonto</button><button id="md-back">Zurück</button></div>','coop-lobby');
+  mdButton('coop-login',mdAccount);mdButton('md-back',mdTitle);return;
+ }
+ const options=[DEFAULT_PACK,...save.packs.map(pack=>pack.packId)].map(id=>'<option value="'+qEsc(id)+'" '+(id===save.activePack?'selected':'')+'>'+qEsc(packTitle(id))+'</option>').join('');
+ show('<h2 class="md-title">Online-Koop</h2><p>Der Koop beginnt auf Tiefe 1 mit deinem aktuellen Charakter und einem eigenen Spielstand.</p>'+
+  (message?'<p role="status" class="md-warning">'+qEsc(message)+'</p>':'')+
+  '<div class="coop-lobby-grid"><section class="md-card"><h3>Lobby erstellen</h3><label class="md-field">Fragenpaket<select id="coop-host-pack">'+options+'</select></label>'+
+  '<label class="md-field">Fragenmodus<select id="coop-mode"><option value="same">Gemeinsamer Pool · Auswahl des Hosts</option><option value="own">Je ein eigener Pool</option></select></label>'+
+  '<button class="primary" id="coop-create">Lobby erstellen</button></section>'+
+  '<section class="md-card"><h3>Lobby beitreten</h3><label class="md-field">Lobbycode<input id="coop-code" maxlength="8" autocomplete="off" placeholder="8 Zeichen"></label>'+
+  '<label class="md-field">Dein Paket bei getrennten Pools<select id="coop-guest-pack">'+options+'</select></label><button id="coop-join">Beitreten</button></section></div>'+
+  '<div class="actions"><button id="md-back">Zurück</button></div>','coop-lobby');
+ mdButton('md-back',mdTitle);
+ const request=async action=>{
+  if(lobbyBusy)return;
+  lobbyBusy=true;
+  try{
+   if(packSync)await packSync;
+   const create=action==='create',pack=$(create?'#coop-host-pack':'#coop-guest-pack').value;
+   const code=create?'':$('#coop-code').value.trim().toUpperCase();
+   if(!create&&!/^[0-9A-F]{8}$/.test(code))throw Error('Gib den achtstelligen Lobbycode ein.');
+   const room=await callCoop(action,code,{pack,mode:$('#coop-mode').value,seed:run.freshSeed()|0});
+   waitingRoom=room;renderCoopLobby();
+   clearLobbyTimer();lobbyTimer=setInterval(pollCoopLobby,1000);
+   if(room.started)await startCoopRun(room);
+  }catch(error){coopLobby(error.message);}
+  finally{lobbyBusy=false;}
+ };
+ mdButton('coop-create',()=>request('create'));mdButton('coop-join',()=>request('join'));
+}
+function renderCoopLobby(){
+ const room=waitingRoom;if(!room)return;
+ show('<h2 class="md-title">Koop-Lobby</h2><p class="muted">'+(room.mode==='same'?'Gemeinsamer Fragenpool':'Eigener Fragenpool pro Person')+'</p>'+
+  '<div class="coop-code"><span>Lobbycode</span><strong>'+qEsc(room.code)+'</strong><button id="coop-copy">Kopieren</button></div>'+
+  '<p id="coop-ready" role="status">'+(room.ready?'2 / 2 Spieler bereit':'1 / 2 · Warte auf eine zweite Person')+'</p>'+
+  '<div class="actions">'+(room.seat===1?'<button class="primary" id="coop-start" '+(room.ready?'':'disabled')+'>Dungeon starten</button>':'')+
+  '<button id="coop-leave">Lobby verlassen</button></div>','coop-wait');
+ mdButton('coop-copy',async()=>{try{await navigator.clipboard.writeText(room.code);$('#coop-copy').textContent='Kopiert';}catch{$('#coop-copy').textContent='Code oben markieren';}});
+ mdButton('coop-leave',leaveWaitingRoom);
+ mdButton('coop-start',async()=>{
+  const button=$('#coop-start');button.disabled=true;
+  try{await startCoopRun(await callCoop('start',room.code));}
+  catch(error){$('#coop-ready').textContent=error.message;button.disabled=false;}
+ });
+}
+async function leaveWaitingRoom(){
+ const room=waitingRoom;waitingRoom=null;clearLobbyTimer();
+ if(room)try{await callCoop('leave',room.code);}catch{}
+ coopLobby();
+}
+async function pollCoopLobby(){
+ if(!waitingRoom||lobbyBusy||coopTransition)return;
+ lobbyBusy=true;
+ const room=waitingRoom;
+ try{
+  const packet=await callCoop('status',room.code);
+  if(waitingRoom!==room)return;
+  waitingRoom=packet;
+  if(packet.started)await startCoopRun(packet);
+  else if(packet.ready!==room.ready)renderCoopLobby();
+ }catch(error){
+  if(waitingRoom?.code===room.code&&$('#coop-ready'))$('#coop-ready').textContent=error.message;
+ }finally{lobbyBusy=false;}
+}
+async function startCoopRun(room){
+ if(coopTransition)return;
+ coopTransition=true;
+ try{
+  const deck=await callCoop('deck',room.code);
+  const packs=deck.data?[run.validatePack(deck.data)]:[];
+  const state={...save,...run.freshRun(room.seed),activePack:deck.pack,packs,runs:[],trophies:[],
+   hp:maxHP(),consumeQueue:[],coopClaims:[],coopProgress:null,coopWorld:null,coopAltarDone:[]};
+  sessionStorage.setItem(coopAPI.key(room),JSON.stringify(state));
+  sessionStorage.setItem(RESUME_KEY,'1');
+  coopAPI.remember({code:room.code,seat:room.seat,mode:room.mode,floor:room.floor,seed:room.seed},accountId);
+  clearLobbyTimer();mdNavigatingToNewCharacter=true;
+  window.DungeonLoading?.transition(1);location.reload();
+ }catch(error){coopTransition=false;throw error;}
+}
+function coopFloor(packet){
+ if(coopTransition||packet.floor===save.floor)return;
+ coopTransition=true;coopRelay?.stop();
+ const next={...coopRoom,seed:packet.seed,floor:packet.floor};
+ const state={...save,...run.floorState(next.seed,next.floor),hp:maxHP(),consumeQueue:[],coopClaims:[],coopProgress:null,coopWorld:null,coopAltarDone:[],coopClaimPending:null,coopDropPending:null,
+  depthSeeds:{...save.depthSeeds,[next.floor]:next.seed},activeBrew:save.activeBrew,wellOffer:save.wellOffer};
+ sessionStorage.setItem(coopAPI.key(next),JSON.stringify(state));
+ coopAPI.remember(next,accountId);
+ mdNavigatingToNewCharacter=true;
+ sessionStorage.setItem(RESUME_KEY,'1');window.DungeonLoading?.transition(next.floor);
+ location.reload();
+}
+const coopHasTransfer=()=>Boolean(coopTransferBusy||save.coopDropPending||save.coopClaimPending);
+async function advanceCoop(){
+ if(coopTransition||coopAdvanceBusy)return;
+ if(coopHasTransfer()||coopPeer?.transfer){tell('Warte, bis die Beute übertragen ist');return;}
+ if(!coopHost){coopRelay?.send('advance-request',{});tell('Ebenenwechsel beim Host angefragt');return;}
+ if(!coopConnected){tell('Warte auf die zweite Person');return;}
+ if(!save.portal||enemies.length||save.floor===LAST_DEPTH)return;
+ coopAdvanceBusy=true;
+ try{
+  coopFloor(await callCoop('advance',coopRoom.code,{floor:save.floor,seed:run.differentLayoutSeed(save.dungeonSeed,rooms,gates)|0}));
+ }catch(error){tell(error.message);}
+ finally{coopAdvanceBusy=false;}
+}
+function showCoopVictory(){
+ show('<h2 class="md-title">Gemeinsam bezwungen</h2><p>Ihr habt Tiefe 5 erreicht und den Dungeon geräumt.</p>'+
+  '<div class="actions"><button id="coop-victory-continue">Weiter erkunden</button><button id="coop-victory-leave">Runde verlassen</button></div>','coop-victory');
+ mdButton('coop-victory-continue',close);mdButton('coop-victory-leave',exitCoop);
+}
+const coopFigureCache=new WeakMap();
+function coopFigureSource(src){
+ return typeof src==='string'&&(/^questions\/figures\/[a-z0-9][a-z0-9._-]*\.(?:png|jpe?g|webp)$/i.test(src)||
+  src.length<=48000&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(src));
+}
+function coopQuizFigure(figure){
+ if(!figure)return null;
+ const details={alt:figure.alt?.slice(0,180),caption:figure.caption?.slice(0,220)};
+ if(coopFigureSource(figure.src))return {...details,src:figure.src};
+ if(!coopFigureCache.has(figure)){
+  coopFigureCache.set(figure,null);
+  const img=new Image();
+  img.onload=()=>{
+   const preview=document.createElement('canvas');
+   for(const max of [560,400,275]){
+    const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    preview.width=Math.max(1,Math.round(img.naturalWidth*scale));
+    preview.height=Math.max(1,Math.round(img.naturalHeight*scale));
+    preview.getContext('2d').drawImage(img,0,0,preview.width,preview.height);
+    const src=preview.toDataURL('image/webp',.77);
+    if(coopFigureSource(src)){coopFigureCache.set(figure,{...details,src});break;}
+   }
+  };
+  img.src=figure.src;
+ }
+ return coopFigureCache.get(figure);
+}
+function coopVisibleQuestion(){
+ if(modalType!=='quiz'||!pending)return null;
+ const q=pending.q;
+ return {key:pending.coopKey,z:pending.z,reason:pending.reason,prompt:q.prompt.slice(0,1600),
+  options:q.choices?.slice(0,14).map(choice=>choice.slice(0,400)),selected:pending.coopPicks??[],
+  count:q.correctIndices?.length??null,feedback:pending.coopFeedback??null,
+  image:coopQuizFigure(q.image),alt:q.image?.alt?.slice(0,180)};
+}
+function watchCoopQuiz(){
+ const q=coopPeer?.quiz;
+ if(typeof q?.prompt!=='string'||modalType&&modalType!=='coop-watch')return;
+ const view=JSON.stringify(q);
+ if(modalType==='coop-watch'&&view===watchCoopQuiz.previous)return;
+ watchCoopQuiz.previous=view;
+ show('<article class="study-card"><span class="pill">'+qEsc(coopPeer.hero.name)+' antwortet</span><h2>'+qEsc(q.prompt)+'</h2>'+
+  (coopFigureSource(q.image?.src)?questionFigure({image:q.image,source:{document:'Fragenpaket',page:'–'}}):q.alt?'<p class="muted">'+qEsc(q.alt)+'</p>':'')+
+  (q.count?'<p>'+q.count+' richtige Antworten</p>':'')+
+  (Array.isArray(q.options)?q.options:[]).map((option,index)=>'<p class="coop-watch-option '+(q.selected?.includes?.(index)?'chosen':'')+'">'+qEsc(option)+'</p>').join('')+
+  (q.feedback?'<p><strong>'+qEsc(q.feedback.status)+'</strong></p><p>'+qEsc(q.feedback.text)+'</p>':'')+
+  '<div class="actions"><button id="coop-stop-watch">Zuschauen beenden</button></div></article>','coop-watch');
+ mdButton('coop-stop-watch',close);
+}
+function writeCoopHud(){
+ if(!coopRoom)return;
+ const display=$('#coop-info'),watch=$('#coop-watch');
+ display.hidden=atTitle;
+ display.textContent='Koop · '+coopRoom.code+' · '+(coopConnected?(coopPeer?.hero.name||'Verbunden'):'Warte auf Mitspieler …');
+ watch.hidden=atTitle||Boolean(modalType)||!coopPeer?.quiz;
+ if(modalType==='coop-watch'){
+  if(coopPeer?.quiz)watchCoopQuiz();else close();
+ }
+}
+function packCoopState(){
+ const state={hero:{
+  x:player.x,y:player.y,dir:player.dir,back:player.back,moving:player.moving,walk:player.walk,attack:player.attack,dash:player.dash,
+  hp:player.hp,max:maxHP(),lift:vault?.lift??0,name:save.character?.name?.slice(0,24)||'Wanderer',
+  appearance:save.character??{},armor:save.equipment.armor??{},weapon:save.equipment.weapon,frame:heroFrame(),
+  ready:!entryGrace&&explored.has(heroRegion)&&!inRest(player.x,player.y)
+ },altar:save.altarUses,quiz:coopVisibleQuestion(),transfer:coopHasTransfer()};
+ if(coopHost){
+  state.world={enemies,bolts,webShots,webPatches,enemyHazards,stormStrikes,gates:save.gates,portal:save.portal,completed:save.completed};
+  save.coopWorld=state.world;
+ }
+ return state;
+}
+function coopReceive(packet){
+ if(packet.floor!==save.floor){coopFloor(packet);return false;}
+ coopMissing=0;coopConnected=packet.peerOnline;
+ const otherPoint=packet.peer?.hero;
+ coopPeer=packet.peerOnline&&Number.isFinite(otherPoint?.x)&&Number.isFinite(otherPoint?.y)?packet.peer:null;
+ if(coopPeer?.hero){
+  const other=coopPeer.hero;
+  Object.assign(remoteHero,{x:other.x,y:other.y,dash:other.dash,hp:other.hp,max:other.max,ready:other.ready});
+  if(!coopPeerVisible||Math.hypot(coopPeerVisible.x-other.x,coopPeerVisible.y-other.y)>185)coopPeerVisible={...other};
+  else Object.assign(coopPeerVisible,{...other,x:coopPeerVisible.x,y:coopPeerVisible.y});
+ }else coopPeerVisible=null;
+ coopRemoteLoot=packet.loot.map(orb=>({...orb,phase:(orb.x+orb.y)*.045}));
+ if(!coopHost&&Array.isArray(coopPeer?.world?.enemies)){
+  const world=coopPeer.world,prior=new Map(enemies.map(e=>[e.id,e]));
+  enemies=world.enemies.map(e=>{
+   const old=prior.get(e.id);
+   return old&&Math.hypot(e.x-old.x,e.y-old.y)<125?{...e,targetX:e.x,targetY:e.y,x:old.x,y:old.y}:e;
+  });
+  ({bolts,webShots,webPatches,enemyHazards,stormStrikes}=world);
+  Object.assign(save.gates,world.gates);save.portal=world.portal;
+  if(world.completed&&!coopFinished){coopFinished=true;save.completed=true;tell('Tiefe 5 zusammen bezwungen');}
+ }
+ updateCoopAltars();writeCoopHud();
+}
+function interpolateCoop(dt){
+ if(!coopRoom)return;
+ const ease=1-Math.exp(-14*dt);
+ if(coopPeerVisible&&coopPeer?.hero){
+  coopPeerVisible.x+=(coopPeer.hero.x-coopPeerVisible.x)*ease;
+  coopPeerVisible.y+=(coopPeer.hero.y-coopPeerVisible.y)*ease;
+ }
+ if(coopHost)return;
+ for(const e of enemies){
+  if(Number.isFinite(e.targetX)){e.x+=(e.targetX-e.x)*ease;e.y+=(e.targetY-e.y)*ease;}
+  e.phase+=dt;if(e.batMove)e.batMove.age+=dt;if(e.lionMove)e.lionMove.age+=dt;
+ }
+}
+function coopEvent(event){
+ if(coopHost){
+  if(event.kind==='hit'){
+   const e=enemies.find(enemy=>enemy.id===event.target&&enemy.hp>0);
+   const p=event.from,shot=event.attack;
+   if(!e||!coopPeer?.hero||!p||!shot||!Number.isFinite(shot.amount)||!Number.isFinite(event.angle)||
+    !Number.isFinite(p.x)||!Number.isFinite(p.y)||Math.hypot(p.x-remoteHero.x,p.y-remoteHero.y)>620||
+    Math.hypot(e.x-p.x,e.y-p.y)>78||gateLineBlocked(p.x,p.y,e.x,e.y))return;
+   const split=Object.fromEntries(Object.entries(shot.split??{}).filter(([type,share])=>Object.hasOwn(items.damage,type)&&Number.isFinite(share)&&share>0&&share<=2));
+   if(!Object.keys(split).length)return;
+   const profile=items.weapon(shot.profile?.id,items.rank({rarity:shot.rarity}));
+   const attack={charged:Boolean(shot.charged),amount:Math.max(0,Math.min(1200,shot.amount)),split,profile,
+    impact:Math.max(0,Math.min(240,Number(shot.impact)||0)),rollChance:Math.max(0,Math.min(1,Number(shot.rollChance)||0))};
+   applyWeaponHit(e,attack,event.angle,true);
+  }else if(event.kind==='gate'&&gates.some(g=>g.id===event.id))save.gates[event.id]=true;
+  else if(event.kind==='advance-request')advanceCoop();
+  else if(event.kind==='ambush'&&Number.isInteger(event.index))addCoopAmbush(event.index);
+ }else if(event.kind==='hurt'){
+  if(event.poison){if(!player.poison)applyPoison(player,event.poison);return;}
+  if(event.bleed){addBleed(event.bleed);return;}
+  if(event.credit){save.combatRecord.dealt+=event.credit;if(event.critical)save.combatRecord[event.critical==='critical'?'crits':'counters']++;}
+  else if(event.amount>0){
+   if(event.slow)player.webSlow=Math.max(player.webSlow,event.slow);
+   takeDamage(event.amount,event.split,event.status,event.depthFactor,event.audioCue);
+  }
+ }
+}
+function connectCoop(){
+ if(!coopRoom||coopRelay)return;
+ save.coopProgress??={cursor:0,events:[],pairs:[]};
+ coopRelay=coopAPI.pipe({room:coopRoom,call:callCoop,readState:packCoopState,onPacket:coopReceive,onEvent:coopEvent,
+  ...save.coopProgress,onProgress:p=>{save.coopProgress=p;},
+  onError(error){
+   if(/Lobby nicht gefunden|kein Mitglied/.test(error.message))leaveCoopRun('Die Koop-Lobby wurde geschlossen');
+   else if(++coopMissing>4){coopConnected=false;coopPeer=null;coopPeerVisible=null;writeCoopHud();}
+  }});
+ if(save.coopTrialAmbush!=null){
+  coopRelay.send('ambush',{index:save.coopTrialAmbush});save.coopTrialAmbush=null;
+ }
+ coopRelay.sync();writeCoopHud();
+ if(save.coopClaimPending)takeCoopOrb(save.coopClaimPending).finally(finishCoopDrop);
+ else if(save.coopDropPending)finishCoopDrop();
+}
+function localAndNetworkSouls(){return coopRoom?[...save.souls,...coopRemoteLoot]:save.souls;}
+function showPickedSoul(item){
+ const rank=items.rank(item);
+ soundUI(rank==='common'?'loot_soul_pick':rank==='rare'?'loot_rare':rank==='epic'?'loot_epic':'loot_exalted');
+ tell('Aufgehoben · '+itemTitle(item));
+}
+async function takeCoopOrb(orb){
+ if(!coopRoom||coopTransferBusy||save.inventory.length>=30)return;
+ coopTransferBusy=true;
+ save.coopClaimPending={id:orb.id,x:player.x,y:player.y};persist();
+ try{
+  const data=await callCoop('take',coopRoom.code,{id:orb.id,floor:save.floor,x:player.x,y:player.y});
+  save.coopClaims??=[];
+  if(data.item&&!save.coopClaims.includes(orb.id)){
+   save.coopClaims.push(orb.id);save.inventory.push(data.item);showPickedSoul(data.item);
+  }
+  coopRemoteLoot=coopRemoteLoot.filter(other=>other.id!==orb.id);
+  save.coopClaimPending=null;persist();
+ }catch(error){
+  if(/Seelenball|zu weit entfernt/.test(error.message)){save.coopClaimPending=null;persist();}
+  tell('Aufheben fehlgeschlagen · '+error.message);
+ }
+ finally{coopTransferBusy=false;}
+}
+async function finishCoopDrop(){
+ if(!coopRoom||coopTransferBusy||!save.coopDropPending)return false;
+ coopTransferBusy=true;
+ try{
+  await callCoop('drop',coopRoom.code,{...save.coopDropPending,floor:save.floor});
+  save.coopDropPending=null;persist();return true;
+ }catch(error){tell('Ablage wartet auf Verbindung · '+error.message);return false;}
+ finally{coopTransferBusy=false;}
+}
+function removeInventoryItem(item){
+ const index=save.inventory.indexOf(item);if(index<0)return false;
+ if(isEquipped(item)){
+  if(item.kind==='weapon'){
+   const replacement=save.inventory.find(it=>it!==item&&it.kind==='weapon'&&!unmetRequirements(it.id).length);
+   save.equipment.weapon=replacement?.id??null;save.equipment.weaponRarity=replacement?items.rank(replacement):'common';
+  }else if(item.kind==='armor'){
+   const slot=armorById(item.id).slot;delete save.equipment.armor[slot];delete save.equipment.armorRarities?.[slot];
+  }else if(item.kind==='ring'){
+   const slot=save.equipment.rings.indexOf(item.id);if(slot>=0){save.equipment.rings[slot]=null;delete save.equipment.ringRarities?.[slot];}
+  }
+ }
+ save.inventory.splice(index,1);return true;
+}
+async function dropInventoryItem(item){
+ if(!item||coopTransferBusy)return;
+ if(save.coopDropPending){await finishCoopDrop();return;}
+ if(!removeInventoryItem(item))return;
+ if(coopRoom){
+  save.coopDropPending={id:coopAPI.token(),x:player.x,y:player.y,item};persist();
+  if(!await finishCoopDrop())return;
+ }else dropSoul(player,item);
+ persist();tell('Abgelegt · '+itemTitle(item));
+}
+function coopEnemyLoot(enemy){
+ const distance=13;
+ const dropPair=create=>{
+  const pair=[1,2].map(seat=>{
+   const x=enemy.x+(seat===1?-distance:distance),y=enemy.y;
+   return {id:coopAPI.token(),seat,x:valid(x,y,4)?x:enemy.x,y,item:create()};
+  });
+  coopRelay?.pair(pair);
+ };
+ if(enemy.type!==SNAKE&&items.enemyRarity(Math.random(),save.floor)){
+  dropPair(()=>lootChoice(items.enemyRarity(Math.random()*.18,save.floor),'Gegnerbeute · Koop'));
+ }
+ if(Math.random()<.015)dropPair(()=>emptyCup('Gegnerbeute · Koop'));
+}
+const exhaustedCoopAltars=new Set(save.coopAltarDone??[]);
+function altarFullyUsed(index){
+ return (save.altarUses[index]??0)>=2&&(!coopRoom||(coopPeer?.altar?.[index]??0)>=2||exhaustedCoopAltars.has(index));
+}
+function altarQuestionOpen(index){
+ return [pending,coopPeer?.quiz].some(question=>question?.reason==='shrine'&&question.z===index);
+}
+function updateCoopAltars(){
+ if(!coopRoom)return;
+ for(const shrine of shrines){
+  if(!altarFullyUsed(shrine.i)||exhaustedCoopAltars.has(shrine.i)||altarQuestionOpen(shrine.i))continue;
+  exhaustedCoopAltars.add(shrine.i);save.coopAltarDone=[...exhaustedCoopAltars];
+  altarBursts.push({...shrine,life:1.12});
+  soundWorld('shrine_spent',shrine,{priority:2});
+ }
+}
+function coopActors(){return coopHost&&coopPeer?.hero?[realHero,remoteHero]:[realHero];}
+function asHero(actor,action){
+ const current=player;
+ player=actor;
+ try{return action();}finally{player=current;}
+}
+
+$('#coop-watch').onclick=watchCoopQuiz;
+const resume=Boolean(coopRoom)||sessionStorage.getItem(RESUME_KEY)==='1';
 sessionStorage.removeItem(RESUME_KEY);
 refreshCatalog();
 const questionsReady=loadQuestions();
 stockSpecialRooms();
 deliverWellOffer();
+if(coopHost&&save.coopWorld?.enemies){
+ ({enemies,bolts,webShots,webPatches,enemyHazards,stormStrikes}=save.coopWorld);
+}
 if(save.trials[trialIndex]==='started')finishTrial(false,true);
 function finishLoading(){
  if(mdNavigatingToNewCharacter)return;
  if(resume)resumeGame();else mdTitle();
+ if(coopRoom)connectCoop();
  const resumeMessage=sessionStorage.getItem(RESUME_KEY+'-message');
  if(resumeMessage){sessionStorage.removeItem(RESUME_KEY+'-message');tell(resumeMessage);}
 }
