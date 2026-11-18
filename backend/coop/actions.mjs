@@ -13,6 +13,11 @@ export function actions(sim){
  const live=(p,site,limit)=>{if(!near(p,site,limit))fail('Du bist zu weit entfernt.');};
  const count=p=>p.inventory.length;
  const floorNumber=()=>sim.state.floor;
+ function chestFoley(pos,gold=false){
+  sim.sound('chest_latch',pos,{gain:.72,priority:2});
+  sim.sound('chest_lid',pos,{gain:.78,priority:2,delay:.16});
+  if(gold)sim.sound('loot_gold',pos,{gain:.64,delay:.34});
+ }
 
  function portal(p){
   live(p,sim.portal,76);
@@ -97,7 +102,11 @@ export function actions(sim){
   if(reason==='gate'&&ok){
    (p.gateQuestions[i]??=[]).push(q.id);
    const count=(sim.state.gateProgress[i]??0)+1;sim.state.gateProgress[i]=count;
-   if(count>=Math.min(2,p.pack.questions.length)){sim.state.gates[i]=true;notice='Wissenstor geöffnet';}else more=true;
+   if(count>=Math.min(2,p.pack.questions.length)){
+    sim.state.gates[i]=true;notice='Wissenstor geöffnet';
+    const gate=sim.floor.gates.find(g=>g.id===i);
+    if(gate)sim.sound('gate_stone_motion',{x:(gate.x+.5)*TILE,y:(gate.y+.5)*TILE},{gain:.68,priority:2});
+   }else more=true;
   }
   if(reason==='brew'&&ok){
    const entry=brewing.stock(sim.state.dungeonSeed,floorNumber(),p.equipment.rings.includes('brewer'),run.random,run.shuffle).find(e=>e.id===i);
@@ -128,7 +137,7 @@ export function actions(sim){
   p.trial=null;p.quiz=null;p.opened.push(trial.index);p.trials[trial.index]=passed?'won':'failed';p.revision++;
   const pos=sim.floor.chests[trial.index];
   if(passed){
-   p.gold+=48+floorNumber()*9;
+   p.gold+=48+floorNumber()*9;chestFoley(pos,true);
    sim.drop(pos,selectLoot(floorNumber()>=3?'legendary':'rare',floorNumber(),sim.random),p.seat);
    sim.emit('notice',{message:'Prüftruhe bestanden'},p.seat);return;
   }
@@ -205,13 +214,14 @@ export function actions(sim){
    const cabinet=index(f.cabinets,i);live(p,cabinet,82);
    if(p.searched.includes(i))fail('Dieser Schrank wurde bereits durchsucht.');
    p.searched.push(i);p.gold+=cabinet.gold;
+   if(cabinet.gold)sim.sound('loot_gold',cabinet,{gain:.58});
    return {notice:cabinet.gold?'Schrank durchsucht · +'+cabinet.gold+' Gold':'Der Schrank ist leer'};
   }
   if(kind==='chest'){
-   live(p,index(f.chests,i),103);
+   const chest=index(f.chests,i);live(p,chest,103);
    if(p.opened.includes(i)||i===f.trialIndex)fail('Diese Truhe wurde bereits besucht.');
    p.opened.push(i);const gold=22+Math.floor(run.random(sim.state.dungeonSeed^(i*10631+31))()*15)+floorNumber()*4;
-   p.gold+=gold;heal(p,12);return {notice:'Truhe geöffnet · +'+gold+' Gold'};
+   p.gold+=gold;heal(p,12);chestFoley(chest,true);return {notice:'Truhe geöffnet · +'+gold+' Gold'};
   }
   fail('Hier gibt es nichts zu untersuchen.');
  }
@@ -246,7 +256,8 @@ export function actions(sim){
     const bones=Number.isInteger(data.bones)?Math.max(0,Math.min(data.bones,p.bones,10)):0;
     const duration=brewing.seconds+bones*60,brew=p.brewEffects,rarity=brew.reduce((a,e)=>items.rarity[e.rank].power>items.rarity[a].power?e.rank:a,'common');
     const potion={...item('potion',duration+'-'+brew.map(e=>e.id+'-'+e.rank).join('-'),rarity,'Brauerei'),brew,duration};
-    p.inventory.splice(i,1,potion);p.bones-=bones;p.brewEffects=[];result={item:potion};break;
+    p.inventory.splice(i,1,potion);p.bones-=bones;p.brewEffects=[];
+    sim.sound('brew_pour',sim.floor.lab,{gain:.81,priority:2});result={item:potion};break;
    }
    case 'well':{
     live(p,sim.floor.wellUse);const it=index(p.inventory,data.index);

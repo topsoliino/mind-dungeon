@@ -190,7 +190,11 @@ export class Simulation{
   if(p.consume&&this.clock>=p.consume.end){
    const it=p.consume.item;p.consume=null;
    if(it.kind==='food')p.hp=Math.min(maxHP(p),p.hp+items.food[it.id].heal*p.mods.food);
-   else {p.activeBrew={effects:it.brew,remaining:it.duration,duration:it.duration};preparePlayer(p);}
+   else {
+    p.activeBrew={effects:it.brew,remaining:it.duration,duration:it.duration};preparePlayer(p);
+    this.sound('brew_drink',p,{gain:.64,priority:2});
+    this.sound('element_buff_on',p,{priority:2,delay:.2});
+   }
    p.revision++;
   }
   p.playtime+=dt;

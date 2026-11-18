@@ -280,3 +280,16 @@ test('temple trap audio follows the plate and projectile launch separately',()=>
  assert.equal(launch.x,Math.round(plate.origin.x*10)/10);
  assert.equal(launch.y,Math.round(plate.origin.y*10)/10);
 });
+
+test('opening a co-op chest emits latch, lid and gold once in playback order',()=>{
+ const {host,sim}=game();
+ const index=sim.floor.chests.findIndex((_,i)=>i!==sim.floor.trialIndex);
+ const chest=sim.floor.chests[index];
+ Object.assign(host,{x:chest.x,y:chest.y});
+ sim.actions.dispatch(host,'interact',{kind:'chest',index});
+ assert.throws(()=>sim.actions.dispatch(host,'interact',{kind:'chest',index}),/bereits besucht/);
+ const sounds=sim.events.filter(e=>e.kind==='sound');
+ assert.deepEqual(sounds.map(e=>[e.cue,e.mix.delay??0]),[
+  ['chest_latch',0],['chest_lid',.16],['loot_gold',.34]
+ ]);
+});

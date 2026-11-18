@@ -6,6 +6,8 @@ function create(api){
  const {W,H,rooms,regionAt,inRest,outsideAt,pointIn,valid,furnitureBlocked,gateLineBlocked,gateBlocked,wall,pressurePlates}=floor;
  const {SNAKE,LION,LIONESS,BAT,STORM_BAT}=enemyRules;
  const isBat=e=>e.type===BAT||e.type===STORM_BAT,isLion=e=>e.type===LION||e.type===LIONESS;
+ const movementCue={lion:'lion_paw',lioness:'lion_paw','bat-fire':'bat_wings','bat-lightning':'bat_wings'};
+ const windupCue={rift:'enemy_priest_voice',bow:'bow_draw',bite:'snake_hiss'};
  const TILE=48,TAU=2*Math.PI,enemyDepth=enemyRules.depthFactor(save.floor);
  const foeResistances=items.foes.map(profile=>enemyRules.resistances(profile,save.floor));
  let player,combatClock=0,cw=1280,ch=720;
@@ -26,8 +28,16 @@ function create(api){
 function moveEnemy(e,dx,dy){
  const {x,y}=e;
  moveActor(e,dx,dy);
- if(Math.hypot(e.x-x,e.y-y)>.05){
-  e.facing=Math.atan2(e.y-y,e.x-x);e.moving=true;
+ const moved=Math.hypot(e.x-x,e.y-y);
+ if(moved<=.05)return;
+ e.facing=Math.atan2(e.y-y,e.x-x);e.moving=true;
+ const cue=movementCue[enemyRules.attacks[e.type].id];
+ if(!cue)return;
+ e.audioStride=(e.audioStride??0)+moved;
+ const stride=isBat(e)?53:35;
+ if(e.audioStride>=stride){
+  e.audioStride%=stride;
+  soundWorld(cue,e,{gain:isBat(e)?.24:.31,cooldown:.22});
  }
 }
 function aimEnemy(e,angle){e.angle=angle;e.facing=angle;}
@@ -85,7 +95,7 @@ function updateEnemy(e,dt){
  }
  if(e.attack<=0&&d<spec.range&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
   e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
-  if(spec.id==='bite')soundWorld('snake_hiss',e,{priority:2,cooldown:.14});
+  if(windupCue[spec.id])soundWorld(windupCue[spec.id],e,{priority:2,cooldown:.18,gain:.77});
   if(spec.id==='frost'){
    e.frostTargets=frostSites(e);
    soundWorld('element_frost_cast',e,{priority:2,cooldown:.25});
@@ -238,6 +248,8 @@ function updateLion(e,dt){
    if(!move.audioStarted){move.audioStarted=true;soundWorld('lion_leap',e,{priority:2,cooldown:.17});}
    moveEnemy(e,Math.cos(move.angle)*270*dt,Math.sin(move.angle)*270*dt);
    if(!move.landed&&nearActor(e,player,11)&&damageActive(e.type===LION?16:13,{physical:1}))move.landed=true;
+  }else if(move.kind==='leap'&&!move.landingPlayed){
+   move.landingPlayed=true;soundWorld('lion_paw',e,{gain:.77,priority:2,rate:.88});
   }else if(move.kind==='rake'&&t<lionRake.duration){
    if(t>=move.next){
     const swipeAngle=move.angle+(move.swipes%2===0?.22:-.22);
@@ -339,6 +351,7 @@ function updateBat(e,dt){
   aimEnemy(e,angle);
   e.castLength=spec.range;
   e.batMove={age:0,next:0,duration:lightning?.93:.71};
+  soundWorld('bat_voice',e,{gain:.55,cooldown:.28});
   soundWorld(lightning?'element_lightning_charge':'element_fire_cast',e,{priority:2,cooldown:.26});
   return;
  }

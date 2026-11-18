@@ -1,6 +1,7 @@
 {
   "source": "Mind Dungeon Soundübergabe, worksheet ElevenLabs",
   "takes_per_cue": 1,
+  "integrated_cues": ["amb_well", "bat_voice", "bat_wings", "bow_draw", "brew_drink", "brew_pour", "chest_latch", "chest_lid", "enemy_priest_voice", "gate_stone_motion", "hero_dash", "hero_effort", "lion_paw", "loot_gold", "step_bridge_creak", "step_rubble"],
   "cues": [
     {
       "cue": "bow_draw",

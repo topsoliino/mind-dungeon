@@ -3,6 +3,7 @@
  const bank = window.DungeonSfxBank;
  const foley = window.DungeonFoleyBank;
  const packages = window.DungeonPackageBank;
+ const eleven = window.DungeonElevenLabsBank;
  const AudioContext = window.AudioContext || window.webkitAudioContext;
  if (!bank || !AudioContext) return;
 
@@ -11,10 +12,13 @@
  const effects = audioAsset('shadowbound-sfx');
  const stone = foley && audioAsset('stone-steps');
  const packSfx = packages && audioAsset('pack-sfx');
+ const elevenSfx = eleven && audioAsset('elevenlabs-sfx');
+ const effectAssets = [effects, stone, packSfx, elevenSfx];
  const ambient = Object.fromEntries(['jungle','waterfall','river'].map(name => [name,audioAsset(name)]));
  for (const name of ['amb_dungeon','amb_rain']) {
   ambient[name] = {...audioAsset(name), start: 0, end: 30, overlap: .8};
  }
+ ambient.amb_well = {...audioAsset('amb_well'), start: 0, end: Infinity, overlap: .11};
  const musicTracks = {
   title: {...audioAsset('01_main_theme'), start: .54, end: 232, overlap: 5.5},
   creator: {...audioAsset('02_character_creation'), start: .18, end: 196.6, overlap: 5.2}
@@ -76,7 +80,7 @@
  }
 
  function assetFor(id) {
-  return packages?.[id] ? packSfx : foley?.[id] ? stone : effects;
+  return eleven?.[id] ? elevenSfx : packages?.[id] ? packSfx : foley?.[id] ? stone : effects;
  }
 
  function flushRequests() {
@@ -117,20 +121,14 @@
    });
   }
   if (context.state !== 'running') context.resume().catch(() => {});
-  if (volume) {
-   decode(effects);
-   decode(stone);
-   decode(packSfx);
-  }
+  if (volume) for (const asset of effectAssets) decode(asset);
   syncMusic();
  }
 
  function setVolume(value) {
   volume = Math.max(0, Math.min(1, value));
   if (volume) {
-   prefetch(effects);
-   prefetch(stone);
-   prefetch(packSfx);
+   for (const asset of effectAssets) prefetch(asset);
   } else {
    heldRequests.length = 0;
    stopAmbience();
@@ -226,7 +224,7 @@
  }
 
  function play(id, options = {}) {
-  const clips = packages?.[id] ?? foley?.[id] ?? bank[id];
+  const clips = eleven?.[id] ?? packages?.[id] ?? foley?.[id] ?? bank[id];
   if (!clips || !context || !volume || document.hidden) return false;
   const asset = assetFor(id);
   const buffer = asset.buffer;
@@ -239,7 +237,7 @@
    return false;
   }
   const { scene, gain = 1, pan = 0, priority = 1, cooldown = .045,
-          group = id, rate = 1, variation = .033 } = options;
+          group = id, rate = 1, variation = .033, delay = 0 } = options;
   if (gain <= .015) return false;
   const now = context.currentTime;
   if (now - (lastStarts.get(group) ?? -Infinity) < cooldown) return false;
@@ -283,7 +281,7 @@
    fader.disconnect();
    panner?.disconnect();
   };
-  source.start(now, offset, duration);
+  source.start(now + delay, offset, duration);
   lastStarts.set(group, now);
   lastVariants.set(id, index);
   voices.add(voice);
