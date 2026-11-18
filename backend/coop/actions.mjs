@@ -4,7 +4,7 @@ import {run,items,foes,brewing,expedition,pools,item,cup,TILE,gap,maxHP,prepareP
 const fail=message=>{throw new Error(message);};
 const index=(list,i)=>Number.isInteger(i)&&i>=0?list[i]:undefined;
 const heal=(p,n)=>{p.hp=Math.min(maxHP(p),p.hp+n);};
-const personalFields=['inventory','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns'];
+const personalFields=['inventory','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil'];
 export function personal(p){
  return {revision:p.revision,character:p.appearance,...Object.fromEntries(personalFields.map(key=>[key,p[key]]))};
 }
@@ -34,7 +34,12 @@ export function actions(sim){
   if(p.quiz)fail('Ein Quiz läuft bereits.');
   const floor=sim.floor;
   let zone=i,options=p.pack.questions,exclude=[];
-  if(reason==='gate'){
+  if(reason==='access'){
+   const site=floor.accessSite(p,i);
+   if(!site||floor.accessState(site)!=='quiz')fail('Dieses Siegel ist nicht verfügbar.');
+   if(sim.activePlayers().some(other=>other.quiz?.reason==='access'&&other.quiz.i===i))fail('Das Siegel wird bereits geprüft.');
+   zone=0;
+  }else if(reason==='gate'){
    const g=floor.gates.find(g=>g.id===i);
    if(!g||sim.state.gates[i])fail('Das Tor ist bereits offen.');
    const shift=g.vertical?(floor.rooms[g.from].cx<g.x?-1:1):(floor.rooms[g.from].cy<g.y?-1:1);
@@ -54,7 +59,7 @@ export function actions(sim){
    const offer=brewing.stock(sim.state.dungeonSeed,floorNumber(),p.equipment.rings.includes('brewer'),run.random,run.shuffle).find(e=>e.id===i);
    if(!offer||p.brewEffects.length>=3||p.brewEffects.some(e=>e.id===i)||!p.inventory.some(it=>it.kind==='cup'))fail('Die Zutat ist nicht verfügbar.');
   }else if(reason==='trial'){
-   if(i!==floor.trialIndex||p.opened.includes(i)||p.trials[i]&&p.trials[i]!=='started')fail('Diese Prüftruhe wurde bereits geöffnet.');
+   if(!items.isTrial(p,i,floor.trialIndex)||p.opened.includes(i)||p.trials[i]&&p.trials[i]!=='started'||p.trial&&p.trial.index!==i)fail('Diese Prüftruhe wurde bereits geöffnet.');
    live(p,index(floor.chests,i),104);
    p.trial??={index:i,deadline:sim.clock+40,correct:0,target:Math.min(3,options.length),used:[],passed:false};
    p.trials[i]='started';exclude=p.trial.used;
@@ -96,6 +101,11 @@ export function actions(sim){
   const {q,reason,i}=qz;const ok=correct(q,data.choice);
   qz.answered=true;xp(p,q,ok);
   let more=false,notice=ok?'Richtig · +Erfahrung':'Nicht ganz';
+  if(reason==='access'){
+   const site=[...sim.floor.links,...sim.floor.doors].find(candidate=>candidate.seal===i);
+   const state=sim.floor.resolveAccess(site,ok);
+   notice=state==='open'?'Prüfsiegel geöffnet':'Falsch · Zugang dauerhaft versiegelt';
+  }
   if(reason==='shrine'){
    (p.altarQuestions[i]??=[]).push(q.id);p.altarUses[i]=(p.altarUses[i]??0)+1;
   }
@@ -125,7 +135,7 @@ export function actions(sim){
    notice=(ok?'Richtig':'Falsch')+' · '+p.trial.correct+'/'+p.trial.target+' richtig';
    more=!p.trial.passed;
   }
-  if(reason!=='study'&&reason!=='trial'&&reason!=='brew'){
+  if(reason!=='study'&&reason!=='trial'&&reason!=='brew'&&reason!=='access'){
    if(ok)heal(p,18);
    else p.hp=Math.max(1,p.hp-8);
   }
@@ -138,13 +148,13 @@ export function actions(sim){
   const pos=sim.floor.chests[trial.index];
   if(passed){
    p.gold+=48+floorNumber()*9;chestFoley(pos,true);
-   sim.drop(pos,selectLoot(floorNumber()>=3?'legendary':'rare',floorNumber(),sim.random),p.seat);
+   sim.drop(pos,selectLoot(items.challengeRarity(floorNumber(),sim.random()),floorNumber(),sim.random),p.seat);
    sim.emit('notice',{message:'Prüftruhe bestanden'},p.seat);return;
   }
   const desk=sim.floor.rooms[trial.index];
   const places=[[2,2],[desk.w-3,3],[desk.w-3,desk.h-3]].map(([dx,dy])=>sim.floor.accessiblePoint((desk.x+dx+.5)*TILE,(desk.y+dy+.5)*TILE));
   places.forEach((place,i)=>{
-   if(!sim.floor.valid(place.x,place.y,12,true)||sim.enemies.some(e=>gap(e,place)<23))return;
+   if(!sim.floor.canReachSpawn(place.x,place.y)||!sim.floor.valid(place.x,place.y,12,true)||sim.enemies.some(e=>gap(e,place)<23))return;
    const type=[foes.ZOMBIE,2,3][i],max=sim.enemyHealth(type,false);
    sim.enemies.push({...place,id:'ambush-'+p.seat+'-'+trial.index+'-'+i,type,roomId:trial.index,hp:max,max,size:.93,phase:i,hit:0,attack:1.4+i*.45,windup:0,angle:0});
   });
@@ -190,6 +200,11 @@ export function actions(sim){
    }}
   }
   if(kind==='consume'){
+   if(it.kind==='trialCharm'){
+    if(!items.markTrials(p,sim.floor.chests.length,floorNumber()<run.LAST_DEPTH))fail('Das Prüfsiegel kann gerade nicht eingesetzt werden.');
+    p.inventory.splice(data.index,1);
+    return {item:it,notice:'Alle übrigen Truhen im Lauf sind jetzt Prüftruhen.'};
+   }
    if(p.consume||!['food','potion'].includes(it.kind)||it.kind==='food'&&p.hp>=maxHP(p))fail('Du kannst das gerade nicht verwenden.');
    p.inventory.splice(data.index,1);p.consume={item:it,start:sim.clock,end:sim.clock+(it.kind==='food'?.69:.82)};
   }
@@ -200,7 +215,7 @@ export function actions(sim){
   const f=sim.floor;
   if(kind==='strata'){
    const link=f.nearestLink(p,i);
-   if(!link||p.consume||p.vault||p.travelLock>0)fail('Dieser Übergang ist gerade nicht erreichbar.');
+   if(!link||f.accessState(link)!=='open'||p.consume||p.vault||p.travelLock>0)fail('Dieser Übergang ist gerade nicht erreichbar.');
    sim.travel(p,link);
    return {link:link.kind};
   }
@@ -229,7 +244,7 @@ export function actions(sim){
   }
   if(kind==='chest'){
    const chest=index(f.chests,i);live(p,chest,103);
-   if(p.opened.includes(i)||i===f.trialIndex)fail('Diese Truhe wurde bereits besucht.');
+   if(p.opened.includes(i)||items.isTrial(p,i,f.trialIndex))fail('Diese Truhe wurde bereits besucht.');
    p.opened.push(i);const gold=22+Math.floor(run.random(sim.state.dungeonSeed^(i*10631+31))()*15)+floorNumber()*4;
    p.gold+=gold;heal(p,12);chestFoley(chest,true);return {notice:'Truhe geöffnet · +'+gold+' Gold'};
   }

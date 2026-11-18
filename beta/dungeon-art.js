@@ -139,7 +139,15 @@ window.DungeonArt = (() => {
     const key=type+variant;
     if(terrainCache.has(key))return terrainCache.get(key);
     const c=surface(),{r,poly}=brush(c),rng=random(variant+31);
-    if(type.startsWith('sewer-')){
+    if(type==='roof-stone'){
+     r(0,0,64,64,'#464955');
+     for(let row=0;row<4;row++){
+      const y=row*16,split=15+rng(35);
+      r(1,y+1,split-2,13,'#636772');r(split+1,y+1,62-split,13,'#575d69');
+      r(2,y+2,split-4,2,'#767984');r(split+2,y+2,59-split,2,'#717683');
+      for(let i=0;i<5;i++)r(3+rng(58),y+5+rng(7),1+rng(4),1,'#7a7d866e');
+     }
+    }else if(type.startsWith('sewer-')){
      r(0,0,64,64,type==='sewer-pool'?'#244b4b':'#1c464d');
      for(let i=0;i<65;i++)r(rng(64),rng(64),3+rng(11),1+rng(3),['#254b46','#32615e','#38524b','#38716a'][rng(4)]);
      for(let i=0;i<7;i++){const x=rng(58),y=rng(58);r(x,y,3,2,'#527f71');r(x+1,y+2,2,1,'#305351');}
@@ -605,6 +613,29 @@ window.DungeonArt = (() => {
     const crouch=stage===1?anticipation:stage===2?-2:stage===3?3-step:Math.abs(stride);
     const y=n=>n+crouch;
     poly([[10,51],[18,47],[48,47],[55,52],[49,56],[14,56]],'#100d13a8');
+    if(zone===16||zone===17){
+     const g=c.getContext('2d');
+     g.drawImage(enemyPose(zone===16?5:8,frame),0,0);
+     g.globalCompositeOperation='source-atop';r(0,0,64,64,'#72bbde68');g.globalCompositeOperation='source-over';
+     r(26,y(18),4,2,'#bdecff');r(35,y(18),4,2,'#fcffff');
+     r(31,y(11),3,4,'#b3e4ed');r(21,y(31),5,2,'#9cdbf7');
+     if(zone===17){r(48,28,13,2,'#9bd5f5');r(58,28,4,1,'#d1f6ff');}
+     return c;
+    }
+    if(zone===15){
+     const flight=stage===2?3:[0,4,6,2][step],crest=stage===1?4:0;
+     for(const side of [-1,1]){
+      const x=d=>32+d*side;
+      poly([[x(4),27],[x(13),18-flight],[x(24),12-flight],[x(30),15-flight],[x(27),25],[x(17),33],[x(8),36]],'#30252a');
+      poly([[x(6),28],[x(14),20-flight],[x(25),14-flight],[x(27),17-flight],[x(24),25],[x(15),31],[x(8),33]],'#896749');
+      poly([[x(14),21-flight],[x(24),16-flight],[x(25),19-flight],[x(20),24],[x(13),28]],'#b19462');
+     }
+     poly([[24,22],[35,21],[44,27],[45,37],[35,43],[25,40],[19,44],[16,41],[22,34]],'#584031');
+     poly([[33+crest,19],[42+crest,20],[49+crest,26],[45+crest,33],[35+crest,32],[30+crest,26]],'#ded4b5');
+     r(41+crest,24,3,2,'#402e26');r(47+crest,27,8,2,'#e4ae43');r(51+crest,29,3,2,'#b98a3d');
+     if(stage===2){r(34,40,7,3,'#c79a4e');r(40,39,3,4,'#f0c368');}
+     return c;
+    }
     if(zone===13||zone===14){
      const large=zone===14,bob=stage===2?-2:Math.abs(stride)%3,cx=large?29:32;
      poly([[19,43],[10,43],[6,38],[4,40],[10,46],[19,48]],'#a77b72');
@@ -1136,6 +1167,12 @@ window.DungeonArt = (() => {
       r(25,33,7,1,'#7b6556');r(28,36,8,1,'#7b6556');r(36,32,7,1,'#7b6556');
       r(39,31,3,3,'#824b43');r(40,31,1,1,glint?'#ffca83':'#bd7962');
       if(glint===2){r(42,30,2,1,'#e9bf7e');r(43,29,1,3,'#e9bf7e');}
+    }else if(type==='trial-charm'){
+      poly([[11,23],[42,13],[54,36],[42,49],[14,50]],'#342b39');
+      poly([[14,23],[42,16],[50,35],[39,46],[17,47]],'#b89364');
+      r(18,23,20,4,'#e4bd87');r(20,31,14,2,'#76564c');r(20,35,12,2,'#76564c');
+      poly([[33,27],[42,24],[49,31],[46,42],[37,43],[31,35]],'#644b88');
+      poly([[39,28],[44,33],[39,39],[35,33]],'#d4b6ee');
     }else if(type==='stairs'||type==='ladder'){
       poly([[9,39],[15,19],[48,17],[57,41],[49,52],[16,53]],'#151921');
       if(type==='stairs'){

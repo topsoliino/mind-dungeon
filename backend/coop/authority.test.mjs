@@ -10,11 +10,11 @@ import {createProjection} from './network.mjs';
 import {checkpointConflict} from './checkpoints.mjs';
 import {startParty,getFloor,advanceParty,partyState,partyMetadata,restoreParty} from './party.mjs';
 
-function game(seed=193){
+function game(seed=193,layoutRevision,depth=1){
  const host=makePlayer(1,{name:'Host',classId:'guardian'},defaultPack);
  const guest=makePlayer(2,{name:'Gast',classId:'archer'},defaultPack);
  host.online=guest.online=true;
- const sim=new Simulation(seed,[host,guest],{random:()=>.04});
+ const sim=new Simulation(seed,[host,guest],{random:()=>.04,layoutRevision},depth);
  sim.actions=actions(sim);
  return {host,guest,sim};
 }
@@ -225,7 +225,7 @@ test('a merchant stall fits against a wall and leaves a reachable customer appro
 });
 
 test('players use ladders and stairs, but alerted enemies only navigate stairs',()=>{
- const {host,guest,sim}=game(193);
+ const {host,guest,sim}=game(193,8);
  const floor=sim.floor,stairs=floor.links.find(s=>s.id==='upper-stairs-0');
  const ladder=floor.links.find(s=>s.id==='sewer-ladder-west-0');
  Object.assign(host,{x:stairs.x,y:stairs.y});
@@ -245,7 +245,7 @@ test('players use ladders and stairs, but alerted enemies only navigate stairs',
 });
 
 test('closed wood blocks arrows and movement until projectile and melee damage destroy it',()=>{
- const {host,guest,sim}=game(193);
+ const {host,guest,sim}=game(193,8);
  const floor=sim.floor,door=floor.doors.find(d=>d.id==='upper-door');
  const from={x:door.x-65,y:door.y},behind={x:door.x+48,y:door.y};
  const enemy={...behind,id:'behind-door',type:foes.SKELETON,roomId:0,hp:100,max:100,size:1};
@@ -266,7 +266,7 @@ test('closed wood blocks arrows and movement until projectile and melee damage d
 });
 
 test('sewer water amplifies electricity and a live weapon sends a second pulse across the channel',()=>{
- const {host,guest,sim}=game(193);
+ const {host,guest,sim}=game(193,8);
  const {floor}=sim;
  const pool=floor.terrain.flatMap((row,y)=>row.flatMap((t,x)=>t==='sewer-pool'?[{x:(x+.5)*TILE,y:(y+.5)*TILE}]:[]))[0];
  assert.ok(pool);
@@ -292,7 +292,7 @@ test('sewer water amplifies electricity and a live weapon sends a second pulse a
 });
 
 test('small rats build bleed and an electrode rat discharges electricity in water',()=>{
- const {host,guest,sim}=game(193);
+ const {host,guest,sim}=game(193,8);
  const floor=sim.floor;
  const spots=floor.terrain.flatMap((row,y)=>row.flatMap((t,x)=>t==='sewer-pool'?
   [{x:(x+.5)*TILE,y:(y+.5)*TILE}]:[]));
@@ -324,6 +324,132 @@ test('revision-seven checkpoints reconstruct their original flat floor',()=>{
  assert.equal(floor.state.layoutRevision,7);
  assert.equal(floor.floor.links.length,0);
  assert.equal(floor.floor.W,sim.floor.W);
+});
+
+test('a run has exactly one sewer and can generate all four tower heights',()=>{
+ const heights=new Set();
+ for(let i=1;i<=100;i++){
+  const runSeed=Math.imul(i,0x9e3779b9);
+  let sewerCount=0;
+  for(let depth=1;depth<=run.LAST_DEPTH;depth++){
+   const seed=depth===1?runSeed:run.nextSeed(runSeed^depth);
+   const layout=run.generate(seed,true,9,depth,run.templeDepth(runSeed),runSeed);
+   const highest=Math.max(0,...Object.values(layout.layers));
+   heights.add(highest+1);
+   if(layout.sewerRooms.length){sewerCount++;assert.equal(depth,run.sewerDepth(runSeed));}
+   if(highest===3)assert.ok(layout.roof.currentOutdoor);
+  }
+  assert.equal(sewerCount,1);
+ }
+ assert.deepEqual([...heights].sort(),[1,2,3,4]);
+});
+
+test('the Ring der Höhe brakes at a cliff, but an eagle can knock its wearer to instant death',()=>{
+ const {host,guest,sim}=game(-731389592,9);
+ const roof=sim.floor.roof;
+ assert.ok(roof.hail);
+ const lip={x:roof.x*TILE+16,y:(roof.cy+.5)*TILE};
+ const full=maxHP(host);
+ Object.assign(host,lip,{hp:full,inv:0});
+ sim.enemies=[];
+ assert.equal(sim.move(host,-55,0),false);
+ assert.equal(host.combatRecord.deaths,1);
+ assert.equal(sim.events.at(-1).cause,'fall');
+ Object.assign(host,lip,{hp:full,inv:0});
+ host.equipment.rings[0]='height';
+ assert.equal(sim.move(host,-55,0),true);
+ assert.ok(host.x>=roof.x*TILE);
+ assert.equal(host.combatRecord.deaths,1);
+ Object.assign(host,lip,{hp:full,inv:0});guest.online=false;
+ const eagle={id:'swoop',x:lip.x+29,y:lip.y,type:foes.EAGLE,hp:100,max:100,size:1,roomId:0,
+  phase:0,hit:0,attack:10,windup:0,angle:Math.PI,runAttack:.65,runDuration:.65};
+ sim.enemies=[eagle];sim.currentTarget=host;
+ sim.ai.act(eagle,.025,host,0,1180,760);
+ assert.equal(host.combatRecord.deaths,2);
+ assert.equal(sim.events.at(-1).cause,'fall');
+});
+
+test('hail amplifies frost and armbrust-ice zombies fire frost bolts',()=>{
+ const {host,guest,sim}=game(-731389592,9);
+ const roof=sim.floor.roof,x=(roof.cx+.5)*TILE,y=(roof.cy+.5)*TILE,max=maxHP(host);
+ host.guard=1;host.resistance={};host.hp=max;host.inv=0;
+ Object.assign(host,{x,y});guest.online=false;
+ const foe={id:'ice-bolt',x:x+90,y,type:foes.FROST_CROSSBOW,hp:100,max:100,size:1,roomId:0,
+  phase:0,hit:0,attack:10,windup:.005,angle:Math.PI};
+ sim.enemies=[foe];sim.currentTarget=host;sim.ai.act(foe,.03,host,0,1180,760);
+ assert.equal(sim.effects.bolts[0].type,'frost-crossbow');
+ sim.ai.moveFrom(.3,host,.3,1180,760);
+ assert.equal(host.dominant,'frost');
+ assert.equal(max-host.hp,22);
+});
+
+test('a failed ladder seal preserves the main stairs, and a correct answer enables a reinforced door',()=>{
+ const {host,sim}=game(1013904242,9),floor=sim.floor;
+ const ladder=floor.links.find(o=>o.seal==='quiz-ladder'&&o.layer===0);
+ const sealed=floor.doors.find(o=>o.seal==='quiz-vault');
+ const stairs=floor.links.find(o=>o.id==='upper-stairs-0');
+ assert.ok(ladder&&sealed&&stairs);
+ Object.assign(host,{x:ladder.x,y:ladder.y});
+ const q=sim.actions.dispatch(host,'quiz',{reason:'access',index:ladder.seal});
+ sim.actions.dispatch(host,'answer',{quiz:q.quiz,choice:null});
+ sim.actions.dispatch(host,'review',{quiz:q.quiz,skip:true});
+ assert.equal(floor.accessState(ladder),'blocked');
+ assert.throws(()=>sim.actions.dispatch(host,'interact',{kind:'strata',index:ladder.id}),/nicht erreichbar/);
+ assert.throws(()=>sim.actions.dispatch(host,'quiz',{reason:'access',index:ladder.seal}),/nicht verfügbar/);
+ Object.assign(host,{x:stairs.x,y:stairs.y});
+ sim.actions.dispatch(host,'interact',{kind:'strata',index:stairs.id});
+ assert.equal(floor.layerAt(host.x,host.y),1);
+ Object.assign(host,{x:sealed.x-31,y:sealed.y});
+ sim.hitDoor(sealed,{amount:500});
+ assert.equal(floor.doorHP(sealed),105);
+ const doorQ=sim.actions.dispatch(host,'quiz',{reason:'access',index:sealed.seal});
+ sim.actions.dispatch(host,'answer',{quiz:doorQ.quiz,choice:choice(host.quiz.q)});
+ sim.actions.dispatch(host,'review',{quiz:doorQ.quiz,skip:true});
+ sim.hitDoor(sealed,{amount:500});
+ assert.equal(floor.doorHP(sealed),0);
+});
+
+test('the sewer relic converts unopened chests and a completed challenge drops rare loot or better',()=>{
+ const {host,sim}=game(193,9,3);
+ const relic=[...sim.orbs.values()].find(o=>o.seat===host.seat&&o.item.kind==='trialCharm');
+ assert.ok(relic);
+ Object.assign(host,{x:relic.x,y:relic.y});
+ sim.actions.dispatch(host,'interact',{kind:'soul',index:relic.id});
+ host.opened=[0];
+ const index=host.inventory.findIndex(o=>o.kind==='trialCharm'),item=host.inventory[index];
+ sim.actions.dispatch(host,'consume',{index,key:items.key(item)});
+ assert.equal(host.trialCharmActive,true);
+ assert.deepEqual(host.opened,[0]);
+ const target=[1,2,3,4].find(n=>n!==sim.floor.trialIndex);
+ assert.equal(items.isTrial(host,target,sim.floor.trialIndex),true);
+ Object.assign(host,sim.floor.chests[target]);
+ let q=sim.actions.dispatch(host,'quiz',{reason:'trial',index:target});
+ for(let i=0;i<3;i++){
+  sim.actions.dispatch(host,'answer',{quiz:q.quiz,choice:choice(host.quiz.q)});
+  q=sim.actions.dispatch(host,'review',{quiz:q.quiz,color:'green'});
+ }
+ assert.ok(host.opened.includes(target));
+ assert.ok([...sim.orbs.values()].some(o=>o.seat===host.seat&&gap(o,host)<8&&['rare','epic','legendary','mythic'].includes(o.item.rarity)));
+ const next=new Simulation(193,[host],{},4);
+ assert.equal(host.trialCharmActive,true);
+ assert.equal(items.isTrial(host,0,next.floor.trialIndex),true);
+});
+
+test('nearby blood loss powers the Ring des Wahns for twenty seconds',()=>{
+ const {guest,sim}=game(193,9);
+ const point=arena(sim,guest);
+ guest.equipment.rings[1]='madness';
+ guest.playtime=40;
+ guest.resistance={};guest.guard=1;
+ assert.ok(sim.hurtPlayer(guest,4,{bleed:1},true,1));
+ assert.equal(guest.madnessUntil,60);
+ const enemy={...point,id:'ring-test',type:foes.SKELETON,hp:100,max:100,size:1};
+ sim.enemies=[enemy];
+ const base=guest.damage;
+ assert.ok(sim.charge(guest,0));assert.ok(sim.attack(guest,0));
+ assert.equal(sim.shots.at(-1).hit.amount,base*1.20);
+ guest.playtime=60;
+ assert.equal(items.madnessBonus(guest,guest.equipment.rings),1);
 });
 
 test('shared layouts, private questions and server-graded answers',()=>{
