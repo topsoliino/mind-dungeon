@@ -277,6 +277,12 @@ window.DungeonRun = (() => {
       &&Number.isInteger(q.correctIndex)&&q.correctIndex>=0&&q.correctIndex<q.choices.length){
     return {...question,choices:q.choices,correctIndex:q.correctIndex};
    }
+   if(q.type==='multiple-choice'&&Array.isArray(q.choices)&&q.choices.length>=2&&q.choices.every(nonempty)
+      &&Array.isArray(q.correctIndices)&&q.correctIndices.length>=2&&q.correctIndices.length<=q.choices.length
+      &&new Set(q.correctIndices).size===q.correctIndices.length
+      &&q.correctIndices.every(index=>Number.isInteger(index)&&index>=0&&index<q.choices.length)){
+    return {...question,choices:q.choices,correctIndices:[...q.correctIndices].sort((a,b)=>a-b)};
+   }
    if(q.type==='free-text'&&Array.isArray(q.answers)&&q.answers.length&&q.answers.every(nonempty)){
     return {...question,answers:q.answers};
    }
@@ -287,7 +293,8 @@ window.DungeonRun = (() => {
   let hash=2166136261;
   for(let i=0;i<fingerprint.length;i++)hash=Math.imul(hash^fingerprint.charCodeAt(i),16777619);
   const packId=nonempty(raw.packId)?raw.packId.trim():'import-'+(hash>>>0).toString(36);
-  return {schemaVersion:2,categories:[...groups.values()],packId,title:nonempty(raw.title)?raw.title.trim():'Importierter Fragenpool',questions};
+  if(packId.length>200)throw Error('Die Paket-ID ist zu lang.');
+  return {schemaVersion:3,categories:[...groups.values()],packId,title:nonempty(raw.title)?raw.title.trim():'Importierter Fragenpool',questions};
  }
  function roomTopics(pack,depth){
   if(!pack)return Array.from({length:sizes.length},()=>[]);

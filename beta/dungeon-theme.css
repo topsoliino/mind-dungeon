@@ -533,3 +533,11 @@ button.bad { background:#643730!important; }
 #dungeon-loading .loading-mark { color:#d9b36d;display:inline-block;margin-right:.7em;animation: loading-rune 1.5s ease-in-out infinite alternate; }
 @keyframes loading-rune { to {opacity:.4;transform:scale(.76) rotate(45deg);} }
 @media(prefers-reduced-motion:reduce) { #dungeon-loading .loading-mark {animation:none;} }
+
+#modalWrap.live-quiz { justify-content:flex-end;align-items:flex-start;padding:min(7vh,56px) clamp(10px,2vw,34px) 12px;pointer-events:none;background:none; }
+#modalWrap.live-quiz #modal { pointer-events:auto;width:min(430px,100%);max-height:86vh; }
+.multiple-submit { display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:12px;color:#d9ba87; }
+.choice-mark { display:inline-grid;place-items:center;width:1em;height:1em;border:1px solid #b19362;margin-right:.55em;vertical-align:-.12em;color:#ffe6ab; }
+.choice[aria-pressed="true"] .choice-mark::after { content:"✓";font-size:.85em;line-height:1; }
+.choice[aria-pressed="true"] { border-color:#c7a45e;background:#513929; }
+@media(max-width:700px){#modalWrap.live-quiz { align-items:flex-end; } #modalWrap.live-quiz #modal { max-height:72vh; } }

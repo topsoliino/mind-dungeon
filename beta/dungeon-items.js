@@ -25,7 +25,7 @@ window.DungeonItems = (() => {
   chicken:{name:'Hühnchen',heal:34}
  };
  const requirements={
-  rapier:{dexterity:11},hammer:{strength:12},staff:{intelligence:11},
+  rapier:{dexterity:11},hammer:{strength:12},staff:{intelligence:11},bow:{dexterity:11},
   blade:{faith:11},dagger:{dexterity:11},greatsword:{strength:13,endurance:11}
  };
  const kinds={weapon:'Waffen',ring:'Ringe',armor:'Rüstung'};

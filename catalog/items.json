@@ -91,6 +91,11 @@
         "endurance": 0.18
       },
       "desc": "Hoher Schaden und großer Schwungradius."
+    },
+    {
+      "id": "bow",
+      "name": "Eibenbogen",
+      "desc": "Verschießt einzelne Pfeile. Halte den Angriff zum Spannen gedrückt."
     }
   ],
   "rings": [

@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "packId": "kvt3-konfrontationsverfahren",
   "title": "KVT III – Die Festung der Vermeidung",
-  "version": 1,
+  "version": 2,
   "questions": [
     {
       "id": "kvt3-001",
@@ -67,22 +67,25 @@
     {
       "id": "kvt3-004",
       "difficulty": 1,
-      "type": "single-choice",
-      "prompt": "Was bedeutet graduiertes Vorgehen?",
+      "type": "multiple-choice",
+      "prompt": "Welche Aussagen treffen auf graduiertes Vorgehen bei der Exposition zu?",
       "choices": [
-        "Ausschließlich längstmögliche Konfrontation mit maximalen Reizen.",
-        "Ausschließlich imaginierte Reize.",
-        "Vermeidung der intensivsten Reize auf Dauer.",
-        "Konfrontation mit zunehmend intensiveren Reizen."
+        "Die Reizintensität wird abgestuft.",
+        "Die Konfrontation erfolgt mit zunehmend stärkeren Reizen.",
+        "Der stärkste Reiz muss in der ersten Übung genutzt werden.",
+        "Graduiert bedeutet immer Exposition in der Vorstellung."
       ],
-      "correctIndex": 3,
-      "explanation": "Graduiert bezeichnet die abgestufte Reizintensität.",
+      "explanation": "Bei graduiertem Vorgehen steigert man die Intensität schrittweise. Die Abstufung legt nicht fest, ob die Exposition in vivo oder in sensu stattfindet.",
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 3
       },
       "categoryId": "grundlagen",
-      "subcategoryId": "grundlagen"
+      "subcategoryId": "grundlagen",
+      "correctIndices": [
+        0,
+        1
+      ]
     },
     {
       "id": "kvt3-005",
@@ -167,22 +170,25 @@
     {
       "id": "kvt3-009",
       "difficulty": 1,
-      "type": "single-choice",
-      "prompt": "Welche Behandlung wird bei Zwangsstörungen im Skript besonders hervorgehoben?",
+      "type": "multiple-choice",
+      "prompt": "Welche Bestandteile hebt das Skript bei der KVT von Zwangsstörungen hervor?",
       "choices": [
-        "KVT mit Exposition und Reaktionsmanagement bzw. -verhinderung.",
-        "Nur Entspannungsübungen.",
-        "Exposition ohne Berücksichtigung von Zwangshandlungen.",
-        "Ausschließlich imaginative Exposition."
+        "Exposition.",
+        "Bestätigung der Notwendigkeit von Ritualen.",
+        "Reaktionsmanagement bzw. Reaktionsverhinderung.",
+        "Ausschließlich Entspannungsübungen."
       ],
-      "correctIndex": 0,
-      "explanation": "Wichtig sind Reaktionsverhinderung und hochfrequente Konfrontation.",
+      "explanation": "Die Exposition wird mit Reaktionsmanagement bzw. Reaktionsverhinderung verbunden.",
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 5
       },
       "categoryId": "anwendung",
-      "subcategoryId": "leitlinien"
+      "subcategoryId": "leitlinien",
+      "correctIndices": [
+        0,
+        2
+      ]
     },
     {
       "id": "kvt3-010",
@@ -267,22 +273,26 @@
     {
       "id": "kvt3-014",
       "difficulty": 2,
-      "type": "single-choice",
-      "prompt": "Nach Mowrer wird Vermeidungsverhalten vor allem aufrechterhalten durch …",
+      "type": "multiple-choice",
+      "prompt": "Welche Aussagen erklären nach Mowrer die Aufrechterhaltung von Vermeidung?",
       "choices": [
-        "positive Bestrafung.",
-        "negative Verstärkung.",
-        "bloße Reizgeneralisierung ohne Konsequenzen.",
-        "negative Bestrafung."
+        "Vermeidung kann die Angst kurzfristig reduzieren.",
+        "Die kurzfristige Entlastung verstärkt das Vermeiden.",
+        "Die Vermeidung wird operant negativ verstärkt.",
+        "Der Angstreiz verliert durch konsequentes Vermeiden automatisch seine Bedeutung."
       ],
-      "correctIndex": 1,
-      "explanation": "Wegfall bzw. Reduktion unangenehmer Angst nach Vermeidung verstärkt das Vermeidungsverhalten.",
+      "explanation": "Die Reduktion eines unangenehmen Zustands verstärkt operant das Vermeidungsverhalten.",
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 9
       },
       "categoryId": "lernen",
-      "subcategoryId": "mowrer"
+      "subcategoryId": "mowrer",
+      "correctIndices": [
+        0,
+        1,
+        2
+      ]
     },
     {
       "id": "kvt3-015",
@@ -347,22 +357,25 @@
     {
       "id": "kvt3-018",
       "difficulty": 2,
-      "type": "single-choice",
-      "prompt": "Was bedeutet Reaktionsverhinderung bei einem Reinigungszwang?",
+      "type": "multiple-choice",
+      "prompt": "Welche Schritte gehören beim Beispiel Reinigungszwang zur Exposition mit Reaktionsverhinderung?",
       "choices": [
-        "Den Kontakt mit Schmutz vermeiden.",
-        "Konfrontation mit Schmutz, ohne die gewohnte Reinigungshandlung auszuführen.",
-        "Nach jedem Kontakt die Hände waschen.",
-        "Nur über den Schmutz sprechen, ohne Konfrontation."
+        "Die gefürchtete Verunreinigung als Expositionsreiz nutzen.",
+        "Die gewohnte Reinigungshandlung unterlassen.",
+        "Das Reinigungsritual unmittelbar danach vollständig ausführen.",
+        "Auf jede Konfrontation mit dem Schmutz verzichten."
       ],
-      "correctIndex": 1,
-      "explanation": "Das Skript nennt Schmutzexposition ohne anschließende Säuberung.",
+      "explanation": "Die Person setzt sich dem Reiz aus und verzichtet dabei auf die gewohnte Neutralisierung durch Reinigung.",
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 15
       },
       "categoryId": "zwang",
-      "subcategoryId": "reaktionsverhinderung"
+      "subcategoryId": "reaktionsverhinderung",
+      "correctIndices": [
+        0,
+        1
+      ]
     },
     {
       "id": "kvt3-019",
@@ -407,22 +420,27 @@
     {
       "id": "kvt3-021",
       "difficulty": 2,
-      "type": "single-choice",
-      "prompt": "Was geschieht bei imaginativer prolongierter Exposition?",
+      "type": "multiple-choice",
+      "prompt": "Welche Merkmale gehören zur imaginativen prolongierten Exposition?",
       "choices": [
-        "Das traumatische Ereignis wird wiederholt und ausführlich im Hier und Jetzt geschildert.",
-        "Nur harmlose Alltagsszenen werden vorgestellt.",
-        "Alle Traumaerinnerungen werden vermieden.",
-        "Die Erinnerung wird durch eine erfundene Geschichte ersetzt."
+        "Die Erinnerung wird allein in abstrakten Stichworten umrissen.",
+        "Das traumatische Ereignis wird wiederholt erinnert.",
+        "Die Person schildert das Ereignis ausführlich und laut.",
+        "Die Schilderung erfolgt im Hier und Jetzt.",
+        "Die Erinnerung wird bei jeder ersten Angstreaktion abgebrochen."
       ],
-      "correctIndex": 0,
-      "explanation": "Die Folie beschreibt wiederholtes ausführliches Erinnern und lautes Schildern.",
+      "explanation": "Bei der imaginativen prolongierten Exposition wird die Erinnerung wiederholt und ausführlich im Hier und Jetzt geschildert.",
       "source": {
         "document": "04_KVT_3_SKRIPT.pdf",
         "page": 17
       },
       "categoryId": "trauma",
-      "subcategoryId": "ptbs"
+      "subcategoryId": "ptbs",
+      "correctIndices": [
+        1,
+        2,
+        3
+      ]
     },
     {
       "id": "kvt3-022",

@@ -11,7 +11,8 @@
   rust:{kg:8,reach:86,grades:{strength:'E',dexterity:'E'},rare:{grades:{strength:'D'}},epic:{crit:2},legendary:{grades:{dexterity:'D'},crit:3}},
   rapier:{kg:5,reach:104,grades:{dexterity:'C',luck:'E'},status:'bleed',rare:{grades:{dexterity:'B'}},epic:{statusLevel:2,crit:2},legendary:{grades:{dexterity:'A'},crit:3,critDamage:1}},
   hammer:{kg:22,reach:81,grades:{strength:'C',vitality:'E'},rare:{elements:{lightning:1}},epic:{grades:{strength:'B'}},legendary:{grades:{strength:'A'}}},
-  staff:{kg:7,reach:116,primary:'magic',grades:{intelligence:'D',attunement:'E'},elements:{dark:1},rare:{grades:{intelligence:'C'}},epic:{crit:1,reserve:5},legendary:{extra:{dark:1},reserve:0}},
+  staff:{kg:7,reach:325,projectile:'arcane',primary:'magic',grades:{intelligence:'D',attunement:'E'},elements:{dark:1},rare:{grades:{intelligence:'C'}},epic:{crit:1,reserve:5},legendary:{extra:{dark:1},reserve:0}},
+  bow:{kg:6,reach:380,projectile:'arrow',grades:{dexterity:'C',endurance:'E'},rare:{grades:{dexterity:'B'}},epic:{crit:2},legendary:{grades:{dexterity:'A'},crit:3,critDamage:1}},
   blade:{kg:11,reach:100,grades:{faith:'C',dexterity:'E'},elements:{fire:1},rare:{grades:{faith:'B'}},epic:{crit:2},legendary:{grades:{faith:'A',dexterity:'D'}}},
   dagger:{kg:3,reach:67,grades:{dexterity:'D',luck:'E'},elements:{dark:1},status:'poison',rare:{grades:{luck:'D'}},epic:{grades:{dexterity:'C'},statusLevel:2},legendary:{grades:{dexterity:'B'},crit:1,critDamage:1}},
   greatsword:{kg:28,reach:113,grades:{strength:'C',endurance:'E'},rare:{grades:{strength:'B'}},epic:{reserve:5},legendary:{extra:{frost:1},reserve:0}}
@@ -31,12 +32,12 @@
  }
  function buildWeapon(id,rank,spec){
   assert(ranks.includes(rank),id,'unknown rarity');
-  const {kg,reach}=spec,primary=spec.primary||'physical',grades={...(spec.grades||{})},elements={...(spec.elements||{})},extra={};
+  const {kg,reach,projectile}=spec,primary=spec.primary||'physical',grades={...(spec.grades||{})},elements={...(spec.elements||{})},extra={};
   let status=spec.status||null,statusLevel=status?1:0,crit=0,critDamage=0,reserve=spec.reserve??0;
-  assert(kg>=3&&kg<=30&&reach>=65&&reach<=130,id,'weight or reach outside bounds');
+  assert(kg>=3&&kg<=30&&reach>=65&&reach<=(projectile?420:130),id,'weight or reach outside bounds');
   assert(Object.keys(grades).length<=4&&Object.values(grades).every(grade=>gradeOrder.includes(grade)),id,'invalid scaling');
   assert(damageTypes.includes(primary),id,'unknown primary damage type');
-  const kgCost=Math.ceil((30-kg)/5),reachCost=Math.ceil((reach-65)/12);
+  const kgCost=Math.ceil((30-kg)/5),reachCost=Math.ceil((reach-65)/(projectile?34:12));
   const primaryCost=primary==='physical'?0:5;
   const starCount=allocation=>Object.values(allocation).reduce((sum,n)=>sum+n,0);
   const summarize=()=>{
@@ -90,9 +91,10 @@
   assert(Number.isInteger(crit)&&crit>=0&&Number.isInteger(critDamage)&&critDamage>=0&&Number.isInteger(statusLevel)&&(!status||['bleed','poison'].includes(status)),id,'invalid critical or status upgrade');
   assert(base>=0&&Number.isInteger(base),id,'budget exceeded');
   const split=Object.fromEntries(Object.entries(distribution).map(([type,stars])=>[type,stars/5]));
-  const speed=Number((.16+kg*.014+(reach-65)*.0018).toFixed(2));
-  const stamina=Math.round(5+.75*kg+.14*(reach-65));
-  return {id,rank,kg,reach,speed,stamina,base,grades,split,stars:distribution,extraStars:{...extra},status,statusLevel,crit:crit/100,critFactor:2+critDamage/10,
+  const rangeCost=projectile?(reach-65)*.26:reach-65;
+  const speed=Number((.16+kg*.014+rangeCost*.0018).toFixed(2));
+  const stamina=Math.round(5+.75*kg+.14*rangeCost);
+  return {id,rank,kg,reach,projectile,speed,stamina,base,grades,split,stars:distribution,extraStars:{...extra},status,statusLevel,crit:crit/100,critFactor:2+critDamage/10,
    impact:Math.round(kg*1.35+4),malus:rank==='mythic',cost:{...summarize(),base},budget:budgets[rank]};
  }
  function buildArmor(set,slot,rank){

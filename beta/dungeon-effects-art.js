@@ -142,6 +142,13 @@ window.DungeonEffectsArt = (() => {
     pixel(x,y,1+(i%2),2,i%2?'#d39a66':'#ffe6a6');
    }
    if(full)shape([[32,8],[34,24],[45,29],[34,32],[32,48],[30,32],[19,29],[30,24]],'#fff3beab');
+  }else if(type==='arcane-shot'){
+   const sway=frame%3-1;
+   shape([[3,31],[20,24-sway],[36,21],[51,24],[59,32],[48,42],[33,43],[20,38+sway]],'#7650a9a8');
+   shape([[13,32],[30,25],[43,23],[55,32],[44,39],[30,38]],'#ae80e8');
+   shape([[26,32],[40,25],[50,31],[43,37]],'#d9c8ff');
+   pixel(38,31,10,2,'#f8eaff');pixel(45,29,3,5,'#f8eaff');
+   for(let i=0;i<7;i++)pixel(6+(i*13+frame*7)%42,20+(i*17+frame*3)%24,2,1,'#c5a2fb');
   }else if(type==='counter-mark'){
    const shift=frame%3;
    shape([[32,14-shift],[47,28],[32,43+shift],[17,28]],'#73daca');
@@ -248,7 +255,7 @@ window.DungeonEffectsArt = (() => {
   }
   return c;
  }
- const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
+ const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
  const frames=Object.fromEntries(types.map(type=>[type,Array.from({length:6},(_,i)=>paint(type,i))]));
  return {frames};
 })();
