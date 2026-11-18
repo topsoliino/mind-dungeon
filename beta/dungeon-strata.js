@@ -215,6 +215,7 @@ window.DungeonStrata=(()=>{
     }
     carve(x,y,2,1,63);paths.push({id:63,x,y,w:2,h:1,theme:pantry.theme});
     doors.push({id:'pantry-door',region:63,x,y,w:2,h:1,vertical:false,hp:30});
+    addRoom(64,pantry.x,y+1,pantry.w,1,{name:pantry.name,theme:pantry.theme},'pantry-nook',0);
    }
    if(hasCrypt){
     const x=rest.x+rest.w+cryptGap+Math.floor(rng()*5),y=rest.y-1,id=58;

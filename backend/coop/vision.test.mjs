@@ -70,6 +70,69 @@ test('a closed door blocks sight from both sides even when the observer shares i
  }
 });
 
+test('entering a room reveals every floor and interior wall, and the view survives leaving and loading',()=>{
+ const W=35,H=18,map=Array.from({length:H},()=>Array(W).fill(1)),regions=map.map(row=>row.map(()=>-1));
+ for(let y=3;y<=13;y++)for(let x=10;x<=32;x++){
+  map[y][x]=0;regions[y][x]=2;
+ }
+ for(let y=3;y<=11;y++)map[y][14]=1;
+ for(let x=2;x<=9;x++){
+  map[8][x]=0;regions[8][x]=x<5?1:3;
+ }
+ const world={W,H,map,regions,stairs:[],rest:{id:1},rooms:[],isPassage:id=>id===3,abyssAt:()=>false,layerForRegion:()=>0};
+ const visited=new Set([1]),view=vision.create(world,TILE,[],[],visited);
+ const entrance=center(10,8);
+ view.update(entrance,800,600);
+ assert.equal(looks(view,18,8),false);
+ assert.equal(knows(view,32,13),false);
+ visited.add(2);
+ view.update(entrance,800,600);
+ for(let y=3;y<=13;y++)for(let x=10;x<=32;x++){
+  assert.ok(knows(view,x,y),`room tile ${x},${y} is covered`);
+  if(map[y][x]===0)assert.ok(looks(view,x,y),`room floor ${x},${y} is outside the view`);
+ }
+ assert.ok(knows(view,14,6));
+ assert.ok(knows(view,32,14));
+ view.update(center(3,8),800,600);
+ assert.ok(looks(view,18,8));
+ const reloaded=vision.create(world,TILE,[],[8*W+18],visited);
+ reloaded.update(center(3,8),800,600);
+ assert.ok(looks(reloaded,18,8));
+ assert.ok(knows(reloaded,32,13));
+});
+
+test('entering the pantry leaves the nook behind its interior door hidden until reached',()=>{
+ const save=run.freshRun(194),floor=geometry.build(run,save);
+ const pantry=floor.annexes.find(room=>room.key==='pantry');
+ const door=floor.doors.find(d=>d.id==='pantry-door');
+ const barrier={...door,face:12,visible:()=>floor.doorHP(door)>0};
+ barrier.floorCells=floor.barrierFloor(barrier);
+ const visited=new Set([floor.rest.id,pantry.id]),view=vision.create(floor,TILE,[barrier],[],visited);
+ const nook=center(pantry.x,pantry.y+pantry.h-1);
+ view.update(center(pantry.cx,pantry.cy),1280,768);
+ assert.ok(view.barrierVisible(barrier));
+ assert.equal(view.remembers(nook.x,nook.y),false);
+ assert.equal(view.sees(nook.x,nook.y),false);
+ floor.strikeDoor(door.hp,door);
+ visited.add(floor.regionAt(nook.x,nook.y));
+ view.update(nook,1280,768);
+ assert.ok(view.sees(nook.x,nook.y));
+ assert.ok(view.remembers(pantry.cx*TILE,nook.y));
+});
+
+test('entering a sewer section still leaves the maze around its bends concealed',()=>{
+ const save=run.freshRun(194);
+ save.floor=run.sewerDepth(save.templeRunSeed);
+ const floor=geometry.build(run,save),entry=floor.links.find(link=>link.id==='sewer-ladder-west-1');
+ const region=floor.regionAt(entry.x,entry.y),visited=new Set([floor.rest.id,region]);
+ assert.ok(floor.sewerRooms.some(room=>room.id===region));
+ const view=vision.create(floor,TILE,[],[],visited);
+ view.update(entry,1280,768);
+ const tiles=floor.regions.flatMap((row,y)=>row.flatMap((id,x)=>id===region&&floor.map[y][x]===0?[center(x,y)]:[]));
+ assert.ok(view.sees(entry.x,entry.y));
+ assert.ok(tiles.some(p=>!view.sees(p.x,p.y)&&!view.remembers(p.x,p.y)));
+});
+
 test('the starter stairs stay visible from a side passage and only the ascent hides the unseen upper landing',()=>{
  const save=run.freshRun(103),floor=geometry.build(run,save);
  const [stair]=floor.stairs;
