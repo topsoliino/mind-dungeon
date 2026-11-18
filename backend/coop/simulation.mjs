@@ -6,18 +6,22 @@ const effectKinds=['bolts','enemyHazards','webShots','webPatches','stormStrikes'
 const radius=e=>e.seat?HERO_RADIUS:e.type===foes.SNAKE||e.type>=foes.BAT?8:e.boss?19:14;
 const nearActor=(a,b,extra=0)=>Math.abs(a.x-b.x)<radius(a)+radius(b)+extra&&Math.abs(a.y-b.y)<radius(a)+radius(b)+extra;
 const clampInput=value=>Number.isFinite(value)?clamp(value,-1,1):0;
+const idleInput=()=>({seq:-1,x:0,y:0,aim:0,blocked:false,at:-Infinity});
+const savePoison=poison=>poison?{...poison,owner:poison.owner?.seat??null}:null;
+const loadPoison=(poison,members)=>poison?{...poison,owner:members.get(poison.owner)?.player}:null;
 
 export class Simulation{
- constructor(seed,players,{random=Math.random,id=randomUUID}={}){
+ constructor(seed,players,{random=Math.random,id=randomUUID}={},depth=1,layoutSeed=seed){
   this.random=random;this.id=id;this.players=players;this.clock=0;this.tickId=0;this.events=[];this.currentTarget=null;this.eventId=0;
-  this.seed=seed;this.startFloor(seed,1);
+  this.seed=seed;this.startFloor(layoutSeed,depth);
  }
  startFloor(seed,floor){
   this.state={...run.floorState(seed,floor),templeDepth:run.templeDepth(this.seed)};
   this.floor=geometry.build(run,this.state);
-  this.enemies=geometry.spawnEnemies(run,foes,this.state,this.floor,true);
+  this.difficulty=this.activePlayers().length===2?1:.5;
+  this.enemies=geometry.spawnEnemies(run,foes,this.state,this.floor,this.difficulty===1);
   this.effects=Object.fromEntries(effectKinds.map(key=>[key,[]]));this.shots=[];this.orbs=new Map();this.portal=null;
-  this.completed=false;this.explored=new Set([this.floor.rest?.id]);this.floorStarted=this.clock;
+  this.completed=false;this.explored=new Set([this.floor.rest?.id]);
   this.resistances=items.foes.map(profile=>foes.resistances(profile,floor));
   for(const p of this.players)this.resetAtRest(p,true);
   this.ai=enemySim.create({
@@ -30,6 +34,57 @@ export class Simulation{
    enemyEncounterReady:e=>this.currentTarget!==null&&this.canTarget(e,this.currentTarget),
    rand:(a,b)=>a+this.random()*(b-a)
   });
+ }
+ static savePlayer(p){
+  const {pack,input,online,mods,load,weapon,resistance,chargeStart,poison,quiz,...state}=p;
+  return {...state,poison:savePoison(poison),quiz:quiz?{...quiz,q:quiz.q.id}:null};
+ }
+ static loadPlayer(state,pack){
+  const quiz=state.quiz&&{...state.quiz,q:pack.questions.find(q=>q.id===state.quiz.q)};
+  const p={...state,pack,quiz:quiz?.q?quiz:null,input:idleInput(),online:false,chargeStart:null};
+  preparePlayer(p);
+  return p;
+ }
+ checkpoint(){
+  return {
+   state:this.state,clock:this.clock,tickId:this.tickId,difficulty:this.difficulty,
+   enemies:this.enemies.map(e=>({...e,poison:savePoison(e.poison)})),effects:this.effects,
+   shots:this.shots.map(({hit,...shot})=>({...shot,hit:{...hit,p:hit.p.seat}})),
+   orbs:[...this.orbs.values()],portal:this.portal,completed:this.completed,explored:[...this.explored],
+   plates:this.floor.pressurePlates.map(({pressed,timer,cooldown})=>({pressed,timer,cooldown})),
+   stormDelay:this.ai.stormTimer()
+  };
+ }
+ restore(saved,players,members){
+  Object.assign(this.state,saved.state);
+  Object.assign(this.effects,saved.effects);
+  Object.assign(this,{players,clock:saved.clock,tickId:saved.tickId,difficulty:saved.difficulty,
+   portal:saved.portal,completed:saved.completed,explored:new Set(saved.explored)});
+  for(const p of players)p.poison=loadPoison(p.poison,members);
+  this.enemies=saved.enemies.map(e=>({...e,poison:loadPoison(e.poison,members)}));
+  this.shots=saved.shots.map(({hit,...shot})=>({...shot,hit:{...hit,p:members.get(hit.p).player}}));
+  this.orbs=new Map(saved.orbs.map(o=>[o.id,o]));
+  this.floor.pressurePlates.forEach((plate,i)=>Object.assign(plate,saved.plates[i]));
+  this.ai.stormTimer(saved.stormDelay);
+ }
+ enemyHealth(type,boss){return Math.max(1,Math.round(foes.health(type,boss,this.state.floor)*this.difficulty));}
+ adaptDifficulty(){
+  const count=this.activePlayers().length,next=count===2?1:.5;
+  if(!count||next===this.difficulty)return;
+  this.difficulty=next;
+  for(const e of this.enemies){
+   const max=this.enemyHealth(e.type,e.boss);
+   e.hp=e.hp/e.max*max;e.max=max;
+  }
+ }
+ setOnline(p,online,awayAt){
+  p.online=online;p.input=idleInput();p.chargeStart=null;p.moving=false;
+  if(!online||!Number.isFinite(awayAt))return;
+  const elapsed=this.clock-awayAt;
+  p.entered+=elapsed;
+  if(p.vault)p.vault.start+=elapsed;
+  if(p.trial)p.trial.deadline+=elapsed;
+  if(p.consume){p.consume.start+=elapsed;p.consume.end+=elapsed;}
  }
  resetAtRest(p,newFloor=false){
   const spawn=this.floor.spawn,offset=p.seat===2?37:0;
@@ -292,19 +347,20 @@ export class Simulation{
   return true;
  }
  defeat(e){
-  for(const p of this.players){p.kills++;p.revision++;}
+  const active=this.activePlayers();
+  for(const p of active){p.kills++;p.revision++;}
   if(e.type===foes.PRIEST){
    this.newEnemies??=[];
    for(const side of [-1,1]){
     const x=e.x+side*27,y=e.y;
     if(!this.floor.valid(x,y,8))continue;
-    const max=foes.health(foes.SNAKE,false,this.state.floor);
+    const max=this.enemyHealth(foes.SNAKE,false);
     this.newEnemies.push({x,y,id:e.id+'-snake-'+side,type:foes.SNAKE,roomId:e.roomId,hp:max,max,size:.57,phase:0,hit:0,attack:.5,windup:0,angle:0,emerge:.28,alerted:true});
    }
   }
   const spawnPair=make=>{
-   if(this.orbs.size>178)return;
-   for(const p of this.players){
+   if(this.orbs.size+active.length>180)return;
+   for(const p of active){
     const x=e.x+(p.seat===1?-13:13),pos=this.floor.valid(x,e.y,4)?{x,y:e.y}:e;
     this.drop(pos,make(),p.seat);
    }

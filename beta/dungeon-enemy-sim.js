@@ -427,7 +427,7 @@ function updateWebs(dt){
   p.x=x;p.y=y;return true;
  });
 }
-return {act,moveFrom};
+return {act,moveFrom,stormTimer(value){if(Number.isFinite(value))stormDelay=value;return stormDelay;}};
 }
 root.DungeonEnemySim={create};
 })(typeof window==='undefined'?globalThis:window);

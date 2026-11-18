@@ -49,7 +49,7 @@ export function createProjection(){
   for(const id of enemies.keys())if(!next.has(id)){enemies.delete(id);removed.push(id);}
   if(force||changed.length)base.enemies=changed;
   if(removed.length)base.removed=removed;
-  const scene={gates:sim.state.gates,portal:sim.portal,completed:sim.completed,gateProgress:sim.state.gateProgress};
+  const scene={explored:[...sim.explored],gates:sim.state.gates,portal:sim.portal,completed:sim.completed,gateProgress:sim.state.gateProgress};
   const sceneKey=JSON.stringify(scene);
   if(force||sceneKey!==staticState){staticState=sceneKey;Object.assign(base,scene);}
   const loot=[...sim.orbs.values()].filter(o=>(!o.seat||o.seat===p.seat)&&currentRegion(p,o));

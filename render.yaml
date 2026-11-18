@@ -13,3 +13,5 @@ services:
         value: 24.16.0
       - key: MIND_ALLOWED_ORIGINS
         value: https://topsoliino.github.io
+      - key: MIND_COOP_STORAGE_TOKEN
+        sync: false

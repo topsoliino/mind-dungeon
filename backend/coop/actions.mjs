@@ -18,8 +18,7 @@ export function actions(sim){
   live(p,sim.portal,76);
   if(sim.enemies.length)fail('Auf dieser Tiefe leben noch Gegner.');
   if(sim.completed)return {victory:true};
-  if(sim.players.some(actor=>actor.quiz||!actor.online))fail('Warte, bis beide Spieler bereit sind.');
-  sim.startFloor(run.differentLayoutSeed(sim.state.dungeonSeed,sim.floor.rooms,sim.floor.gates),floorNumber()+1);
+  if(sim.activePlayers().some(actor=>actor.quiz))fail('Warte, bis die andere Person ihre Frage abgeschlossen hat.');
   return {advance:true};
  }
  function stock(p){
@@ -137,7 +136,7 @@ export function actions(sim){
   const places=[[2,2],[desk.w-3,3],[desk.w-3,desk.h-3]].map(([dx,dy])=>sim.floor.accessiblePoint((desk.x+dx+.5)*TILE,(desk.y+dy+.5)*TILE));
   places.forEach((place,i)=>{
    if(!sim.floor.valid(place.x,place.y,12,true)||sim.enemies.some(e=>gap(e,place)<23))return;
-   const type=[foes.ZOMBIE,2,3][i],max=foes.health(type,false,floorNumber());
+   const type=[foes.ZOMBIE,2,3][i],max=sim.enemyHealth(type,false);
    sim.enemies.push({...place,id:'ambush-'+p.seat+'-'+trial.index+'-'+i,type,roomId:trial.index,hp:max,max,size:.93,phase:i,hit:0,attack:1.4+i*.45,windup:0,angle:0});
   });
   sim.emit('notice',{message:'Prüftruhe fehlgeschlagen · Hinterhalt!'},p.seat);
