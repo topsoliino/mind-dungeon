@@ -1,5 +1,6 @@
 (root=>{
 'use strict';
+const lionRake={duration:.63,pace:.19,reach:102,spread:.86,bleed:27};
 function create(api){
  const {enemyRules,items,balance,save,state,floor,getEnemies,moveActor,actorRadius,nearActor,takeDamage,applyPoison,addBleed,
   soundWorld,burst,hurtEnemy,shockWater,knockHero,coopActors,enemyEncounterReady,rand}=api;
@@ -287,7 +288,6 @@ function updatePlates(dt){
   state.bolts.push({x:from,y:p.y,angle:p.angle,speed,life:Math.abs(from-p.origin.x)/speed+1.15,type:'trap',entryX:p.origin.x,origin:{source:'Tempelfalle',action:'Giftpfeil'}});
  }
 }
-const lionRake={duration:.63,pace:.19,reach:102,spread:.86,bleed:27};
 function updateLion(e,dt){
  const spec=enemyRules.attacks[e.type];
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
@@ -497,5 +497,5 @@ function updateWebs(dt){
 }
 return {act,moveFrom,stormTimer(value){if(Number.isFinite(value))stormDelay=value;return stormDelay;}};
 }
-root.DungeonEnemySim={create};
+root.DungeonEnemySim={create,lionRake};
 })(typeof window==='undefined'?globalThis:window);
