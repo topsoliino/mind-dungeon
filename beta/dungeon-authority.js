@@ -116,11 +116,11 @@ window.DungeonAuthority=(()=>{
  const motionKeys=['x','y','dir','walk','weaponSide','moving','back','attack','attackDuration','dash','lift','charge','pose','hp','max','stamina','maxStamina','combat','inv','bleed','webSlow','grabSlow','poison','dominant','ack','brewTime'];
  const decodeMotion=row=>row?Object.fromEntries(motionKeys.map((key,i)=>[key,row[i]])):null;
  function decodeEnemy(r){
-  const [id,type,x,y,hp,max,size,boss,fireSnake,roomId,phase,moving,angle,facing,hit,emerge,windup,runAttack,runDuration,recover,b,l,target,dominant]=r;
+  const [id,type,x,y,hp,max,size,boss,fireSnake,roomId,phase,moving,angle,facing,hit,emerge,windup,runAttack,runDuration,recover,b,l,target,dominant,veil]=r;
   const batMove=b?{age:b[0],duration:b[1]}:null;
   const lionMove=l?{kind:l[0],age:l[1],angle:l[2],windup:l[3],duration:l[4],last:l[5]?{time:l[5][0],angle:l[5][1]}:null}:null;
   return {id,type,x,y,hp,max,size,boss,fireSnake,roomId,phase,moving,angle,facing,hit,emerge,windup,runAttack,runDuration,recover,batMove,lionMove,
-   dominant,castLength:b?.[2],target:target?{x:target[0],y:target[1]}:null};
+   dominant,veilPhase:veil?.[0],veilTime:veil?.[1],castLength:b?.[2],target:target?{x:target[0],y:target[1]}:null};
  }
  return {origin,warm,connection,decodeMotion,decodeEnemy};
 })();

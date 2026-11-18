@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import test from 'node:test';
 import {WebSocket} from 'ws';
-import {run,geometry,defaultPack,makePlayer,items,foes,TILE,gap,maxHP,preparePlayer,pools} from './rules.mjs';
+import {run,geometry,defaultPack,makePlayer,items,foes,brewing,TILE,gap,maxHP,preparePlayer,pools} from './rules.mjs';
 import {Simulation} from './simulation.mjs';
 import {actions} from './actions.mjs';
 import {createCoopServer} from './server.mjs';
@@ -31,6 +31,181 @@ function arena(sim,p){
  throw new Error('Fixture could not find a clear combat line');
 }
 const choice=q=>q.type==='free-text'?q.answers[0]:q.correctIndices??q.correctIndex;
+
+test('new starts give up to four exits and wide stairs connect floors by walking',()=>{
+ const {host,guest,sim}=game(103);
+ const {floor}=sim,{rest}=floor;
+ assert.equal([[rest.x-1,rest.cy],[rest.x+rest.w,rest.cy],[rest.cx,rest.y-1],[rest.cx,rest.y+rest.h]]
+  .filter(([x,y])=>floor.map[y][x]===0).length,4);
+ assert.equal(floor.stairs.length,3);
+ assert.ok(floor.links.every(link=>link.kind==='ladder'));
+ sim.enemies=[];
+ for(const stair of floor.stairs){
+  const x=(stair.a.x+.5)*TILE,y=(stair.a.y+.5)*TILE,end=(stair.b.y+.5)*TILE;
+  assert.equal(stair.w,4);
+  assert.equal(floor.layerAt(x,y),stair.lower);
+  assert.ok(floor.wall((stair.x-.5)*TILE,(stair.y+2.5)*TILE));
+  Object.assign(host,{x,y});
+  assert.ok(sim.move(host,0,end-y));
+  assert.equal(floor.layerAt(host.x,host.y),stair.upper);
+  assert.ok(Math.abs(host.y-end)<1e-6);
+ }
+ const stair=floor.stairs[0],x=(stair.a.x+.5)*TILE;
+ const foe={x,y:(stair.a.y-.5)*TILE,id:'stair-pursuit',type:foes.SKELETON,aggro:7,alerted:true,
+  hp:80,max:80,size:1,phase:0,angle:0,attack:2,hit:0,windup:0};
+ Object.assign(host,{x,y:(stair.b.y+.5)*TILE,entryGrace:0});guest.online=false;sim.enemies=[foe];
+ for(let step=0;step<180&&floor.layerAt(foe.x,foe.y)===0;step++)sim.step(1/30);
+ assert.equal(floor.layerAt(foe.x,foe.y),1);
+ assert.equal(sim.events.some(e=>e.kind==='travel'),false);
+ assert.ok(floor.doors.every(d=>!floor.terrain[Math.floor(d.y/TILE)][Math.floor(d.x/TILE)]?.startsWith('bridge-')));
+ const interior=floor.doors.find(d=>d.id==='upper-inner-door');
+ const pos={x:interior.x-40,y:interior.y};
+ assert.ok(floor.gateLineBlocked(pos.x,pos.y,interior.x+40,interior.y));
+ floor.strikeDoor(interior.hp,interior);
+ assert.equal(floor.gateLineBlocked(pos.x,pos.y,interior.x+40,interior.y),false);
+});
+
+test('crypts are limited per run and their altar makes a six-ingredient golden brew',()=>{
+ const spawned=new Set();
+ for(let seed=90;seed<126;seed++){
+  const depths=run.cryptDepths(seed);
+  assert.equal(new Set(depths).size,depths.length);
+  assert.ok(depths.length<=2);
+  spawned.add(depths.length);
+ }
+ assert.equal(spawned.size,3);
+ const {host,sim}=game(103);
+ const {floor}=sim;
+ assert.ok(floor.crypt&&floor.canReachSpawn(floor.cryptAltar.x,floor.cryptAltar.y));
+ const locals=sim.enemies.filter(e=>e.id.startsWith('crypt-'));
+ for(const type of [foes.WHITE_ORC,foes.BLACK_ORC,foes.RAT,foes.BAT])assert.ok(locals.some(e=>e.type===type));
+ Object.assign(host,floor.cryptAltar);
+ const empty={kind:'cup',id:'cup',rarity:'rare'};
+ host.inventory.push(empty,empty);
+ assert.throws(()=>sim.actions.dispatch(host,'interact',{kind:'crypt-altar'}),/drei/);
+ host.inventory.push(empty);
+ const altar=sim.actions.dispatch(host,'interact',{kind:'crypt-altar'});
+ assert.equal(altar.item.id,'golden-cup');
+ assert.equal(host.inventory.filter(o=>o.id==='cup').length,0);
+ Object.assign(host,floor.lab);host.bones=1;
+ const vessel=altar.item.id;
+ const offered=brewing.stock(sim.state.dungeonSeed,1,false,run.random,run.shuffle,vessel);
+ assert.equal(offered.length,6);
+ for(const entry of offered){
+  const packet=sim.actions.dispatch(host,'quiz',{reason:'brew',index:entry.id,vessel});
+  assert.ok(sim.actions.dispatch(host,'answer',{quiz:packet.quiz,choice:choice(host.quiz.q)}).ok);
+  sim.actions.dispatch(host,'review',{quiz:packet.quiz,color:'green'});
+ }
+ const {item}=sim.actions.dispatch(host,'brew',{vessel,bones:1});
+ assert.equal(item.brew.length,6);
+ assert.equal(item.duration,(brewing.seconds+60)*2);
+ assert.equal(host.inventory.some(o=>o.id==='golden-cup'),false);
+ assert.equal(host.bones,0);
+});
+
+test('an orc spins, remains veiled for six seconds and strikes for critical physical damage and bleeding',()=>{
+ const {host,sim}=game(103);
+ const site=arena(sim,host);
+ const e={...site,id:'crypt-test',type:foes.WHITE_ORC,hp:80,max:80,phase:0,angle:0,attack:0,size:1};
+ sim.enemies=[e];sim.currentTarget=host;
+ const act=dt=>sim.ai.act(e,dt,host,0,1180,760);
+ act(.01);
+ assert.equal(e.veilPhase,'turn');
+ act(.54);
+ assert.equal(e.veilPhase,'hidden');
+ assert.equal(e.veilTime,6);
+ for(let i=0;i<59;i++)act(.1);
+ assert.equal(e.veilPhase,'hidden');
+ assert.equal(sim.events.some(o=>o.critical==='crit'),false);
+ act(.11);
+ assert.equal(e.veilPhase,'strike');
+ act(.22);
+ assert.ok(sim.events.some(o=>o.kind==='hit'&&o.type==='physical'&&o.critical==='crit'));
+ assert.ok(sim.events.some(o=>o.kind==='hit'&&o.type==='bleed'));
+ assert.equal(items.cryptDrop(e,()=>.03,1).id,'farm-scythe');
+ assert.equal(items.cryptDrop(e,()=>.16,1).rarity,'rare');
+ const great=items.cryptDrop(e,()=>.22,1);
+ assert.equal(great.id,'great-scythe');
+ const scythe=items.weapon(great.id),sword=items.weapon('greatsword');
+ assert.ok(scythe.reach>sword.reach&&scythe.impact>sword.impact&&scythe.sweep<sword.sweep);
+});
+
+test('nearby gates and wooden doors are visible from the approach while their passage blocks sight',()=>{
+ const {sim}=game();
+ const g=sim.floor.gates[0];
+ const gate={x:(g.x+.5)*TILE,y:(g.y+.5)*TILE,vertical:g.vertical,span:4.2*TILE,face:.54*TILE};
+ const door={...sim.floor.doors[0],face:12};
+ for(const site of [gate,door]){
+  const point=distance=>({x:site.x+(site.vertical?distance:0),y:site.y+(site.vertical?0:distance)});
+  const from=point(-70),behind=point(70);
+  assert.ok(sim.floor.barrierVisible(from,site));
+  assert.ok(sim.floor.barrierVisible(behind,site));
+  assert.equal(sim.floor.barrierVisible(point(-290),site),false);
+  assert.ok(sim.floor.gateLineBlocked(from.x,from.y,behind.x,behind.y));
+ }
+});
+
+test('water beside both bridges drops the hero while sewer water remains walkable',()=>{
+ const {host,sim}=game(193,undefined,run.templeDepth(193));
+ sim.enemies=[];
+ for(const type of ['river','clear-river']){
+  const {terrain}=sim.floor;
+  const y=terrain.findIndex((row,i)=>row.some((cell,x)=>cell===type&&terrain[i+1]?.[x]==='bridge-x'));
+  const x=terrain[y].findIndex((cell,i)=>cell===type&&terrain[y+1][i]==='bridge-x');
+  const start={x:(x+.5)*TILE,y:(y+1.5)*TILE};
+  assert.ok(sim.floor.abyssAt(start.x,start.y-TILE));
+  Object.assign(host,start,{inv:0,hp:maxHP(host)});
+  host.equipment.rings[0]='height';
+  assert.ok(sim.move(host,0,-TILE));
+  assert.equal(sim.floor.abyssAt(host.x,host.y),false);
+  host.equipment.rings[0]=null;
+  assert.equal(sim.move(host,0,-TILE),false);
+  assert.ok(sim.events.some(e=>e.kind==='death'&&e.cause==='fall'));
+ }
+ const sewer=game(193,undefined,run.sewerDepth(193)).sim.floor;
+ const y=sewer.terrain.findIndex(row=>row.includes('sewer-pool'));
+ const x=sewer.terrain[y].indexOf('sewer-pool');
+ assert.equal(sewer.abyssAt((x+.5)*TILE,(y+.5)*TILE),false);
+});
+
+test('new seeds vary the deck and room topics while due cards return after their review interval',()=>{
+ const qs=defaultPack.questions;
+ const progress={questionSeen:{},questionReview:{},questionCount:0};
+ const order=seed=>run.orderQuestions(qs,progress,seed).map(q=>q.id);
+ assert.deepEqual(order(193),order(193));
+ assert.notDeepEqual(order(193),order(311));
+ const topics=seed=>run.roomTopics(defaultPack,1,seed).flatMap(room=>room.map(g=>g.activeSubcategory.id));
+ assert.notDeepEqual(topics(193),topics(311));
+ const [red,yellow,green,local]=qs;
+ progress.questionReview={[red.id]:{color:'red',due:6},[yellow.id]:{color:'yellow',due:11},[green.id]:{color:'green',due:0}};
+ progress.questionCount=5;
+ assert.equal(run.nextQuestion(qs,[local],[],progress,193).id,local.id);
+ progress.questionCount=6;
+ assert.equal(run.nextQuestion(qs,[local],[],progress,193).id,red.id);
+ progress.questionCount=11;
+ assert.equal(run.nextQuestion(qs,[local],[red.id],progress,193).id,yellow.id);
+ assert.ok(!order(193).includes(green.id));
+});
+
+test('legacy combination cards become independently selectable and keep their grading on reconnect',()=>{
+ const q={id:'combination',type:'single-choice',topic:'Test',prompt:'Welche Aussagen stimmen? (1) Aussage A. (2) Aussage B. (3) Aussage C. (4) Aussage D. Wähle die vollständige Kombination.',
+  choices:['1 und 2','2 und 4','Nur 2','Alle vier'],correctIndex:1,explanation:'Richtig sind 2 und 4. Erklärung.'};
+ const pack=run.validatePack({questions:[q]});
+ const source=pack.questions[0];
+ assert.equal(source.type,'multiple-choice');
+ assert.equal(source.prompt,'Welche Aussagen stimmen?');
+ assert.equal(source.explanation,'Erklärung.');
+ assert.deepEqual([...source.correctIndices],[1,3]);
+ const {host,sim}=game();
+ host.pack=pack;Object.assign(host,sim.floor.shrines[0]);
+ const quiz=sim.actions.dispatch(host,'quiz',{reason:'shrine',index:0});
+ assert.ok(new Set(Array.from({length:8},(_,seed)=>run.shuffleOptions(source,seed).join())).size>1);
+ const restored=Simulation.loadPlayer(JSON.parse(JSON.stringify(Simulation.savePlayer(host))),pack);
+ const selected=Array.from(quiz.question.choices).flatMap((option,i)=>['Aussage B.','Aussage D.'].includes(option)?[i]:[]);
+ assert.deepEqual([...restored.quiz.q.correctIndices],selected);
+ assert.deepEqual([...restored.quiz.q.choices],[...quiz.question.choices]);
+ assert.equal(sim.actions.dispatch(restored,'answer',{quiz:quiz.quiz,choice:selected}).ok,true);
+});
 
 test('server enforces combat inputs and line of sight, grants paired drops and prevents double pickup',()=>{
  const {host,guest,sim}=game();

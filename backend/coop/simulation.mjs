@@ -40,8 +40,15 @@ export class Simulation{
   const {pack,input,online,mods,load,weapon,resistance,chargeStart,poison,quiz,...state}=p;
   return {...state,poison:savePoison(poison),quiz:quiz?{...quiz,q:quiz.q.id}:null};
  }
- static loadPlayer(state,pack){
-  const quiz=state.quiz&&{...state.quiz,q:pack.questions.find(q=>q.id===state.quiz.q)};
+ static loadPlayer(state,pack,previousPack=pack){
+  const stored=state.quiz;
+  let quiz=null;
+  if(stored){
+   const q=pack.questions.find(q=>q.id===stored.q);
+   const previous=previousPack.questions.find(q=>q.id===stored.q);
+   const legacyQuestion=stored.legacyQuestion??(!stored.order&&q?.type!==previous?.type?previous:undefined);
+   quiz={...stored,legacyQuestion,q:legacyQuestion??run.presentQuestion(q,stored.order)};
+  }
   const p={...state,pack,quiz:quiz?.q?quiz:null,input:idleInput(),online:false,chargeStart:null};
   preparePlayer(p);
   return p;
@@ -319,7 +326,7 @@ export class Simulation{
   if(door)impact=door;
   for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
-   if(e.hp>0&&gap(e,p)<reach+(e.size-1)*10&&Math.cos(angle-p.dir)>.25&&
+   if(e.hp>0&&gap(e,p)<reach+(e.size-1)*10&&Math.cos(angle-p.dir)>w.sweep&&
      !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;impact??={x:e.x,y:e.y};this.weaponHit(e,hit,angle);}
   }
   if(door)this.hitDoor(door,hit);
@@ -373,7 +380,7 @@ export class Simulation{
   }
   this.emit('hit',{x:round(e.x),y:round(e.y),value:n,type:hit.type,critical,enemyType:e.type,weapon});
  }
- hurtPlayer(p,n,split={physical:1},status=false,depth=foes.depthFactor(this.state.floor),cue){
+ hurtPlayer(p,n,split={physical:1},status=false,depth=foes.depthFactor(this.state.floor),cue,critical){
   if(!p.online||p.inv>0&&!status||p.dash>0||this.floor.inRest(p.x,p.y))return false;
   const wet=this.floor.inRain(p.x,p.y)&&split.fire;
   const wetSplit=this.floor.waterLightning(wet?{...split,fire:split.fire*.55}:split,p.x,p.y);
@@ -384,7 +391,7 @@ export class Simulation{
   p.hp=hp;p.combatRecord.taken+=taken;p.revision++;
   if(!status)p.inv=.75;
   if(proc==='block'){this.emit('armor',{...location,proc});return false;}
-  p.dominant=hit.type;this.emit('hit',{...location,value:taken,type:hit.type,cue,pain:!status&&p.hp>0});
+  p.dominant=hit.type;this.emit('hit',{...location,value:taken,type:hit.type,cue,critical,pain:!status&&p.hp>0});
   if(proc)this.emit('armor',{...location,proc});
   if(taken>0&&hit.type==='bleed')this.bloodLoss(p);
   if(p.hp<=0)this.die(p);
@@ -441,6 +448,8 @@ export class Simulation{
    }
   };
   const sewer=this.floor.layerAt(e.x,e.y)===-1;
+  const scythe=items.cryptDrop(e,this.random,this.state.floor);
+  if(scythe)spawnPair(()=>scythe);
   const rank=e.type===foes.SNAKE?null:items.enemyRarity(this.random(),this.state.floor,sewer);
   if(rank)spawnPair(()=>{
    const drop=selectLoot(rank,this.state.floor,this.random);

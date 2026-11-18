@@ -156,13 +156,27 @@ window.DungeonItems = (() => {
   {physical:.12,fire:-.25,bleed:-.1},{physical:.06,frost:-.22,bleed:-.1},
   {fire:.45,frost:-.35},{lightning:.45,fire:-.30},
   {fire:-.22,bleed:-.12},{lightning:.48,frost:-.16},
-  {physical:.08,frost:-.15},{frost:.65,fire:-.40},{frost:.60,fire:-.34}
+  {physical:.08,frost:-.15},{frost:.65,fire:-.40},{frost:.60,fire:-.34},
+  {dark:.32,poison:.65,fire:-.23},{dark:.38,poison:.65,fire:-.25}
  ];
  const foeAttack=[
   {physical:1},{physical:.35,fire:.65},{physical:.75,dark:.25},
   {physical:.4,magic:.6},{frost:.75,dark:.25},{physical:.75,dark:.25},{physical:1},{physical:1},{physical:.85,dark:.15},
   {physical:1},{physical:1},{physical:1},{physical:1},{lightning:1},{physical:1},{frost:1},{frost:1}
  ];
+ const cryptScythes=[
+  {id:'farm-scythe',name:'Bauernsense',desc:'Eine einfache Feldsense mit breiter Schneide. Baut Blutung auf.'},
+  {id:'dark-scythe',name:'Dunkelsense',desc:'Schattenstahl aus der Krypta. Verursacht vor allem Dunkelschaden.'},
+  {id:'great-scythe',name:'Großsense',desc:'Eine schwere Sense mit weitem Schwung und starkem Rückstoß.'}
+ ];
+ function cryptDrop(enemy,random,depth){
+  if(!enemy.id?.startsWith('crypt-'))return null;
+  const roll=random();
+  if(roll>=.26)return null;
+  const id=cryptScythes[roll<.13?0:roll<.19?1:2].id;
+  const rarity=id==='farm-scythe'?'common':enemyRarity(random(),depth)??'common';
+  return {kind:'weapon',id,rarity:id==='dark-scythe'&&rarity==='common'?'rare':rarity,source:'Krypta'};
+ }
  function rank(item){return rarity[item?.rarity]?item.rarity:'common';}
  function key(item){return [item.kind,item.id,rank(item)].join('/');}
  function enemyRarity(roll,depth,sewer=false){
@@ -226,5 +240,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,heightRing,madnessRing,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,dashCooldown,armorCooldown,recoverWithArmor,resolveArmorHit,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,heightRing,madnessRing,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,dashCooldown,armorCooldown,recoverWithArmor,resolveArmorHit,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

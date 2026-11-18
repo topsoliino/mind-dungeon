@@ -55,6 +55,11 @@ window.DungeonRun = (() => {
   x=Math.imul(x^(x>>>16),0x45d9f3b);
   return 1+((x^(x>>>16))>>>0)%LAST_DEPTH;
  }
+ function cryptDepths(seed){
+  const rng=random(Math.imul(seed^0x3fc1327b,1597334677));
+  const roll=rng(),count=roll<.22?0:roll<.78?1:2;
+  return shuffle([1,2,3,4,5],rng).slice(0,count);
+ }
  function generate(seed,varied=true,revision=5,depth=1,templeAt=0,runSeed=seed){
   const rng=random(seed);
   const cells=Array.from({length:6},(_,i)=>({col:i%3,row:i/3|0}));
@@ -224,16 +229,17 @@ window.DungeonRun = (() => {
    }
   }
   const base={rooms,corridors,map,regions,gates,annexes,terrain,rest,paths};
-  return revision>=8?window.DungeonStrata.extend(base,seed,depth,random,shuffle,revision,sewerDepth(runSeed)):base;
+  return revision>=8?window.DungeonStrata.extend(base,seed,depth,random,shuffle,revision,sewerDepth(runSeed),
+   revision>=10&&cryptDepths(runSeed).includes(depth)):base;
 
  }
  function differentLayoutSeed(seed,rooms,gates){
-  const signature=(r,g)=>r.map(p=>[p.x,p.y,p.w,p.h].join(':')).join('|')+'/'+g.map(p=>p.from+':'+p.to).sort().join('|');
+  const signature=(r,g)=>r.map(p=>[p.x,p.y-r[0].y,p.w,p.h].join(':')).join('|')+'/'+g.map(p=>p.from+':'+p.to).sort().join('|');
   const old=signature(rooms,gates);
   let candidate=seed;
   for(let attempt=0;attempt<24;attempt++){
    candidate=nextSeed(candidate);
-   const layout=generate(candidate);
+   const layout=generate(candidate,true,7);
    if(signature(layout.rooms,layout.gates)!==old)return candidate;
   }
   return freshSeed();
@@ -262,12 +268,64 @@ window.DungeonRun = (() => {
   if((!asset&&!embedded)||!nonempty(alt))throw Error('Ein Fragenbild braucht einen gültigen Bildpfad oder eingebettete Bilddaten und einen Alternativtext.');
   return {src,alt,caption:nonempty(caption)?caption.trim():undefined};
  }
+ function upgradeCombination(q){
+  if(q?.type!=='single-choice'||typeof q.prompt!=='string'||!Array.isArray(q.choices)||
+   !/\s+Wähle die vollständige Kombination\.\s*$/i.test(q.prompt))return q;
+  const values=q.prompt.replace(/\s+Wähle die vollständige Kombination\.\s*$/i,'').split(/\s+\((\d+)\)\s+/);
+  const [prompt,...statements]=values,choices=[];
+  for(let i=0;i<statements.length;i+=2){
+   if(Number(statements[i])!==choices.length+1||!nonempty(statements[i+1]))return q;
+   choices.push(statements[i+1].trim());
+  }
+  if(choices.length<3)return q;
+  const keys=q.choices.map(option=>{
+   if(typeof option!=='string')return null;
+   if(choices.length===4&&/^alle vier$/i.test(option.trim()))return [0,1,2,3];
+   if(!/^(?:nur +)?\d+(?:(?: *, *| +und +)\d+)*$/i.test(option.trim()))return null;
+   return option.match(/\d+/g).map(n=>Number(n)-1);
+  });
+  if(keys.some(indices=>!indices||new Set(indices).size!==indices.length||indices.some(i=>i<0||i>=choices.length)))return q;
+  const correctIndices=keys[q.correctIndex];
+  if(!correctIndices||correctIndices.length<2)return q;
+  const explanation=typeof q.explanation==='string'?q.explanation.replace(/^Richtig sind [\d, und]+\.\s*/i,''):q.explanation;
+  return {...q,prompt,choices,correctIndices,explanation,type:'multiple-choice'};
+ }
+ function seededKey(seed,value){
+  let hash=(2166136261^(seed>>>0))>>>0;
+  for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619);
+  hash=Math.imul(hash^(hash>>>16),0x45d9f3b);
+  return (hash^(hash>>>16))>>>0;
+ }
+ function orderQuestions(questions,progress,seed){
+  const seen=progress.questionSeen??{},review=progress.questionReview??{},count=progress.questionCount??0;
+  return questions.filter(q=>review[q.id]?.color!=='green'&&(review[q.id]?.due??-1)<=count)
+   .map(q=>({q,due:review[q.id]?.due??Infinity,seen:seen[q.id]??-1,key:seededKey(seed,q.id)}))
+   .sort((a,b)=>a.due-b.due||a.seen-b.seen||a.key-b.key)
+   .map(row=>row.q);
+ }
+ function nextQuestion(questions,local,excluded,progress,seed){
+  const deck=orderQuestions(questions.filter(q=>!excluded.includes(q.id)),progress,seed);
+  const first=deck[0];
+  if(!first||progress.questionReview?.[first.id])return first;
+  const localIds=new Set(local.map(q=>q.id));
+  return deck.find(q=>localIds.has(q.id))??first;
+ }
+ const shuffleOptions=(question,seed=freshSeed())=>question.choices?
+  shuffle(question.choices.map((_,i)=>i),random(seededKey(seed,question.id))):null;
+ function presentQuestion(question,order){
+  if(!question||!Array.isArray(order)||!question.choices||order.length!==question.choices.length||
+   new Set(order).size!==order.length||order.some(i=>!Number.isInteger(i)||i<0||i>=order.length))return question;
+  const choices=order.map(i=>question.choices[i]);
+  if(question.type==='multiple-choice')return {...question,choices,correctIndices:question.correctIndices.map(i=>order.indexOf(i)).sort((a,b)=>a-b)};
+  return {...question,choices,correctIndex:order.indexOf(question.correctIndex)};
+ }
  function validatePack(raw){
   if(!Array.isArray(raw?.questions)||!raw.questions.length)throw Error('Keine Fragen im Paket gefunden.');
   if(raw.categories!=null&&!Array.isArray(raw.categories))throw Error('Kategorien müssen eine Liste sein.');
   const groups=packTopics(raw),structured=groups.size>0;
   const ids=new Set();
-  const questions=raw.questions.map((q,i)=>{
+  const questions=raw.questions.map((input,i)=>{
+   const q=upgradeCombination(input);
    if(!nonempty(q?.id)||q.id.trim() in Object.prototype||ids.has(q.id.trim())||!nonempty(q.prompt)||typeof q.explanation!=='string'){
     throw Error('Frage '+(i+1)+' braucht eine eindeutige ID, einen Fragetext und eine Erklärung.');
    }
@@ -280,6 +338,7 @@ window.DungeonRun = (() => {
    const category=groups.get(categoryId),sub=category?.subcategories.find(entry=>entry.id===subcategoryId);
    if(!sub)throw Error('Frage '+(i+1)+' verweist auf eine unbekannte Unterkategorie.');
    const question={id,categoryId,subcategoryId,topic:sub.title,prompt:q.prompt,explanation:q.explanation,image:figure(q.image),
+    ...(nonempty(q.title)?{title:q.title.trim()}:{}),
     difficulty:Number.isFinite(q.difficulty)?Math.max(1,Math.min(5,Math.round(q.difficulty))):1,type:q.type,
     source:{document:nonempty(q.source?.document)?q.source.document:'Fragenpaket',
      page:typeof q.source?.page==='string'||Number.isFinite(q.source?.page)?q.source.page:'–'}};
@@ -306,7 +365,7 @@ window.DungeonRun = (() => {
   if(packId.length>200)throw Error('Die Paket-ID ist zu lang.');
   return {schemaVersion:3,categories:[...groups.values()],packId,title:nonempty(raw.title)?raw.title.trim():'Importierter Fragenpool',questions};
  }
- function roomTopics(pack,depth){
+ function roomTopics(pack,depth,seed){
   if(!pack)return Array.from({length:sizes.length},()=>[]);
   const byCategory=new Map();
   for(const question of pack.questions){
@@ -319,6 +378,10 @@ window.DungeonRun = (() => {
    const children=category.subcategories.filter(sub=>questions.some(q=>q.subcategoryId===sub.id));
    return [{...category,subcategories:children,questions}];
   });
+  if(Number.isInteger(seed)){
+   shuffle(groups,random(seededKey(seed,pack.packId)));
+   for(const group of groups)shuffle(group.subcategories,random(seededKey(seed,group.id)));
+  }
   if(!groups.length)return Array.from({length:sizes.length},()=>[]);
   const start=(depth-1)*(groups.length>sizes.length?sizes.length:1);
   return Array.from({length:sizes.length},(_,i)=>{
@@ -333,14 +396,14 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},doors:{},access:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:9,cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
+   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:10,cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
-  return {...floorState(seed,1),trialCharmActive:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};
+  return {...floorState(seed,1),trialCharmActive:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionSeen:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};
  }
  const runFields=[...Object.keys(freshRun(0))];
  function snapshot(save){
   return Object.fromEntries(runFields.map(key=>[key,save[key]]));
  }
- return {LAST_DEPTH,DEFAULT_PACK,templeDepth,sewerDepth,cemeteryRoll,W,H,generate,random,shuffle,freshSeed,nextSeed,differentLayoutSeed,validatePack,roomTopics,floorState,freshRun,snapshot};
+ return {LAST_DEPTH,DEFAULT_PACK,templeDepth,sewerDepth,cryptDepths,cemeteryRoll,W,H,generate,random,shuffle,freshSeed,nextSeed,differentLayoutSeed,validatePack,roomTopics,orderQuestions,nextQuestion,shuffleOptions,presentQuestion,floorState,freshRun,snapshot};
 })();
