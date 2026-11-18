@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=20"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=17"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=17"></script><script src="beta/dungeon-items.js?v=17"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=16"></script><script src="beta/dungeon-effects-art.js?v=18"></script><script src="beta/dungeon-art.js?v=18"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=4"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=20"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=1"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-run.js?v=17"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=17"></script><script src="beta/dungeon-items.js?v=17"></script><script src="beta/dungeon-brewing.js?v=16"></script><script src="beta/dungeon-enemies.js?v=16"></script><script src="beta/dungeon-effects-art.js?v=18"></script><script src="beta/dungeon-art.js?v=18"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=4"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -1711,7 +1711,7 @@ $('#import').onchange=async e=>{
 function startMenu(){mdTitle()}
 function burst(x,y,c,n){if(particles.length>450)particles.splice(0,particles.length-350);for(let i=0;i<n;i++){let a=rand(0,TAU),v=rand(30,150);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.3,.85),max:.85,c,r:rand(1.5,4)})}}
 let combatTime=0,staminaRest=0,levelBannerTimer=0;
-let heroShots=[];
+let heroShots=[],coopVisualShots=[];
 let impactBursts=[],heldAttack=null,combatClock=0,consumeMove=null,vault=null;
 function startAttack(input){
  if(!modalType&&!paused&&!mdNavigatingToNewCharacter&&!vault&&player.attack<=0&&player.dash<=0&&!heldAttack&&!consumeMove&&!save.consumeQueue.length)heldAttack={input,started:combatClock};
@@ -1796,29 +1796,49 @@ function strike(charged=false){
  if(!spendStamina(cost)){tell('Zu wenig Ausdauer');return;}
  player.attackDuration=profile.speed*(charged?1.25:1);
  player.attack=player.attackDuration;
- soundWorld(swingCue[w.id],player,{priority:2,cooldown:.065});
  const ang=player.dir,split=brewBonus.element?{[brewBonus.element]:Object.values(profile.split).reduce((sum,share)=>sum+share,0)}:profile.split;
- const color=items.damage[Object.keys(split)[0]].color;
  const attack={charged,profile,impact,rollChance,split,rarity:rank,amount:weaponDamage(w,rank)*brewBonus.damage};
+ const swing={x:player.x,y:player.y,dir:ang,weapon:w.id,type:Object.keys(split)[0],
+  reach:profile.reach*brewBonus.reach,scale:brewBonus.reach,duration:player.attackDuration,charged};
+ playWeaponSwing(swing);
+ if(coopRoom){
+  const action={...swing,id:coopAPI.token()};
+  coopLastSwing={action,at:performance.now()};
+  coopRealtime?.swing(action);
+ }
  if(profile.projectile){
-  const speed=(profile.projectile==='arrow'?490:345)*(charged?1.23:1);
-  heroShots.push({...attack,x:player.x,y:player.y,angle:ang,speed,remaining:profile.reach*brewBonus.reach});
-  burst(player.x+Math.cos(ang)*23,player.y+Math.sin(ang)*23,color,charged?12:5);
-  if(charged)soundWorld('weapon_charge_release',player,{priority:2,gain:.72});
+  heroShots.push({...attack,x:player.x,y:player.y,angle:ang,speed:weaponShotSpeed(profile.projectile,charged),remaining:swing.reach});
   return;
  }
- slashes.push({x:player.x,y:player.y,ang,life:.22,color,radius:Math.min(84,w.reach*.76)*brewBonus.reach});
- if(charged){
-  soundWorld('weapon_charge_release',player,{priority:2,gain:.88});
-  const duration=.35,distance=Math.min(56,w.reach*.63);
-  impactBursts.push({x:player.x+Math.cos(ang)*distance,y:player.y+Math.sin(ang)*distance,angle:ang,
-   life:duration,duration,kind:'charged-swing'});
- }
- burst(player.x+Math.cos(ang)*28,player.y+Math.sin(ang)*28,color,charged?15:6);
  for(const e of enemies){
   const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
   if(e.hp<=0||!enemyEncounterReady(e)||d>=profile.reach*brewBonus.reach+(e.size-1)*10||Math.cos(a-ang)<=.25||gateLineBlocked(player.x,player.y,e.x,e.y))continue;
   applyWeaponHit(e,attack,a);
+ }
+}
+function weaponShotSpeed(projectile,charged){
+ return (projectile==='arrow'?490:345)*(charged?1.23:1);
+}
+function playWeaponSwing({x,y,dir,weapon,type,reach,scale,charged},remote=false,age=0){
+ const profile=items.weapon(weapon,'common'),color=items.damage[type]?.color||'#e7c697';
+ const projectile=profile.projectile,dx=Math.cos(dir),dy=Math.sin(dir);
+ if(age<.24)soundWorld(swingCue[weapon],{x,y},{priority:2,cooldown:.065});
+ if(charged&&age<.24)soundWorld('weapon_charge_release',{x,y},{priority:2,gain:projectile?.72:.88});
+ if(projectile){
+  if(remote){
+   const speed=weaponShotSpeed(projectile,charged),travel=speed*Math.min(age,.12);
+   if(reach>travel)coopVisualShots.push({x:x+dx*travel,y:y+dy*travel,angle:dir,speed,remaining:reach-travel,charged,profile});
+  }
+  if(age<.22)burst(x+dx*23,y+dy*23,color,charged?12:5);
+  return;
+ }
+ if(age<.22){
+  slashes.push({x,y,ang:dir,life:.22-age,color,radius:Math.min(84,profile.reach*.76)*scale});
+  burst(x+dx*28,y+dy*28,color,charged?15:6);
+ }
+ if(charged&&age<.35){
+  const duration=.35,distance=Math.min(56,profile.reach*.63);
+  impactBursts.push({x:x+dx*distance,y:y+dy*distance,angle:dir,life:duration-age,duration,kind:'charged-swing'});
  }
 }
 function applyWeaponHit(e,attack,angle,fromPeer=false){
@@ -2038,6 +2058,11 @@ function update(dt){
   updateBolts(dt);updateEnemyHazards(dt);
  }
  updateHeroShots(dt);
+ if(coopVisualShots.length)coopVisualShots=coopVisualShots.filter(shot=>{
+  const travel=Math.min(shot.remaining,shot.speed*dt);
+  shot.x+=Math.cos(shot.angle)*travel;shot.y+=Math.sin(shot.angle)*travel;
+  return (shot.remaining-=travel)>0&&!wall(shot.x,shot.y)&&!gateBlocked(shot.x,shot.y);
+ });
  if(mdNavigatingToNewCharacter)return;
  altarBursts=altarBursts.filter(effect=>(effect.life-=dt)>0);
  impactBursts=impactBursts.filter(effect=>(effect.life-=dt)>0);
@@ -2873,7 +2898,7 @@ function drawWeather(drawLine,originX=0,originY=0){
  }
 }
 function drawCombatEffects(draw,ground){
- if(!ground)for(const shot of heroShots){
+ if(!ground)for(const shot of coopVisualShots.length?heroShots.concat(coopVisualShots):heroShots){
   if(!regionVisibleAt(shot.x,shot.y))continue;
   const arcane=shot.profile.projectile==='arcane',size=shot.charged?1.25:1;
   draw(arcane?'arcane-shot':'arrow',Math.floor(frame*20)%6,shot.x,shot.y-14,(arcane?36:39)*size,(arcane?24:19)*size,shot.angle,1);
@@ -3001,19 +3026,18 @@ function peerBitmap(avatar){
  return peerArtwork;
 }
 function peerWeaponPose(avatar){
- if(!avatar.weapon)return null;
- const id=weaponArtId(avatar.weapon),aim=Number(avatar.dir)||0,side=Math.cos(aim)<0?-1:1;
- return {id,x:avatar.x+side*13,y:avatar.y-2-(avatar.lift||0),angle:id==='bow'?aim:aim+Math.PI/2,
-  grip:(gripHeights[id]??50)/64,depth:avatar.y+(Math.sin(aim)<-.38?-.5:.5)};
+ if(!avatar.weapon||avatar.frame>=3&&avatar.frame<backHeroIndex)return null;
+ return carryWeapon(avatar,weaponArtId(avatar.weapon));
 }
 function drawCanvasPeer(avatar){
  const pose=peerWeaponPose(avatar);
  const hero=()=>s.drawImage(peerBitmap(avatar),avatar.x-37,avatar.y-48-(avatar.lift||0),74,74);
- if(!pose||pose.depth>=avatar.y)hero();
+ const depth=avatar.y+(avatar.lift?55:0);
+ if(!pose||pose.depth>=depth)hero();
  if(!pose)return;
  s.save();s.translate(pose.x,pose.y);s.rotate(pose.angle);
  s.drawImage(weaponBitmap(pose.id),-29,-58*pose.grip,58,58);s.restore();
- if(pose.depth<avatar.y)hero();
+ if(pose.depth<depth)hero();
 }
 function positionWorldHUD(scrollX,scrollY){
  if(coopRoom){
@@ -3283,9 +3307,12 @@ function heroFrame(){
   return (move.it.kind==='food'?3:7)+stage;
  }
  if(vault)return player.back?backHeroIndex+2+Math.floor(vault.age/vault.duration*4):vault.age<vault.duration*.45?1:2;
- const stepping=player.moving&&player.attack<=0;
- if(player.back)return backHeroIndex+(stepping?1+Math.floor(player.walk)%6:0);
- return !stepping?0:Math.sin(player.walk)>.25?1:Math.sin(player.walk)<-.25?2:0;
+ return locomotionFrame(player);
+}
+function locomotionFrame({moving,attack,back,walk}){
+ const stepping=moving&&attack<=0;
+ if(back)return backHeroIndex+(stepping?1+Math.floor(walk)%6:0);
+ return !stepping?0:Math.sin(walk)>.25?1:Math.sin(walk)<-.25?2:0;
 }
 function foeFrame(e){
  if(isBat(e)){
@@ -3311,17 +3338,18 @@ function foeLift(e){
  if(move?.kind==='leap'&&move.age>=move.windup)return -Math.round(25*Math.sin(Math.PI*Math.min(1,(move.age-move.windup)/move.duration)));
  return Math.round(Math.sin(e.phase*4)*2-(e.windup>0?Math.min(4,7*e.windup):0));}
 const gripHeights={dagger:46,hammer:47,staff:46,bow:32};
-function weaponPose(){
- const w=usableWeapon(),id=weaponArtId(w.id);
- const dx=Math.cos(player.dir),dy=Math.sin(player.dir);
- if(Math.abs(dx)>.23)player.weaponSide=Math.sign(dx);
- const side=player.weaponSide||1,behind=dy<-.38;
- const swing=heldAttack?-side*(.65+chargeProgress()*.8):player.attack>0?(1-Math.min(1,player.attack/player.attackDuration))*1.5-.66:0;
+function carryWeapon({x,y,dir,weaponSide,charge,attack,attackDuration,lift},id){
+ const side=weaponSide||1,behind=Math.sin(dir)<-.38;
+ const swing=charge>=0?-side*(.65+charge*.8):attack>0?(1-Math.min(1,attack/(attackDuration||.4)))*1.5-.66:0;
  // Socket coordinates on the 64px actor sprite: palm centers at (20,41) and (45,40).
- const palmX=side<0?20:45,palmY=side<0?41:40;
- const socketScale=74/64;
- return {id,x:player.x+(palmX-32)*socketScale,y:player.y+palmY*socketScale-48-(vault?.lift??0),
-  angle:id==='bow'?player.dir:player.dir+swing+Math.PI/2,grip:(gripHeights[id]??50)/64,depth:player.y+(vault?55:0)+(behind?-.5:.5)};
+ const palmX=side<0?20:45,palmY=side<0?41:40,socketScale=74/64;
+ return {id,x:x+(palmX-32)*socketScale,y:y+palmY*socketScale-48-lift,
+  angle:id==='bow'?dir:dir+swing+Math.PI/2,grip:(gripHeights[id]??50)/64,depth:y+(lift?55:0)+(behind?-.5:.5)};
+}
+function weaponPose(){
+ const dx=Math.cos(player.dir);
+ if(Math.abs(dx)>.23)player.weaponSide=Math.sign(dx);
+ return carryWeapon({...player,charge:heldAttack?chargeProgress():-1,lift:vault?.lift??0},weaponArtId(usableWeapon().id));
 }
 function heroAlpha(){return (player.inv>0||player.dash>0)&&Math.sin(frame*25)>0?.6:1;}
 function drawCanvasHero(){
@@ -3419,7 +3447,7 @@ class DungeonScene extends Phaser.Scene{
       painter.clearRect(0,0,64,64);painter.drawImage(bitmap,0,0);
       this.peerBitmap=bitmap;this.textures.get('coop-peer').refresh();
      }
-     this.peer.setPosition(avatar.x,avatar.y-(avatar.lift||0)).setDepth(avatar.y);
+     this.peer.setPosition(avatar.x,avatar.y-(avatar.lift||0)).setDepth(avatar.y+(avatar.lift?55:0));
     }
     if(pose)this.peerWeapon.setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
      .setPosition(pose.x,pose.y).setRotation(pose.angle).setDepth(pose.depth);
@@ -3847,13 +3875,18 @@ async function mdHandleEmailConfirmation(){
 let waitingRoom=null,lobbyTimer=null,lobbyBusy=false,coopRelay=null,coopPeer=null,coopPeerVisible=null,
  coopRemoteLoot=[],coopConnected=false,coopTransferBusy=false,coopFinished=false,coopTransition=false,coopAdvanceBusy=false,coopMissing=0;
 const remoteHero={x:0,y:0,hp:0,dash:0,inv:0,bleed:0,webSlow:0,grabSlow:0};
+const motionAPI=window.DungeonCoopMotion;
+const peerMotion=motionAPI?.motionBuffer(64,65),peerFallback=motionAPI?.motionBuffer(155,85);
+const fallbackStream=coopRoom?coopAPI.token():null;
+let coopRealtime=null,coopMotionAt=-Infinity,coopLastSwing=null,coopPeerSwing=null;
+const seenCoopSwings=new Set();
 const callCoop=(action,code='',data={})=>mdRest('rpc/mind_coop',{method:'POST',
  headers:{'Content-Type':'application/json'},body:JSON.stringify({p_action:action,p_code:code,p_data:data}),
  signal:AbortSignal.timeout(6500)});
 function leaveCoopRun(message='Koop verlassen'){
  if(!coopRoom||coopTransition)return;
  coopTransition=true;
- coopRelay?.stop();coopAPI.forget();sessionStorage.removeItem(coopAPI.key(coopRoom));
+ coopRelay?.stop();coopRealtime?.stop();coopAPI.forget();sessionStorage.removeItem(coopAPI.key(coopRoom));
  sessionStorage.removeItem(RESUME_KEY);
  sessionStorage.setItem(RESUME_KEY+'-message',message);
  mdNavigatingToNewCharacter=true;location.reload();
@@ -3951,7 +3984,7 @@ async function startCoopRun(room){
 }
 function coopFloor(packet){
  if(coopTransition||packet.floor===save.floor)return;
- coopTransition=true;coopRelay?.stop();
+ coopTransition=true;coopRelay?.stop();coopRealtime?.stop();
  const next={...coopRoom,seed:packet.seed,floor:packet.floor};
  const state={...save,...run.floorState(next.seed,next.floor),hp:maxHP(),consumeQueue:[],coopClaims:[],coopProgress:null,coopWorld:null,coopAltarDone:[],coopClaimPending:null,coopDropPending:null,
   depthSeeds:{...save.depthSeeds,[next.floor]:next.seed},activeBrew:save.activeBrew,wellOffer:save.wellOffer};
@@ -4038,12 +4071,19 @@ function writeCoopHud(){
   if(coopPeer?.quiz)watchCoopQuiz();else close();
  }
 }
+function readCoopMotion(){
+ return {x:Math.round(player.x*10)/10,y:Math.round(player.y*10)/10,dir:Math.round(player.dir*1000)/1000,
+  back:player.back,moving:player.moving,walk:Math.round(player.walk*100)/100,weaponSide:player.weaponSide||1,
+  attack:player.attack,attackDuration:player.attackDuration||.4,dash:player.dash,lift:vault?.lift??0,
+  charge:heldAttack?chargeProgress():-1,pose:vault||consumeMove?heroFrame():-1,
+  ready:!entryGrace&&explored.has(heroRegion)&&!inRest(player.x,player.y)};
+}
 function packCoopState(){
- const state={hero:{
-  x:player.x,y:player.y,dir:player.dir,back:player.back,moving:player.moving,walk:player.walk,attack:player.attack,dash:player.dash,
-  hp:player.hp,max:maxHP(),lift:vault?.lift??0,name:save.character?.name?.slice(0,24)||'Wanderer',
+ const now=performance.now(),last=coopLastSwing;
+ const state={hero:{...readCoopMotion(),clock:now,stream:fallbackStream,
+  hp:player.hp,max:maxHP(),name:save.character?.name?.slice(0,24)||'Wanderer',
   appearance:save.character??{},armor:save.equipment.armor??{},weapon:save.equipment.weapon,frame:heroFrame(),
-  ready:!entryGrace&&explored.has(heroRegion)&&!inRest(player.x,player.y)
+  swing:last&&now-last.at<700?{...last.action,age:(now-last.at)/1000}:null
  },altar:save.altarUses,quiz:coopVisibleQuestion(),transfer:coopHasTransfer()};
  if(coopHost){
   state.world={enemies,bolts,webShots,webPatches,enemyHazards,stormStrikes,gates:save.gates,portal:save.portal,completed:save.completed};
@@ -4053,15 +4093,18 @@ function packCoopState(){
 }
 function coopReceive(packet){
  if(packet.floor!==save.floor){coopFloor(packet);return false;}
- coopMissing=0;coopConnected=packet.peerOnline;
- const otherPoint=packet.peer?.hero;
- coopPeer=packet.peerOnline&&Number.isFinite(otherPoint?.x)&&Number.isFinite(otherPoint?.y)?packet.peer:null;
- if(coopPeer?.hero){
-  const other=coopPeer.hero;
-  Object.assign(remoteHero,{x:other.x,y:other.y,dash:other.dash,hp:other.hp,max:other.max,ready:other.ready});
-  if(!coopPeerVisible||Math.hypot(coopPeerVisible.x-other.x,coopPeerVisible.y-other.y)>185)coopPeerVisible={...other};
-  else Object.assign(coopPeerVisible,{...other,x:coopPeerVisible.x,y:coopPeerVisible.y});
- }else coopPeerVisible=null;
+ const now=performance.now(),freshMotion=now-coopMotionAt<600;
+ const other=packet.peer?.hero;
+ coopMissing=0;coopConnected=packet.peerOnline||freshMotion;
+ coopPeer=packet.peerOnline&&Number.isFinite(other?.x)&&Number.isFinite(other?.y)?packet.peer:freshMotion?coopPeer:null;
+ if(coopPeer&&other){
+  const state={...other,walk:other.walk||0,attackDuration:other.attackDuration||.4,
+   attack:other.attack||0,lift:other.lift||0,charge:other.charge??-1,pose:other.pose??-1};
+  peerFallback?.push(state,now,other.clock??now,other.stream);
+  if(!freshMotion)updateRemoteHero(state);
+  Object.assign(remoteHero,{hp:other.hp,max:other.max});
+  if(other.swing)receiveCoopSwing(other.swing,now,other.swing.age+.075);
+ }else if(!freshMotion)clearCoopAvatar();
  coopRemoteLoot=packet.loot.map(orb=>({...orb,phase:(orb.x+orb.y)*.045}));
  if(!coopHost&&Array.isArray(coopPeer?.world?.enemies)){
   const world=coopPeer.world,prior=new Map(enemies.map(e=>[e.id,e]));
@@ -4075,13 +4118,42 @@ function coopReceive(packet){
  }
  updateCoopAltars();writeCoopHud();
 }
+function clearCoopAvatar(){
+ coopPeerVisible=null;peerMotion?.clear();peerFallback?.clear();coopMotionAt=-Infinity;coopPeerSwing=null;
+}
+function updateRemoteHero({x,y,dash,ready}){
+ Object.assign(remoteHero,{x,y,dash,ready});
+}
+function receiveCoopMotion(sample,now){
+ if(!peerMotion?.push(sample,now,sample.clock,sample.stream))return;
+ coopMotionAt=now;
+ updateRemoteHero(sample);
+}
+function receiveCoopSwing(swing,now,age=0){
+ if(!swing||typeof swing.id!=='string'||seenCoopSwings.has(swing.id)||!weaponArtIds.includes(swing.weapon)||
+    !Object.hasOwn(items.damage,swing.type)||!Number.isFinite(age)||age<0||age>.45||
+    ![swing.x,swing.y,swing.dir,swing.reach,swing.scale,swing.duration].every(Number.isFinite))return;
+ seenCoopSwings.add(swing.id);
+ if(seenCoopSwings.size>40)seenCoopSwings.delete(seenCoopSwings.values().next().value);
+ coopPeerSwing={...swing,at:now-1000*age};
+ playWeaponSwing(swing,true,age);
+}
 function interpolateCoop(dt){
  if(!coopRoom)return;
- const ease=1-Math.exp(-14*dt);
- if(coopPeerVisible&&coopPeer?.hero){
-  coopPeerVisible.x+=(coopPeer.hero.x-coopPeerVisible.x)*ease;
-  coopPeerVisible.y+=(coopPeer.hero.y-coopPeerVisible.y)*ease;
+ const now=performance.now();
+ if(coopRealtime)coopRealtime.motion(readCoopMotion(),now);
+ if(coopPeer?.hero){
+  const state=(now-coopMotionAt<550?peerMotion:peerFallback)?.sample(now)??coopPeer.hero;
+  const swing=coopPeerSwing,age=swing?(now-swing.at)/1000:Infinity;
+  if(swing&&age<swing.duration){
+   state.attack=swing.duration-age;state.attackDuration=swing.duration;state.charge=-1;
+   if(age<.09)state.dir=swing.dir;
+  }
+  const {name,hp,appearance,armor,weapon}=coopPeer.hero;
+  coopPeerVisible={...state,name,hp,appearance,armor,weapon,
+   frame:state.pose>=0?state.pose:locomotionFrame(state)};
  }
+ const ease=1-Math.exp(-14*dt);
  if(coopHost)return;
  for(const e of enemies){
   if(Number.isFinite(e.targetX)){e.x+=(e.targetX-e.x)*ease;e.y+=(e.targetY-e.y)*ease;}
@@ -4122,11 +4194,13 @@ function connectCoop(){
   ...save.coopProgress,onProgress:p=>{save.coopProgress=p;},
   onError(error){
    if(/Lobby nicht gefunden|kein Mitglied/.test(error.message))leaveCoopRun('Die Koop-Lobby wurde geschlossen');
-   else if(++coopMissing>4){coopConnected=false;coopPeer=null;coopPeerVisible=null;writeCoopHud();}
+   else if(++coopMissing>4&&performance.now()-coopMotionAt>=600){coopConnected=false;coopPeer=null;clearCoopAvatar();writeCoopHud();}
   }});
  if(save.coopTrialAmbush!=null){
   coopRelay.send('ambush',{index:save.coopTrialAmbush});save.coopTrialAmbush=null;
  }
+ coopRealtime=motionAPI?.realtime({room:coopRoom,config:MD_PUBLIC_CONFIG,getToken:()=>mdSession?.access_token,
+  onMotion:receiveCoopMotion,onSwing:receiveCoopSwing,onLoss(){coopMotionAt=-Infinity;peerMotion?.clear();}});
  coopRelay.sync();writeCoopHud();
  if(save.coopClaimPending)takeCoopOrb(save.coopClaimPending).finally(finishCoopDrop);
  else if(save.coopDropPending)finishCoopDrop();
