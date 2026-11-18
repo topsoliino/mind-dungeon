@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import test from 'node:test';
 import {WebSocket} from 'ws';
-import {run,geometry,defaultPack,makePlayer,items,foes,TILE,gap} from './rules.mjs';
+import {run,geometry,defaultPack,makePlayer,items,foes,TILE,gap,maxHP,preparePlayer,pools} from './rules.mjs';
 import {Simulation} from './simulation.mjs';
 import {actions} from './actions.mjs';
 import {createCoopServer} from './server.mjs';
@@ -58,6 +58,95 @@ test('server enforces combat inputs and line of sight, grants paired drops and p
  sim.actions.dispatch(host,'interact',{kind:'soul',index:chest.id});assert.equal(host.inventory.length,n+1);
  assert.throws(()=>sim.actions.dispatch(host,'interact',{kind:'soul',index:chest.id}),/verfügbar/);
  assert.ok(sim.portal);
+});
+
+test('Bastion blocks one direct hit and keeps its 60-second cooldown through a restart',()=>{
+ const {host,sim}=game();
+ arena(sim,host);
+ host.equipment.armor={chest:'bastion-chest',helmet:'bastion-helmet'};
+ preparePlayer(host);
+ const full=host.hp;
+ assert.equal(sim.hurtPlayer(host,6,{poison:1},true),true);
+ assert.equal(host.armorCooldowns.block,undefined);
+ const afterPoison=host.hp;
+ assert.ok(afterPoison<full);
+ assert.equal(sim.hurtPlayer(host,1000),false);
+ assert.equal(host.hp,afterPoison);
+ assert.equal(host.armorCooldowns.block,60);
+ assert.equal(sim.events.at(-1).proc,'block');
+
+ const restored=Simulation.loadPlayer(JSON.parse(JSON.stringify(Simulation.savePlayer(host))),defaultPack);
+ Object.assign(restored,{online:true,inv:0,playtime:59});
+ assert.equal(sim.hurtPlayer(restored,6),true);
+ restored.equipment.armor={chest:'bastion-chest'};
+ preparePlayer(restored);
+ Object.assign(restored,{inv:0,playtime:60});
+ assert.equal(sim.hurtPlayer(restored,6),false);
+ assert.equal(restored.armorCooldowns.block,150);
+});
+
+test('Emberheart restores 40 percent HP at the 20 percent threshold and respects its cooldown',()=>{
+ const {guest,sim}=game();
+ arena(sim,guest);
+ guest.equipment.armor={chest:'emberheart-chest',legs:'emberheart-legs'};
+ preparePlayer(guest);
+ const max=maxHP(guest);
+ guest.hp=max*.2+2;
+ assert.equal(sim.hurtPlayer(guest,1,{physical:1},true,1),true);
+ assert.equal(guest.hp,max*.2+1);
+ assert.equal(sim.hurtPlayer(guest,1,{physical:1},true,1),true);
+ assert.equal(guest.hp,max*.4);
+ assert.equal(guest.armorCooldowns.heal,180);
+ assert.equal(sim.events.at(-1).proc,'heal');
+ assert.equal(guest.combatRecord.taken,2);
+
+ Object.assign(guest,{playtime:179,hp:2});
+ sim.hurtPlayer(guest,1,{physical:1},true,1);
+ assert.equal(guest.hp,1);
+ Object.assign(guest,{playtime:180,hp:2});
+ sim.hurtPlayer(guest,1,{physical:1},true,1);
+ assert.equal(guest.hp,max*.4);
+ assert.equal(guest.armorCooldowns.heal,360);
+ Object.assign(guest,{playtime:360,hp:1});
+ sim.hurtPlayer(guest,100,{physical:1},true,1);
+ assert.equal(guest.combatRecord.deaths,1);
+ assert.equal(guest.armorCooldowns.heal,360);
+ Object.assign(guest,{playtime:359.5,hp:max*.1});
+ sim.stepPlayer(guest,.25);
+ assert.equal(guest.hp,max*.1);
+ sim.stepPlayer(guest,.25);
+ assert.equal(guest.hp,max*.4);
+ assert.equal(guest.armorCooldowns.heal,540);
+});
+
+test('Pfadschütze starts in the new set and armor modifies bow range and dash cooldown',()=>{
+ const {host,guest,sim}=game();
+ for(const [slot,id] of Object.entries(guest.equipment.armor)){
+  assert.equal(id,'pathfinder-'+slot);
+  assert.ok(guest.inventory.some(it=>it.kind==='armor'&&it.id===id));
+ }
+ for(const set of ['pathfinder','bastion','emberheart','windstep']){
+  for(const slot of ['helmet','chest','legs','boots']){
+   const id=set+'-'+slot;
+   assert.ok(pools.armor.some(it=>it.id===id));
+   const common=items.armorProfile(id);
+   const upgraded=items.armorProfile(id,'legendary');
+   assert.equal(common.kg,upgraded.kg);
+   assert.equal(Object.values(common.cost).reduce((total,n)=>total+n,0),common.budget);
+   for(const [type,value] of Object.entries(common.stats))assert.ok(upgraded.stats[type]>=value);
+  }
+ }
+ arena(sim,guest);
+ assert.ok(sim.charge(guest,0));
+ assert.ok(sim.attack(guest,0));
+ assert.equal(sim.shots.at(-1).left,guest.weapon.reach*1.12);
+ assert.equal(items.arrowRange(host.weapon,guest.equipment.armor),1);
+
+ host.equipment.armor={legs:'windstep-legs',boots:'windstep-boots'};
+ preparePlayer(host);
+ assert.ok(sim.control(host,{seq:1,x:1,y:0,aim:0,dash:true}));
+ sim.stepPlayer(host,1/30);
+ assert.equal(host.dashCooldown,.85*.75);
 });
 
 test('shared layouts, private questions and server-graded answers',()=>{

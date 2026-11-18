@@ -198,6 +198,11 @@ export class Simulation{
    p.revision++;
   }
   p.playtime+=dt;
+  const recovered=items.recoverWithArmor(p,p.equipment.armor,p.hp,maxHP(p));
+  if(recovered>p.hp){
+   p.hp=recovered;p.revision++;
+   this.emit('armor',{seat:p.seat,x:round(p.x),y:round(p.y),proc:'heal'});
+  }
   const threat=this.enemies.some(e=>e.hp>0&&gap(e,p)<420&&this.canTarget(e,p)&&!this.floor.gateLineBlocked(p.x,p.y,e.x,e.y));
   p.combat=threat?1.35:remaining(p.combat,dt);
   if(p.attack||p.dash||p.chargeStart!==null)p.staminaRest=0;
@@ -208,7 +213,7 @@ export class Simulation{
   if(p.chargeStart!==null&&this.clock-at>.5)p.chargeStart=null;
   const length=Math.hypot(x,y)||1;x/=length;y/=length;
   if(!p.vault&&!p.dashCooldown&&dash&&(x||y)&&this.cost(p,Math.round((p.equipment.rings.includes('dodge')?17:25)*p.mods.cost))){
-   p.chargeStart=null;p.dash=p.load.dashTime;p.dashCooldown=.85*p.mods.dashCooldown*(p.weapon?.malus?balance.weaponMythicDash:1);p.dashX=x;p.dashY=y;
+   p.chargeStart=null;p.dash=p.load.dashTime;p.dashCooldown=.85*p.mods.dashCooldown*items.dashCooldown(p.equipment.armor)*(p.weapon?.malus?balance.weaponMythicDash:1);p.dashX=x;p.dashY=y;
    this.emit('dash',{seat:p.seat,x:p.x,y:p.y});
   }
   if(p.dash&&!p.quiz){x=p.dashX;y=p.dashY;}
@@ -269,8 +274,8 @@ export class Simulation{
   const w=p.weapon;
   if(!this.cost(p,Math.round(w.stamina*(charged?1.28:1)*p.mods.cost)))return false;
   p.attack=p.attackDuration=w.speed*(charged?1.25:1);
-  const reach=w.reach*p.mods.reach,type=p.mods.element??Object.keys(w.split)[0];
-  const swing={seat:p.seat,id:this.id(),x:round(p.x),y:round(p.y),dir:p.dir,weapon:w.id,type,reach,scale:p.mods.reach,duration:p.attack,charged};
+  const scale=p.mods.reach*items.arrowRange(w,p.equipment.armor),reach=w.reach*scale,type=p.mods.element??Object.keys(w.split)[0];
+  const swing={seat:p.seat,id:this.id(),x:round(p.x),y:round(p.y),dir:p.dir,weapon:w.id,type,reach,scale,duration:p.attack,charged};
   this.emit('swing',swing);
   const hit={p,w,charged,amount:p.damage,crit:p.crit,impact:p.impact,split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
   if(w.projectile){
@@ -331,9 +336,13 @@ export class Simulation{
   const wet=this.floor.inRain(p.x,p.y)&&split.fire;
   const hit=items.hit(n*depth*p.guard,wet?{...split,fire:split.fire*.55}:split,p.resistance);
   if(hit.total<=0)return false;
-  const taken=Math.min(p.hp,hit.total);p.hp-=taken;p.combatRecord.taken+=taken;p.revision++;
+  const {hp,taken,proc}=items.resolveArmorHit(p,p.equipment.armor,p.hp,maxHP(p),hit.total,status);
+  const location={seat:p.seat,x:round(p.x),y:round(p.y)};
+  p.hp=hp;p.combatRecord.taken+=taken;p.revision++;
   if(!status)p.inv=.75;
-  p.dominant=hit.type;this.emit('hit',{seat:p.seat,x:round(p.x),y:round(p.y),value:taken,type:hit.type,cue,pain:!status&&p.hp>0});
+  if(proc==='block'){this.emit('armor',{...location,proc});return false;}
+  p.dominant=hit.type;this.emit('hit',{...location,value:taken,type:hit.type,cue,pain:!status&&p.hp>0});
+  if(proc)this.emit('armor',{...location,proc});
   if(p.hp<=0){this.sound('hero_fall',p,{priority:4,gain:.85});p.combatRecord.deaths++;if(p.trial)this.actions.finishTrial(p,false);this.resetAtRest(p);this.emit('death',{seat:p.seat});}
   return true;
  }

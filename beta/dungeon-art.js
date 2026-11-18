@@ -699,6 +699,26 @@ window.DungeonArt = (() => {
     }
     return c;
   }
+  const armorAccents={pathfinder:'#b6d0c6',bastion:'#f4d28c',emberheart:'#ffac76',windstep:'#9de1f1'};
+  function armorEmblem({r,poly},set,x,y){
+    const accent=armorAccents[set];
+    switch(set){
+      case 'pathfinder':
+        poly([[x,y-4],[x+4,y],[x+2,y],[x+2,y+3],[x-2,y+3],[x-2,y],[x-4,y]],accent);
+        break;
+      case 'bastion':
+        poly([[x-4,y-3],[x+4,y-3],[x+3,y+1],[x,y+4],[x-3,y+1]],accent);
+        r(x-1,y-2,2,4,'#88704d');
+        break;
+      case 'emberheart':
+        poly([[x,y-4],[x+1,y-1],[x+4,y-2],[x+3,y+2],[x,y+4],[x-3,y+2],[x-4,y-2],[x-1,y-1]],accent);
+        r(x-1,y,2,2,'#fff2c2');
+        break;
+      case 'windstep':
+        r(x-1,y-3,5,1,accent);r(x-4,y-1,7,1,accent);r(x-3,y+1,4,1,accent);
+        break;
+    }
+  }
   function armorDetails({r,poly},armor,back,step,sway){
     const leather='#7b533d',silver='#c8c3b0',antique='#bc995d',shadeBlue='#3c4158',inkGold='#523c42';
     switch(armor.helmetStyle){
@@ -726,6 +746,10 @@ window.DungeonArt = (() => {
         poly([[20,16],[25,10],[29,9],[28,5],[34,8],[39,9],[44,15],[44,24],[40,29],[38,25],[24,25],[20,24]],'#302743');
         r(23,16,18,2,'#685980');if(!back){r(26,18,12,4,'#46374e');r(26,19,4,1,'#dcc1a3');r(34,19,4,1,'#dcc1a3');}
         break;
+    }
+    if(armorAccents[armor.helmetStyle]){
+      r(22,13,21,2,armorAccents[armor.helmetStyle]);
+      if(!back)armorEmblem({r,poly},armor.helmetStyle,32,14);
     }
     switch(armor.chestStyle){
       case 'wanderer':
@@ -755,9 +779,14 @@ window.DungeonArt = (() => {
         if(back){r(24+sway,42,2,5,'#493650');r(39+sway,43,2,5,'#493650');}
         break;
     }
+    if(armorAccents[armor.chestStyle]){
+      const accent=armorAccents[armor.chestStyle];
+      r(17,29,6,2,accent);r(41,29,6,2,accent);
+      armorEmblem({r,poly},armor.chestStyle,32+sway,back?35:33);
+    }
     for(const [x,y] of [[23,step],[34,-step]]){
-      const band={wanderer:leather,scholar:'#9180af',hunter:'#5b6541',knight:silver,shadow:shadeBlue}[armor.legsStyle];
-      const cuff={wanderer:'#79563b',scholar:'#a392bf',hunter:'#92955f',knight:silver,shadow:inkGold}[armor.bootsStyle];
+      const band={wanderer:leather,scholar:'#9180af',hunter:'#5b6541',knight:silver,shadow:shadeBlue}[armor.legsStyle]??armorAccents[armor.legsStyle];
+      const cuff={wanderer:'#79563b',scholar:'#a392bf',hunter:'#92955f',knight:silver,shadow:inkGold}[armor.bootsStyle]??armorAccents[armor.bootsStyle];
       if(band)r(x+1,45+y,5,1,band);
       if(cuff)r(x,50+y,7,1,cuff);
     }
@@ -1143,7 +1172,10 @@ window.DungeonArt = (() => {
       }else{
         for(const x of [10,34]){r(x+4,15,17,34,ink);r(x,36,22,15,ink);r(x+7,17,11,26,iron);r(x+3,39,17,8,iron);r(x+7,22,11,3,gold);r(x+4,44,15,2,pale);}
       }
-      if(style==='hunter'&&slot==='helmet'){
+      if(armorAccents[style]&&(slot==='helmet'||slot==='chest')){
+        if(slot==='helmet')r(22,24,21,2,armorAccents[style]);
+        armorEmblem({r,poly},style,32,slot==='helmet'?20:34);
+      }else if(style==='hunter'&&slot==='helmet'){
         poly([[36,21],[42,10],[50,5],[48,13],[40,22]],'#ba9f61');r(19,24,29,3,color);
       }else if(style==='knight'&&slot==='helmet'){
         poly([[21,14],[26,5],[39,5],[44,13],[37,11],[32,15]],'#985a68');
@@ -1158,10 +1190,10 @@ window.DungeonArt = (() => {
         else if(style==='shadow'){poly([[9,28],[22,14],[27,20],[20,34]],'#534464');poly([[55,28],[42,14],[37,20],[44,34]],'#534464');r(24,32,17,3,'#ae829e');}
         else{r(22,24,4,20,'#835d48');r(38,24,4,20,'#835d48');}
       }else if(style&&slot==='legs'){
-        const tint={wanderer:'#775748',scholar:'#9b82b5',hunter:'#a69457',knight:pale,shadow:'#837394'}[style];
+        const tint={wanderer:'#775748',scholar:'#9b82b5',hunter:'#a69457',knight:pale,shadow:'#837394'}[style]??armorAccents[style];
         r(19,31,10,3,tint);r(35,31,10,3,tint);
       }else if(style&&slot==='boots'){
-        const tint={wanderer:'#8c6544',scholar:'#9b82b5',hunter:'#b4aa70',knight:pale,shadow:'#88768f'}[style];
+        const tint={wanderer:'#8c6544',scholar:'#9b82b5',hunter:'#b4aa70',knight:pale,shadow:'#88768f'}[style]??armorAccents[style];
         for(const x of [10,34]){r(x+6,18,12,4,tint);r(x+4,38,15,2,tint);}
       }
     }else if(type==='weapon'){

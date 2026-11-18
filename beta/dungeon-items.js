@@ -34,6 +34,71 @@ window.DungeonItems = (() => {
  const breweryRing={id:'brewer',name:'Ring des Sudmeisters',desc:'Hebt die Seltenheit aller fünf Brauangebote um eine zulässige Stufe an.',bonus:'brewery'};
  const weapon=(id,rank='common')=>balance.weaponTable[id]?.[rank]||balance.weaponTable.rust.common;
  const armorProfile=(id,rank='common')=>balance.armorTable[id]?.[rank];
+ const armorParts={helmet:'Helm',chest:'Harnisch',legs:'Hose',boots:'Stiefel'};
+ const armorSets={
+  wanderer:{name:'Wanderer',color:'#7b8896'},scholar:{name:'Gelehrten',color:'#7c6eb5'},
+  hunter:{name:'Jäger',color:'#648477'},knight:{name:'Ritter',color:'#9caab9'},
+  shadow:{name:'Schatten',color:'#5c4d7f'},pathfinder:{name:'Pfadschützen',color:'#44636b'},
+  bastion:{name:'Bollwerk',color:'#a89775'},emberheart:{name:'Glutherz',color:'#91494b'},
+  windstep:{name:'Windläufer',color:'#528398'}
+ };
+ const armorItems=Object.entries(armorSets).flatMap(([set,{name,color}])=>Object.entries(armorParts).map(([slot,label])=>{
+  const id=set+'-'+slot;
+  return {id,kind:'armor',slot,set,kg:armorProfile(id).kg,name:name+'-'+label,color};
+ }));
+ const classArmorSets={guardian:'knight',duelist:'wanderer',scholar:'scholar',pilgrim:'hunter',archer:'pathfinder'};
+ function startingArmor(classId){
+  return Object.fromEntries(armorItems.filter(piece=>piece.set===classArmorSets[classId]).map(piece=>[piece.slot,piece.id]));
+ }
+ function armorPerks(armor){
+  const perks={};
+  for(const id of Object.values(armor??{})){
+   const effect=armorProfile(id)?.effect;
+   if(effect)perks[effect.key]=(perks[effect.key]??0)+effect.value;
+  }
+  return perks;
+ }
+ const arrowRange=(weapon,armor)=>weapon.projectile==='arrow'?1+(armorPerks(armor).arrowReach??0):1;
+ const dashCooldown=armor=>1-(armorPerks(armor).dashCooldown??0);
+ const healThreshold=.20,healTarget=.40;
+ function armorCooldown(actor,key){
+  return Math.max(0,(actor.armorCooldowns?.[key]??0)-actor.playtime);
+ }
+ function startArmorCooldown(actor,key,seconds){
+  (actor.armorCooldowns??={})[key]=actor.playtime+seconds;
+ }
+ function recoverWithArmor(actor,armor,hp,max){
+  if(hp<=0||hp>max*healThreshold||armorCooldown(actor,'heal')>0)return hp;
+  const {heal,healBoost=0}=armorPerks(armor);
+  if(!heal)return hp;
+  startArmorCooldown(actor,'heal',heal-healBoost);
+  return max*healTarget;
+ }
+ function resolveArmorHit(actor,armor,hp,max,damage,status){
+  if(!status&&armorCooldown(actor,'block')===0){
+   const {block,blockBoost=0}=armorPerks(armor);
+   if(block){
+    startArmorCooldown(actor,'block',block-blockBoost);
+    return {hp,taken:0,proc:'block'};
+   }
+  }
+  const taken=Math.min(hp,damage),damaged=hp-taken;
+  const recovered=recoverWithArmor(actor,armor,damaged,max);
+  return {hp:recovered,taken,proc:recovered>damaged?'heal':null};
+ }
+ function armorEffectText(id){
+  const effect=armorProfile(id)?.effect;
+  if(!effect)return '';
+  const {key,value}=effect,seconds=value+' s',percent=Math.round(value*100)+' %';
+  switch(key){
+   case 'arrowReach':return '+'+percent+' Pfeilreichweite.';
+   case 'block':return 'Blockt einen direkten Treffer vollständig. Lädt sich in '+seconds+' wieder auf.';
+   case 'blockBoost':return 'Verkürzt die Abklingzeit des Bollwerk-Harnischs um '+seconds+'.';
+   case 'heal':return 'Hebt deine verbleibenden LP bei höchstens 20 % Leben auf 40 %. Lädt sich in '+seconds+' wieder auf.';
+   case 'healBoost':return 'Verkürzt die Abklingzeit des Glutherz-Harnischs um '+seconds+'.';
+   case 'dashCooldown':return '−'+percent+' Abklingzeit beim Ausweichen.';
+  }
+ }
  const weaponCrit=(id,rank)=>weapon(id,rank).crit;
  function critChance(dexterity,load,weaponBonus,gearBonus){
   return Math.min(1,.05+Math.floor(Math.max(0,dexterity)/2)*.01+(load.ratio<.5?.05:0)+weaponBonus+gearBonus);
@@ -137,5 +202,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,dashCooldown,armorCooldown,recoverWithArmor,resolveArmorHit,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();
