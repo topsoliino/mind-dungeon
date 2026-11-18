@@ -26,12 +26,12 @@ export class Simulation{
   for(const p of this.players)this.resetAtRest(p,true);
   this.ai=enemySim.create({
    enemyRules:foes,items,balance,save:this.state,state:this.effects,floor:this.floor,getEnemies:()=>this.enemies,
-   moveActor:(e,dx,dy)=>this.move(e,dx,dy),nearActor,regionKnown:region=>this.explored.has(region),
+   moveActor:(e,dx,dy)=>this.move(e,dx,dy),actorRadius:radius,nearActor,
    takeDamage:(p,...args)=>this.hurtPlayer(p,...args),maxHP,
    applyPoison:(p,opts)=>this.poison(p,opts),addBleed:(p,n)=>this.bleed(p,n),
    soundWorld:(cue,pos,mix)=>this.sound(cue,pos,mix),
    burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),coopActors:()=>this.activePlayers(),
-   enemyEncounterReady:e=>this.currentTarget!==null&&this.canTarget(e,this.currentTarget),
+   enemyEncounterReady:()=>this.currentTarget!==null,
    rand:(a,b)=>a+this.random()*(b-a)
   });
  }
@@ -91,7 +91,7 @@ export class Simulation{
   const x=this.floor.valid(spawn.x+offset,spawn.y,HERO_RADIUS,false,true)?spawn.x+offset:spawn.x;
   Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,attackDuration:.4,walk:0,
    moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,
-   combat:0,staminaRest:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null});
+   combat:0,staminaRest:0,entryGrace:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null});
   p.input={seq:p.input.seq,x:0,y:0,aim:0,blocked:false,at:-Infinity};
   if(newFloor){
    Object.assign(p,{opened:[],searched:[],altarUses:{},altarQuestions:{},gateQuestions:{},boneClaims:{},rubyClaims:{},templeAttempts:{},trials:{},
@@ -136,9 +136,7 @@ export class Simulation{
   return true;
  }
  canTarget(e,p){
-  if(!p.online||this.floor.inRest(p.x,p.y)||p.region<0)return false;
-  const region=this.floor.regionAt(e.x,e.y);
-  return this.clock-p.entered>=.32&&this.explored.has(region)&&(region===p.region||e.alerted);
+  return p.online&&foes.encounterReady(e,p,this.floor,p.entryGrace??0);
  }
  isWeb(p){
   return !this.floor.inRest(p.x,p.y)&&(this.floor.furniture.some(o=>o.type==='web'&&Math.abs(o.x-p.x)<o.w/2+9&&Math.abs(o.y-p.y)<o.h/2+9)||
@@ -178,7 +176,7 @@ export class Simulation{
   }
  }
  stepPlayer(p,dt){
-  for(const key of ['inv','attack','dash','dashCooldown','webSlow','grabSlow','bleedGrace'])p[key]=remaining(p[key],dt);
+  for(const key of ['inv','attack','dash','dashCooldown','webSlow','grabSlow','bleedGrace','entryGrace'])p[key]=remaining(p[key],dt);
   if(!p.bleedGrace)p.bleed=remaining(p.bleed,dt*14);
   if(p.activeBrew){
    p.activeBrew.remaining=remaining(p.activeBrew.remaining,dt);
@@ -234,8 +232,13 @@ export class Simulation{
   p.moving=gap(p,before)>.08;
   if(p.moving)p.walk+=dt*(p.dash?23:12);
   const region=this.floor.regionAt(p.x,p.y);
-  if(p.region!==region){p.region=region;p.entered=this.clock;}
-  if(region>=0&&this.clock-p.entered>=.32)this.explored.add(region);
+  if(p.region!==region){
+   p.region=region;p.entered=this.clock;
+   p.entryGrace=region>=0&&!this.explored.has(region)&&!this.floor.isPassage(region)?foes.entryGrace:0;
+  }
+  if(region>=0&&!this.floor.passageSealed(region)&&(this.floor.isPassage(region)||this.clock-p.entered>=.85)){
+   this.explored.add(region);
+  }
  }
  vaultPath(p,aim){
   const floor=this.floor,region=p.region,dx=Math.cos(aim),dy=Math.sin(aim);
@@ -277,6 +280,7 @@ export class Simulation{
   const scale=p.mods.reach*items.arrowRange(w,p.equipment.armor),reach=w.reach*scale,type=p.mods.element??Object.keys(w.split)[0];
   const swing={seat:p.seat,id:this.id(),x:round(p.x),y:round(p.y),dir:p.dir,weapon:w.id,type,reach,scale,duration:p.attack,charged};
   this.emit('swing',swing);
+  if(this.floor.inRest(p.x,p.y))return true;
   const hit={p,w,charged,amount:p.damage,crit:p.crit,impact:p.impact,split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
   if(w.projectile){
    this.shots.push({x:p.x,y:p.y,angle:p.dir,left:reach,speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
@@ -285,7 +289,7 @@ export class Simulation{
   let targetHit=false;
   for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
-   if(e.hp>0&&this.canTarget(e,p)&&gap(e,p)<reach+(e.size-1)*10&&Math.cos(angle-p.dir)>.25&&
+   if(e.hp>0&&gap(e,p)<reach+(e.size-1)*10&&Math.cos(angle-p.dir)>.25&&
      !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;this.weaponHit(e,hit,angle);}
   }
   if(!targetHit){
@@ -300,7 +304,8 @@ export class Simulation{
    for(let i=0;i<steps;i++){
     shot.x+=Math.cos(shot.angle)*stride;shot.y+=Math.sin(shot.angle)*stride;
     if(this.floor.wall(shot.x,shot.y)||this.floor.gateBlocked(shot.x,shot.y))return false;
-    const enemy=this.enemies.find(e=>e.hp>0&&gap(e,shot)<radius(e)+5&&this.explored.has(this.floor.regionAt(e.x,e.y)));
+    const enemy=this.enemies.find(e=>e.hp>0&&gap(e,shot)<radius(e)+5&&
+     !this.floor.gateLineBlocked(shot.x,shot.y,e.x,e.y));
     if(enemy){this.weaponHit(enemy,shot.hit,shot.angle);return false;}
    }
    return (shot.left-=distance)>0;
@@ -326,7 +331,7 @@ export class Simulation{
   if(e.hp<=0)return;
   const n=Math.min(e.hp,hit.total);
   if(n>0){
-   e.hp-=n;e.dominant=hit.type;e.hit=.22;
+   e.hp-=n;e.dominant=hit.type;e.hit=.22;foes.alert(e);
    if(p){p.combatRecord.dealt+=n;if(critical)p.combatRecord[critical==='critical'?'crits':'counters']++;p.revision++;}
   }
   this.emit('hit',{x:round(e.x),y:round(e.y),value:n,type:hit.type,critical,enemyType:e.type,weapon});
@@ -377,15 +382,17 @@ export class Simulation{
     this.newEnemies.push({x,y,id:e.id+'-snake-'+side,type:foes.SNAKE,roomId:e.roomId,hp:max,max,size:.57,phase:0,hit:0,attack:.5,windup:0,angle:0,emerge:.28,alerted:true});
    }
   }
-  const spawnPair=make=>{
+  const spawnPair=(make,origin=e)=>{
    if(this.orbs.size+active.length>180)return;
    for(const p of active){
-    const x=e.x+(p.seat===1?-13:13),pos=this.floor.valid(x,e.y,4)?{x,y:e.y}:e;
+    const x=origin.x+(p.seat===1?-13:13),pos=this.floor.valid(x,origin.y,4)?{x,y:origin.y}:origin;
     this.drop(pos,make(),p.seat);
    }
   };
   if(e.type!==foes.SNAKE&&items.enemyRarity(this.random(),this.state.floor))spawnPair(()=>selectLoot(items.enemyRarity(this.random()*.18,this.state.floor),this.state.floor,this.random));
   if(this.random()<.015)spawnPair(()=>cup('Gegnerbeute · Koop'));
+  const bones=foes.boneDrop(e,this.random);
+  if(bones)spawnPair(()=>bones,this.floor.boneDropPosition(e));
   this.emit('defeated',{x:e.x,y:e.y,type:e.type});
  }
 }

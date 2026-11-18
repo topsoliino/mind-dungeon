@@ -9,6 +9,9 @@ const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths}=run.generat
 const H=map.length,W=map[0].length;
 const annexByRegion=new Map(annexes.map(a=>[a.id,a]));
 const annexPassages=new Map([...annexes.map(a=>a.passage),...paths].map(path=>[path.id,path]));
+const passages=new Set([...corridors.map(c=>c.id),...annexPassages.keys()]);
+const isPassage=id=>passages.has(id);
+const passageSealed=id=>gates.some(g=>g.corridorId===id&&!save.gates[g.id]);
 const court=annexes.find(a=>a.key==='court');
 const cemetery=annexes.find(a=>a.key==='cemetery');
 const templeRooms=annexes.filter(a=>a.key.startsWith('temple-'));
@@ -106,7 +109,7 @@ function valid(x,y,r=12,ignoreSeals=false,feet=false){
  return !furnitureBlocked(x,y,feet?9:r,feet?6:r);
 }
 const merchantRandom=run.random(furnishingSeed^0x7157be6a);
-const merchantRoomId=1+Math.floor(merchantRandom()*4),merchantZone=zones[merchantRoomId];
+const preferredMerchantRoom=1+Math.floor(merchantRandom()*4);
 function accessiblePoint(x,y,radius=14){
  if(valid(x,y,radius,true))return {x,y};
  const tileX=Math.floor(x/TILE),tileY=Math.floor(y/TILE);
@@ -115,6 +118,13 @@ function accessiblePoint(x,y,radius=14){
   if(valid(px,py,radius,true))return {x:px,y:py};
  }
  return {x,y};
+}
+function boneDropPosition(origin){
+ for(const [dx,dy] of [[0,27],[0,-27],[27,0],[-27,0]]){
+  const x=origin.x+dx,y=origin.y+dy;
+  if(valid(x,y,5)&&!gateLineBlocked(origin.x,origin.y,x,y))return {x,y};
+ }
+ return origin;
 }
 const shrines=zones.map((z,i)=>({...accessiblePoint((z.x+.5)*TILE,(z.y+.5)*TILE),i}));
 const chests=[[10.5,7.5],[23.5,4.5],[38.5,9.5],[22.5,25.5],[37.5,25.5]].map(([x,y],i)=>
@@ -139,22 +149,41 @@ const roomPlans=[
 const entrances=[...corridors,...(save.variedRooms?new Set([...annexPassages.values(),...paths]):[])].flatMap(c=>!c.vertical
  ? [{x:(c.x+c.w/2)*TILE,y:c.y*TILE},{x:(c.x+c.w/2)*TILE,y:(c.y+c.h)*TILE}]
  : [{x:c.x*TILE,y:(c.y+c.h/2)*TILE},{x:(c.x+c.w)*TILE,y:(c.y+c.h/2)*TILE}]);
-const merchantRoom=rooms[merchantRoomId];
 const shopObstacles=[...entrances,...shrines,...chests];
-const marketSites=[];
-for(const dy of [2.8,3.35,4,merchantRoom.h-2.65,merchantRoom.h-3.4]){
- for(const dx of [2.55,merchantRoom.w-2.55,3.25,merchantRoom.w-3.25,merchantRoom.w/2]){
-  const p={x:(merchantRoom.x+dx)*TILE,y:(merchantRoom.y+dy)*TILE};
-  if(![[-81,-35],[81,-35],[-81,35],[81,35]].every(([x,y])=>!wall(p.x+x,p.y+y)))continue;
-  if(!valid(p.x,p.y+53,14,true))continue;
-  const clearance=Math.min(...shopObstacles.map(o=>Math.min(Math.hypot(p.x-o.x,p.y-o.y),Math.hypot(p.x-o.x,p.y+53-o.y))));
-  marketSites.push({...p,clearance});
+function wallMarket(room){
+ const halfWidth=FURNITURE.market.w/2,halfDepth=FURNITURE.market.h/2;
+ const left=room.x*TILE,right=(room.x+room.w)*TILE,top=room.y*TILE,sites=[];
+ function addSite(x,y,wallPenalty){
+  if(![-halfWidth,0,halfWidth].every(dx=>[-halfDepth,0,halfDepth].every(dy=>!wall(x+dx,y+dy))))return;
+  const approach={x,y:y+halfDepth+24};
+  if(!valid(approach.x,approach.y,14,true))return;
+  const clearance=Math.min(...shopObstacles.map(o=>Math.min(
+   Math.hypot(x-o.x,y-o.y),Math.hypot(approach.x-o.x,approach.y-o.y))));
+  sites.push({roomId:room.i,x,y,clearance,approach,score:clearance-wallPenalty});
  }
+ for(let row=0;row<room.h-3;row++)for(let col=2;col<room.w-2;col++){
+  const x=left+(col+.5)*TILE,wallBottom=top+row*TILE;
+  if([-halfWidth,-halfWidth/2,0,halfWidth/2,halfWidth].every(dx=>wall(x+dx,wallBottom-6))){
+   addSite(x,wallBottom+halfDepth+26,row?24:0);
+  }
+ }
+ for(let row=1;row<room.h-2;row++){
+  const y=top+(row+.5)*TILE;
+  for(const side of [-1,1]){
+   const edge=side===-1?left:right;
+   if([-halfDepth,0,halfDepth].every(dy=>wall(edge+side*6,y+dy))){
+    addSite(edge-side*(halfWidth+9),y,48);
+   }
+  }
+ }
+ return sites.sort((a,b)=>b.score-a.score)[0];
 }
-const market=marketSites.find(p=>p.clearance>115)||marketSites.sort((a,b)=>b.clearance-a.clearance)[0]
- ||accessiblePoint((merchantRoom.x+merchantRoom.w-2.5)*TILE,(merchantRoom.y+merchantRoom.h-2.8)*TILE,36);
-const merchant=save.layoutRevision>=2?{x:market.x,y:market.y+53}:
- {x:(merchantZone.x+1.5)*TILE,y:(merchantZone.y+2.5)*TILE};
+const roomsForShop=[rooms[preferredMerchantRoom],...rooms.slice(1).filter(room=>room.i!==preferredMerchantRoom),rooms[0]];
+const shopSites=roomsForShop.map(wallMarket).filter(Boolean);
+const fallbackMarket=pointIn(rooms[preferredMerchantRoom],0,-1.15);
+const shop=shopSites.find(site=>site.clearance>=95)||shopSites.sort((a,b)=>b.score-a.score)[0]||
+ {roomId:preferredMerchantRoom,...fallbackMarket,approach:accessiblePoint(fallbackMarket.x,fallbackMarket.y+54)};
+const merchantRoomId=shop.roomId,market={x:shop.x,y:shop.y},merchant=shop.approach;
 const mapRandom=run.random(furnishingSeed^Math.imul(save.floor,0xa34fc319));
 const mapSites=[];
 for(const room of run.shuffle(rooms.slice(1),mapRandom)){
@@ -165,8 +194,8 @@ for(const room of run.shuffle(rooms.slice(1),mapRandom)){
  }
 }
 const mapPickup=mapSites[Math.floor(mapRandom()*mapSites.length)]||pointIn(rooms[1],0,0);
-const landmarks=[...shrines,...chests,merchant,mapPickup,spawn,...bonePiles,...templeShrines,...(restCat?[restCat,wellUse,wellArrival]:[]),...(save.layoutRevision>=2?[market]:[])];
-if(save.layoutRevision>=2)furniture.push({type:'market',...market,zone:merchantRoomId,...FURNITURE.market});
+const landmarks=[...shrines,...chests,merchant,mapPickup,spawn,...bonePiles,...templeShrines,...(restCat?[restCat,wellUse,wellArrival]:[]),market];
+furniture.push({type:'market',...market,zone:merchantRoomId,...FURNITURE.market});
 function placeRoomSet(pieces,ax,ay,zone){
  const group=[];
  for(const [type,dx,dy] of pieces){
@@ -358,12 +387,12 @@ const pressurePlates=templeRooms.flatMap(room=>{
 });
 return {
  rooms,corridors,map,regions,gates,annexes,terrain,rest,
- paths,H,W,annexByRegion,annexPassages,court,cemetery,templeRooms,
+ paths,H,W,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,
  regionAt,gateLineBlocked,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
- cabinets,pressurePlates,canReachSpawn,accessiblePoint
+ cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition
 };
 }
 function spawnEnemies(run,enemyRules,save,floor,coop){

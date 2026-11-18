@@ -1,7 +1,7 @@
 (root=>{
 'use strict';
 function create(api){
- const {enemyRules,items,balance,save,state,floor,getEnemies,moveActor,nearActor,regionKnown,takeDamage,applyPoison,addBleed,
+ const {enemyRules,items,balance,save,state,floor,getEnemies,moveActor,actorRadius,nearActor,takeDamage,applyPoison,addBleed,
   soundWorld,burst,hurtEnemy,coopActors,enemyEncounterReady,rand}=api;
  const {W,H,rooms,regionAt,inRest,outsideAt,pointIn,valid,furnitureBlocked,gateLineBlocked,gateBlocked,wall,pressurePlates}=floor;
  const {SNAKE,LION,LIONESS,BAT,STORM_BAT}=enemyRules;
@@ -44,7 +44,7 @@ function aimEnemy(e,angle){e.angle=angle;e.facing=angle;}
 function updateEnemy(e,dt){
  if(!enemyEncounterReady(e)){
   e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.emerge=Math.max(0,(e.emerge||0)-dt);
-  e.windup=0;e.runAttack=0;e.track=0;e.aggro=0;e.moving=false;
+  e.windup=0;e.runAttack=0;e.track=0;e.aggro=Math.max(0,(e.aggro||0)-dt);e.moving=false;
   e.batMove=null;e.lionMove=null;e.called=0;
   return;
  }
@@ -57,11 +57,11 @@ function updateEnemy(e,dt){
  const range=enemyRules.eyeRange(e.type,e.boss,Math.min(cw,W*TILE),Math.min(ch,H*TILE),angle);
  const line=d<range*1.22&&!gateLineBlocked(e.x,e.y,player.x,player.y);
  const spotted=line&&d<=range;
- if(spotted)e.alerted=true;
+ if(spotted)enemyRules.alert(e);
+ else e.aggro=Math.max(0,(e.aggro||0)-dt);
  if(spotted&&e.boss&&!e.audioEntered&&d<330){
   e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
  }
- e.aggro=spotted?1.4:Math.max(0,(e.aggro||0)-dt);
  const clear=line&&e.aggro>0;
  if(e.type!==SNAKE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))damageActive(9+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.runAttack>0){
@@ -89,11 +89,8 @@ function updateEnemy(e,dt){
   executeEnemyAttack(e,spec);
   return;
  }
- if(!clear){
-  if(e.type===SNAKE&&e.aggro>0&&d<range*1.22)chaseSerpent(e,dt,spec.speed,true);
-  return;
- }
- if(e.attack<=0&&d<spec.range&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
+ if(!e.aggro)return;
+ if(clear&&e.attack<=0&&d<spec.range&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
   e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
   if(windupCue[spec.id])soundWorld(windupCue[spec.id],e,{priority:2,cooldown:.18,gain:.77});
   if(spec.id==='frost'){
@@ -102,14 +99,9 @@ function updateEnemy(e,dt){
   }
   return;
  }
- if(nearActor(e,player,1)||(spec.id==='bow'||spec.id==='crossbow')&&d<spec.range*.72)return;
+ if(nearActor(e,player,1)||clear&&(spec.id==='bow'||spec.id==='crossbow')&&d<spec.range*.72)return;
  const speed=(spec.speed+(e.boss?7:0))*(1+.075*(save.floor-1));
- if(e.type===SNAKE){
-  const angleToHero=Math.atan2(player.y-e.y,player.x-e.x);
-  const blocked=!valid(e.x+Math.cos(angleToHero)*20,e.y+Math.sin(angleToHero)*20,8);
-  chaseSerpent(e,dt,speed,blocked);return;
- }
- moveEnemy(e,Math.cos(angle)*speed*dt,Math.sin(angle)*speed*dt);
+ pursue(e,dt,speed,clear);
 }
 function executeEnemyAttack(e,spec){
  e.attack=(e.boss?2.25:2.85)-(save.floor-1)*.12;
@@ -154,36 +146,43 @@ function frostSites(e){
   x:e.target.x-Math.sin(e.angle)*offset,y:e.target.y+Math.cos(e.angle)*offset
  })).filter(p=>valid(p.x,p.y,4)&&!gateLineBlocked(e.x,e.y,p.x,p.y));
 }
-// Serpents recalculate a route through open tiles when the direct line is blocked.
-function chaseSerpent(e,dt,speed,blocked){
- let target=player;
- if(blocked){
+// Route around walls and solid props when the direct approach is blocked.
+function pursue(e,dt,speed,clear,goal=player){
+ const radius=actorRadius(e),distance=Math.hypot(goal.x-e.x,goal.y-e.y);
+ const a=Math.atan2(goal.y-e.y,goal.x-e.x),check=Math.min(distance,22);
+ let target=goal;
+ if(!clear||!valid(e.x+Math.cos(a)*check,e.y+Math.sin(a)*check,radius)){
+  const tile=Math.floor(goal.y/TILE)*W+Math.floor(goal.x/TILE);
   e.routeDelay=(e.routeDelay||0)-dt;
-  if(e.routeDelay<=0||e.route&&Math.hypot(e.route.x-e.x,e.route.y-e.y)<7){
-   e.route=serpentStep(e,player);e.routeDelay=.25;
+  if(e.routeGoal!==tile||e.routeDelay<=0||e.route&&Math.hypot(e.x-e.route.x,e.y-e.route.y)<5){
+   e.route=findStep(e,goal,radius);e.routeGoal=tile;e.routeDelay=e.route ? .34 : .55;
   }
   if(!e.route)return;
   target=e.route;
  }
  const angle=Math.atan2(target.y-e.y,target.x-e.x);
- aimEnemy(e,angle);
  const stride=Math.min(speed*dt,Math.hypot(target.x-e.x,target.y-e.y));
- moveEnemy(e,Math.cos(angle)*stride,Math.sin(angle)*stride);
+ aimEnemy(e,angle);moveEnemy(e,Math.cos(angle)*stride,Math.sin(angle)*stride);
 }
-function serpentStep(e,target,limit=420){
+const neighbors=[[1,0],[-1,0],[0,1],[0,-1]];
+function findStep(e,target,radius,limit=850){
  const start=Math.floor(e.y/TILE)*W+Math.floor(e.x/TILE);
  const goal=Math.floor(target.y/TILE)*W+Math.floor(target.x/TILE);
  const frontier=[start],steps=new Map([[start,start]]);
+ const center=id=>({x:(id%W+.5)*TILE,y:(Math.floor(id/W)+.5)*TILE});
  for(let i=0;i<frontier.length&&i<limit;i++){
-  const id=frontier[i];
-  if(id===goal){
+  const id=frontier[i],point=center(id);
+  if(id===goal||Math.hypot(point.x-target.x,point.y-target.y)<TILE&&
+   !gateLineBlocked(point.x,point.y,target.x,target.y)){
    if(id===start)return target;
-   const first=steps.get(id);
-   return {x:(first%W+.5)*TILE,y:(Math.floor(first/W)+.5)*TILE};
+   return center(steps.get(id));
   }
-  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+  for(const [dx,dy] of neighbors){
    const x=id%W+dx,y=Math.floor(id/W)+dy,n=y*W+x;
-   if(x<0||x>=W||y<0||y>=H||steps.has(n)||!valid((x+.5)*TILE,(y+.5)*TILE,8))continue;
+   if(x<0||x>=W||y<0||y>=H||steps.has(n))continue;
+   const p=center(n);
+   if(inRest(p.x,p.y)||!valid(p.x,p.y,radius)||
+    !valid((p.x+point.x)/2,(p.y+point.y)/2,radius))continue;
    steps.set(n,id===start?n:steps.get(id));frontier.push(n);
   }
  }
@@ -236,9 +235,9 @@ function updateLion(e,dt){
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
  const clear=d<=enemyRules.eyeRange(e.type,false,cw,ch,angle)&&!gateLineBlocked(e.x,e.y,player.x,player.y);
- if(clear)e.alerted=true;
+ if(clear)enemyRules.alert(e);
  e.called=Math.max(0,(e.called||0)-dt);
- e.aggro=clear?1.4:Math.max(e.called,(e.aggro||0)-dt);
+ if(!clear)e.aggro=Math.max(e.called,(e.aggro||0)-dt);
  const move=e.lionMove;
  if(move){
   move.age+=dt;
@@ -264,7 +263,7 @@ function updateLion(e,dt){
    move.called=true;e.roarCooldown=8;
    soundWorld('lion_roar',e,{priority:3,cooldown:.50});
    const ally=nearestLion(e);
-   if(ally){ally.called=9;ally.aggro=9;ally.alerted=true;}
+   if(ally){enemyRules.alert(ally);ally.called=9;}
    burst(e.x,e.y,'#e2b472',23);
   }
   if(t>=move.duration){e.lionMove=null;e.attack=spec.recovery+.55;e.counterUntil=combatClock+balance.counterSeconds;}
@@ -279,23 +278,15 @@ function updateLion(e,dt){
   return;
  }
  if(nearActor(e,player,3))return;
- if(clear){aimEnemy(e,angle);moveEnemy(e,Math.cos(angle)*spec.speed*dt,Math.sin(angle)*spec.speed*dt);}
- else if(e.aggro>0){
-  e.routeDelay=(e.routeDelay||0)-dt;
-  if(e.routeDelay<=0||e.route&&Math.hypot(e.x-e.route.x,e.y-e.route.y)<8){
-   e.route=serpentStep(e,player,2000);e.routeDelay=.31;
-  }
-  if(e.route){const a=Math.atan2(e.route.y-e.y,e.route.x-e.x);aimEnemy(e,a);
-   const stride=Math.min(spec.speed*dt,Math.hypot(e.route.x-e.x,e.route.y-e.y));moveEnemy(e,Math.cos(a)*stride,Math.sin(a)*stride);}
- }
+ if(e.aggro>0)pursue(e,dt,spec.speed,clear);
 }
 function updateBat(e,dt){
  const spec=enemyRules.attacks[e.type],lightning=e.type===STORM_BAT;
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
  const clear=d<=enemyRules.eyeRange(e.type,false,cw,ch,angle)&&!gateLineBlocked(e.x,e.y,player.x,player.y);
- if(clear)e.alerted=true;
- e.aggro=clear?1.4:Math.max(0,(e.aggro||0)-dt);
+ if(clear)enemyRules.alert(e);
+ if(!clear)e.aggro=Math.max(0,(e.aggro||0)-dt);
  const move=e.batMove;
  if(move){
   move.age+=dt;
@@ -334,19 +325,14 @@ function updateBat(e,dt){
   }
  }
  if(e.fleeTime>0){
-  e.routeDelay-=dt;
-  if(e.routeDelay<=0||e.route&&Math.hypot(e.route.x-e.x,e.route.y-e.y)<8){
-   e.route=serpentStep(e,e.fleeGoal,1800);e.routeDelay=.25;
-  }
-  if(e.route){
-   const a=Math.atan2(e.route.y-e.y,e.route.x-e.x);
-   const step=Math.min(spec.speed*dt,Math.hypot(e.route.x-e.x,e.route.y-e.y));
-   aimEnemy(e,a);moveEnemy(e,Math.cos(a)*step,Math.sin(a)*step);
-  }
+  pursue(e,dt,spec.speed,false,e.fleeGoal);
   if(Math.hypot(e.fleeGoal.x-e.x,e.fleeGoal.y-e.y)<14)e.fleeTime=0;
   return;
  }
- if(!clear)return;
+ if(!clear){
+  if(e.aggro>0)pursue(e,dt,spec.speed,false);
+  return;
+ }
  if(e.attack<=0&&d<spec.range){
   aimEnemy(e,angle);
   e.castLength=spec.range;
@@ -389,7 +375,7 @@ function updateStorm(dt){
 function nearestLion(e){
  let best=null,distance=Infinity;
  for(const other of getEnemies()){
-  if(other===e||other.hp<=0||!isLion(other)||!regionKnown(regionAt(other.x,other.y)))continue;
+  if(other===e||other.hp<=0||!isLion(other))continue;
   const gap=Math.hypot(other.x-e.x,other.y-e.y);
   if(gap<distance){best=other;distance=gap;}
  }

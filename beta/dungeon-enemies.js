@@ -61,12 +61,31 @@ window.DungeonEnemies = (() => {
   if(e.recover>0)return 12+Math.min(3,Math.floor((1-e.recover/a.recovery)*4));
   return Math.floor(e.phase*(e.moving?11:3))%4;
  }
- const PRIEST=1,ZOMBIE=5,SNAKE=6,ARCHER=7,CROSSBOW=8,LION=9,LIONESS=10,BAT=11,STORM_BAT=12;
+ const PRIEST=1,SKELETON=3,ZOMBIE=5,SNAKE=6,ARCHER=7,CROSSBOW=8,LION=9,LIONESS=10,BAT=11,STORM_BAT=12;
  function physicalImpactCue(type,weapon){
-  if(type===3||type===ARCHER)return 'hit_bone';
+  if(type===SKELETON||type===ARCHER)return 'hit_bone';
   if(type===0||type===PRIEST)return 'hit_metal';
   if(type===4)return 'hit_stone';
   return ['blade','dagger','rapier','greatsword'].includes(weapon)?'hit_cut':'hit_body';
  }
- return {physicalImpactCue,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,PRIEST,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT};
+ const entryGrace=.4,chaseSeconds=7;
+ function encounterReady(enemy,hero,floor,grace){
+  const region=floor.regionAt(hero.x,hero.y);
+  if(region<0||floor.inRest(hero.x,hero.y))return false;
+  const distance=Math.hypot(hero.x-enemy.x,hero.y-enemy.y);
+  if(enemy.aggro>0&&distance<960)return true;
+  return grace<=0&&(region===floor.regionAt(enemy.x,enemy.y)||
+   enemy.alerted===true&&distance<550&&!floor.gateLineBlocked(enemy.x,enemy.y,hero.x,hero.y));
+ }
+ function alert(enemy){
+  enemy.alerted=true;enemy.aggro=chaseSeconds;
+ }
+ function boneDrop(enemy,random){
+  if(enemy.type!==SKELETON&&enemy.type!==ARCHER)return null;
+  const large=enemy.boss||enemy.size>=1.2;
+  if(random()>=(large?.60:.35))return null;
+  const bundle=large&&random()<.5?3:1;
+  return {kind:'bones',id:'bones',rarity:'common',bundle,source:'Skelettbeute'};
+ }
+ return {physicalImpactCue,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,entryGrace,encounterReady,alert,boneDrop,PRIEST,SKELETON,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT};
 })();

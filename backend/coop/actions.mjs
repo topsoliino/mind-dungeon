@@ -166,8 +166,12 @@ export function actions(sim){
  function take(p,id){
   const orb=sim.orbs.get(id);
   if(!orb||orb.seat&&orb.seat!==p.seat)fail('Der Seelenball ist nicht mehr verfügbar.');
-  if(count(p)>=30)fail('Dein Inventar ist voll.');
-  live(p,orb,68);p.inventory.push(orb.item);sim.orbs.delete(id);
+  const bones=orb.item.kind==='bones';
+  if(!bones&&count(p)>=30)fail('Dein Inventar ist voll.');
+  live(p,orb,68);
+  if(bones)p.bones+=orb.item.bundle===3?3:1;
+  else p.inventory.push(orb.item);
+  sim.orbs.delete(id);
   return {item:orb.item};
  }
  function inventory(p,kind,data){
