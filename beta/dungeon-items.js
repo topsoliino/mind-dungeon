@@ -45,8 +45,31 @@ window.DungeonItems = (() => {
   }
   return {healed,buffered:power-healed-spare};
  }
- function queueDamage(actor,hit){
-  (actor.damageQueue??=[]).push({amount:hit.total,type:hit.type,remaining:damageDelay});
+ function queueDamage(actor,hit,origin){
+  (actor.damageQueue??=[]).push({amount:hit.total,type:hit.type,remaining:damageDelay,origin});
+ }
+ function rememberHit(actor,hit,amount){
+  if(amount<=0)return null;
+  const entry={source:hit.origin?.source??'Umgebung',action:hit.origin?.action??(damage[hit.type]?.label??'Treffer'),type:hit.type,amount};
+  const history=actor.damageHistory??=[];
+  history.push(entry);
+  if(history.length>5)history.shift();
+  return entry;
+ }
+ function deathReport(floor,layer,questions,actor,next,cause,finalHit){
+  const history=[...(actor.damageHistory??[])];
+  const fatal=cause==='fall'?{source:finalHit?.source??'Umgebung',action:'Sturz in den Abgrund',fall:true}:finalHit??history.at(-1);
+  if(cause==='fall')history.push(fatal);
+  const losses=Object.fromEntries(['gold','bones','rubies','xp'].map(key=>[key,Math.max(0,(actor[key]??0)-(next[key]??0))]));
+  const learning={total:questions.length,solved:0,ready:0,later:0,retired:0,answered:actor.questionCount??0};
+  for(const q of questions){
+   if(actor.solved?.[q.id]>0)learning.solved++;
+   const review=actor.questionReview?.[q.id];
+   if(review?.color==='green')learning.retired++;
+   else if((review?.due??0)>learning.answered)learning.later++;
+   else learning.ready++;
+  }
+  return {floor,layer,history:history.slice(-5),fatal,losses,learning};
  }
  function takeDueDamage(actor,dt){
   const queue=actor.damageQueue;
@@ -281,5 +304,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodNeeded,chooseFood,eatMeal,queueDamage,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

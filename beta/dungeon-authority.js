@@ -113,7 +113,7 @@ window.DungeonAuthority=(()=>{
    stop(){closed=true;clearTimeout(retry);bound=null;const socket=ws;ws=null;if(socket){resetRequests(socket);socket.close();}}
   };
  }
- const motionKeys=['x','y','dir','walk','weaponSide','moving','back','attack','attackDuration','dash','lift','charge','pose','hp','max','stamina','maxStamina','combat','inv','bleed','webSlow','grabSlow','poison','dominant','ack','brewTime','damageQueue'];
+ const motionKeys=['x','y','dir','walk','weaponSide','moving','back','attack','attackDuration','dash','lift','charge','pose','hp','max','stamina','maxStamina','combat','inv','bleed','webSlow','grabSlow','poison','dominant','ack','brewTime','damageQueue','fallProgress'];
  const decodeMotion=row=>row?Object.fromEntries(motionKeys.map((key,i)=>[key,row[i]])):null;
  function decodeEnemy(r){
   const [id,type,x,y,hp,max,size,boss,fireSnake,roomId,phase,moving,angle,facing,hit,emerge,windup,runAttack,runDuration,recover,b,l,target,dominant,veil]=r;

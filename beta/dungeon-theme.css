@@ -565,16 +565,16 @@ button.bad { background:#643730!important; }
  color:#ffe5ad;font:clamp(1rem,3.3vw,1.55rem)/1.2 Georgia,serif;letter-spacing:.045em;text-align:center;
 }
 .quiz-intro span { grid-area:1/1;opacity:0;padding:0 1rem;text-shadow:0 0 16px #ffd295; }
-.quiz-intro .quiz-glyphs { color:#f8bf78;font-size:1rem;letter-spacing:.6em;transform:translateY(-2.2rem);animation:quiz-glyph 820ms ease-out both; }
-.quiz-category { animation:quiz-reveal 360ms ease-out 35ms both; }
-.quiz-title { animation:quiz-reveal 370ms ease-out 415ms both; }
-.quiz-body { animation:quiz-content 160ms ease-out 805ms both; }
+.quiz-intro .quiz-glyphs { color:#f8bf78;font-size:1rem;letter-spacing:.6em;transform:translateY(-2.2rem);animation:quiz-glyph 1620ms ease-out both; }
+.quiz-category { animation:quiz-reveal 720ms ease-out 35ms both; }
+.quiz-title { animation:quiz-reveal 740ms ease-out 785ms both; }
+.quiz-body { animation:quiz-content 160ms ease-out 1580ms both; }
 #modal .quiz-body h2 { margin-top:0; }
 #xpHud.level-pending .meter { animation:level-pending 2.6s ease-in-out infinite; }
 #xpHud.level-pending #statline { color:#ffdc96; }
 @keyframes quiz-reveal {
  0% { opacity:0;filter:blur(5px);transform:translateY(4px); }
- 25%,68% { opacity:1;filter:blur(0);transform:translateY(0); }
+ 14%,84% { opacity:1;filter:blur(0);transform:translateY(0); }
  100% { opacity:0;filter:blur(2px);transform:translateY(-3px); }
 }
 @keyframes quiz-glyph {
@@ -599,3 +599,24 @@ button.bad { background:#643730!important; }
 #health { position:relative; }
 #health-damage { position:absolute;inset:0;pointer-events:none; }
 #health-damage span { position:absolute;top:0;bottom:0; }
+
+#modalWrap[data-screen="death"] { background:#120d13f5; }
+#modal:has(.death-recap) { width:min(610px,96vw); }
+.death-recap { display:grid;gap:13px;color:#e9d9bc; }
+.death-recap header { text-align:center;padding:6px 0 10px;border-bottom:1px solid #95705066; }
+.death-recap header p { margin:4px 0;font-size:.9rem;color:#d4b997; }
+.death-recap h2 { margin:.3rem 0;color:#f3c5a8; }
+.death-recap header .death-cause { color:#f4c0ad; }
+.death-recap section { padding:8px 11px;background:#1e161b;border:1px solid #b68b612b;border-radius:5px; }
+.death-recap h3 { margin:0 0 6px;color:#e5c393;font:normal 1rem Georgia,serif; }
+.death-recap ol { display:grid;gap:3px;list-style:none;padding:0;margin:0; }
+.death-recap li { display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;border-left:2px solid #88674f; }
+.death-recap li.fatal { background:#55292d47;border-color:#cc7c6f; }
+.death-recap li small { display:block;color:#bba892;font-size:.78rem; }
+.death-recap li b { color:var(--hit-color);white-space:nowrap;font-size:.86rem; }
+.death-recap dl { display:flex;gap:7px;flex-wrap:wrap;margin:0; }
+.death-recap dl>div { flex:1 0 auto;min-width:70px;text-align:center;padding:5px;border:1px solid #90765544;border-radius:4px; }
+.death-recap dt { color:#c8ae8a;font-size:.78rem; }
+.death-recap dd { margin:3px 0 0;font-weight:700;color:#ffe2b5; }
+.death-recap .death-progress { margin:0 0 7px;font-size:.88rem; }
+.death-recap button { justify-self:center;padding-inline:26px; }

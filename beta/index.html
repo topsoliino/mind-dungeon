@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=23"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=1"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=4"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-strata.js?v=4"></script><script src="beta/dungeon-strata-fx.js?v=2"></script><script src="beta/dungeon-run.js?v=21"></script><script src="beta/dungeon-world.js?v=8"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=20"></script><script src="beta/dungeon-items.js?v=22"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=22"></script><script src="beta/dungeon-enemy-sim.js?v=9"></script><script src="beta/dungeon-effects-art.js?v=20"></script><script src="beta/dungeon-art.js?v=25"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=7"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=24"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=2"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=5"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-strata.js?v=4"></script><script src="beta/dungeon-strata-fx.js?v=2"></script><script src="beta/dungeon-run.js?v=22"></script><script src="beta/dungeon-world.js?v=9"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=20"></script><script src="beta/dungeon-items.js?v=23"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=23"></script><script src="beta/dungeon-enemy-sim.js?v=10"></script><script src="beta/dungeon-effects-art.js?v=21"></script><script src="beta/dungeon-art.js?v=26"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=7"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -119,6 +119,7 @@ save.consumeQueue=Array.isArray(save.consumeQueue)?save.consumeQueue.filter(it=>
  save.consumeQueue?.kind==='food'||save.consumeQueue?.kind==='potion'?[save.consumeQueue]:[];
 save.damageQueue=Array.isArray(save.damageQueue)?save.damageQueue.filter(hit=>hit?.amount>0&&Number.isFinite(hit.amount)&&
  Number.isFinite(hit.remaining)&&hit.remaining>0&&hit.remaining<=1&&Object.hasOwn(items.damage,hit.type)):[];
+save.damageHistory=Array.isArray(save.damageHistory)?save.damageHistory.slice(-5):[];
 save.doors??={};save.trialCharmActive??=false;save.accessByDepth??={};
 save.access={...(save.access??{}),...save.accessByDepth[save.floor+'-'+save.dungeonSeed]};
 save.souls??=[];save.shopSold??=[];save.searched??=[];save.trials??={};save.ambushes??=[];
@@ -205,8 +206,10 @@ function catPose(){
 const HERO_RADIUS=14;
 let player={dash:0,dashCooldown:0,dashX:0,dashY:0,x:save.x??(coopRoom?.seat===2?spawn.x+37:spawn.x),y:save.y??spawn.y,hp:Math.max(1,save.hp),max:100,speed:178,dir:0,attack:0,inv:0,walk:0,moving:false,back:false};
 const realHero=player;
-player.damageQueue=save.damageQueue;
-if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y,HERO_RADIUS,false,true))Object.assign(player,spawn);
+const fallSeconds=window.DungeonWorld.fallSeconds;
+player.damageQueue=save.damageQueue;player.damageHistory=save.damageHistory;
+player.fall=!authorityMode&&save.fall?.remaining>0&&save.fall.remaining<=fallSeconds?save.fall:null;
+if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y,HERO_RADIUS,false,true,Boolean(player.fall)))Object.assign(player,spawn);
 
 const ATTRS={
  vigor:['Vitalität','Jeder Punkt gibt dir 3 zusätzliche maximale Lebenspunkte.'],
@@ -939,7 +942,7 @@ function clearAccountSession(){
 async function mdRest(path,options={},authenticated=true){if(!mdConfig)throw Error('Supabase ist noch nicht konfiguriert');if(authenticated){if(!mdSession)throw Error('Bitte zuerst anmelden');if(Date.now()>mdSession.expires_at-60000)await mdRefresh()}const r=await fetch(mdConfig.url+'/rest/v1/'+path,{...options,headers:{apikey:mdConfig.publishableKey,...(authenticated?{Authorization:'Bearer '+mdSession.access_token}:{}),...(options?.headers||{})}});if(!r.ok)throw Error('Datenbankfehler '+r.status+': '+(await r.text()).slice(0,160));if(r.status===204)return null;const t=await r.text();return t?JSON.parse(t):null}
 async function mdAuth(action,email,password){if(!mdConfig)mdConfig=MD_PUBLIC_CONFIG;const url=action==='register'?'/auth/v1/signup?redirect_to='+encodeURIComponent('https://topsoliino.github.io/mind-dungeon/beta/'):'/auth/v1/token?grant_type=password';const r=await fetch(mdConfig.url+url,{method:'POST',headers:{apikey:mdConfig.publishableKey,'Content-Type':'application/json'},body:JSON.stringify({email,password})});const d=await r.json();if(!r.ok)throw Error(d.msg||d.error_description||d.message||'Anmeldung fehlgeschlagen');if(d.access_token)mdSetSession(d);return !!d.access_token}
 async function syncSave(){if(coopRoom||!mdSession||saveBusy)return;saveBusy=true;try{await mdRest('character_saves?on_conflict=user_id,slot',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:mdSession.user.id,slot:mdSlot,data:{...save,packs:undefined,hp:player.hp,x:player.x,y:player.y,playtime:save.playtime},updated_at:new Date().toISOString()})})}catch(err){console.warn('Cloud-Speichern fehlgeschlagen:',err.message);throw err}finally{saveBusy=false}}
-let mdNavigatingToNewCharacter=false;function persist(){if(mdNavigatingToNewCharacter)return;
+let mdNavigatingToNewCharacter=false,deathPending=false;function persist(){if(mdNavigatingToNewCharacter||deathPending)return;
  const slots=save.quickSlots.map((key,i)=>slotItem(i)?key:null);
  save.hp=player.hp;save.x=vault?.start.x??player.x;save.y=vault?.start.y??player.y;
  try{saveRun({...save,quickSlots:slots});}
@@ -951,7 +954,7 @@ let unmountTitleGlow=null;
 function show(content,type='menu'){
  unmountTitleGlow?.();unmountTitleGlow=null;
  if(!paused&&type!=='quiz'&&performance.now()-lastUiSound>48)soundUI('ui_open');
- const live=!atTitle&&(type==='quiz'||type==='coop-watch'||Boolean(coopRoom));
+ const live=!atTitle&&type!=='death'&&(type==='quiz'||type==='coop-watch'||Boolean(coopRoom));
  if(type==='quiz')player.dash=0;
  $('#levelNotice').hidden=true;
  audio?.setPaused(!live);
@@ -974,7 +977,8 @@ function show(content,type='menu'){
   return;
  }
  const replacement=selector&&panel.querySelector(selector);
- (replacement&&!replacement.disabled?replacement:panel.querySelector('button[aria-pressed="true"]:not(:disabled),button:not(:disabled)'))?.focus();
+ (replacement&&!replacement.disabled?replacement:panel.querySelector('button[aria-pressed="true"]:not(:disabled),button:not(:disabled)'))?.focus({preventScroll:type==='death'});
+ if(type==='death')panel.scrollTop=0;
 }
 function resumeGame(){atTitle=false;close();}
 function close(){
@@ -1007,6 +1011,7 @@ function navModal(e){
  }
  if(e.code==='Escape'){
   e.preventDefault();
+  if(modalType==='death')return;
   if(modalType==='coop-wait'){leaveWaitingRoom();return;}
   if(pending?.serverQuiz){finishAuthorityQuiz(null,true);return;}
   if(trial)finishTrial(trial.passed===true);
@@ -1357,7 +1362,10 @@ function answer(i){
    const hp=player.hp;player.hp=Math.min(maxHP(),player.hp+18);burst(player.x,player.y,'#8df2d2',24);
    if(player.hp>hp)soundWorld('element_heal',player,{gain:.48,priority:2});
   }
-  else{player.hp=Math.max(1,player.hp-8);shake=8;}
+  else{
+   const before=player.hp;player.hp=Math.max(1,player.hp-8);shake=8;
+   items.rememberHit(player,{origin:{source:'Lernkarte',action:'Falsche Antwort'}},before-player.hp);
+  }
  }
  recordAnswer(q,ok);
  reviewAnswer(q,i,ok,ok?'Richtig · +Erfahrung':reason==='study'?'Nicht ganz.':'Nicht ganz · −8 LP',()=>{
@@ -1470,7 +1478,7 @@ let heroShots=[],coopVisualShots=[];
 let impactBursts=[],heldAttack=null,combatClock=0,consumeMove=null,vault=null;
 function isConsuming(){return Boolean(consumeMove||authorityMode&&authorityOwn?.pose>=3&&authorityOwn?.pose<backHeroIndex);}
 function startAttack(input){
- if(!modalType&&!paused&&!mdNavigatingToNewCharacter&&!vault&&player.attack<=0&&player.dash<=0&&!heldAttack&&!isConsuming()&&!save.consumeQueue.length){heldAttack={input,started:combatClock};if(authorityMode&&input!=='keyboard')authorityCommand('charge');}
+ if(!modalType&&!paused&&!mdNavigatingToNewCharacter&&heroFallProgress()<0&&!vault&&player.attack<=0&&player.dash<=0&&!heldAttack&&!isConsuming()&&!save.consumeQueue.length){heldAttack={input,started:combatClock};if(authorityMode&&input!=='keyboard')authorityCommand('charge');}
 }
 function releaseAttack(input){
  if(heldAttack?.input!==input)return;
@@ -1565,7 +1573,8 @@ function shockWater(origin,impact,split,amount,owner){
  waterArcs.push(pulse);
  soundWorld('element_lightning_beam',pulse,{gain:.56,priority:2});
  for(const actor of coopActors())if(actor!==owner&&world.pulseReaches(pulse,actor)){
-  asHero(actor,()=>takeDamage(pulse.power,{lightning:1},true,1));
+  const origin=owner===realHero?{source:'Eigene Waffe',action:'Blitz im Wasser'}:enemyRules.damageOrigin(owner,'Blitz im Wasser');
+  asHero(actor,()=>takeDamage(pulse.power,{lightning:1},true,1,undefined,undefined,origin));
  }
  for(const enemy of enemies)if(enemy!==owner&&enemy.hp>0&&world.pulseReaches(pulse,enemy)){
   hurtEnemy(enemy,items.hit(pulse.power,{lightning:1},foeResistances[enemy.type]),owner===realHero);
@@ -1611,14 +1620,8 @@ function strike(charged=false){
   if(contact)soundWorld(contact.cue,contact,{gain:.67,priority:2});
  }
 }
-function drawWeaponTrails(drawLine,drawArc){
- for(const trail of slashes){
-  const alpha=Math.min(1,trail.life/.22);
-  if(!trail.thrust){drawArc(trail,alpha);continue;}
-  const dx=Math.cos(trail.ang),dy=Math.sin(trail.ang),end=trail.thrust*(1-.45*alpha);
-  drawLine(trail.x+dx*20,trail.y+dy*20,trail.x+dx*end,trail.y+dy*end,trail.color,alpha);
-  drawLine(trail.x+dx*(end-17),trail.y+dy*(end-17),trail.x+dx*end,trail.y+dy*end,'#fff2d9',alpha);
- }
+function drawWeaponTrails(drawArc){
+ for(const trail of slashes)drawArc(trail,Math.min(1,trail.life/.22));
 }
 function weaponShotSpeed(projectile,charged){
  return (projectile==='arrow'?490:345)*(charged?1.23:1);
@@ -1639,8 +1642,9 @@ function playWeaponSwing({x,y,dir,weapon,type,reach,scale,charged},remote=false,
   if(age<.22)burst(x+dx*23,y+dy*23,color,charged?12:5);
   return;
  }
+ if(profile.thrust)return;
  if(age<.22){
-  slashes.push({x,y,ang:dir,life:.22-age,color,thrust:profile.thrust?reach:0,arc:profile.sweep<.25?Math.acos(profile.sweep):.75,radius:Math.min(profile.sweep<.25?108:84,profile.reach*.83)*scale});
+  slashes.push({x,y,ang:dir,life:.22-age,color,arc:profile.sweep<.25?Math.acos(profile.sweep):.75,radius:Math.min(profile.sweep<.25?108:84,profile.reach*.83)*scale});
   burst(x+dx*28,y+dy*28,color,charged?15:6);
  }
  if(charged&&age<.35){
@@ -1744,13 +1748,13 @@ function tickPoison(e,dt){
  if(e.poison.untilTick>0)return;
  const status=e.poison;
  const amount=Math.max(3,e.max*.035);
- if(e===player)takeDamage(amount*(status.power||1),{poison:1},true);
+ if(e===player)takeDamage(amount*(status.power||1),{poison:1},true,undefined,undefined,undefined,status.origin);
  else hurtEnemy(e,items.hit(amount*(status.power||1),{poison:1},foeResistances[e.type]),status.playerHit===true);
  if(e.poison!==status)return;
  status.untilTick+=.72;if(--status.ticks===0)e.poison=null;
 }
 let strataReadyAt=0;
-function interact(){if(modalType||paused||vault||isConsuming()||mdNavigatingToNewCharacter)return;
+function interact(){if(modalType||paused||vault||isConsuming()||heroFallProgress()>=0||mdNavigatingToNewCharacter)return;
 if(authorityMode){authorityInteract(near);return;}
 if(near?.kind==='access'){
  const site=world.accessSite(player,near.i);
@@ -1786,7 +1790,7 @@ if(near?.kind==='portal'){enterPortal();return;}if(near?.kind==='merchant'){merc
 save.gold+=gold;player.hp=Math.min(maxHP(),player.hp+12);
 chestFoley(chests[k],true);burst(chests[k].x,chests[k].y,'#ffd27d',35);tell('Truhe geöffnet · +'+gold+' Gold');persist()}}else{tell('Hier gibt es nichts zu untersuchen')}}
 window.addEventListener('keydown',e=>{
- if(mdNavigatingToNewCharacter)return;
+ if(mdNavigatingToNewCharacter||heroFallProgress()>=0)return;
  if(modalType){navModal(e);return;}
  if(e.target.closest('input,textarea,select,[contenteditable]'))return;
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
@@ -1864,6 +1868,12 @@ function playFootstep(oldX,oldY) {
 }
 function update(dt){
  if(mdNavigatingToNewCharacter)return;
+ if(!authorityMode&&player.fall){
+  frame+=dt;player.fall.remaining-=dt;
+  if(player.fall.remaining<=0)retreatAfterDeath('fall',player.fall.origin);
+  return;
+ }
+ if(authorityMode&&authorityOwn?.fallProgress>=0){frame+=dt;authorityInput(0,0);return;}
  if(!modalType&&aimMode==='mouse'){
   const mx=(phaserActive?(window.__mindPhaserCameraX??cam.x):cam.x)+mouse.x;
   const my=(phaserActive?(window.__mindPhaserCameraY??cam.y):cam.y)+mouse.y;
@@ -2113,7 +2123,8 @@ function clearsActor(actor,x,y,other){
  const ox=Math.abs(actor.x-other.x),oy=Math.abs(actor.y-other.y);
  return ox<range&&oy<range&&dx>=ox&&dy>=oy&&(dx>ox||dy>oy);
 }
-function moveActor(actor,dx,dy,knockback=false){
+function moveActor(actor,dx,dy,knockback=false,origin){
+ if(actor.fall)return false;
  const hero=actor===player,radius=actorRadius(actor);
  const canFall=hero&&(knockback||!hasRing('height'));
  const traversable=(x,y)=>valid(x,y,radius,false,hero,canFall)&&
@@ -2124,9 +2135,13 @@ function moveActor(actor,dx,dy,knockback=false){
   const lastX=actor.x,lastY=actor.y,x=actor.x+dx/count,y=actor.y+dy/count;
   if(dx&&traversable(x,actor.y))actor.x=x;
   if(dy&&traversable(actor.x,y))actor.y=y;
-  if(canFall&&world.abyssAt(actor.x,actor.y)){
+  if(canFall&&world.pastLedge(actor.x,actor.y)){
    if(authorityMode){actor.x=lastX;actor.y=lastY;}
-   else retreatAfterDeath('fall');
+   else if(actor===realHero){
+    save.fall=actor.fall={remaining:fallSeconds,origin};
+    actor.attack=0;actor.dash=0;actor.moving=false;vault=null;clearHeldAttack();
+    soundWorld('hero_fall',actor,{priority:4,gain:.85});persist();
+   }
    return false;
   }
  }
@@ -2158,7 +2173,7 @@ function gearResistance(){
  return Object.fromEntries(Object.entries(protection).map(([type,value])=>[type,Math.min(.9,value)]));
 }
 function generalGuard(){return hasRing('bulwark')?.12:0;}
-function addBleed(amount){
+function addBleed(amount,origin){
  if(coopHost&&player===remoteHero){coopRelay?.send('hurt',{bleed:amount});return;}
  player.bleed=Math.min(100,(player.bleed||0)+amount);
  player.bleedGrace=2.4;
@@ -2167,7 +2182,7 @@ function addBleed(amount){
  const duration=.75;
  impactBursts.push({x:player.x,y:player.y,life:duration,duration,kind:'blood-burst'});
  burst(player.x,player.y-8,'#b73c52',20);
- takeDamage(maxHP()*.16,{bleed:1},true,1,'element_bleed_hero');
+ takeDamage(maxHP()*.16,{bleed:1},true,1,'element_bleed_hero',undefined,origin);
  tell('Blutverlust');
 }
 function updateHealthHud(){
@@ -2193,12 +2208,12 @@ function showArmorProc(proc,actor,own){
  soundWorld(block?'hit_metal':'element_heal',actor,{gain:.56,priority:3});
  if(own)tell(block?'Bollwerk · Treffer geblockt':'Glutherz · Auf 40 % Leben geheilt');
 }
-function takeDamage(amount,split={physical:1},status=false,depthFactor=enemyDepth,audioCue,critical){
- if(inRest(player.x,player.y)||player.dash>0||player.inv>0&&!status||mdNavigatingToNewCharacter)return false;
+function takeDamage(amount,split={physical:1},status=false,depthFactor=enemyDepth,audioCue,critical,origin){
+ if(player.fall||inRest(player.x,player.y)||player.dash>0||player.inv>0&&!status||mdNavigatingToNewCharacter)return false;
  if(coopHost&&player===remoteHero){
   const slow=player.webSlow||0;player.webSlow=0;
   if(!status)player.inv=.75;
-  coopRelay?.send('hurt',{amount,split,status,depthFactor,audioCue,slow,critical});return true;
+  coopRelay?.send('hurt',{amount,split,status,depthFactor,audioCue,slow,critical,origin});return true;
  }
  const reduction=generalGuard();
  const damage=weatherSplit(amount*depthFactor*(1-reduction)*brewBonus.guard,split,player.x,player.y);
@@ -2207,7 +2222,7 @@ function takeDamage(amount,split={physical:1},status=false,depthFactor=enemyDept
  combatTime=1.35;staminaRest=0;
  if(!status)player.inv=.75;
  if(items.blockArmorHit(save,save.equipment.armor,status)){showArmorProc('block',player,true);persist();return false;}
- items.queueDamage(player,hit);shake=9;
+ items.queueDamage(player,hit,origin);shake=9;
  showDamage(player.x,player.y,hit.total,hit.type,true,critical);burst(player.x,player.y,items.damage[hit.type].color,12);
  heroHitAudio({type:hit.type,cue:audioCue??(hit.type==='poison'&&status?'element_poison_tick':undefined),pain:!status},
   player,save.character,save.equipment.armor);
@@ -2220,32 +2235,74 @@ function updateIncomingDamage(dt){
   if(!hit.amount)continue;
   const {hp,taken,proc}=items.resolveArmorDamage(save,save.equipment.armor,player.hp,maxHP(),hit.amount);
   player.hp=hp;save.combatRecord.taken+=taken;
+  const lastHit=items.rememberHit(player,hit,taken);
   if(taken>0&&hit.type==='bleed')triggerMadness(player);
   if(proc)showArmorProc(proc,player,true);
-  if(hp<=0){retreatAfterDeath();return true;}
+  if(hp<=0){retreatAfterDeath('combat',lastHit);return true;}
  }
  if(due.length)persist();
  return false;
 }
-function retreatAfterDeath(cause){
- const message=cause==='fall'?'In den Abgrund gestürzt':'Gefallen';
- soundWorld('hero_fall',player,{priority:4,gain:.85});
- player.damageQueue.length=0;
+function showDeathRecap(recap,onContinue,label='Zum Ruheraum'){
+ pending=null;
+ soundUI('hero_death',{priority:4,variation:0});
+ const {floor,layer,fatal,learning,losses,history}=recap;
+ const where='Tiefe '+floor+' / '+LAST_DEPTH+' · '+(layerNames[layer]||'Erdgeschoss');
+ const cause=fatal?[fatal.source,fatal.action].filter(Boolean).join(' · '):'Unbekannte Ursache';
+ const events=[...history].reverse().map((hit,index)=>
+  '<li'+(index===0?' class="fatal"':'')+'><span><strong>'+qEsc(hit.source)+'</strong><small>'+qEsc(hit.action)+'</small></span>'+
+  '<b style="--hit-color:'+(items.damage[hit.type]?.color??'#edb393')+'">'+(hit.fall?'Tödlich': '−'+Math.round(hit.amount)+' LP')+'</b></li>').join('');
+ const resources=[['Gold','gold'],['Knochen','bones'],['Rubine','rubies'],['XP','xp']];
+ show('<article class="death-recap"><header><p>'+qEsc(where)+'</p><h2>Du bist gefallen</h2><p class="death-cause">'+qEsc(cause)+'</p></header>'+
+  '<section><h3>Letzte Schadensereignisse</h3>'+(events?'<ol>'+events+'</ol>':'<p>Keine Treffer aufgezeichnet.</p>')+'</section>'+
+  '<section><h3>Verloren</h3><dl>'+resources.map(([title,key])=>'<div><dt>'+title+'</dt><dd>'+Math.round(losses[key])+'</dd></div>').join('')+'</dl></section>'+
+  '<section><h3>Lernkartenstand</h3><p class="death-progress"><strong>'+qEsc(learning.solved)+' / '+qEsc(learning.total)+' richtig</strong>'+
+  ' · '+qEsc(learning.answered)+' beantwortet</p><dl><div><dt>Fällig</dt><dd>'+qEsc(learning.ready)+'</dd></div>'+
+  '<div><dt>Zurückgestellt</dt><dd>'+qEsc(learning.later)+'</dd></div><div><dt>Pausiert</dt><dd>'+qEsc(learning.retired)+'</dd></div></dl></section>'+
+  '<button id="death-continue" class="primary">'+qEsc(label)+'</button></article>','death');
+ const button=$('#death-continue');
+ button.onclick=async()=>{
+  button.disabled=true;
+  try{await onContinue();}
+  finally{if(button.isConnected&&!mdNavigatingToNewCharacter)button.disabled=false;}
+ };
+}
+function continueSoloDeath(data){
+ const {deathRecap,...next}=data;
+ writeAndReload(next,true);
+}
+function retreatAfterDeath(cause,finalHit){
+ if(deathPending||modalType==='death')return;
+ if(cause!=='fall')soundWorld('hero_fall',player,{priority:4,gain:.85});
+ const layer=world.layerAt(player.x,player.y),history=[...player.damageHistory];
+ player.fall=save.fall=null;player.damageQueue.length=0;player.damageHistory.length=0;
  save.combatRecord.deaths++;
+ const before={...save,damageHistory:history};
  if(coopRoom){
-  if(trial)finishTrial(false);else close();
+  if(trial)finishTrial(false);
   Object.assign(player,spawn,{hp:maxHP(),poison:null,bleed:0,dash:0,inv:1.4,webSlow:0,grabSlow:0});
   vault=null;consumeMove=null;clearHeldAttack();
-  soundUI('hero_death',{priority:4});tell(message+' · Zurück im Ruheraum');persist();return;
+  const recap=items.deathReport(save.floor,layer,questions,before,save,cause,finalHit);
+  showDeathRecap(recap,()=>{close();persist();});persist();return;
  }
- const depth=Math.max(1,save.floor-1);
- const seed=depth===save.floor?save.dungeonSeed:save.depthSeeds[depth]??run.freshSeed();
- const gear=gearItems();
- const retained=gear.map(held=>save.inventory.find(it=>items.key(it)===items.key(held))||held);
+ const depth=Math.max(1,save.floor-1),seed=depth===save.floor?save.dungeonSeed:save.depthSeeds[depth]??run.freshSeed();
+ const retained=gearItems().map(held=>save.inventory.find(it=>items.key(it)===items.key(held))||held);
  const depthSeeds=Object.fromEntries(Object.entries(save.depthSeeds).filter(([floor])=>Number(floor)<=depth));
  depthSeeds[depth]=seed;
- writeAndReload({...save,...run.floorState(seed,depth),depthSeeds,hp:maxHP(),xp:0,gold:0,kills:0,
-  inventory:retained,consumeQueue:[],completed:false},true,message+' · Zurück auf Tiefe '+depth,'hero_death');
+ const next={...save,...run.floorState(seed,depth),depthSeeds,hp:maxHP(),xp:0,gold:0,kills:0,
+  inventory:retained,consumeQueue:[],completed:false};
+ const recap=items.deathReport(save.floor,layer,questions,before,next,cause,finalHit);
+ const data={...next,deathRecap:recap};
+ deathPending=true;
+ try{saveRun(data);}catch(error){console.warn('Todesrückblick konnte nicht gespeichert werden:',error.message);}
+ showDeathRecap(recap,()=>continueSoloDeath(data),'Weiter zu Tiefe '+depth);
+}
+function presentAuthorityDeath(recap,requiresDismiss=true){
+ if(modalType==='death')return;
+ vault=null;player.dash=0;
+ showDeathRecap(recap,async()=>{
+  if(!requiresDismiss||await serverAction('dismiss-death'))close();
+ });
 }
 function awakenPortal(lastEnemy){
  const {x,y}=lastEnemy;
@@ -2505,7 +2562,7 @@ function drawCombatEffects(draw,ground){
   const height=lightning?(age<0?42:57):226;
   const lift=age<0?0:foeLift(e)-8*e.size;
   const shape=age<0?(lightning?'bat-lightning-warning':'bat-warning'):lightning?'bat-beam':'bat-flame';
-  draw(shape,age<0?pose:Math.floor(age*(lightning?23:18))%6,e.x+dx*(length*.5+nose),
+  draw(shape,age<0?pose:Math.floor(age*(lightning?23:32))%effectArt.frames[shape].length,e.x+dx*(length*.5+nose),
    e.y+lift+dy*(length*.5+nose),length,height,angle,age<0?.55+.24*e.batMove.age/spec.windup:.97);
  }
  if(ground){
@@ -2563,22 +2620,24 @@ function visibleCoopPeer(){
 }
 let peerArtKey='',peerArtwork=null;
 function peerBitmap(avatar){
- const pose=Math.max(0,Math.min(17,Number(avatar.frame)|0));
+ const falling=avatar.fallProgress>=0;
+ const pose=falling?(avatar.fallProgress>.32?2:1):Math.max(0,Math.min(17,Number(avatar.frame)|0));
  const armor=avatar.armor&&typeof avatar.armor==='object'?avatar.armor:{};
  const look=avatar.appearance&&typeof avatar.appearance==='object'?avatar.appearance:{};
- const key=JSON.stringify([pose,look,armor,avatar.lift>0]);
+ const key=JSON.stringify([pose,look,armor,falling||avatar.lift>0]);
  if(peerArtKey!==key){
   peerArtKey=key;
   peerArtwork=art.actor('hero',{...look,armor:spriteArmor(armor),back:pose>=backHeroIndex,
-   frame:pose>=backHeroIndex?pose-backHeroIndex:pose,groundShadow:!avatar.lift});
+   frame:pose>=backHeroIndex?pose-backHeroIndex:pose,groundShadow:!avatar.lift&&!falling});
  }
  return peerArtwork;
 }
 function peerWeaponPose(avatar){
- if(!avatar.weapon||avatar.frame>=3&&avatar.frame<backHeroIndex)return null;
+ if(avatar.fallProgress>=0||!avatar.weapon||avatar.frame>=3&&avatar.frame<backHeroIndex)return null;
  return carryWeapon(avatar,weaponArtId(avatar.weapon));
 }
 function drawCanvasPeer(avatar){
+ if(avatar.fallProgress>=0){drawCanvasFall(peerBitmap(avatar),avatar.x,avatar.y,avatar.fallProgress);return;}
  const pose=peerWeaponPose(avatar);
  const hero=()=>s.drawImage(peerBitmap(avatar),avatar.x-37,avatar.y-48-(avatar.lift||0),74,74);
  const depth=avatar.y+(avatar.lift?55:0);
@@ -2591,7 +2650,7 @@ function drawCanvasPeer(avatar){
 function positionWorldHUD(scrollX,scrollY){
  if(coopRoom){
   const avatar=visibleCoopPeer(),tag=$('#coop-peer-tag');
-  tag.hidden=!avatar||atTitle;
+  tag.hidden=!avatar||atTitle||avatar.fallProgress>=0;
   if(avatar){
    tag.textContent=(avatar.name||'Mitspieler')+' · '+Math.ceil(avatar.hp)+' LP';
    tag.style.left=Math.round(avatar.x-scrollX)+'px';tag.style.top=Math.round(avatar.y-scrollY-53-(avatar.lift||0))+'px';
@@ -2659,7 +2718,7 @@ drawSouls((x,y,rarity,pose)=>{
  const sprite=rarity==='bones'?boneLootFrames[pose]:soulFrames[rarity][pose];
  s.drawImage(sprite,Math.round(x-24),Math.round(y-24),48,48);
 });
-drawWeaponTrails(drawLine,(z,alpha)=>{
+drawWeaponTrails((z,alpha)=>{
  s.strokeStyle=z.color;s.globalAlpha=alpha;s.lineWidth=7;s.beginPath();s.arc(z.x,z.y,z.radius,z.ang-z.arc,z.ang+z.arc);s.stroke();
 });
 s.globalAlpha=1;
@@ -2936,8 +2995,20 @@ function weaponPose(){
  return carryWeapon({...player,charge:heldAttack?chargeProgress():-1,lift:vault?.lift??0},weaponArtId(usableWeapon().id));
 }
 function heroAlpha(){return (player.inv>0||player.dash>0)&&Math.sin(frame*25)>0?.6:1;}
+function heroFallProgress(){return player.fall?1-player.fall.remaining/fallSeconds:authorityOwn?.fallProgress??-1;}
+function fallLook(progress){
+ const t=Math.max(0,Math.min(1,progress));
+ return {size:74*(1-.94*t**.82),lift:7*t+66*t*t,angle:.92*t,alpha:1-.95*t*t};
+}
+function drawCanvasFall(bitmap,x,y,progress){
+ const look=fallLook(progress);
+ s.save();s.translate(x,y+look.lift);s.rotate(look.angle);s.globalAlpha=look.alpha;
+ s.drawImage(bitmap,-look.size/2,-look.size*48/74,look.size,look.size);s.restore();
+}
 function drawCanvasHero(){
  refreshHeroArt();
+ const falling=heroFallProgress();
+ if(falling>=0){drawCanvasFall(vaultBitmaps[falling>.32?2:1],player.x,player.y,falling);return;}
  const pose=weaponPose(),alpha=heroAlpha();
  const hero=()=>{s.globalAlpha=alpha;s.drawImage((vault?vaultBitmaps:heroBitmaps)[heroFrame()],Math.round(player.x-37),Math.round(player.y-48-(vault?.lift??0)),74,74);};
  s.save();
@@ -3022,10 +3093,13 @@ class DungeonScene extends Phaser.Scene{
    const dt=Math.min(.035,delta/1000);if(!paused)update(dt);frame+=paused?dt:0;
    refreshHeroArt(this.textures);
    this.vaultShadow.setPosition(player.x,player.y+14).setDepth(player.y-1).setVisible(Boolean(vault));
-   this.hero.setTexture((vault?'vault-':'hero-')+heroFrame()).setPosition(player.x,player.y-(vault?.lift??0)).setDepth(player.y+(vault?55:0))
-    .setAlpha(heroAlpha());
+   const falling=heroFallProgress(),fall=falling>=0?fallLook(falling):null;
+   const heroKey=fall?'vault-'+(falling>.32?2:1):(vault?'vault-':'hero-')+heroFrame();
+   this.hero.setTexture(heroKey).setPosition(player.x,player.y+(fall?.lift??-(vault?.lift??0)))
+    .setDepth(player.y+(vault?55:0)).setDisplaySize(fall?.size??74,fall?.size??74)
+    .setRotation(fall?.angle??0).setAlpha(fall?.alpha??heroAlpha());
    const pose=weaponPose();
-   this.weapon.setVisible(!consumeMove&&Boolean(save.equipment.weapon)&&!(authorityMode&&authorityOwn?.pose>=3&&authorityOwn?.pose<backHeroIndex)).setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
+   this.weapon.setVisible(!fall&&!isConsuming()&&Boolean(save.equipment.weapon)).setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
     .setPosition(pose.x,pose.y).setRotation(pose.angle).setDepth(pose.depth).setAlpha(heroAlpha());
    if(this.peer){
     const avatar=visibleCoopPeer(),pose=avatar&&peerWeaponPose(avatar);
@@ -3037,7 +3111,9 @@ class DungeonScene extends Phaser.Scene{
       painter.clearRect(0,0,64,64);painter.drawImage(bitmap,0,0);
       this.peerBitmap=bitmap;this.textures.get('coop-peer').refresh();
      }
-     this.peer.setPosition(avatar.x,avatar.y-(avatar.lift||0)).setDepth(avatar.y+(avatar.lift?55:0));
+     const peerFall=avatar.fallProgress>=0?fallLook(avatar.fallProgress):null;
+     this.peer.setPosition(avatar.x,avatar.y+(peerFall?.lift??-(avatar.lift||0))).setDepth(avatar.y+(avatar.lift?55:0))
+      .setDisplaySize(peerFall?.size??74,peerFall?.size??74).setRotation(peerFall?.angle??0).setAlpha(peerFall?.alpha??1);
     }
     if(pose)this.peerWeapon.setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
      .setPosition(pose.x,pose.y).setRotation(pose.angle).setDepth(pose.depth);
@@ -3109,7 +3185,7 @@ class DungeonScene extends Phaser.Scene{
     soulIndex++;sprite.setTexture(key).setPosition(x,y).setVisible(true);
    });
    for(let i=soulIndex;i<this.soulSprites.length;i++)this.soulSprites[i].setVisible(false);
-   drawWeaponTrails(drawLine,(z,alpha)=>{
+   drawWeaponTrails((z,alpha)=>{
     this.fx.lineStyle(5,Number('0x'+z.color.slice(1)),alpha);this.fx.beginPath();
     this.fx.arc(z.x,z.y,z.radius,z.ang-z.arc,z.ang+z.arc);this.fx.strokePath();
    });
@@ -3802,7 +3878,7 @@ function coopEvent(event){
   if(event.credit){save.combatRecord.dealt+=event.credit;if(event.critical)save.combatRecord[event.critical==='critical'?'crits':'counters']++;}
   else if(event.amount>0){
    if(event.slow)player.webSlow=Math.max(player.webSlow,event.slow);
-   takeDamage(event.amount,event.split,event.status,event.depthFactor,event.audioCue,event.critical);
+   takeDamage(event.amount,event.split,event.status,event.depthFactor,event.audioCue,event.critical,event.origin);
   }
  }
 }
@@ -3933,8 +4009,8 @@ let stormStrikes=[];
 const enemySim=window.DungeonEnemySim.create({
  enemyRules,items,balance,save,state:enemyEffects,floor:world,getEnemies:()=>enemies,moveActor,actorRadius,nearActor,
  takeDamage:(actor,...args)=>asHero(actor,()=>takeDamage(...args)),
- applyPoison,maxHP,addBleed:(actor,amount)=>asHero(actor,()=>addBleed(amount)),
- soundWorld,burst,hurtEnemy,shockWater,knockHero:(actor,dx,dy)=>asHero(actor,()=>moveActor(actor,dx,dy,true)),coopActors,enemyEncounterReady,rand
+ applyPoison,maxHP,addBleed:(actor,amount,origin)=>asHero(actor,()=>addBleed(amount,origin)),
+ soundWorld,burst,hurtEnemy,shockWater,knockHero:(actor,dx,dy,origin)=>asHero(actor,()=>moveActor(actor,dx,dy,true,origin)),coopActors,enemyEncounterReady,rand
 });
 $('#coop-watch').onclick=watchCoopQuiz;
 const resume=Boolean(coopRoom)||sessionStorage.getItem(RESUME_KEY)==='1';
@@ -4028,7 +4104,7 @@ function serverItem(action,it,more={}){
 function authorityInput(x,y){
  const now=performance.now();
  if(!authorityConnected||now-authorityInputAt<45)return;
- const blocked=Boolean(modalType||authorityOwn?.pose>=3&&authorityOwn?.pose<backHeroIndex);
+ const blocked=Boolean(modalType||heroFallProgress()>=0||authorityOwn?.pose>=3&&authorityOwn?.pose<backHeroIndex);
  const seq=++authoritySeq;
  authorityInputAt=now;
  const sent=authorityLink.send({type:'input',floor:save.floor,seq,x,y,aim:player.dir,
@@ -4054,7 +4130,7 @@ function authorityFrame(packet){
  authorityOwn=sample;
  if(isConsuming()){player.dash=0;player.attack=0;clearHeldAttack(false);}
  const prediction=authorityInputs.get(sample.ack),error=prediction?{x:sample.x-prediction.x,y:sample.y-prediction.y}:{x:sample.x-player.x,y:sample.y-player.y};
- if(!prior||packet.reset||Math.hypot(sample.x-player.x,sample.y-player.y)>110){
+ if(!prior||packet.reset||sample.fallProgress>=0||Math.hypot(sample.x-player.x,sample.y-player.y)>110){
   Object.assign(player,{x:sample.x,y:sample.y});authorityCorrection={x:0,y:0};
  }else if(Math.hypot(error.x,error.y)>5&&(!prediction||!prior||prior.ack!==sample.ack||!player.moving))authorityCorrection=error;
  // Keep controls immediate. Life, stamina and the outcome of combat come from the server.
@@ -4124,13 +4200,15 @@ function authorityFrame(packet){
    tell(layerNames[world.layerAt(event.x,event.y)]);
   }else if(event.kind==='armor')showArmorProc(event.proc,event,event.seat===coopRoom.seat);
   else if(event.kind==='death'&&event.seat===coopRoom.seat){
-   vault=null;close();Object.assign(player,{x:sample.x,y:sample.y,dash:0});
-   soundUI('hero_death',{priority:4});tell((event.cause==='fall'?'In den Abgrund gestürzt':'Gefallen')+' · Zurück im Ruheraum');
+   Object.assign(player,{x:sample.x,y:sample.y,dash:0});
+   const recap=event.recap??items.deathReport(save.floor,world.layerAt(sample.x,sample.y),questions,save,save,event.cause);
+   presentAuthorityDeath(recap,Boolean(event.recap));
   }else if(event.kind==='portal')soundWorld('floor_portal_spawn',event,{priority:3});
   else if(event.kind==='notice'){
    if(pending?.serverQuiz&&pending.coopReason==='trial')close();tell(event.message);
   }
  }
+ if(save.deathRecap)presentAuthorityDeath(save.deathRecap);
  updateCoopAltars();writeCoopHud();
 }
 function authorityQuizDisplay(packet){
@@ -4198,7 +4276,10 @@ async function authorityInteract(selection){
 
 function finishLoading(){
  if(mdNavigatingToNewCharacter)return;
- if(resume)resumeGame();else mdTitle();
+ if(!coopRoom&&save.deathRecap){
+  const recap=save.deathRecap;atTitle=false;deathPending=true;
+  showDeathRecap(recap,()=>continueSoloDeath(save),'Weiter zu Tiefe '+save.floor);
+ }else if(resume)resumeGame();else mdTitle();
  if(coopRoom)connectCoop();
  const resumeMessage=sessionStorage.getItem(RESUME_KEY+'-message');
  if(resumeMessage){sessionStorage.removeItem(RESUME_KEY+'-message');tell(resumeMessage);}

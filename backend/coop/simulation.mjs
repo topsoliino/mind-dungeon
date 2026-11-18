@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {run,balance,items,foes,geometry,enemySim,TILE,HERO_RADIUS,round,clamp,gap,remaining,normalAngle,maxHP,preparePlayer,selectLoot,cup,pools} from './rules.mjs';
+import {run,balance,items,foes,geometry,enemySim,TILE,HERO_RADIUS,fallSeconds,round,clamp,gap,remaining,normalAngle,maxHP,preparePlayer,selectLoot,cup,pools} from './rules.mjs';
 
 const vaultable=new Set(['barrel','table','round-table','banquet','banquet-long','bench','chair','basket','straw-bed']);
 const effectKinds=['bolts','enemyHazards','webShots','webPatches','stormStrikes','waterArcs'];
@@ -29,9 +29,9 @@ export class Simulation{
    enemyRules:foes,items,balance,save:this.state,state:this.effects,floor:this.floor,getEnemies:()=>this.enemies,
    moveActor:(e,dx,dy)=>this.move(e,dx,dy),actorRadius:radius,nearActor,
    takeDamage:(p,...args)=>this.hurtPlayer(p,...args),maxHP,
-   applyPoison:(p,opts)=>this.poison(p,opts),addBleed:(p,n)=>this.bleed(p,n),
+   applyPoison:(p,opts)=>this.poison(p,opts),addBleed:(p,n,origin)=>this.bleed(p,n,origin),
    soundWorld:(cue,pos,mix)=>this.sound(cue,pos,mix),
-   burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),shockWater:(...args)=>this.shockWater(...args),knockHero:(p,x,y)=>this.move(p,x,y,true),coopActors:()=>this.activePlayers(),
+   burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),shockWater:(...args)=>this.shockWater(...args),knockHero:(p,x,y,origin)=>this.move(p,x,y,true,origin),coopActors:()=>this.activePlayers(),
    enemyEncounterReady:()=>this.currentTarget!==null,
    rand:(a,b)=>a+this.random()*(b-a)
   });
@@ -100,7 +100,7 @@ export class Simulation{
   Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,attackDuration:.4,walk:0,
    moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,
    combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null,
-   consumeQueue:newFloor?p.consumeQueue??[]:[],damageQueue:newFloor?p.damageQueue??[]:[]});
+   consumeQueue:newFloor?p.consumeQueue??[]:[],damageQueue:newFloor?p.damageQueue??[]:[],damageHistory:newFloor?p.damageHistory??[]:[],fall:null});
   p.input={seq:p.input.seq,x:0,y:0,aim:0,blocked:false,at:-Infinity};
   if(newFloor){
    Object.assign(p,{opened:[],searched:[],altarUses:{},altarQuestions:{},gateQuestions:{},boneClaims:{},rubyClaims:{},templeAttempts:{},trials:{},
@@ -121,7 +121,8 @@ export class Simulation{
   if(this.events.length>96)this.events.shift();
  }
  sound(cue,{x,y},mix){this.emit('sound',{cue,x:round(x),y:round(y),mix});return true;}
- move(actor,dx,dy,knockback=false){
+ move(actor,dx,dy,knockback=false,origin){
+  if(actor.fall)return false;
   const hero=Boolean(actor.seat),others=hero?this.enemies:this.players;
   const clear=(x,y,other)=>{
    if(other===actor||other.hp<=0||!hero&&!other.online)return true;
@@ -136,7 +137,12 @@ export class Simulation{
    const x=actor.x+dx/steps,y=actor.y+dy/steps;
    if(dx&&pass(x,actor.y))actor.x=x;
    if(dy&&pass(actor.x,y))actor.y=y;
-   if(canFall&&this.floor.abyssAt(actor.x,actor.y)){this.die(actor,'fall');return false;}
+   if(canFall&&this.floor.pastLedge(actor.x,actor.y)){
+    actor.fall={remaining:fallSeconds,origin};
+    actor.attack=0;actor.dash=0;actor.chargeStart=null;actor.moving=false;
+    this.sound('hero_fall',actor,{priority:4,gain:.85});
+    return false;
+   }
   }
   return true;
  }
@@ -157,7 +163,8 @@ export class Simulation{
   this.effects.waterArcs.push(pulse);
   this.sound('element_lightning_beam',pulse,{priority:2,gain:.56});
   for(const p of this.activePlayers())if(p!==owner&&this.floor.pulseReaches(pulse,p)){
-   this.hurtPlayer(p,pulse.power,{lightning:1},true,1);
+   const origin=owner?.seat?{source:owner.appearance?.name??'Mitspieler',action:'Blitz im Wasser'}:foes.damageOrigin(owner,'Blitz im Wasser');
+   this.hurtPlayer(p,pulse.power,{lightning:1},true,1,undefined,undefined,origin);
   }
   for(const e of this.enemies)if(e!==owner&&e.hp>0&&this.floor.pulseReaches(pulse,e)){
    this.hurtEnemy(e,items.hit(pulse.power,{lightning:1},this.resistances[e.type]),owner?.seat?owner:null);
@@ -165,7 +172,7 @@ export class Simulation{
  }
  control(p,input){
   if(!Number.isSafeInteger(input.seq)||input.seq<=p.input.seq||!Number.isFinite(input.aim))return false;
-  const blocked=Boolean(input.blocked||p.quiz||p.consume);
+  const blocked=Boolean(input.blocked||p.quiz||p.consume||p.fall||p.deathRecap);
   p.input={seq:input.seq,x:blocked?0:clampInput(input.x),y:blocked?0:clampInput(input.y),aim:normalAngle(input.aim),
    dash:Boolean(input.dash)&&!blocked,blocked,at:this.clock};
   if(blocked)p.chargeStart=null;
@@ -233,6 +240,11 @@ export class Simulation{
   this.emit('notice',{message:notice},p.seat);
  }
  stepPlayer(p,dt){
+  if(p.fall){
+   p.fall.remaining-=dt;
+   if(p.fall.remaining<=1e-7)this.die(p,'fall',p.fall.origin);
+   return;
+  }
   for(const key of ['inv','attack','dash','dashCooldown','webSlow','grabSlow','bleedGrace','entryGrace','travelLock'])p[key]=remaining(p[key],dt);
   if(!p.bleedGrace)p.bleed=remaining(p.bleed,dt*14);
   if(p.activeBrew){
@@ -320,7 +332,7 @@ export class Simulation{
   return null;
  }
  charge(p,aim,vaultFirst=false){
-  if(p.quiz||p.consume||p.attack||p.dash||p.vault||p.chargeStart!==null)return false;
+  if(p.fall||p.deathRecap||p.quiz||p.consume||p.attack||p.dash||p.vault||p.chargeStart!==null)return false;
   p.dir=Number.isFinite(aim)?normalAngle(aim):p.dir;
   if(vaultFirst){
    const heading=p.input.x||p.input.y?Math.atan2(p.input.y,p.input.x):p.dir,to=this.vaultPath(p,heading);
@@ -333,7 +345,7 @@ export class Simulation{
   if(p.chargeStart===null)return false;
   const charged=this.clock-p.chargeStart>=balance.chargeSeconds;
   p.chargeStart=null;
-  if(p.quiz||p.consume||p.dash||p.attack||p.vault||!p.weapon)return false;
+  if(p.fall||p.deathRecap||p.quiz||p.consume||p.dash||p.attack||p.vault||!p.weapon)return false;
   p.dir=Number.isFinite(aim)?normalAngle(aim):p.dir;
   const w=p.weapon;
   if(!this.cost(p,Math.round(w.stamina*(charged?1.28:1)*p.mods.cost)))return false;
@@ -406,8 +418,8 @@ export class Simulation{
   }
   this.emit('hit',{x:round(e.x),y:round(e.y),value:n,type:hit.type,critical,enemyType:e.type,weapon});
  }
- hurtPlayer(p,n,split={physical:1},status=false,depth=foes.depthFactor(this.state.floor),cue,critical){
-  if(!p.online||p.inv>0&&!status||p.dash>0||this.floor.inRest(p.x,p.y))return false;
+ hurtPlayer(p,n,split={physical:1},status=false,depth=foes.depthFactor(this.state.floor),cue,critical,origin){
+  if(!p.online||p.fall||p.inv>0&&!status||p.dash>0||this.floor.inRest(p.x,p.y))return false;
   const wet=this.floor.inRain(p.x,p.y)&&split.fire;
   const wetSplit=this.floor.waterLightning(wet?{...split,fire:split.fire*.55}:split,p.x,p.y);
   const hit=items.hit(n*depth*p.guard,wetSplit,p.resistance);
@@ -416,7 +428,7 @@ export class Simulation{
   p.revision++;
   if(!status)p.inv=.75;
   if(items.blockArmorHit(p,p.equipment.armor,status)){this.emit('armor',{...location,proc:'block'});return false;}
-  items.queueDamage(p,hit);p.dominant=hit.type;
+  items.queueDamage(p,hit,origin);p.dominant=hit.type;
   this.emit('hit',{...location,value:hit.total,type:hit.type,cue,critical,pain:!status});
   return true;
  }
@@ -424,17 +436,22 @@ export class Simulation{
   if(!hit.amount)return false;
   const {hp,taken,proc}=items.resolveArmorDamage(p,p.equipment.armor,p.hp,maxHP(p),hit.amount);
   p.hp=hp;p.combatRecord.taken+=taken;p.revision++;
+  const dealt=items.rememberHit(p,hit,taken);
   const location={seat:p.seat,x:round(p.x),y:round(p.y)};
   if(proc)this.emit('armor',{...location,proc});
   if(taken>0&&hit.type==='bleed')this.bloodLoss(p);
-  if(p.hp<=0){this.die(p);return true;}
+  if(p.hp<=0){this.die(p,'combat',dealt);return true;}
   return false;
  }
- die(p,cause){
-  this.sound('hero_fall',p,{priority:4,gain:.85});
+ die(p,cause,finalHit){
+  if(cause!=='fall')this.sound('hero_fall',p,{priority:4,gain:.85});
+  const layer=this.floor.layerAt(p.x,p.y),before={...p};
   p.combatRecord.deaths++;
   if(p.trial)this.actions.finishTrial(p,false);
-  this.resetAtRest(p);this.emit('death',{seat:p.seat,cause});
+  this.resetAtRest(p);
+  const recap=items.deathReport(this.state.floor,layer,p.pack.questions,before,p,cause,finalHit);
+  p.deathRecap=recap;
+  this.emit('death',{seat:p.seat,cause,recap},p.seat);
  }
  bloodLoss(point){
   for(const p of this.activePlayers())if(p.equipment.rings.includes('madness')&&gap(p,point)<=220&&
@@ -449,12 +466,12 @@ export class Simulation{
   if(--poison.ticks<=0)actor.poison=null;
   else poison.untilTick=.72;
   const amount=7*(poison.power??1);
-  if(actor.seat)this.hurtPlayer(actor,amount,{poison:1},true,1.1,'element_poison_tick');
+  if(actor.seat)this.hurtPlayer(actor,amount,{poison:1},true,1.1,'element_poison_tick',undefined,poison.origin);
   else this.hurtEnemy(actor,items.hit(amount,{poison:1},this.resistances[actor.type]),poison.owner);
  }
- bleed(p,amount){
+ bleed(p,amount,origin){
   p.bleed=Math.min(100,p.bleed+amount);p.bleedGrace=2;
-  if(p.bleed>=100){p.bleed=0;this.hurtPlayer(p,maxHP(p)*.16,{bleed:1},true,1,'element_bleed_hero');}
+  if(p.bleed>=100){p.bleed=0;this.hurtPlayer(p,maxHP(p)*.16,{bleed:1},true,1,'element_bleed_hero',undefined,origin);}
  }
  drop(pos,item,owner=0){
   if(this.orbs.size>=180)return false;

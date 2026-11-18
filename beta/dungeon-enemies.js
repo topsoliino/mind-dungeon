@@ -76,6 +76,13 @@ window.DungeonEnemies = (() => {
  const PRIEST=1,SKELETON=3,ZOMBIE=5,SNAKE=6,ARCHER=7,CROSSBOW=8,LION=9,LIONESS=10,BAT=11,STORM_BAT=12,RAT=13,ELECTRO_RAT=14,EAGLE=15,FROST_ZOMBIE=16,FROST_CROSSBOW=17;
  const WHITE_ORC=18,BLACK_ORC=19;
  const isOrc=e=>e.type===WHITE_ORC||e.type===BLACK_ORC;
+ const names=['Anstürmer','Dunkelpriester','Spinne','Skelett','Frostgeist','Zombie','Schlange','Skelettbogenschütze',
+  'Armbrustzombie','Löwe','Löwin','Feuerfledermaus','Sturmfledermaus','Kleine Ratte','Elektrodenratte','Adler',
+  'Eiszombie','Armbrust-Eiszombie','Ork in weißer Robe','Ork in schwarzer Robe'];
+ function damageOrigin(enemy,action){
+  const name=enemy?.type===SNAKE&&enemy.fireSnake?'Feuerschlange':names[enemy?.type];
+  return {source:name?(enemy.boss?'Elite · ':'')+name:'Umgebung',action};
+ }
  function physicalImpactCue(type,weapon){
   if(type===SKELETON||type===ARCHER)return 'hit_bone';
   if(type===0||type===PRIEST)return 'hit_metal';
@@ -85,7 +92,7 @@ window.DungeonEnemies = (() => {
  const entryGrace=.4,chaseSeconds=7;
  function encounterReady(enemy,hero,floor,grace){
   const region=floor.regionAt(hero.x,hero.y);
-  if(region<0||floor.inRest(hero.x,hero.y))return false;
+  if(hero.fall||region<0||floor.inRest(hero.x,hero.y))return false;
   const distance=Math.hypot(hero.x-enemy.x,hero.y-enemy.y);
   if(distance<420&&floor.stairConnected(enemy,hero)&&!floor.gateLineBlocked(enemy.x,enemy.y,hero.x,hero.y))return true;
   if(floor.layerAt(enemy.x,enemy.y)!==floor.layerAt(hero.x,hero.y)){
@@ -106,5 +113,5 @@ window.DungeonEnemies = (() => {
   const bundle=large&&random()<.5?3:1;
   return {kind:'bones',id:'bones',rarity:'common',bundle,source:'Skelettbeute'};
  }
- return {physicalImpactCue,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,entryGrace,encounterReady,alert,boneDrop,PRIEST,SKELETON,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,WHITE_ORC,BLACK_ORC,isOrc};
+ return {physicalImpactCue,damageOrigin,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,entryGrace,encounterReady,alert,boneDrop,PRIEST,SKELETON,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,WHITE_ORC,BLACK_ORC,isOrc};
 })();

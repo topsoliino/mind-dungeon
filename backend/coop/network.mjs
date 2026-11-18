@@ -1,4 +1,4 @@
-import {round,gap,maxHP} from './rules.mjs';
+import {round,gap,maxHP,fallSeconds} from './rules.mjs';
 import {personal} from './actions.mjs';
 
 const q=n=>round(n||0,100);
@@ -17,7 +17,8 @@ function motion(p,clock){
   t===null?0:round(Math.sin(Math.PI*t)*29),p.chargeStart===null?-1:q(Math.min(1,(clock-p.chargeStart)/.58)),pose,
   round(p.hp),maxHP(p),round(p.stamina),p.staminaMax,q(p.combat),q(p.inv),round(p.bleed),q(p.webSlow),q(p.grabSlow),p.poison?1:0,
   p.dominant??null,p.input.seq,q(p.activeBrew?.remaining),
-  (p.damageQueue??[]).filter(hit=>hit.amount>0).map(hit=>({amount:hit.amount,type:hit.type,remaining:q(hit.remaining)}))];
+  (p.damageQueue??[]).filter(hit=>hit.amount>0).map(hit=>({amount:hit.amount,type:hit.type,remaining:q(hit.remaining)})),
+  p.fall?q(1-p.fall.remaining/fallSeconds):-1];
 }
 export function createProjection(){
  let floor=0,revision=-1,event=0,peerRevision=-1,peerQuiz='',effects='',staticState='',lootKey='';

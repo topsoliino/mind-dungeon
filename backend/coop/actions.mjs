@@ -4,7 +4,7 @@ import {run,items,foes,brewing,expedition,pools,item,cup,TILE,gap,maxHP,prepareP
 const fail=message=>{throw new Error(message);};
 const index=(list,i)=>Number.isInteger(i)&&i>=0?list[i]:undefined;
 const heal=(p,n)=>{p.hp=Math.min(maxHP(p),p.hp+n);};
-const personalFields=['inventory','consumeQueue','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','questionSeen','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil'];
+const personalFields=['inventory','consumeQueue','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','questionSeen','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil','deathRecap'];
 export function personal(p){
  return {revision:p.revision,character:p.appearance,...Object.fromEntries(personalFields.map(key=>[key,p[key]]))};
 }
@@ -23,6 +23,8 @@ export function actions(sim){
   live(p,sim.portal,76);
   if(sim.enemies.length)fail('Auf dieser Tiefe leben noch Gegner.');
   if(sim.completed)return {victory:true};
+  if(sim.activePlayers().some(actor=>actor.fall))fail('Warte, bis der Sturz abgeschlossen ist.');
+  if(sim.activePlayers().some(actor=>actor.deathRecap))fail('Warte, bis der Todesrückblick geschlossen ist.');
   if(sim.activePlayers().some(actor=>actor.quiz))fail('Warte, bis die andere Person ihre Frage abgeschlossen hat.');
   return {advance:true};
  }
@@ -148,7 +150,10 @@ export function actions(sim){
   }
   if(reason!=='study'&&reason!=='trial'&&reason!=='brew'&&reason!=='access'){
    if(ok)heal(p,18);
-   else p.hp=Math.max(1,p.hp-8);
+   else {
+    const before=p.hp;p.hp=Math.max(1,p.hp-8);
+    items.rememberHit(p,{origin:{source:'Lernkarte',action:'Falsche Antwort'}},before-p.hp);
+   }
   }
   qz.more=more;qz.notice=notice;qz.ok=ok;qz.choice=data.choice;
   return {ok,notice,explanation:q.explanation,correctIndices:q.correctIndices??[q.correctIndex].filter(Number.isInteger)};
@@ -269,9 +274,12 @@ export function actions(sim){
   fail('Hier gibt es nichts zu untersuchen.');
  }
  function dispatch(p,kind,data){
+  if(p.fall)fail('Du stürzt gerade.');
+  if(p.deathRecap&&kind!=='dismiss-death')fail('Schließe zuerst den Todesrückblick.');
   if(p.quiz&&!['answer','review'].includes(kind))fail('Beende zuerst das Quiz.');
   let result;
   switch(kind){
+   case 'dismiss-death':p.deathRecap=null;result={};break;
    case 'interact':result=interact(p,data.kind,data.index);break;
    case 'quiz':result=quiz(p,data.reason,data.index,data.vessel);break;
    case 'answer':result=answer(p,data);break;
