@@ -65,12 +65,13 @@ window.DungeonEffectsArt = (() => {
    shape([[32,29-size],[34+size,30],[32,32+size],[30-size,30]],'#80b5c1a0');
    shape([[32,31-size],[34+size/2|0,30],[32,31+size],[30-size/2|0,30]],'#fbebbc');
    pixel(31,22,2,17,'#fff2db');
-  }else if(type==='arrow'||type==='poison-arrow'){
-   const poisonous=type==='poison-arrow';
+  }else if(type==='arrow'||type==='poison-arrow'||type==='frost-arrow'){
+   const poisonous=type==='poison-arrow',frost=type==='frost-arrow';
+   if(frost)for(let i=0;i<10;i++)pixel(4+i*4,31+((i*7+frame)%9)-4,2+(i%2),2,i%2?'#a0e5f9aa':'#d2f7ff90');
    if(poisonous)for(let i=0;i<9;i++)pixel(4+i*3,31+((i*5+frame)%7)-3,3,2,i%2?'#71944daa':'#cadb9270');
    pixel(5,30,50,4,'#292420');pixel(6,31,49,2,'#c29566');
-   shape([[49,27],[62,32],[49,37]],poisonous?'#9eba68':'#d9d1b7');
-   pixel(50,31,7,1,poisonous?'#dde5a1':'#fff1d4');
+   shape([[49,27],[62,32],[49,37]],poisonous?'#9eba68':frost?'#82cced':'#d9d1b7');
+   pixel(50,31,7,1,poisonous?'#dde5a1':frost?'#e8fbff':'#fff1d4');
    shape([[3,26],[14,28],[17,32],[14,36],[3,38],[7,32]],'#b49672');
   }else if(type==='web-shot'){
    for(const [x,y] of [[14,23],[22,16],[35,16],[47,23],[48,36],[39,46],[25,47],[16,39]]){
@@ -255,7 +256,7 @@ window.DungeonEffectsArt = (() => {
   }
   return c;
  }
- const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
+ const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','frost-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
  const frames=Object.fromEntries(types.map(type=>[type,Array.from({length:6},(_,i)=>paint(type,i))]));
  return {frames};
 })();

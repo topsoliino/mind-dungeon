@@ -3,7 +3,7 @@ import {run,balance,items,foes,geometry,enemySim,TILE,HERO_RADIUS,round,clamp,ga
 
 const vaultable=new Set(['barrel','table','round-table','banquet','banquet-long','bench','chair','basket','straw-bed']);
 const effectKinds=['bolts','enemyHazards','webShots','webPatches','stormStrikes','waterArcs'];
-const radius=e=>e.seat?HERO_RADIUS:e.type===foes.SNAKE||[foes.BAT,foes.STORM_BAT,foes.RAT].includes(e.type)?8:e.boss?19:14;
+const radius=e=>e.seat?HERO_RADIUS:e.type===foes.SNAKE||[foes.BAT,foes.STORM_BAT,foes.RAT,foes.EAGLE].includes(e.type)?8:e.boss?19:14;
 const nearActor=(a,b,extra=0)=>Math.abs(a.x-b.x)<radius(a)+radius(b)+extra&&Math.abs(a.y-b.y)<radius(a)+radius(b)+extra;
 const clampInput=value=>Number.isFinite(value)?clamp(value,-1,1):0;
 const idleInput=()=>({seq:-1,x:0,y:0,aim:0,blocked:false,at:-Infinity});
@@ -16,7 +16,7 @@ export class Simulation{
   this.seed=seed;this.startFloor(layoutSeed,depth,layoutRevision);
  }
  startFloor(seed,floor,layoutRevision){
-  this.state={...run.floorState(seed,floor),templeDepth:run.templeDepth(this.seed)};
+  this.state={...run.floorState(seed,floor),templeDepth:run.templeDepth(this.seed),templeRunSeed:this.seed};
   if(layoutRevision)this.state.layoutRevision=layoutRevision;
   this.floor=geometry.build(run,this.state);
   this.difficulty=this.activePlayers().length===2?1:.5;
@@ -31,7 +31,7 @@ export class Simulation{
    takeDamage:(p,...args)=>this.hurtPlayer(p,...args),maxHP,
    applyPoison:(p,opts)=>this.poison(p,opts),addBleed:(p,n)=>this.bleed(p,n),
    soundWorld:(cue,pos,mix)=>this.sound(cue,pos,mix),
-   burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),shockWater:(...args)=>this.shockWater(...args),coopActors:()=>this.activePlayers(),
+   burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),shockWater:(...args)=>this.shockWater(...args),knockHero:(p,x,y)=>this.move(p,x,y,true),coopActors:()=>this.activePlayers(),
    enemyEncounterReady:()=>this.currentTarget!==null,
    rand:(a,b)=>a+this.random()*(b-a)
   });
@@ -97,6 +97,7 @@ export class Simulation{
   if(newFloor){
    Object.assign(p,{opened:[],searched:[],altarUses:{},altarQuestions:{},gateQuestions:{},boneClaims:{},rubyClaims:{},templeAttempts:{},trials:{},
     cupClaimed:false,shopSold:[],brewEffects:[],merchantMapFound:false,wellUsed:false,mythicSold:p.mythicSold??[]});
+   if(this.floor.sewerRelic)this.drop(this.floor.sewerRelic,items.trialCharm,p.seat);
    if(p.wellOffer){this.drop(p,p.wellOffer,p.seat);p.wellOffer=null;}
    const pantry=this.floor.annexes.find(room=>room.key==='pantry');
    if(pantry){
@@ -112,7 +113,7 @@ export class Simulation{
   if(this.events.length>96)this.events.shift();
  }
  sound(cue,{x,y},mix){this.emit('sound',{cue,x:round(x),y:round(y),mix});return true;}
- move(actor,dx,dy){
+ move(actor,dx,dy,knockback=false){
   const hero=Boolean(actor.seat),others=hero?this.enemies:this.players;
   const clear=(x,y,other)=>{
    if(other===actor||other.hp<=0||!hero&&!other.online)return true;
@@ -120,13 +121,16 @@ export class Simulation{
    const sx=Math.abs(x-other.x),sy=Math.abs(y-other.y);
    return sx>=r||sy>=r||ox<r&&oy<r&&sx>=ox&&sy>=oy&&(sx>ox||sy>oy);
   };
-  const pass=(x,y)=>this.floor.valid(x,y,radius(actor),false,hero)&&(hero||!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
+  const canFall=hero&&(knockback||!actor.equipment.rings.includes('height'));
+  const pass=(x,y)=>this.floor.valid(x,y,radius(actor),false,hero,canFall)&&(hero||!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
   const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
   for(let i=0;i<steps;i++){
    const x=actor.x+dx/steps,y=actor.y+dy/steps;
    if(dx&&pass(x,actor.y))actor.x=x;
    if(dy&&pass(actor.x,y))actor.y=y;
+   if(canFall&&this.floor.abyssAt(actor.x,actor.y)){this.die(actor,'fall');return false;}
   }
+  return true;
  }
  travel(p,link){
   Object.assign(p,link.exit,{dash:0,moving:false,inv:.45,vault:null,chargeStart:null,travelLock:.48});
@@ -134,7 +138,9 @@ export class Simulation{
   this.emit('travel',{seat:p.seat,x:p.x,y:p.y,link:link.kind});
  }
  hitDoor(door,attack){
+  if(this.floor.accessState(door)!=='open')return;
   const hp=this.floor.strikeDoor(attack.amount*(attack.charged?1.5:1),door);
+  if(hp===0&&door.reward)this.drop({x:(door.reward.x+.5)*TILE,y:(door.reward.y+.5)*TILE},selectLoot('epic',this.state.floor,this.random));
   this.emit('door',{x:door.x,y:door.y,id:door.id,hp});
  }
  shockWater(origin,impact,split,amount,owner){
@@ -248,7 +254,7 @@ export class Simulation{
    p.back=y<0;
    const slow=p.webSlow||p.grabSlow||this.isWeb(p);
    const speed=p.speed*(p.dash?p.load.dashSpeed*p.mods.dashDistance:1)*(slow?.53:1)*(p.chargeStart!==null?.64:1);
-   this.move(p,x*speed*dt,y*speed*dt);
+   if(!this.move(p,x*speed*dt,y*speed*dt))return;
   }
   const face=Math.cos(p.dir);if(Math.abs(face)>.23)p.weaponSide=Math.sign(face);
   p.moving=gap(p,before)>.08;
@@ -303,7 +309,7 @@ export class Simulation{
   const swing={seat:p.seat,id:this.id(),x:round(p.x),y:round(p.y),dir:p.dir,weapon:w.id,type,reach,scale,duration:p.attack,charged};
   this.emit('swing',swing);
   if(this.floor.inRest(p.x,p.y))return true;
-  const hit={p,w,charged,amount:p.damage,crit:p.crit,impact:p.impact,split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
+  const hit={p,w,charged,amount:p.damage*items.madnessBonus(p,p.equipment.rings),crit:p.crit,impact:p.impact,split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
   if(w.projectile){
    this.shots.push({x:p.x,y:p.y,origin:{x:p.x,y:p.y},angle:p.dir,left:reach,speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
    return true;
@@ -361,6 +367,7 @@ export class Simulation{
   if(e.hp<=0)return;
   const n=Math.min(e.hp,hit.total);
   if(n>0){
+   if(hit.type==='bleed')this.bloodLoss(e);
    e.hp-=n;e.dominant=hit.type;e.hit=.22;foes.alert(e);
    if(p){p.combatRecord.dealt+=n;if(critical)p.combatRecord[critical==='critical'?'crits':'counters']++;p.revision++;}
   }
@@ -379,8 +386,21 @@ export class Simulation{
   if(proc==='block'){this.emit('armor',{...location,proc});return false;}
   p.dominant=hit.type;this.emit('hit',{...location,value:taken,type:hit.type,cue,pain:!status&&p.hp>0});
   if(proc)this.emit('armor',{...location,proc});
-  if(p.hp<=0){this.sound('hero_fall',p,{priority:4,gain:.85});p.combatRecord.deaths++;if(p.trial)this.actions.finishTrial(p,false);this.resetAtRest(p);this.emit('death',{seat:p.seat});}
+  if(taken>0&&hit.type==='bleed')this.bloodLoss(p);
+  if(p.hp<=0)this.die(p);
   return true;
+ }
+ die(p,cause){
+  this.sound('hero_fall',p,{priority:4,gain:.85});
+  p.combatRecord.deaths++;
+  if(p.trial)this.actions.finishTrial(p,false);
+  this.resetAtRest(p);this.emit('death',{seat:p.seat,cause});
+ }
+ bloodLoss(point){
+  for(const p of this.activePlayers())if(p.equipment.rings.includes('madness')&&gap(p,point)<=220&&
+   !this.floor.gateLineBlocked(p.x,p.y,point.x,point.y)){
+   p.madnessUntil=p.playtime+20;p.revision++;
+  }
  }
  poison(actor,opts){actor.poison={...opts};}
  tickPoison(actor,dt){
@@ -427,6 +447,12 @@ export class Simulation{
    return sewer?{...drop,source:'Kanalisation'}:drop;
   });
   if(this.random()<.015)spawnPair(()=>cup('Gegnerbeute · Koop'));
+  if(this.state.layoutRevision>=9){
+   if(this.random()<.035)spawnPair(()=>({kind:'ring',id:'height',rarity:'rare',source:'Gegnerbeute'}));
+   if([foes.RAT,foes.ELECTRO_RAT].includes(e.type)&&this.random()<(e.type===foes.ELECTRO_RAT?.13:.08)){
+    spawnPair(()=>({kind:'ring',id:'madness',rarity:'rare',source:'Kanalisation'}));
+   }
+  }
   const bones=foes.boneDrop(e,this.random);
   if(bones)spawnPair(()=>bones,this.floor.boneDropPosition(e));
   this.emit('defeated',{x:e.x,y:e.y,type:e.type});

@@ -2,9 +2,9 @@
 'use strict';
 function create(api){
  const {enemyRules,items,balance,save,state,floor,getEnemies,moveActor,actorRadius,nearActor,takeDamage,applyPoison,addBleed,
-  soundWorld,burst,hurtEnemy,shockWater,coopActors,enemyEncounterReady,rand}=api;
+  soundWorld,burst,hurtEnemy,shockWater,knockHero,coopActors,enemyEncounterReady,rand}=api;
  const {W,H,rooms,regionAt,inRest,outsideAt,pointIn,valid,furnitureBlocked,gateLineBlocked,gateBlocked,wall,pressurePlates}=floor;
- const {SNAKE,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT}=enemyRules;
+ const {SNAKE,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW}=enemyRules;
  const isBat=e=>e.type===BAT||e.type===STORM_BAT,isLion=e=>e.type===LION||e.type===LIONESS;
  const movementCue={lion:'lion_paw',lioness:'lion_paw','bat-fire':'bat_wings','bat-lightning':'bat_wings'};
  const windupCue={rift:'enemy_priest_voice',bow:'bow_draw',bite:'snake_hiss'};
@@ -74,9 +74,9 @@ function updateEnemy(e,dt){
   e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
  }
  const clear=line&&e.aggro>0;
- if(e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))damageActive(9+(e.boss?5:0),items.foeAttack[e.type]);
+ if(e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&e.type!==EAGLE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))damageActive(9+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.runAttack>0){
-  if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'){advanceRush(e,spec,dt,angle);return;}
+  if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'||spec.id==='eagle'){advanceRush(e,spec,dt,angle);return;}
   if(['web','frost','bow','crossbow','electrode','rat-bite'].includes(spec.id)){
    e.runAttack=Math.max(0,e.runAttack-dt);
    if(!e.runAttack)recover(e,spec.recovery);
@@ -130,7 +130,7 @@ function executeEnemyAttack(e,spec){
   e.runDuration=e.runAttack=.28;
   return;
  }
- const durations={charge:1.1,rift:.74,reap:.36,grab:.38,bite:.25};
+ const durations={charge:1.1,rift:.74,reap:.36,grab:.38,bite:.25,eagle:.65};
  if(durations[spec.id]){
   const cue=spec.id==='rift'?'element_dark_rift':spec.id==='charge'?'weapon_hammer':spec.id==='reap'?'weapon_greatsword':null;
   if(spec.id==='bite')soundWorld('snake_bite',e,{priority:2,cooldown:.14});
@@ -147,7 +147,7 @@ function executeEnemyAttack(e,spec){
 }
 function advanceRush(e,spec,dt,targetAngle){
  if(e.track>0){e.angle=enemyRules.turn(e.angle,targetAngle,dt*2.3);e.track-=dt;}
- const oldX=e.x,oldY=e.y,speed=({charge:252,rift:222,grab:211,bite:170})[spec.id];
+ const oldX=e.x,oldY=e.y,speed=({charge:252,rift:222,grab:211,bite:170,eagle:406})[spec.id];
  moveEnemy(e,Math.cos(e.angle)*speed*dt,Math.sin(e.angle)*speed*dt);
  e.runAttack=Math.max(0,e.runAttack-dt);
  if(Math.hypot(e.x-oldX,e.y-oldY)<speed*dt*.2)e.runAttack=0;
@@ -157,9 +157,10 @@ function advanceRush(e,spec,dt,targetAngle){
  }
  if(!e.struck&&nearActor(e,player,9)&&!gateLineBlocked(e.x,e.y,player.x,player.y)){
   const dark=spec.id==='rift';
-  const damage=spec.id==='bite'?5:spec.id==='grab'?13:21;
-  e.struck=damageActive(e.fireSnake?8:damage,e.fireSnake?{fire:1}:dark?{dark:1}:{physical:1});
+  const damage=spec.id==='bite'?5:spec.id==='grab'?13:spec.id==='eagle'?23:21;
+  e.struck=damageActive(e.fireSnake?8:damage,e.fireSnake?{fire:1}:dark?{dark:1}:e.type===FROST_ZOMBIE?{frost:1}:{physical:1});
   if(e.struck&&player.inv<1){
+   if(spec.id==='eagle')knockHero(player,Math.cos(e.angle)*92,Math.sin(e.angle)*92);
    if(spec.id==='grab'){player.grabSlow=1.4;player.stamina=Math.max(0,player.stamina-18);}
    if(spec.id==='bite'&&!e.fireSnake&&!player.poison)poison(player,{untilTick:.72,ticks:3});
   }
@@ -408,7 +409,7 @@ function nearestLion(e){
 }
 function fireBolt(e,type){
  const speed=type==='bow'?330:445;
- state.bolts.push({x:e.x,y:e.y,angle:e.angle,speed,life:1.23,type});
+ state.bolts.push({x:e.x,y:e.y,angle:e.angle,speed,life:1.23,type:e.type===FROST_CROSSBOW?'frost-crossbow':type});
 }
 function updateBolts(dt){
  state.bolts=state.bolts.filter(p=>{
@@ -419,7 +420,7 @@ function updateBolts(dt){
   for(let i=0;i<steps;i++){
    const x=p.x+dx/steps,y=p.y+dy/steps;
    const approaching=p.type==='trap'&&(p.angle===0?x<p.entryX:x>p.entryX);
-   if(!approaching&&(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||furnitureBlocked(x,y,2)))return false;
+   if(!approaching&&(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||floor.doorAt(x,y)||furnitureBlocked(x,y,2)))return false;
    p.x=x;p.y=y;
    if(approaching)continue;
    if(!p.audioPassed&&Math.hypot(p.x-player.x,p.y-player.y)<146){
@@ -429,8 +430,11 @@ function updateBolts(dt){
    const target=coopActors().find(hero=>hero.dash<=0&&Math.hypot(p.x-hero.x,p.y-hero.y)<13);
    if(target){
     const damage=p.type==='trap'?10:p.type==='bow'?11:16;
-    const split=p.type==='trap'?{physical:.70,poison:.30}:p.type==='crossbow'?{physical:.75,dark:.25}:{physical:1};
-    asHero(target,()=>{if(damageActive(damage,split)&&p.type==='trap'&&!player.poison)poison(player,{untilTick:.67,ticks:2,power:.55});});
+    const split=p.type==='trap'?{physical:.70,poison:.30}:p.type==='crossbow'?{physical:.75,dark:.25}:p.type==='frost-crossbow'?{frost:1}:{physical:1};
+    asHero(target,()=>{
+     if(!damageActive(damage,split))return;
+     if(p.type==='trap'&&!player.poison)poison(player,{untilTick:.67,ticks:2,power:.55});
+    });
     return false;
    }
   }

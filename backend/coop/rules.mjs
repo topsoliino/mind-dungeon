@@ -52,6 +52,7 @@ export function makePlayer(seat,character,pack){
 }
 export function preparePlayer(p){
  p.armorCooldowns??={};
+ p.madnessUntil??=0;p.trialCharmActive??=false;
  p.mods=brewing.bonuses(p.activeBrew);
  const {weapon,weaponRarity,armor,armorRarities,rings,ringRarities}=p.equipment;
  p.weapon=weapon?items.weapon(weapon,weaponRarity):null;

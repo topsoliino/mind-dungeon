@@ -5,7 +5,7 @@ const TILE=48,HERO_RADIUS=14;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 function build(run,save){
 const furnishingSeed=save.dungeonSeed;
-const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[]}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth);
+const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[],roof=null,sewerRelic=null}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth,save.templeRunSeed??save.dungeonSeed);
 const H=map.length,W=map[0].length;
 const annexByRegion=new Map(annexes.map(a=>[a.id,a]));
 const annexPassages=new Map([...annexes.flatMap(a=>a.passage?[a.passage]:[]),...paths].map(path=>[path.id,path]));
@@ -44,8 +44,8 @@ function regionAt(x,y){return regions[Math.floor(y/TILE)]?.[Math.floor(x/TILE)]?
 const tileCenter=p=>({x:(p.x+.5)*TILE,y:(p.y+.5)*TILE});
 const layerForRegion=id=>layers[id]??0;
 const layerAt=(x,y)=>layerForRegion(regionAt(x,y));
-const links=linkTiles.flatMap(({id,kind,a,b})=>[[a,b],[b,a]].map(([from,to],side)=>({
- ...tileCenter(from),id:id+'-'+side,kind,layer:layerForRegion(regions[from.y][from.x]),exit:tileCenter(to)
+const links=linkTiles.flatMap(({id,kind,a,b,seal})=>[[a,b],[b,a]].map(([from,to],side)=>({
+ ...tileCenter(from),id:id+'-'+side,kind,seal,layer:layerForRegion(regions[from.y][from.x]),exit:tileCenter(to)
 })));
 function nearestLink(actor,id){
  return links.find(s=>(id===undefined||s.id===id)&&Math.hypot(actor.x-s.x,actor.y-s.y)<=57&&
@@ -53,16 +53,30 @@ function nearestLink(actor,id){
 }
 function stairsFor(actor,target){
  const layer=layerAt(actor.x,actor.y),goal=layerAt(target.x,target.y);
- return links.find(s=>s.kind==='stairs'&&s.layer===layer&&layerAt(s.exit.x,s.exit.y)===goal);
+ return links.find(s=>s.kind==='stairs'&&s.layer===layer&&
+  Math.abs(layerAt(s.exit.x,s.exit.y)-goal)<Math.abs(layer-goal));
 }
 const doors=doorTiles.map(d=>({...d,...tileCenter({x:d.x+Math.floor(d.w/2),
  y:d.y+Math.floor(d.h/2)}),span:(d.vertical?d.h:d.w)*TILE}));
 const doorHP=d=>save.doors?.[d.id]??d.hp;
+const accessState=site=>site?.seal?(save.access?.[site.seal]??'quiz'):'open';
+function accessSite(actor,id){
+ return [...links,...doors].find(site=>site.seal===id&&Math.hypot(actor.x-site.x,actor.y-site.y)<=85&&
+  (site.kind?!gateLineBlocked(actor.x,actor.y,site.x,site.y):doorAhead(actor.x,actor.y,Math.atan2(site.y-actor.y,site.x-actor.x),86)===site));
+}
+function resolveAccess(site,correct){
+ const state=(save.access??={})[site.seal]??=(correct?'open':'blocked');
+ if(save.accessByDepth)(save.accessByDepth[save.floor+'-'+save.dungeonSeed]??={})[site.seal]=state;
+ return state;
+}
+const abyssAt=(x,y)=>save.layoutRevision>=9&&terrain[Math.floor(y/TILE)]?.[Math.floor(x/TILE)]==='abyss';
+const hailAt=(x,y)=>Boolean(outsideAt(x,y)?.hail);
 function doorAt(x,y,radius=0){
  return doors.find(d=>doorHP(d)>0&&(d.vertical?Math.abs(x-d.x)<9+radius&&Math.abs(y-d.y)<d.span/2:
   Math.abs(y-d.y)<9+radius&&Math.abs(x-d.x)<d.span/2));
 }
 function strikeDoor(damage,door){
+ if(accessState(door)!=='open')return doorHP(door);
  const hp=Math.max(0,doorHP(door)-Math.max(1,Math.round(damage)));
  (save.doors??={})[door.id]=hp;
  return hp;
@@ -82,7 +96,8 @@ const waterAt=(x,y)=>{
  return tile?.startsWith('sewer-')?tile:null;
 };
 function waterLightning(split,x,y){
- return split.lightning&&waterAt(x,y)?{...split,lightning:split.lightning*1.35}:split;
+ const wet=split.lightning&&waterAt(x,y),cold=split.frost&&hailAt(x,y);
+ return wet||cold?{...split,...(wet?{lightning:split.lightning*1.35}:{}),...(cold?{frost:split.frost*1.35}:{})}:split;
 }
 function waterPulse(origin,target,split,amount){
  if(!split.lightning)return null;
@@ -153,10 +168,10 @@ function footWall(x,y){
  }
  return Math.abs(ox)<=9&&((north&&oy<=5)||(south&&oy>=-9));
 }
-function valid(x,y,r=12,ignoreSeals=false,feet=false){
+function valid(x,y,r=12,ignoreSeals=false,feet=false,allowFall=false){
  const rx=feet?10:r,ry=feet?5:r,solid=feet?footWall:wall;
  for(const dx of [-rx,0,rx])for(const dy of [-ry,0,ry]){
-  if(solid(x+dx,y+dy)||!ignoreSeals&&(gateBlocked(x+dx,y+dy)||doorAt(x+dx,y+dy)))return false;
+  if(solid(x+dx,y+dy)&&!(allowFall&&abyssAt(x+dx,y+dy))||!ignoreSeals&&(gateBlocked(x+dx,y+dy)||doorAt(x+dx,y+dy)))return false;
  }
  return !furnitureBlocked(x,y,feet?9:r,feet?6:r);
 }
@@ -248,7 +263,7 @@ for(const room of run.shuffle(rooms.slice(1),mapRandom)){
  }
 }
 const mapPickup=mapSites[Math.floor(mapRandom()*mapSites.length)]||pointIn(rooms[1],0,0);
-const landmarks=[...links,...shrines,...chests,merchant,mapPickup,spawn,...bonePiles,...templeShrines,...(restCat?[restCat,wellUse,wellArrival]:[]),market];
+const landmarks=[...links,...(sewerRelic?[tileCenter(sewerRelic)]:[]),...shrines,...chests,merchant,mapPickup,spawn,...bonePiles,...templeShrines,...(restCat?[restCat,wellUse,wellArrival]:[]),market];
 furniture.push({type:'market',...market,zone:merchantRoomId,...FURNITURE.market});
 function placeRoomSet(pieces,ax,ay,zone){
  const group=[];
@@ -474,13 +489,13 @@ return {
  paths,H,W,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,
- regionAt,layerAt,layerForRegion,links,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,lofts,sewerRooms,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
+ regionAt,layerAt,layerForRegion,links,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition
 };
 }
 function spawnEnemies(run,enemyRules,save,floor,coop){
- const {ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT}=enemyRules;
+ const {ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW}=enemyRules;
  const {rooms,templeRooms,court,cemetery,canReachSpawn,regionAt,valid,landmarks,spawn}=floor;
  const enemies=[],defeated=new Set(save.defeated),furnishingSeed=save.dungeonSeed,TAU=2*Math.PI;
  const enemyHealth=(type,boss)=>Math.max(1,Math.round(enemyRules.health(type,boss,save.floor)*(coop?1:.5)));
@@ -503,7 +518,10 @@ for(const room of rooms){
   const rolled=k<2?roster[k]:roster[Math.floor(encounterRandom()*(save.floor>=3?4:3))];
   const melee=k===count-1&&(roomId===2||zombieRandom()<.40)?ZOMBIE:rolled;
   const ranged=rangedRandom()<.34;
-  const type=ranged&&melee===3?ARCHER:ranged&&melee===ZOMBIE?CROSSBOW:melee;
+  let type=ranged&&melee===3?ARCHER:ranged&&melee===ZOMBIE?CROSSBOW:melee;
+  if(save.layoutRevision>=9&&[ZOMBIE,CROSSBOW].includes(type)&&zombieRandom()<.26+.06*save.floor){
+   type=type===CROSSBOW?FROST_CROSSBOW:FROST_ZOMBIE;
+  }
   const boss=k===0&&roomId!==0;
   const max=enemyHealth(type,boss);
   const phase=encounterRandom()*6,attack=1.2+encounterRandom()*1.8;
@@ -559,6 +577,7 @@ function stockOutdoorEnemies(){
 }
 stockOutdoorEnemies();
 const extraRng=run.random(furnishingSeed^0x4fab947c);
+const upperRoster=save.layoutRevision>=9?[0,2,3,ARCHER,FROST_ZOMBIE,FROST_CROSSBOW]:[0,2,3,ARCHER];
 for(const room of [...floor.lofts,...floor.sewerRooms]){
  const sewer=room.key.startsWith('sewer'),sites=[];
  for(let y=room.y;y<room.y+room.h;y++)for(let x=room.x;x<room.x+room.w;x++){
@@ -570,11 +589,19 @@ for(const room of [...floor.lofts,...floor.sewerRooms]){
  const count=sewer?3+Math.floor(extraRng()*3):2+Math.floor(extraRng()*2);
  for(let i=0;i<count&&sites.length;i++){
   const id=room.key+'-'+i,pos=sites.pop();
-  const type=sewer?(i===0||i>1&&extraRng()<.32?ELECTRO_RAT:RAT):[0,2,3,ARCHER][Math.floor(extraRng()*4)];
+  const type=sewer?(i===0||i>1&&extraRng()<.32?ELECTRO_RAT:RAT):upperRoster[Math.floor(extraRng()*upperRoster.length)];
   const max=enemyHealth(type,false);
   if(!defeated.has(id))enemies.push({...pos,id,type,roomId:0,hp:max,max,phase:extraRng()*TAU,
    hit:0,attack:1.2+extraRng(),windup:0,angle:0,size:type===RAT?.61:type===ELECTRO_RAT?1.08:1});
   for(let j=sites.length-1;j>=0;j--)if(Math.hypot(sites[j].x-pos.x,sites[j].y-pos.y)<83)sites.splice(j,1);
+ }
+}
+if(floor.roof){
+ const {roof}=floor;
+ for(const [i,dx,dy,type] of [[0,5,2,EAGLE],[1,8,5,BAT],[2,8,2,EAGLE],[3,5,6,STORM_BAT]]){
+  const x=(roof.x+dx+.5)*TILE,y=(roof.y+dy+.5)*TILE,id='roof-'+i,max=enemyHealth(type,false);
+  if(!defeated.has(id))enemies.push({x,y,id,type,roomId:0,hp:max,max,size:type===EAGLE?1.09:.78,
+   phase:i,hit:0,attack:1.2+i*.3,windup:0,angle:0});
  }
 }
 return enemies;

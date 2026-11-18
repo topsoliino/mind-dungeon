@@ -30,6 +30,19 @@ window.DungeonItems = (() => {
  };
  const kinds={weapon:'Waffen',ring:'Ringe',armor:'Rüstung'};
  const merchantRing={id:'merchant',name:'Händlerring',desc:'Ausgerüstet zeigt der Händler je eine zusätzliche Waffe, einen Ring und ein Rüstungsteil.',bonus:'merchant'};
+ const heightRing={id:'height',name:'Ring der Höhe',desc:'Fängt dich beim Laufen und Ausweichen am Abgrund ab. Rückstoß kann dich über die Kante stoßen.',bonus:'height'};
+ const madnessRing={id:'madness',name:'Ring des Wahns',desc:'Blutverlust im Umkreis von 220 erhöht deine Angriffskraft für 20 Sekunden um 20 %.',bonus:'madness'};
+ const trialCharm={kind:'trialCharm',id:'sewer-trials',rarity:'rare',source:'Kanalisation'};
+ function markTrials(actor,total,hasLaterDepth){
+  if(actor.trialCharmActive)return false;
+  const unopened=Array.from({length:total},(_,i)=>i).some(i=>!actor.opened.includes(i)&&!actor.trials[i]);
+  if(!unopened&&!hasLaterDepth)return false;
+  actor.trialCharmActive=true;
+  return true;
+ }
+ const isTrial=(actor,index,fixed)=>index===fixed||actor.trialCharmActive===true&&!actor.opened.includes(index);
+ const challengeRarity=(depth,roll)=>roll<(depth>=3?.12:.04)?'legendary':roll<.34?'epic':'rare';
+ const madnessBonus=(actor,rings)=>rings.includes('madness')&&(actor.madnessUntil??0)>actor.playtime?1.20:1;
  const precisionRing={id:'precision',name:'Ring der Präzision',desc:'+8 Prozentpunkte Würfel-Crit-Chance.',bonus:'critical'};
  const breweryRing={id:'brewer',name:'Ring des Sudmeisters',desc:'Hebt die Seltenheit aller fünf Brauangebote um eine zulässige Stufe an.',bonus:'brewery'};
  const weapon=(id,rank='common')=>balance.weaponTable[id]?.[rank]||balance.weaponTable.rust.common;
@@ -142,11 +155,13 @@ window.DungeonItems = (() => {
   {poison:1,dark:.30,fire:-.40},
   {physical:.12,fire:-.25,bleed:-.1},{physical:.06,frost:-.22,bleed:-.1},
   {fire:.45,frost:-.35},{lightning:.45,fire:-.30},
-  {fire:-.22,bleed:-.12},{lightning:.48,frost:-.16}
+  {fire:-.22,bleed:-.12},{lightning:.48,frost:-.16},
+  {physical:.08,frost:-.15},{frost:.65,fire:-.40},{frost:.60,fire:-.34}
  ];
  const foeAttack=[
   {physical:1},{physical:.35,fire:.65},{physical:.75,dark:.25},
-  {physical:.4,magic:.6},{frost:.75,dark:.25},{physical:.75,dark:.25},{physical:1},{physical:1},{physical:.85,dark:.15}
+  {physical:.4,magic:.6},{frost:.75,dark:.25},{physical:.75,dark:.25},{physical:1},{physical:1},{physical:.85,dark:.15},
+  {physical:1},{physical:1},{physical:1},{physical:1},{lightning:1},{physical:1},{frost:1},{frost:1}
  ];
  function rank(item){return rarity[item?.rarity]?item.rarity:'common';}
  function key(item){return [item.kind,item.id,rank(item)].join('/');}
@@ -211,5 +226,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,dashCooldown,armorCooldown,recoverWithArmor,resolveArmorHit,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,weaponScaling,knockbackPower,food,requirements,kinds,merchantRing,heightRing,madnessRing,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,dashCooldown,armorCooldown,recoverWithArmor,resolveArmorHit,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();
