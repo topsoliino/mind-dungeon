@@ -99,7 +99,8 @@ export class Simulation{
   const x=this.floor.valid(spawn.x+offset,spawn.y,HERO_RADIUS,false,true)?spawn.x+offset:spawn.x;
   Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,attackDuration:.4,walk:0,
    moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,
-   combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null});
+   combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null,
+   consumeQueue:newFloor?p.consumeQueue??[]:[],damageQueue:newFloor?p.damageQueue??[]:[]});
   p.input={seq:p.input.seq,x:0,y:0,aim:0,blocked:false,at:-Infinity};
   if(newFloor){
    Object.assign(p,{opened:[],searched:[],altarUses:{},altarQuestions:{},gateQuestions:{},boneClaims:{},rubyClaims:{},templeAttempts:{},trials:{},
@@ -210,6 +211,27 @@ export class Simulation{
    this.emit('portal',this.portal);
   }
  }
+ queueConsumable(p,it){
+  p.inventory.splice(p.inventory.indexOf(it),1);
+  (p.consumeQueue??=[]).push(it);
+  this.startConsumption(p);
+ }
+ startConsumption(p){
+  if(p.consume||p.vault||p.quiz||!p.consumeQueue?.length)return;
+  const it=p.consumeQueue.shift(),food=it.kind==='food';
+  p.consume={item:it,start:this.clock,end:this.clock+(food?items.foodSeconds:.82),applied:food};
+  p.chargeStart=null;
+  if(food){
+   p.attack=0;p.dash=0;p.moving=false;
+   this.eatMeal(p,it);
+  }
+ }
+ eatMeal(p,it){
+  const {healed,buffered}=items.eatMeal(p,maxHP(p),it,p.mods.food);
+  if(healed||buffered)this.sound('element_heal',p,{priority:2});
+  const notice=items.food[it.id].name+' · +'+Math.round(healed)+' LP'+(buffered?' · '+Math.round(buffered)+' Schaden abgefangen':'');
+  this.emit('notice',{message:notice},p.seat);
+ }
  stepPlayer(p,dt){
   for(const key of ['inv','attack','dash','dashCooldown','webSlow','grabSlow','bleedGrace','entryGrace','travelLock'])p[key]=remaining(p[key],dt);
   if(!p.bleedGrace)p.bleed=remaining(p.bleed,dt*14);
@@ -221,14 +243,18 @@ export class Simulation{
   this.tickPoison(p,dt);
   if(p.trial&&!p.trial.passed&&this.clock>=p.trial.deadline)this.actions.finishTrial(p,false);
   if(p.consume&&this.clock>=p.consume.end){
-   const it=p.consume.item;p.consume=null;
-   if(it.kind==='food')p.hp=Math.min(maxHP(p),p.hp+items.food[it.id].heal*p.mods.food);
+   const {item:it,applied}=p.consume;p.consume=null;
+   if(it.kind==='food'){if(!applied)this.eatMeal(p,it);}
    else {
     p.activeBrew={effects:it.brew,remaining:it.duration,duration:it.duration};preparePlayer(p);
     this.sound('brew_drink',p,{gain:.64,priority:2});
     this.sound('element_buff_on',p,{priority:2,delay:.2});
    }
    p.revision++;
+  }
+  this.startConsumption(p);
+  for(const hit of items.takeDueDamage(p,dt)){
+   if(this.settleDamage(p,hit))return;
   }
   p.playtime+=dt;
   const recovered=items.recoverWithArmor(p,p.equipment.armor,p.hp,maxHP(p));
@@ -326,7 +352,7 @@ export class Simulation{
   if(door)impact=door;
   for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
-   if(e.hp>0&&gap(e,p)<reach+(e.size-1)*10&&Math.cos(angle-p.dir)>w.sweep&&
+   if(e.hp>0&&items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)&&
      !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;impact??={x:e.x,y:e.y};this.weaponHit(e,hit,angle);}
   }
   if(door)this.hitDoor(door,hit);
@@ -386,16 +412,23 @@ export class Simulation{
   const wetSplit=this.floor.waterLightning(wet?{...split,fire:split.fire*.55}:split,p.x,p.y);
   const hit=items.hit(n*depth*p.guard,wetSplit,p.resistance);
   if(hit.total<=0)return false;
-  const {hp,taken,proc}=items.resolveArmorHit(p,p.equipment.armor,p.hp,maxHP(p),hit.total,status);
   const location={seat:p.seat,x:round(p.x),y:round(p.y)};
-  p.hp=hp;p.combatRecord.taken+=taken;p.revision++;
+  p.revision++;
   if(!status)p.inv=.75;
-  if(proc==='block'){this.emit('armor',{...location,proc});return false;}
-  p.dominant=hit.type;this.emit('hit',{...location,value:taken,type:hit.type,cue,critical,pain:!status&&p.hp>0});
+  if(items.blockArmorHit(p,p.equipment.armor,status)){this.emit('armor',{...location,proc:'block'});return false;}
+  items.queueDamage(p,hit);p.dominant=hit.type;
+  this.emit('hit',{...location,value:hit.total,type:hit.type,cue,critical,pain:!status});
+  return true;
+ }
+ settleDamage(p,hit){
+  if(!hit.amount)return false;
+  const {hp,taken,proc}=items.resolveArmorDamage(p,p.equipment.armor,p.hp,maxHP(p),hit.amount);
+  p.hp=hp;p.combatRecord.taken+=taken;p.revision++;
+  const location={seat:p.seat,x:round(p.x),y:round(p.y)};
   if(proc)this.emit('armor',{...location,proc});
   if(taken>0&&hit.type==='bleed')this.bloodLoss(p);
-  if(p.hp<=0)this.die(p);
-  return true;
+  if(p.hp<=0){this.die(p);return true;}
+  return false;
  }
  die(p,cause){
   this.sound('hero_fall',p,{priority:4,gain:.85});

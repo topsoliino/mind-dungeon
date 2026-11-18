@@ -31,6 +31,75 @@ function arena(sim,p){
  throw new Error('Fixture could not find a clear combat line');
 }
 const choice=q=>q.type==='free-text'?q.answers[0]:q.correctIndices??q.correctIndex;
+function settleHits(sim,p){
+ for(const hit of items.takeDueDamage(p,1))if(sim.settleDamage(p,hit))break;
+}
+
+test('stair landings stay in one combat area and an unalerted foe can attack across the layer boundary',()=>{
+ const {host,sim}=game(103);
+ const stair=sim.floor.stairs[0],x=(stair.a.x+.5)*TILE,split=Math.floor((stair.y*2+stair.h-1)/2)*TILE;
+ Object.assign(host,{x,y:split+14,inv:0,entryGrace:.4});
+ const rat={x,y:split-19,type:foes.RAT,hp:70,max:70,size:1,phase:0,angle:Math.PI/2,attack:1,windup:.01};
+ assert.notEqual(sim.floor.layerAt(x,rat.y),sim.floor.layerAt(x,host.y));
+ assert.ok(sim.floor.stairsNear(host)[0].regions.has(sim.floor.rest.id));
+ assert.ok(sim.floor.stairConnected(host,rat));
+ assert.ok(sim.canTarget(rat,host));
+ sim.enemies=[rat];sim.currentTarget=host;
+ sim.ai.act(rat,.03,host,0,1180,760);
+ assert.ok(host.damageQueue.length);
+ assert.equal(host.bleed,31);
+});
+
+test('spears appear in some merchant samples and hit along a thrust rather than across the sides',()=>{
+ const draws=Array.from({length:64},(_,seed)=>items.shop(seed,1,pools).slice(0,3).some(it=>it.id==='spear'));
+ assert.ok(draws.includes(true)&&draws.includes(false));
+ const spear=items.weapon('spear');
+ assert.ok(items.meleeHit(spear,112,10,0,spear.reach));
+ assert.equal(items.meleeHit(spear,55,37,0,spear.reach),false);
+ assert.equal(items.meleeHit(spear,-45,0,0,spear.reach),false);
+ const {host,sim}=game();
+ const target=arena(sim,host);
+ host.equipment.weapon='spear';preparePlayer(host);
+ const enemy={...target,id:'spear-target',type:foes.SKELETON,hp:80,max:80,size:1};
+ const flank={...enemy,id:'spear-flank',y:enemy.y+30};
+ sim.enemies=[enemy,flank];
+ assert.ok(sim.charge(host,0)&&sim.attack(host,0));
+ assert.ok(enemy.hp<80);
+ assert.equal(flank.hp,80);
+});
+
+test('quick food absorbs pending damage, chooses the smallest sufficient portion, and queues while stationary',()=>{
+ const {host,sim}=game();
+ arena(sim,host);sim.enemies=[];
+ host.inventory.push(...['glucose','banana','bread','chicken','banana'].map(id=>({kind:'food',id,rarity:'common'})));
+ Object.assign(host,{guard:1,resistance:{},inv:0});
+ const hp=maxHP(host),start=host.x;
+ assert.ok(sim.hurtPlayer(host,21,{frost:1},true,1));
+ assert.equal(host.hp,hp);
+ sim.step(.92);
+ assert.equal(host.hp,hp);
+ const warning=createProjection()(sim,host).you.at(-1);
+ assert.equal(warning[0].type,'frost');
+ assert.equal(sim.actions.dispatch(host,'quick-food',{}).item.id,'bread');
+ assert.equal(host.consume.end-host.consume.start,1.5);
+ assert.equal(host.damageQueue[0].amount,0);
+ assert.equal(sim.actions.dispatch(host,'quick-food',{}).item.id,'glucose');
+ assert.equal(host.consumeQueue.length,1);
+ sim.control(host,{seq:1,x:1,y:0,aim:0,dash:true});
+ sim.step(.08);
+ assert.equal(host.hp,hp);
+ assert.equal(host.x,start);
+ assert.equal(host.dash,0);
+ sim.step(1.45);
+ assert.equal(host.consume.item.id,'glucose');
+ assert.equal(host.consumeQueue.length,0);
+ assert.ok(sim.hurtPlayer(host,12,{physical:1},true,1));
+ sim.step(.99);
+ assert.equal(host.hp,hp);
+ sim.step(.01);
+ assert.equal(host.hp,hp-12);
+ assert.equal(sim.actions.dispatch(host,'quick-food',{}).item.id,'banana');
+});
 
 test('new starts give up to four exits and wide stairs connect floors by walking',()=>{
  const {host,guest,sim}=game(103);
@@ -140,6 +209,8 @@ test('nearby gates and wooden doors are visible from the approach while their pa
   const from=point(-70),behind=point(70);
   assert.ok(sim.floor.barrierVisible(from,site));
   assert.ok(sim.floor.barrierVisible(behind,site));
+  assert.ok(sim.floor.barrierFloor(site).length);
+  assert.ok(sim.floor.barrierFloor(site).every(id=>sim.floor.map[Math.floor(id/sim.floor.W)][id%sim.floor.W]===0));
   assert.equal(sim.floor.barrierVisible(point(-290),site),false);
   assert.ok(sim.floor.gateLineBlocked(from.x,from.y,behind.x,behind.y));
  }
@@ -242,6 +313,7 @@ test('Bastion blocks one direct hit and keeps its 60-second cooldown through a r
  preparePlayer(host);
  const full=host.hp;
  assert.equal(sim.hurtPlayer(host,6,{poison:1},true),true);
+ settleHits(sim,host);
  assert.equal(host.armorCooldowns.block,undefined);
  const afterPoison=host.hp;
  assert.ok(afterPoison<full);
@@ -268,8 +340,10 @@ test('Emberheart restores 40 percent HP at the 20 percent threshold and respects
  const max=maxHP(guest);
  guest.hp=max*.2+2;
  assert.equal(sim.hurtPlayer(guest,1,{physical:1},true,1),true);
+ settleHits(sim,guest);
  assert.equal(guest.hp,max*.2+1);
  assert.equal(sim.hurtPlayer(guest,1,{physical:1},true,1),true);
+ settleHits(sim,guest);
  assert.equal(guest.hp,max*.4);
  assert.equal(guest.armorCooldowns.heal,180);
  assert.equal(sim.events.at(-1).proc,'heal');
@@ -277,13 +351,16 @@ test('Emberheart restores 40 percent HP at the 20 percent threshold and respects
 
  Object.assign(guest,{playtime:179,hp:2});
  sim.hurtPlayer(guest,1,{physical:1},true,1);
+ settleHits(sim,guest);
  assert.equal(guest.hp,1);
  Object.assign(guest,{playtime:180,hp:2});
  sim.hurtPlayer(guest,1,{physical:1},true,1);
+ settleHits(sim,guest);
  assert.equal(guest.hp,max*.4);
  assert.equal(guest.armorCooldowns.heal,360);
  Object.assign(guest,{playtime:360,hp:1});
  sim.hurtPlayer(guest,100,{physical:1},true,1);
+ settleHits(sim,guest);
  assert.equal(guest.combatRecord.deaths,1);
  assert.equal(guest.armorCooldowns.heal,360);
  Object.assign(guest,{playtime:359.5,hp:max*.1});
@@ -452,14 +529,17 @@ test('sewer water amplifies electricity and a live weapon sends a second pulse a
  Object.assign(host,{resistance:{},guard:1,hp:max,inv:0});
  arena(sim,host);
  sim.hurtPlayer(host,damage,{lightning:1},true,1);
+ settleHits(sim,host);
  assert.equal(max-host.hp,20);
  Object.assign(host,pool,{hp:max,inv:0});
  sim.hurtPlayer(host,damage,{lightning:1},true,1);
+ settleHits(sim,host);
  assert.equal(max-host.hp,27);
  Object.assign(guest,pool,{resistance:{},guard:1,inv:0});
  const before=guest.hp;
  host.mods.element='lightning';host.damage=30;
  assert.ok(sim.charge(host,0));assert.ok(sim.attack(host,0));
+ settleHits(sim,guest);
  assert.ok(guest.hp<before);
  assert.equal(sim.effects.waterArcs.length,1);
  assert.equal(items.enemyRarity(.21,1,true),'rare');
@@ -485,6 +565,7 @@ test('small rats build bleed and an electrode rat discharges electricity in wate
  host.inv=0;
  const before=host.hp;
  sim.ai.act(rat,.03,host,0,1180,760);
+ settleHits(sim,host);
  assert.ok(host.hp<before);
  assert.equal(sim.effects.waterArcs.length,1);
  assert.equal(host.bleed,31);
@@ -555,6 +636,7 @@ test('hail amplifies frost and armbrust-ice zombies fire frost bolts',()=>{
  assert.equal(sim.effects.bolts[0].type,'frost-crossbow');
  sim.ai.moveFrom(.3,host,.3,1180,760);
  assert.equal(host.dominant,'frost');
+ settleHits(sim,host);
  assert.equal(max-host.hp,22);
 });
 
@@ -617,6 +699,7 @@ test('nearby blood loss powers the Ring des Wahns for twenty seconds',()=>{
  guest.playtime=40;
  guest.resistance={};guest.guard=1;
  assert.ok(sim.hurtPlayer(guest,4,{bleed:1},true,1));
+ settleHits(sim,guest);
  assert.equal(guest.madnessUntil,60);
  const enemy={...point,id:'ring-test',type:foes.SKELETON,hp:100,max:100,size:1};
  sim.enemies=[enemy];

@@ -44,6 +44,18 @@ function regionAt(x,y){return regions[Math.floor(y/TILE)]?.[Math.floor(x/TILE)]?
 const tileCenter=p=>({x:(p.x+.5)*TILE,y:(p.y+.5)*TILE});
 const layerForRegion=id=>layers[id]??0;
 const layerAt=(x,y)=>layerForRegion(regionAt(x,y));
+for(const stair of stairs){
+ const landings=[stair.a,stair.b].map(p=>regions[p.y][p.x]);
+ stair.regions=new Set([...stair.roomIds,...stair.stepIds,...landings]);
+}
+function stairsNear(actor){
+ const x=actor.x/TILE,y=actor.y/TILE,id=regionAt(actor.x,actor.y);
+ return stairs.filter(s=>s.regions.has(id)&&x>=s.x-1.2&&x<=s.x+s.w+1.2&&y>=s.y-1.65&&y<=s.y+s.h+1.65);
+}
+function stairConnected(a,b){
+ const ar=regionAt(a.x,a.y),br=regionAt(b.x,b.y);
+ return stairsNear(a).some(s=>s.regions.has(br))||stairsNear(b).some(s=>s.regions.has(ar));
+}
 const cryptAltar=crypt&&pointIn(crypt,2,0);
 const links=linkTiles.flatMap(({id,kind,a,b,seal})=>[[a,b],[b,a]].map(([from,to],side)=>({
  ...tileCenter(from),id:id+'-'+side,kind,seal,layer:layerForRegion(regions[from.y][from.x]),exit:tileCenter(to)
@@ -126,6 +138,16 @@ function barrierVisible(actor,barrier){
  const front=Math.sign(normal||1)*Math.min(Math.abs(normal),face);
  return [nearest,0,-edge/2,edge/2].some(offset=>!gateLineBlocked(actor.x,actor.y,
   x+(vertical?front:offset),y+(vertical?offset:front)));
+}
+function barrierFloor(barrier){
+ const {x,y,vertical,span,face}=barrier,cells=[];
+ const rx=vertical?face:span/2,ry=vertical?span/2:face;
+ for(let row=Math.floor((y-ry)/TILE);row<Math.ceil((y+ry)/TILE);row++){
+  for(let col=Math.floor((x-rx)/TILE);col<Math.ceil((x+rx)/TILE);col++){
+   if(map[row]?.[col]===0)cells.push(row*W+col);
+  }
+ }
+ return cells;
 }
 function gateBlocked(x,y){return gates.some(g=>!save.gates[g.id]&&(g.vertical?Math.abs(x/TILE-(g.x+.5))<.52&&Math.abs(y/TILE-(g.y+.5))<2.1:Math.abs(y/TILE-(g.y+.5))<.52&&Math.abs(x/TILE-(g.x+.5))<2.1))}
 function wall(x,y){const i=Math.floor(x/TILE),j=Math.floor(y/TILE);return i<0||j<0||i>=W||j>=H||map[j][i]===1}
@@ -510,7 +532,7 @@ return {
  paths,H,W,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,
- regionAt,layerAt,layerForRegion,links,stairs,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
+ regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition
 };

@@ -145,7 +145,7 @@ window.DungeonStrata=(()=>{
     carve(x,y,w,h,id);layers[id]=layer;annexes.push(room);
     return room;
    }
-   function addStairs(id,position,top,bottom,upper,lower){
+   function addStairs(id,position,top,bottom,upper,lower,roomIds){
     const w=4,x=position-2,split=Math.floor((top+bottom)/2);
     for(let y=top;y<=bottom;y++){
      const high=y<split,region=high?id:id+1;
@@ -153,7 +153,7 @@ window.DungeonStrata=(()=>{
      layers[region]=high?upper:lower;
      for(const col of [x-1,x+w]){map[y][col]=1;terrain[y][col]='stair-wall';regions[y][col]=region;}
     }
-    const run={id:'stairs-'+id,x,y:top,w,h:bottom-top+1,upper,lower,
+    const run={id:'stairs-'+id,x,y:top,w,h:bottom-top+1,upper,lower,roomIds,stepIds:[id,id+1],
      a:{x:position-1,y:bottom+1},b:{x:position-1,y:top-1}};
     stairs.push(run);
     for(const offset of [0,1])paths.push({id:id+offset,x,y:offset?split:top,w,h:offset?bottom-split+1:split-top,theme:3});
@@ -162,7 +162,7 @@ window.DungeonStrata=(()=>{
     const start=addRoom(30,cx-5,29,11,9,nameplates[0],'upper-0',1);
     const end=addRoom(31,start.x+start.w+1,29,12,9,nameplates[1],'upper-1',1);
     lofts.push(start,end);
-    addStairs(50,cx,36,43,1,0);
+    addStairs(50,cx,36,43,1,0,[rest.id,start.id]);
     const walkX=rest.x-2,landing=44,approachY=rooms[0].y+2;
     carve(walkX,landing,cx-walkX+2,2,60);
     carve(walkX,landing,2,approachY-landing+2,60);
@@ -186,7 +186,7 @@ window.DungeonStrata=(()=>{
     doors.push({id:'upper-inner-door',region:61,x:wallX,y:end.cy,w:1,h:2,vertical:true,hp:40});
     if(stories>=3){
      const extra=addRoom(33,cx-5,17,11,8,nameplates[2],'upper-tower',2);
-     lofts.push(extra);addStairs(52,cx,23,30,2,1);
+     lofts.push(extra);addStairs(52,cx,23,30,2,1,[start.id,extra.id]);
      if(stories===4){
       const weather=rng();
       roof=addRoom(35,cx-5,5,11,8,{name:'Turmspitze',theme:4,currentOutdoor:true,
@@ -195,7 +195,7 @@ window.DungeonStrata=(()=>{
       for(let y=roof.y-1;y<=roof.y+roof.h;y++)for(let x=roof.x-1;x<=roof.x+roof.w;x++){
        if(map[y][x]===1){regions[y][x]=35;terrain[y][x]='abyss';}
       }
-      addStairs(54,cx,11,18,3,2);
+      addStairs(54,cx,11,18,3,2,[extra.id,roof.id]);
      }
     }
    }

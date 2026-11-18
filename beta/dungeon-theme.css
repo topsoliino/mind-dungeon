@@ -82,7 +82,7 @@ button.bad { background:#643730!important; }
 .rpg-cell.equipped { border-color:#c59b5d;background:#423123; }
 .md-field input,.md-field select,#modal input:not([type=file]) { border-color:var(--line);border-radius:0;background:#1b1615;color:var(--text); }
 #health,.meter { border:1px solid #77634b;border-radius:0;background:#151313; }
-#health>div { background:repeating-linear-gradient(90deg,#1f131a33 0 2px,transparent 2px 9px),linear-gradient(#c77462,#843d35); }
+#healthfill { background:repeating-linear-gradient(90deg,#1f131a33 0 2px,transparent 2px 9px),linear-gradient(#c77462,#843d35); }
 #staminafill { background:repeating-linear-gradient(90deg,#15201833 0 2px,transparent 2px 9px),linear-gradient(#8ba372,#496747); }
 #xpfill { background:repeating-linear-gradient(90deg,#23180d33 0 2px,transparent 2px 9px),linear-gradient(#d4ad60,#8d643e); }
 #notice { color:#f6d599; }
@@ -140,7 +140,7 @@ button.bad { background:#643730!important; }
 .shop-item>.item-glyph { width:31px;height:31px; }
 #soulPreview { position:fixed;bottom:calc(14% + 42px);left:50%;transform:translateX(-50%);z-index:6;pointer-events:none;align-items:center;gap:8px;padding:6px 10px; }
 #soulPreview:not([hidden]) { display:flex; }
-#health>div { background:repeating-linear-gradient(90deg,#1f131a33 0 2px,transparent 2px 9px),linear-gradient(var(--hurt,#c77462),#622e2d); }
+#healthfill { background:repeating-linear-gradient(90deg,#1f131a33 0 2px,transparent 2px 9px),linear-gradient(#c77462,#622e2d); }
 #modal .answer-field { width:100%;padding:10px;background:#181210;color:#f4dfb9;border:1px solid #ad8551;box-shadow:inset 0 0 0 2px #100d0c;caret-color:#ffdb8d; }
 #modal .answer-field::placeholder { color:#b59a77; }
 #modal button:focus-visible { outline:2px solid #f7d488;outline-offset:1px; }
@@ -595,3 +595,7 @@ button.bad { background:#643730!important; }
  .quiz-body,#xpHud.level-pending .meter { animation:none; }
  #xpHud.level-pending .meter { border-color:#f6c477; }
 }
+
+#health { position:relative; }
+#health-damage { position:absolute;inset:0;pointer-events:none; }
+#health-damage span { position:absolute;top:0;bottom:0; }
