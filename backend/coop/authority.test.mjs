@@ -149,6 +149,81 @@ test('Pfadschütze starts in the new set and armor modifies bow range and dash c
  assert.equal(host.dashCooldown,.85*.75);
 });
 
+test('arrows hit through the open courtyard threshold before that room is explored',()=>{
+ const {guest,sim}=game(-1640531527);
+ const court=sim.floor.court,x=(court.cx+.5)*TILE;
+ Object.assign(guest,{x,y:(court.y-.5)*TILE});
+ const enemy={id:'cross-room',x,y:(court.y+1.5)*TILE,type:foes.SKELETON,hp:150,max:150,size:1};
+ sim.enemies=[enemy];
+ assert.notEqual(sim.floor.regionAt(guest.x,guest.y),sim.floor.regionAt(enemy.x,enemy.y));
+ assert.equal(sim.explored.has(court.id),false);
+ assert.equal(sim.canTarget(enemy,guest),false);
+ assert.ok(sim.charge(guest,Math.PI/2));
+ assert.ok(sim.attack(guest,Math.PI/2));
+ sim.updateShots(.4);
+ assert.ok(enemy.hp<150);
+ assert.ok(enemy.aggro>0);
+ assert.ok(sim.canTarget(enemy,guest));
+
+ const gate=sim.floor.gates[0],axis=gate.vertical?'x':'y';
+ const p={x:(gate.x+.5)*TILE,y:(gate.y+.5)*TILE};
+ const target={...p,[axis]:p[axis]+56};
+ Object.assign(enemy,target,{hp:150});
+ const from={...p,[axis]:p[axis]-56};
+ assert.ok(sim.floor.gateLineBlocked(from.x,from.y,enemy.x,enemy.y));
+ sim.shots.push({...from,angle:gate.vertical?0:Math.PI/2,left:150,speed:490,hit:null});
+ sim.updateShots(.4);
+ assert.equal(enemy.hp,150);
+ assert.equal(sim.shots.length,0);
+});
+
+test('an alerted skeleton follows around the open courtyard corner into the passage',()=>{
+ const {host,guest,sim}=game(-1640531527);
+ const court=sim.floor.court,x=(court.cx+.5)*TILE;
+ host.online=false;
+ Object.assign(guest,{x,y:(court.y-1.5)*TILE,entryGrace:.4});
+ const enemy={id:'pursuit',type:foes.SKELETON,hp:150,max:150,size:1,x:x+3*TILE,y:(court.y+.5)*TILE,
+  roomId:0,phase:.2,attack:10,hit:0,angle:0,windup:0};
+ sim.enemies=[enemy];sim.explored.add(court.passage.id);
+ assert.equal(foes.encounterReady(enemy,enemy,sim.floor,foes.entryGrace),false);
+ assert.equal(foes.encounterReady(enemy,enemy,sim.floor,0),true);
+ assert.ok(sim.floor.gateLineBlocked(enemy.x,enemy.y,guest.x,guest.y));
+ sim.step(1/30);
+ assert.equal(enemy.x,x+3*TILE);
+ foes.alert(enemy);
+ for(let i=0;i<180;i++)sim.step(1/30);
+ assert.equal(sim.floor.regionAt(enemy.x,enemy.y),court.passage.id);
+ assert.ok(gap(enemy,guest)<48);
+});
+
+test('large skeletons can drop three common bones and each player can collect their own bundle',()=>{
+ const {host,guest,sim}=game();
+ sim.random=()=>.2;
+ const point=arena(sim,host),skeleton={...point,id:'skeleton',type:foes.SKELETON,boss:true,size:1.3};
+ assert.equal(foes.boneDrop({...skeleton,boss:false,size:1},sim.random).bundle,1);
+ assert.equal(foes.boneDrop(skeleton,()=>.9),null);
+ sim.defeat(skeleton);
+ const bundles=[...sim.orbs.values()].filter(o=>o.item.kind==='bones');
+ assert.deepEqual(bundles.map(o=>[o.seat,o.item.bundle,o.item.rarity]),[[1,3,'common'],[2,3,'common']]);
+ for(const [p,orb] of [[host,bundles[0]],[guest,bundles[1]]]){
+  Object.assign(p,{x:orb.x,y:orb.y});
+  p.inventory=Array(30).fill(p.inventory[0]);
+  sim.actions.dispatch(p,'interact',{kind:'soul',index:orb.id});
+  assert.equal(p.bones,3);assert.equal(p.inventory.length,30);
+  assert.throws(()=>sim.actions.dispatch(p,'interact',{kind:'soul',index:orb.id}),/verfügbar/);
+ }
+});
+
+test('a merchant stall fits against a wall and leaves a reachable customer approach',()=>{
+ for(const seed of [14,193,-1640531527,99130132]){
+  const floor=geometry.build(run,run.floorState(seed,3)),{x,y}=floor.market;
+  assert.ok(floor.wall(x,y-61)||floor.wall(x-91,y)||floor.wall(x+91,y));
+  assert.ok(floor.valid(floor.merchant.x,floor.merchant.y,14));
+  assert.ok(floor.canReachSpawn(floor.merchant.x,floor.merchant.y));
+  assert.ok(floor.furniture.some(p=>p.type==='market'));
+ }
+});
+
 test('shared layouts, private questions and server-graded answers',()=>{
  const {host,guest,sim}=game();
  const legacy=geometry.build(run,{...run.floorState(193,1),templeDepth:run.templeDepth(193)});
