@@ -4,11 +4,16 @@ window.DungeonVision=(()=>{
  const nearWalls=[...adjacent,[1,1],[1,-1],[-1,1],[-1,-1]];
  const memoryVersion=1;
  function create(world,tileSize,barriers,prior,explored){
-  const {map,regions,W,H,stairs,rest,rooms}=world;
+  const {map,regions,W,H,stairs,rest,rooms,sewerRooms=[]}=world;
   const size=W*H,opaque=new Uint8Array(size),obstacles=new Uint8Array(size),live=new Uint8Array(size),known=new Uint8Array(size);
-  const seenTiles=[];
+  const seenTiles=[],roomTiles=new Map(),revealedRooms=new Set();
+  const sewerSections=new Set(sewerRooms.map(room=>room.id));
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-   if(map[y][x]===1&&!world.abyssAt((x+.5)*tileSize,(y+.5)*tileSize))opaque[y*W+x]=1;
+   const cell=y*W+x,region=regions[y][x];
+   if(map[y][x]===1&&!world.abyssAt((x+.5)*tileSize,(y+.5)*tileSize))opaque[cell]=1;
+   if(region<0||world.isPassage(region)||sewerSections.has(region))continue;
+   if(!roomTiles.has(region))roomTiles.set(region,[]);
+   roomTiles.get(region).push(cell);
   }
   let revision=0,signature='',visibleBarriers=new Set(),viewOrigin;
   const inside=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
@@ -17,7 +22,6 @@ window.DungeonVision=(()=>{
    known[id]=1;seenTiles.push(id);revision++;
   }
   function rememberFloor(id){
-   if(known[id])return;
    remember(id);
    if(opaque[id])return;
    const y=Math.floor(id/W),x=id%W;
@@ -25,6 +29,12 @@ window.DungeonVision=(()=>{
     const col=x+dx,row=y+dy,neighbor=row*W+col;
     if(inside(col,row)&&opaque[neighbor])remember(neighbor);
    }
+  }
+  function revealRoom(region){
+   const cells=roomTiles.get(region);
+   if(!cells||revealedRooms.has(region))return;
+   revealedRooms.add(region);
+   for(const cell of cells)rememberFloor(cell);
   }
   function updateObstacles(observer,closed){
    obstacles.set(opaque);
@@ -84,13 +94,13 @@ window.DungeonVision=(()=>{
   }
   function rememberStart(){
    const start=rest??rooms[0],id=rest?.id??start.i,layer=world.layerForRegion(id);
+   revealRoom(id);
    const allow=region=>region===id||world.isPassage(region)&&world.layerForRegion(region)===layer;
    const starts=[],passages=[];
    for(let y=0;y<H;y++)for(let x=0;x<W;x++){
     const region=regions[y][x],cell=y*W+x;
     if(!opaque[cell]&&world.isPassage(region)&&allow(region))passages.push({x,y,cell});
     if(region!==id||opaque[cell])continue;
-    rememberFloor(cell);
     if(adjacent.some(([dx,dy])=>world.isPassage(regions[y+dy]?.[x+dx])&&map[y+dy]?.[x+dx]===0)){
      starts.push({x:x+.5,y:y+.5});
     }
@@ -105,16 +115,13 @@ window.DungeonVision=(()=>{
   }
   if(Array.isArray(prior)){
    for(const id of prior)if(Number.isInteger(id)&&id>=0&&id<size)remember(id);
-  }else{
-   for(let id=0;id<size;id++){
-    const region=regions[Math.floor(id/W)][id%W];
-    if(explored.has(region)&&!world.isPassage(region)&&!opaque[id])rememberFloor(id);
-   }
   }
+  for(const region of explored)revealRoom(region);
   rememberStart();
   function update(observer,width,height){
    const x=observer.x/tileSize,y=observer.y/tileSize;
    if(!inside(Math.floor(x),Math.floor(y)))return;
+   for(const region of explored)revealRoom(region);
    const closed=barriers.map(b=>b.visible()),upper=stairs.map(s=>explored.has(s.roomIds[1]));
    const origin=sightOrigin(x,y,closed);
    if(!origin.blockers.length){
@@ -123,21 +130,22 @@ window.DungeonVision=(()=>{
    }
    const {x:sx,y:sy}=origin;
    const rx=Math.max(10,Math.ceil(width/tileSize/2)+3),ry=Math.max(8,Math.ceil(height/tileSize/2)+3);
-   const key=[sx,sy,rx,ry,closed.map(Number).join(''),upper.map(Number).join('')].join('|');
+   const key=[sx,sy,rx,ry,revealedRooms.size,closed.map(Number).join(''),upper.map(Number).join('')].join('|');
    if(key===signature)return;
    signature=key;viewOrigin=origin;live.fill(0);
    updateObstacles(origin,closed);
    for(let y=Math.max(0,Math.floor(sy-ry));y<=Math.min(H-1,Math.ceil(sy+ry));y++){
     for(let x=Math.max(0,Math.floor(sx-rx));x<=Math.min(W-1,Math.ceil(sx+rx));x++){
      if(!trace(origin,x,y))continue;
-     const id=y*W+x;live[id]=1;rememberFloor(id);
+     const id=y*W+x;live[id]=1;
+     if(!known[id])rememberFloor(id);
     }
    }
    visibleBarriers=new Set();
    for(const [i,barrier] of barriers.entries()){
-    if(closed[i]&&barrier.floorCells.some(id=>live[id])){
+    if(closed[i]&&barrier.floorCells.some(id=>known[id])){
      visibleBarriers.add(barrier);
-     for(const id of barrier.floorCells)rememberFloor(id);
+     for(const id of barrier.floorCells)if(!known[id])rememberFloor(id);
     }
    }
    for(const s of stairs){
@@ -146,13 +154,17 @@ window.DungeonVision=(()=>{
     if(seen)rememberSteps(s);
    }
   }
-  function sees(x,y,view){
+  function sees(x,y){
    const col=Math.floor(x/tileSize),row=Math.floor(y/tileSize);
-   return inside(col,row)&&Boolean(view[row*W+col]);
+   return inside(col,row)&&(revealedRooms.has(regions[row][col])||Boolean(live[row*W+col]))&&
+    (!viewOrigin||!crossesOriginBarrier(viewOrigin,x/tileSize,y/tileSize));
   }
-  return {update,seenTiles,known,get revision(){return revision;},
-   sees:(x,y)=>sees(x,y,live)&&!crossesOriginBarrier(viewOrigin,x/tileSize,y/tileSize),
-   remembers:(x,y)=>sees(x,y,known),barrierVisible:barrier=>visibleBarriers.has(barrier)};
+  function remembers(x,y){
+   const col=Math.floor(x/tileSize),row=Math.floor(y/tileSize);
+   return inside(col,row)&&Boolean(known[row*W+col]);
+  }
+  return {update,seenTiles,known,get revision(){return revision;},sees,remembers,
+   barrierVisible:barrier=>visibleBarriers.has(barrier)};
  }
  return {create,memoryVersion};
 })();
