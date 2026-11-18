@@ -84,6 +84,6 @@ Primärer Renderer: Phaser 3 (WebGL), geladen über jsDelivr. Die Dungeonkarte w
 
 Die Phaser-Integration ist eine erste Migration: Spiellogik, Inventar und Wissensprüfungen sind weiterhin im vorhandenen Spielcode enthalten. Die Grafik ist bewusst reduziert, um die Rendering-Last zu verringern.
 
-## Spielstände und Backend
+## Spielstände und Koop-Server
 
-Lokale Spielstände bleiben kompatibel und werden weiterhin im Browser gespeichert. Unter `backend/` liegt eine Node.js-Spielstand-API mit tokenpflichtigen Endpunkten. **Sie ist nicht auf GitHub Pages aktiv und darf erst nach Einrichtung einer sicheren Nutzeranmeldung mit dem Frontend verbunden werden.** Datenbank und Benutzerkonten folgen später.
+GitHub Pages liefert das Spiel aus. Supabase verwaltet die Anmeldung, Cloud-Speicherslots und Fragenpakete. Der Node.js-Dienst unter `backend/coop/` simuliert gemeinsame Partien. Die [Einrichtung für Render und lokale Tests](backend/README.md) steht im Backend-Handbuch.

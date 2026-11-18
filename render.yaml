@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mind-dungeon-coop
+    runtime: node
+    region: frankfurt
+    plan: free
+    autoDeployTrigger: off
+    buildCommand: npm --prefix backend ci --omit=dev
+    startCommand: npm --prefix backend start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 24.16.0
+      - key: MIND_ALLOWED_ORIGINS
+        value: https://topsoliino.github.io

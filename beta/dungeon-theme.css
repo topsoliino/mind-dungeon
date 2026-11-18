@@ -550,3 +550,6 @@ button.bad { background:#643730!important; }
 .coop-code strong {font:24px monospace;letter-spacing:.1em;color:#ffdc93;}
 .coop-watch-option {padding:7px 10px;border-left:2px solid #806339;}
 .coop-watch-option.chosen {background:#513929;border-color:#f2c67a;}
+
+.coop-warmup { grid-column:1/-1;margin:0;color:#d9bd86;font-size:.87rem; }
+.coop-warmup:empty { display:none; }

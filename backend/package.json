@@ -1,0 +1,8 @@
+{
+  "name": "mind-dungeon-server",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22 <25"},
+  "scripts": {"start": "node coop/server.mjs", "test": "node --test coop/*.test.mjs"},
+  "dependencies": {"ws": "8.23.0"}
+}
