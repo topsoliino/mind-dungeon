@@ -184,25 +184,25 @@ window.DungeonEffectsArt = (() => {
      pixel(x,31-spread,4,1,'#e5a266ac');pixel(x,31+spread,4,1,'#e5a266ac');
     }
    }else if(type==='bat-flame'){
-    // Wide, torn flame fronts lead the embers out of a tight, hot muzzle.
-    const tips=Array.from({length:9},(_,i)=>{
-     const x=i*8,spread=(x/64)*23,shift=(frame+i*2)%5;
-     return [x,31-spread+shift,31+spread-shift];
-    });
-    shape([...tips.map(([x,upper])=>[x,upper]),...tips.slice().reverse().map(([x,,lower])=>[x,lower])],'#612933a0');
-    for(let i=0;i<16;i++){
-     const step=(i*11+frame*7)%49,x=5+step;
-     const drift=Math.sin((i*25+frame*11)/9)*(2+step*.24),y=32+drift;
-     const length=7+i%5,spread=2+step*.079;
-     shape([[x-5,y],[x+3,y-spread],[x+length,y-spread*.7],[x+length-3,y+spread*.4],[x+length-6,y+spread]],i%3?'#ad493bde':'#d65f3bd8');
-     shape([[x-3,y],[x+2,y-spread*.57],[x+length-1,y-.8],[x+3,y+spread*.58]],i%2?'#ec8b4e':'#f0ad62');
-     if(i%3===0)pixel(x+2,y,5,1,'#ffe9af');
+    const glow=ctx.createRadialGradient(30,31,1,30,31,30);
+    glow.addColorStop(0,'#ff9e395c');glow.addColorStop(.57,'#d64a292b');glow.addColorStop(1,'#8f302000');
+    ctx.fillStyle=glow;ctx.fillRect(0,3,64,58);
+    for(let i=0;i<20;i++){
+     const travel=(i*17+frame*9)%62,x=2+travel,spread=2+travel*.1;
+     const drift=Math.sin(i*2.13+frame*.65)*(3+travel*.36),y=32+drift;
+     const curl=(i%2?1:-1)*spread*.76;
+     shape([[x-8,y],[x-2,y-spread],[x+5,y-spread*.65],[x+13,y+curl],[x+5,y+spread],[x-2,y+spread*.55]],
+      travel>37?'#9d3c32b8':'#e26132e9');
+     shape([[x-5,y],[x+1,y-spread*.56],[x+9,y+curl*.68],[x+2,y+spread*.44]],travel>37?'#e87543ec':'#ffad54');
+     if(travel<38&&i%2===0)shape([[x-2,y],[x+2,y-1],[x+7,y+curl*.38],[x+2,y+2]],'#ffe8ab');
     }
-    shape([[0,30],[8,28],[15,29],[24,31],[12,34],[4,34],[0,33]],'#ffc276');
-    shape([[0,31],[7,30],[13,31],[6,32],[0,33]],'#fff1c4');
-    for(let i=0;i<15;i++){
-     const x=12+(i*17+frame*7)%51,drift=(i%2?1:-1)*(7+x*.24+(frame+i)%7);
-     pixel(x,32+drift,i%3===0?3:1,i%4===0?2:1,i%3?'#eb814ea6':'#ffbd72');
+    shape([[0,30],[8,27],[18,29],[24,31],[13,35],[4,34],[0,33]],'#ffbe68');
+    shape([[0,31],[6,29],[14,31],[6,33],[0,33]],'#fff5cc');
+    for(let i=0;i<18;i++){
+     const x=13+(i*19+frame*7)%54,drift=(i%2?1:-1)*(4+x*.36+(frame+i)%8);
+     const color=i%4===0?'#ffdaa0':i%3?'#eb784ac4':'#7e372b9e';
+     pixel(x-2,32+drift,3+i%3,1,color);
+     if(i%4===0)pixel(x,31+drift,2,3,'#fff3d3');
     }
    }else{
     const arc=(points,color,width)=>{

@@ -29,7 +29,7 @@ const classes={
 };
 export const item=(kind,id,rarity='common',source='Koop')=>({kind,id,rarity,source});
 export const pools={
- weapon:Object.keys(balance.weaponTable).map(id=>item('weapon',id)),
+ weapon:Object.keys(balance.weaponTable).filter(id=>!items.cryptScythes.some(w=>w.id===id)).map(id=>item('weapon',id)),
  ring:['hunter','bulwark','scholar','faith','luck','dodge','precision','brewer','merchant'].map(id=>item('ring',id)),
  armor:Object.keys(balance.armorTable).map(id=>item('armor',id))
 };

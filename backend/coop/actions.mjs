@@ -30,7 +30,14 @@ export function actions(sim){
   const floor=floorNumber(), offers=expedition.stock(pools,sim.seed,floor,run.shuffle,run.random);
   return {gold:items.shop(sim.state.dungeonSeed,floor,pools).slice(0,p.equipment.rings.includes('merchant')?6:3),...offers};
  }
- function quiz(p,reason,i){
+ const brewStock=(p,vessel)=>brewing.stock(sim.state.dungeonSeed,floorNumber(),p.equipment.rings.includes('brewer'),run.random,run.shuffle,vessel);
+ function brewVessel(p,requested){
+  const id=requested??'cup';
+  const i=p.inventory.findIndex(it=>it.kind==='cup'&&it.id===id);
+  if(i<0||!['cup',brewing.goldenCup.id].includes(id))fail('Du hast diesen Becher nicht.');
+  return {id,i};
+ }
+ function quiz(p,reason,i,vessel){
   if(p.quiz)fail('Ein Quiz läuft bereits.');
   const floor=sim.floor;
   let zone=i,options=p.pack.questions,exclude=[];
@@ -56,8 +63,9 @@ export function actions(sim){
    options=options.filter(q=>q.difficulty===3);exclude=p.templeAttempts[i]?.used??[];
   }else if(reason==='brew'){
    live(p,floor.lab,95);
-   const offer=brewing.stock(sim.state.dungeonSeed,floorNumber(),p.equipment.rings.includes('brewer'),run.random,run.shuffle).find(e=>e.id===i);
-   if(!offer||p.brewEffects.length>=3||p.brewEffects.some(e=>e.id===i)||!p.inventory.some(it=>it.kind==='cup'))fail('Die Zutat ist nicht verfügbar.');
+   vessel=brewVessel(p,vessel).id;
+   const offer=brewStock(p,vessel).find(e=>e.id===i);
+   if(!offer||p.brewEffects.length>=brewing.capacity(vessel)||p.brewEffects.some(e=>e.id===i))fail('Die Zutat ist nicht verfügbar.');
   }else if(reason==='trial'){
    if(!items.isTrial(p,i,floor.trialIndex)||p.opened.includes(i)||p.trials[i]&&p.trials[i]!=='started'||p.trial&&p.trial.index!==i)fail('Diese Prüftruhe wurde bereits geöffnet.');
    live(p,index(floor.chests,i),104);
@@ -79,7 +87,7 @@ export function actions(sim){
    p.trials[i]='started';
   }
   const order=run.shuffleOptions(source),q=run.presentQuestion(source,order);
-  p.quiz={id:randomUUID(),q,order,reason,i,answered:false};p.chargeStart=null;p.dash=0;
+  p.quiz={id:randomUUID(),q,order,reason,i,vessel,answered:false};p.chargeStart=null;p.dash=0;
   return publicQuiz(p);
  }
  function publicQuiz(p){
@@ -122,7 +130,7 @@ export function actions(sim){
    }else more=true;
   }
   if(reason==='brew'&&ok){
-   const entry=brewing.stock(sim.state.dungeonSeed,floorNumber(),p.equipment.rings.includes('brewer'),run.random,run.shuffle).find(e=>e.id===i);
+   const entry=brewStock(p,qz.vessel).find(e=>e.id===i);
    if(entry)p.brewEffects.push(entry);
   }
   if(reason==='temple'){
@@ -224,6 +232,12 @@ export function actions(sim){
   }
   if(kind==='merchant'){live(p,f.merchant);return {stock:stock(p)};}
   if(kind==='brewery'){live(p,f.lab);return {};}
+  if(kind==='crypt-altar'){
+   live(p,f.cryptAltar,86);
+   if(!brewing.transmute(p.inventory))fail('Der Krypta-Altar braucht drei leere Becher.');
+   sim.sound('world_well_reward',f.cryptAltar,{priority:2});
+   return {item:brewing.goldenCup,notice:'Goldenen Becher erhalten'};
+  }
   if(kind==='well'){live(p,f.wellUse);return {};}
   if(kind==='portal')return portal(p);
   if(kind==='soul')return take(p,i);
@@ -258,7 +272,7 @@ export function actions(sim){
   let result;
   switch(kind){
    case 'interact':result=interact(p,data.kind,data.index);break;
-   case 'quiz':result=quiz(p,data.reason,data.index);break;
+   case 'quiz':result=quiz(p,data.reason,data.index,data.vessel);break;
    case 'answer':result=answer(p,data);break;
    case 'review':result=review(p,data);break;
    case 'equip':case 'unequip':case 'consume':case 'drop':result=inventory(p,kind,data);break;
@@ -279,10 +293,12 @@ export function actions(sim){
     p.inventory.splice(data.index,1);p.gold+=Math.max(1,Math.floor(items.price(it,1)*(p.equipment.rings.includes('luck')?.55:.4)));result={stock:stock(p)};break;
    }
    case 'brew':{
-    live(p,sim.floor.lab);const i=p.inventory.findIndex(o=>o.kind==='cup');
-    if(i<0||!p.brewEffects.length)fail('Dir fehlen Zutaten oder ein Becher.');
+    live(p,sim.floor.lab);const {id,i}=brewVessel(p,data.vessel);
+    const available=brewStock(p,id),cap=brewing.capacity(id);
+    if(!p.brewEffects.length||p.brewEffects.length>cap||p.brewEffects.some(e=>!available.some(o=>o.id===e.id)))fail('Dir fehlen passende Zutaten.');
+    if(id===brewing.goldenCup.id&&p.brewEffects.length!==cap)fail('Der Goldene Becher braucht alle sechs Zutaten.');
     const bones=Number.isInteger(data.bones)?Math.max(0,Math.min(data.bones,p.bones,10)):0;
-    const duration=brewing.seconds+bones*60,brew=p.brewEffects,rarity=brew.reduce((a,e)=>items.rarity[e.rank].power>items.rarity[a].power?e.rank:a,'common');
+    const duration=brewing.duration(id,bones),brew=p.brewEffects,rarity=brew.reduce((a,e)=>items.rarity[e.rank].power>items.rarity[a].power?e.rank:a,'common');
     const potion={...item('potion',duration+'-'+brew.map(e=>e.id+'-'+e.rank).join('-'),rarity,'Brauerei'),brew,duration};
     p.inventory.splice(i,1,potion);p.bones-=bones;p.brewEffects=[];
     sim.sound('brew_pour',sim.floor.lab,{gain:.81,priority:2});result={item:potion};break;

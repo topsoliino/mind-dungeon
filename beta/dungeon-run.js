@@ -55,6 +55,11 @@ window.DungeonRun = (() => {
   x=Math.imul(x^(x>>>16),0x45d9f3b);
   return 1+((x^(x>>>16))>>>0)%LAST_DEPTH;
  }
+ function cryptDepths(seed){
+  const rng=random(Math.imul(seed^0x3fc1327b,1597334677));
+  const roll=rng(),count=roll<.22?0:roll<.78?1:2;
+  return shuffle([1,2,3,4,5],rng).slice(0,count);
+ }
  function generate(seed,varied=true,revision=5,depth=1,templeAt=0,runSeed=seed){
   const rng=random(seed);
   const cells=Array.from({length:6},(_,i)=>({col:i%3,row:i/3|0}));
@@ -224,16 +229,17 @@ window.DungeonRun = (() => {
    }
   }
   const base={rooms,corridors,map,regions,gates,annexes,terrain,rest,paths};
-  return revision>=8?window.DungeonStrata.extend(base,seed,depth,random,shuffle,revision,sewerDepth(runSeed)):base;
+  return revision>=8?window.DungeonStrata.extend(base,seed,depth,random,shuffle,revision,sewerDepth(runSeed),
+   revision>=10&&cryptDepths(runSeed).includes(depth)):base;
 
  }
  function differentLayoutSeed(seed,rooms,gates){
-  const signature=(r,g)=>r.map(p=>[p.x,p.y,p.w,p.h].join(':')).join('|')+'/'+g.map(p=>p.from+':'+p.to).sort().join('|');
+  const signature=(r,g)=>r.map(p=>[p.x,p.y-r[0].y,p.w,p.h].join(':')).join('|')+'/'+g.map(p=>p.from+':'+p.to).sort().join('|');
   const old=signature(rooms,gates);
   let candidate=seed;
   for(let attempt=0;attempt<24;attempt++){
    candidate=nextSeed(candidate);
-   const layout=generate(candidate);
+   const layout=generate(candidate,true,7);
    if(signature(layout.rooms,layout.gates)!==old)return candidate;
   }
   return freshSeed();
@@ -332,6 +338,7 @@ window.DungeonRun = (() => {
    const category=groups.get(categoryId),sub=category?.subcategories.find(entry=>entry.id===subcategoryId);
    if(!sub)throw Error('Frage '+(i+1)+' verweist auf eine unbekannte Unterkategorie.');
    const question={id,categoryId,subcategoryId,topic:sub.title,prompt:q.prompt,explanation:q.explanation,image:figure(q.image),
+    ...(nonempty(q.title)?{title:q.title.trim()}:{}),
     difficulty:Number.isFinite(q.difficulty)?Math.max(1,Math.min(5,Math.round(q.difficulty))):1,type:q.type,
     source:{document:nonempty(q.source?.document)?q.source.document:'Fragenpaket',
      page:typeof q.source?.page==='string'||Number.isFinite(q.source?.page)?q.source.page:'–'}};
@@ -389,7 +396,7 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},doors:{},access:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:9,cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
+   defeated:[],explored:[REST_ID],portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:10,cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
   return {...floorState(seed,1),trialCharmActive:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionSeen:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{}};
@@ -398,5 +405,5 @@ window.DungeonRun = (() => {
  function snapshot(save){
   return Object.fromEntries(runFields.map(key=>[key,save[key]]));
  }
- return {LAST_DEPTH,DEFAULT_PACK,templeDepth,sewerDepth,cemeteryRoll,W,H,generate,random,shuffle,freshSeed,nextSeed,differentLayoutSeed,validatePack,roomTopics,orderQuestions,nextQuestion,shuffleOptions,presentQuestion,floorState,freshRun,snapshot};
+ return {LAST_DEPTH,DEFAULT_PACK,templeDepth,sewerDepth,cryptDepths,cemeteryRoll,W,H,generate,random,shuffle,freshSeed,nextSeed,differentLayoutSeed,validatePack,roomTopics,orderQuestions,nextQuestion,shuffleOptions,presentQuestion,floorState,freshRun,snapshot};
 })();

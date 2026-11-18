@@ -43,24 +43,26 @@ function moveEnemy(e,dx,dy){
 }
 function aimEnemy(e,angle){e.angle=angle;e.facing=angle;}
 function updateEnemy(e,dt){
- if(!enemyEncounterReady(e)){
+ if(!e.veilPhase&&!enemyEncounterReady(e)){
   e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.emerge=Math.max(0,(e.emerge||0)-dt);
   e.windup=0;e.runAttack=0;e.track=0;e.aggro=Math.max(0,(e.aggro||0)-dt);e.moving=false;
   e.batMove=null;e.lionMove=null;e.called=0;
   return;
  }
  if(floor.layerAt(e.x,e.y)!==floor.layerAt(player.x,player.y)){
+  if(e.veilPhase)updateOrc(e,dt,false);
+  else{e.phase+=dt;e.aggro=Math.max(0,(e.aggro||0)-dt);}
   const stairs=floor.stairsFor(e,player);
-  e.windup=0;e.runAttack=0;e.moving=false;e.phase+=dt;
-  e.aggro=Math.max(0,(e.aggro||0)-dt);
+  e.windup=0;e.runAttack=0;e.moving=false;
   if(!stairs)return;
-  if(Math.hypot(e.x-stairs.x,e.y-stairs.y)<23){
+  if(!stairs.continuous&&Math.hypot(e.x-stairs.x,e.y-stairs.y)<23){
    Object.assign(e,stairs.exit);e.route=null;e.routeGoal=null;
   }else pursue(e,dt,Math.max(76,enemyRules.attacks[e.type].speed),!gateLineBlocked(e.x,e.y,stairs.x,stairs.y),stairs);
   return;
  }
  if(isBat(e)){updateBat(e,dt);return;}
  if(isLion(e)){updateLion(e,dt);return;}
+ if(enemyRules.isOrc(e)){updateOrc(e,dt);return;}
  const spec=enemyRules.attacks[e.type];
  if(e.emerge>0){e.emerge=Math.max(0,e.emerge-dt);return;}
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
@@ -113,6 +115,32 @@ function updateEnemy(e,dt){
  if(nearActor(e,player,1)||clear&&(spec.id==='bow'||spec.id==='crossbow')&&d<spec.range*.72)return;
  const speed=(spec.speed+(e.boss?7:0))*(1+.075*(save.floor-1));
  pursue(e,dt,speed,clear);
+}
+function updateOrc(e,dt,sameLayer=true){
+ const spec=enemyRules.attacks[e.type];
+ e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
+ const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
+ const clear=sameLayer&&d<Math.min(470,enemyRules.eyeRange(e.type,false,cw,ch,angle))&&!gateLineBlocked(e.x,e.y,player.x,player.y);
+ if(clear)enemyRules.alert(e);
+ else e.aggro=Math.max(0,(e.aggro||0)-dt);
+ if(e.veilPhase){
+  e.veilTime=Math.max(0,e.veilTime-dt);
+  if(e.veilPhase==='turn'&&!e.veilTime){e.veilPhase='hidden';e.veilTime=6;}
+  else if(e.veilPhase==='hidden'){
+   if(!e.veilTime){e.veilPhase='strike';e.veilTime=.36;e.struck=false;aimEnemy(e,angle);}
+   else if(sameLayer&&d>49)pursue(e,dt,spec.speed,clear);
+  }else if(e.veilPhase==='strike'){
+   if(!e.struck&&e.veilTime<=.16){
+    e.struck=true;
+    if(d<spec.range&&clear&&Math.cos(angle-e.angle)>.45&&damageActive(34,{physical:1},false,undefined,'hit_cut','crit'))bleedActive(100);
+   }
+   if(!e.veilTime){e.veilPhase=null;e.attack=6;recover(e,spec.recovery);}
+  }
+  return;
+ }
+ if(e.recover>0){e.recover=Math.max(0,e.recover-dt);return;}
+ if(clear&&e.attack<=0){aimEnemy(e,angle);e.veilPhase='turn';e.veilTime=spec.windup;return;}
+ if(e.aggro>0&&!nearActor(e,player,3))pursue(e,dt,spec.speed*.76,clear);
 }
 function executeEnemyAttack(e,spec){
  e.attack=(e.boss?2.25:2.85)-(save.floor-1)*.12;

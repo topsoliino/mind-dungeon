@@ -23,6 +23,15 @@ window.DungeonBrewing = (() => {
   {label:'Natternsud',icon:'☣',description:'Giftresistenz',color:'#78a63c',resist:{poison:.56}}
  ];
  const seconds=42;
+ const goldenCup={kind:'cup',id:'golden-cup',rarity:'rare',source:'Krypta'};
+ const capacity=id=>id===goldenCup.id?6:3;
+ const duration=(id,bones)=>(seconds+bones*60)*(id===goldenCup.id?2:1);
+ function transmute(inventory){
+  const empty=inventory.flatMap((it,i)=>it.kind==='cup'&&it.id==='cup'?[i]:[]).slice(0,3);
+  if(empty.length<3)return false;
+  for(const i of empty.reverse())inventory.splice(i,1);
+  inventory.push({...goldenCup});return true;
+ }
  const power={common:1,rare:1.35,epic:1.65,legendary:1.95,mythic:2.3};
  const infusions=new Set([4,5,6,7]);
  const ladder=(depth)=>depth<3?['common','rare','epic','legendary']:['common','rare','legendary','mythic'];
@@ -31,7 +40,7 @@ window.DungeonBrewing = (() => {
   if(ring){const levels=ladder(depth);rank=levels[Math.min(levels.length-1,levels.indexOf(rank)+1)];}
   return rank;
  }
- function stock(seed,depth,ring,random,shuffle){
+ function stock(seed,depth,ring,random,shuffle,vessel){
   const rng=random(seed^0x2d9408a1);
   // A selection can offer several supporting effects, but at most one infusion
   // so its temporary damage type is always unambiguous.
@@ -39,7 +48,7 @@ window.DungeonBrewing = (() => {
   for(const id of candidates){
    if(infusions.has(id)&&selected.some(entry=>infusions.has(entry.id)))continue;
    selected.push({id,rank:tier(rng(),depth,ring)});
-   if(selected.length===5)break;
+   if(selected.length===(vessel===goldenCup.id?6:5))break;
   }
   return selected;
  }
@@ -81,5 +90,5 @@ window.DungeonBrewing = (() => {
    return Math.round(srgb*255).toString(16).padStart(2,'0');
   }).join('');
  }
- return {effects,seconds,stock,entries,bonuses,mix};
+ return {effects,seconds,goldenCup,capacity,duration,transmute,stock,entries,bonuses,mix};
 })();
