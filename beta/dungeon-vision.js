@@ -2,6 +2,7 @@ window.DungeonVision=(()=>{
  'use strict';
  const adjacent=[[1,0],[-1,0],[0,1],[0,-1]];
  const nearWalls=[...adjacent,[1,1],[1,-1],[-1,1],[-1,-1]];
+ const memoryVersion=1;
  function create(world,tileSize,barriers,prior,explored){
   const {map,regions,W,H,stairs,rest,rooms}=world;
   const size=W*H,opaque=new Uint8Array(size),obstacles=new Uint8Array(size),live=new Uint8Array(size),known=new Uint8Array(size);
@@ -9,7 +10,7 @@ window.DungeonVision=(()=>{
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
    if(map[y][x]===1&&!world.abyssAt((x+.5)*tileSize,(y+.5)*tileSize))opaque[y*W+x]=1;
   }
-  let revision=0,signature='',visibleBarriers=new Set();
+  let revision=0,signature='',visibleBarriers=new Set(),viewOrigin;
   const inside=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
   function remember(id){
    if(known[id])return;
@@ -36,9 +37,29 @@ window.DungeonVision=(()=>{
     for(let x=s.x;x<s.x+s.w;x++)obstacles[s.y*W+x]=1;
    }
   }
+  function sightOrigin(x,y,closed){
+   const id=Math.floor(y)*W+Math.floor(x);
+   const blockers=barriers.filter((barrier,i)=>closed[i]&&barrier.floorCells.includes(id));
+   return {x,y,blockers};
+  }
+  // The tile trace skips its starting cell. Within a door cell, test the
+  // actual door plane so the threshold stays lit up to the near face.
+  function crossesOriginBarrier(origin,x,y){
+   for(const b of origin.blockers){
+    const from=b.vertical?origin.x:origin.y,to=b.vertical?x:y;
+    if(from===to)continue;
+    const t=((b.vertical?b.x:b.y)/tileSize-from)/(to-from);
+    if(t<0||t>=1)continue;
+    const tangent=b.vertical?origin.y+t*(y-origin.y):origin.x+t*(x-origin.x);
+    if(Math.abs(tangent*tileSize-(b.vertical?b.y:b.x))<=b.span/2)return true;
+   }
+   return false;
+  }
   // A ray can touch the front of a blocker. It cannot continue through it
   // or slip along the exact corner of a neighboring blocking cell.
-  function trace(sx,sy,tx,ty,allow){
+  function trace(origin,tx,ty,allow){
+   if(crossesOriginBarrier(origin,tx+.5,ty+.5))return false;
+   const {x:sx,y:sy}=origin;
    let x=Math.floor(sx),y=Math.floor(sy);
    const dx=tx+.5-sx,dy=ty+.5-sy,stepX=Math.sign(dx),stepY=Math.sign(dy);
    const strideX=dx?1/Math.abs(dx):Infinity,strideY=dy?1/Math.abs(dy):Infinity;
@@ -74,9 +95,11 @@ window.DungeonVision=(()=>{
      starts.push({x:x+.5,y:y+.5});
     }
    }
+   const closed=barriers.map(b=>b.visible());
    for(const start of starts){
-    updateObstacles(start,barriers.map(b=>b.visible()));
-    for(const p of passages)if(!known[p.cell]&&trace(start.x,start.y,p.x,p.y,allow))rememberFloor(p.cell);
+    const origin=sightOrigin(start.x,start.y,closed);
+    updateObstacles(origin,closed);
+    for(const p of passages)if(!known[p.cell]&&trace(origin,p.x,p.y,allow))rememberFloor(p.cell);
    }
    for(const s of stairs)if(s.roomIds.includes(id))rememberSteps(s);
   }
@@ -90,17 +113,23 @@ window.DungeonVision=(()=>{
   }
   rememberStart();
   function update(observer,width,height){
-   const sx=(Math.floor(observer.x/tileSize*4)+.5)/4,sy=(Math.floor(observer.y/tileSize*4)+.5)/4;
-   if(!inside(Math.floor(sx),Math.floor(sy)))return;
+   const x=observer.x/tileSize,y=observer.y/tileSize;
+   if(!inside(Math.floor(x),Math.floor(y)))return;
    const closed=barriers.map(b=>b.visible()),upper=stairs.map(s=>explored.has(s.roomIds[1]));
+   const origin=sightOrigin(x,y,closed);
+   if(!origin.blockers.length){
+    origin.x=(Math.floor(x*4)+.5)/4;
+    origin.y=(Math.floor(y*4)+.5)/4;
+   }
+   const {x:sx,y:sy}=origin;
    const rx=Math.max(10,Math.ceil(width/tileSize/2)+3),ry=Math.max(8,Math.ceil(height/tileSize/2)+3);
    const key=[sx,sy,rx,ry,closed.map(Number).join(''),upper.map(Number).join('')].join('|');
    if(key===signature)return;
-   signature=key;live.fill(0);
-   updateObstacles({x:sx,y:sy},closed);
+   signature=key;viewOrigin=origin;live.fill(0);
+   updateObstacles(origin,closed);
    for(let y=Math.max(0,Math.floor(sy-ry));y<=Math.min(H-1,Math.ceil(sy+ry));y++){
     for(let x=Math.max(0,Math.floor(sx-rx));x<=Math.min(W-1,Math.ceil(sx+rx));x++){
-     if(!trace(sx,sy,x,y))continue;
+     if(!trace(origin,x,y))continue;
      const id=y*W+x;live[id]=1;rememberFloor(id);
     }
    }
@@ -122,7 +151,8 @@ window.DungeonVision=(()=>{
    return inside(col,row)&&Boolean(view[row*W+col]);
   }
   return {update,seenTiles,known,get revision(){return revision;},
-   sees:(x,y)=>sees(x,y,live),remembers:(x,y)=>sees(x,y,known),barrierVisible:barrier=>visibleBarriers.has(barrier)};
+   sees:(x,y)=>sees(x,y,live)&&!crossesOriginBarrier(viewOrigin,x/tileSize,y/tileSize),
+   remembers:(x,y)=>sees(x,y,known),barrierVisible:barrier=>visibleBarriers.has(barrier)};
  }
- return {create};
+ return {create,memoryVersion};
 })();
