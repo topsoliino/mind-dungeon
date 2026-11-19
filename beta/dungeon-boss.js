@@ -45,7 +45,8 @@ function resistance(e,base){
 }
 function create(arena,save,hooks){
  if(!arena)return null;
- const battle=()=>save.bossBattle??={phase:'sealed',time:0,altars:[false,false],waves:0,cues:[],last:-1};
+ const testAccess=hooks.testAccess===true;
+ const battle=()=>save.bossBattle??={phase:testAccess?'ready':'sealed',time:0,altars:[testAccess,testAccess],waves:0,cues:[],last:-1};
  battle();
  const inside=p=>arena.id===hooks.region(p);
  const actors=()=>hooks.enemies().filter(e=>e.bossRole&&e.hp>0);
