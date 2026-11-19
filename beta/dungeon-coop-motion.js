@@ -5,7 +5,7 @@ window.DungeonCoopMotion = (() => {
  const turn=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;
  const goodPoint=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.y>=0&&p.x<=8192&&p.y<=6144;
  const bounded=(value,min,max)=>Number.isFinite(value)&&value>=min&&value<=max;
- const active=p=>p.moving||p.attack>0||p.dash>0||p.lift>0||p.charge>=0||p.pose>=0;
+ const active=p=>p.wallRecoil>0||p.moving||p.attack>0||p.dash>0||p.lift>0||p.charge>=0||p.pose>=0;
 
  function motionBuffer(delay,maxAhead){
   let points=[],last=null,offset=null,epoch=null;
@@ -35,12 +35,13 @@ window.DungeonCoopMotion = (() => {
    if(b&&time<b.time){
     const t=(time-a.time)/(b.time-a.time);
     return {...a,x:mix(a.x,b.x,t),y:mix(a.y,b.y,t),dir:turn(a.dir,b.dir,t),walk:mix(a.walk,b.walk,t),
+     wallRecoil:Math.max(0,(a.wallRecoil??0)-(time-a.time)/1000),
      fallProgress:a.fallProgress>=0&&b.fallProgress>=0?mix(a.fallProgress,b.fallProgress,t):a.fallProgress,
      lift:mix(a.lift,b.lift,t),attack:Math.min(a.attack,Math.max(0,a.attack-(time-a.time)/1000)),charge:a.charge<0||b.charge<0?a.charge:mix(a.charge,b.charge,t),
      moving:a.moving||b.moving&&Math.hypot(b.x-a.x,b.y-a.y)>1};
    }
    const age=Math.max(0,time-last.time),ahead=Math.min(maxAhead,age);
-   const result={...last,attack:Math.max(0,last.attack-age/1000),dash:Math.max(0,last.dash-age/1000)};
+   const result={...last,wallRecoil:Math.max(0,(last.wallRecoil??0)-age/1000),attack:Math.max(0,last.attack-age/1000),dash:Math.max(0,last.dash-age/1000)};
    if(a!==last&&last.moving){
     const dt=last.clock-a.clock;
     if(dt>0){

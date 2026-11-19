@@ -200,7 +200,7 @@ window.DungeonArt = (() => {
     }
     terrainCache.set(key,c);return c;
   }
-  function world(map,zoneAt,lights,seed,terrain) {
+  function world(map,zoneAt,lights,seed,terrain,frontWalls) {
     const rnd=random(seed),chunkSize=16,chunks=[],fx=window.DungeonStrataFx;
     const tiles=map.map((row,y)=>row.map((value,x)=>{
       const v=rnd(12),surfaceType=terrain?.[y]?.[x];
@@ -222,6 +222,7 @@ window.DungeonArt = (() => {
         const image=surfaceType&&surfaceType!=='partition'?terrainTile(surfaceType,v):
          open||surfaceType==='partition'?floor(zone,v):wall(zone,mask,v%4);
         const px=x*SIZE,py=y*SIZE;
+        if(frontWalls&&(mask&1))frontWalls.push({x,y,bitmap:image,key:'front-wall-'+zone+'-'+mask+'-'+v%4});
         if(fx?.isSewer(surfaceType)){
          g.drawImage(floor(zone,v),px,py);
          g.save();fx.shorePath(g,px,py,SIZE,fx.shoreline(terrain,x,y));g.clip();

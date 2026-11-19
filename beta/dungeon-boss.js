@@ -66,18 +66,21 @@ function create(arena,save,hooks){
   const s=battle();
   s.phase='intro';s.time=0;s.cues=[];
   hooks.players().forEach(teleport);
-  const count=hooks.players().length;
+  const health=hooks.players().length>1?410:250;
+  s.scientistMax=scientists.length*health;
   hooks.spawn(scientists.map((_,i)=>makeActor('behaviorist-'+i,'scientist',hooks.types.SKELETON,
-   {x:arena.x-(i===1?108:158),y:arena.y+(i-1)*92},count>1?410:250,1.17,
+   {x:arena.x-(i===1?108:158),y:arena.y+(i-1)*92},health,1.17,
    {scientist:i,warded:true,nextAttack:1+i*.8,boss:true})));
   hooks.changed('intro');
  }
  function startWave(){
-  const s=battle(),wave=++s.waves,count=(hooks.players().length>1?5:3)+wave;
+  const s=battle(),wave=++s.waves,coop=hooks.players().length>1;
+  const count=(coop?5:3)+wave,health=coop?32:21;
+  s.waveMax=count*health;
   hooks.spawn(Array.from({length:count},(_,i)=>{
    const vent=(Math.floor(i*arena.vents.length/count)+wave-1)%arena.vents.length;
    const p=arena.vents[vent],spawn=point(p,aim(p,arena),23+Math.floor(i/arena.vents.length)*25);
-   return makeActor('behaviorist-wave-'+wave+'-'+i,'rat',hooks.types.RAT,spawn,hooks.players().length>1?32:21,.62,{emerge:.42});
+   return makeActor('behaviorist-wave-'+wave+'-'+i,'rat',hooks.types.RAT,spawn,health,.62,{emerge:.42});
   }));
   s.nextWave=null;
  }

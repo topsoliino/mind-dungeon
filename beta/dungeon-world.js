@@ -1,7 +1,7 @@
 (root=>{
 root.DungeonWorld=(()=>{
 'use strict';
-const TILE=48,HERO_RADIUS=14,fallSeconds=.85;
+const TILE=48,HERO_RADIUS=14,fallSeconds=.85,wallRecoilSeconds=.32;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 function build(run,save){
 const furnishingSeed=save.dungeonSeed;
@@ -225,7 +225,7 @@ function weaponImpact(x,y,angle,reach){
  const dx=Math.cos(angle),dy=Math.sin(angle);
  for(let step=12;step<=reach;step+=6){
   const px=x+step*dx,py=y+step*dy;
-  if(wall(px,py)||gateBlocked(px,py))return {x:px,y:py,cue:'hit_stone'};
+  if(stoneAt(px,py)||gateBlocked(px,py))return {x:px,y:py,cue:'hit_stone'};
   if(furnitureBlocked(px,py,2)){
    const prop=furniture.find(p=>p.solid&&Math.abs(px-p.x)<p.w/2+2&&Math.abs(py-p.y)<p.h/2+2);
    const cue=stoneProps.has(prop?.type)?'hit_stone':woodProps.has(prop?.type)?'hit_wood':null;
@@ -245,6 +245,45 @@ function footWall(x,y){
   if(ox>=left&&ox<=right&&oy>=-9&&oy<=5)return true;
  }
  return Math.abs(ox)<=9&&((north&&oy<=5)||(south&&oy>=-9));
+}
+function stoneAt(x,y){return footWall(x,y)&&!abyssAt(x,y);}
+function weaponClearance(x,y,tx,ty){
+ const n=Math.max(1,Math.ceil(Math.hypot(tx-x,ty-y)/3));
+ for(let i=1;i<=n;i++){
+  const t=i/n,px=x+(tx-x)*t,py=y+(ty-y)*t;
+  if(stoneAt(px,py)||gateBlocked(px,py)||doorAt(px,py))return (i-1)/n;
+ }
+ return 1;
+}
+function meleeWall(x,y,dir,weapon,reach){
+ if(weapon.projectile?weapon.projectile!=='arcane':weapon.reach<100)return null;
+ // The staff's physical head has a short swing. The spell uses its own range.
+ const length=weapon.projectile?60:reach;
+ const sweep=weapon.thrust?0:weapon.projectile?.6:Math.acos(weapon.sweep);
+ const count=Math.ceil(sweep*48);
+ for(let i=0;i<=count;i++){
+  const progress=count?i/count:.5,offset=(2*progress-1)*sweep,angle=dir+offset;
+  const dx=Math.cos(angle),dy=Math.sin(angle);
+  const extent=length*(weapon.thrust?1:.67+.33*Math.sin(Math.PI*progress));
+  let first=0;
+  for(let step=4;step<=extent;step+=3){
+   const px=x+dx*step,py=y+dy*step;
+   if(doorAt(px,py)||gateBlocked(px,py))break;
+   if(!stoneAt(px,py)){first=0;continue;}
+   if(!first)first=step;
+   // Let the tip graze edges without interrupting the swing.
+   if(step-first>=9&&extent-first>=15)return {x:x+dx*first,y:y+dy*first,angle,aim:dir,offset,distance:first};
+  }
+ }
+ return null;
+}
+function beforeMeleeWall(x,y,tx,ty,weapon,contact){
+ if(!contact)return true;
+ const dx=tx-x,dy=ty-y;
+ if(weapon.thrust)return dx*Math.cos(contact.aim)+dy*Math.sin(contact.aim)<contact.distance;
+ const offset=Math.atan2(dy,dx)-contact.aim;
+ const turn=Math.atan2(Math.sin(offset),Math.cos(offset));
+ return turn<contact.offset-.05||turn<=contact.offset+.05&&Math.hypot(dx,dy)<contact.distance;
 }
 function valid(x,y,r=12,ignoreSeals=false,feet=false,allowFall=false){
  const rx=feet?10:r,ry=feet?5:r,solid=feet?footWall:wall;
@@ -601,7 +640,7 @@ return {
  paths,H,W,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,
- regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
+ regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,weaponClearance,meleeWall,beforeMeleeWall,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition,sightBarriers,lootPosition
 };
@@ -734,6 +773,6 @@ if(floor.crypt){
 }
 return enemies;
 }
-return {TILE,HERO_RADIUS,fallSeconds,build,spawnEnemies};
+return {TILE,HERO_RADIUS,fallSeconds,wallRecoilSeconds,build,spawnEnemies};
 })();
 })(typeof window==='undefined'?globalThis:window);

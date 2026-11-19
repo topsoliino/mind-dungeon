@@ -19,7 +19,7 @@ function motion(p,clock){
   round(p.hp),maxHP(p),round(p.stamina),p.staminaMax,q(p.combat),q(p.inv),round(p.bleed),q(p.webSlow),q(p.grabSlow),p.poison?1:0,
   p.dominant??null,p.input.seq,q(p.activeBrew?.remaining),
   (p.damageQueue??[]).filter(hit=>hit.amount>0).map(hit=>({amount:hit.amount,type:hit.type,remaining:q(hit.remaining)})),
-  p.fall?q(1-p.fall.remaining/fallSeconds):-1,p.fall?.heading??0];
+  p.fall?q(1-p.fall.remaining/fallSeconds):-1,p.fall?.heading??0,...(p.wallRecoil?[q(p.wallRecoil),q(p.recoilAngle)]:[])];
 }
 export function createProjection(){
  let floor=0,revision=-1,event=0,peerRevision=-1,peerQuiz='',effects='',staticState='',lootKey='';
