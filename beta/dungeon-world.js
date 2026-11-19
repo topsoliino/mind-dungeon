@@ -18,6 +18,27 @@ function build(run,save){
 const furnishingSeed=save.dungeonSeed;
 const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[],roof=null,sewerRelic=null,stairs=[],crypt=null,extraRooms=[],alleys=null,sanctuary=null,bossArena:arenaTiles}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth,save.templeRunSeed??save.dungeonSeed);
 const H=map.length,W=map[0].length;
+const stairGeometry=window.DungeonStairs;
+const stairFlights=[...(sanctuary?.flights??[]).map(stairGeometry.straight),...stairs.map(stair=>
+ stair.curve?stair:stairGeometry.straight({...stair,style:stair.id.startsWith('jungle-')?'jungle':
+  stair.id==='sanctuary-spiral'?'sanctuary':'stone'}))];
+const spiral=stairs.find(stair=>stair.curve),spiralSteps=spiral?stairGeometry.sections(spiral):[];
+const spiralTiles=new Map();
+for(const section of spiralSteps){
+ const xs=section.polygon.map(p=>p[0]),ys=section.polygon.map(p=>p[1]);
+ for(let y=Math.floor(Math.min(...ys));y<=Math.floor(Math.max(...ys));y++)
+  for(let x=Math.floor(Math.min(...xs));x<=Math.floor(Math.max(...xs));x++){
+   const index=y*W+x;
+   if(!spiralTiles.has(index))spiralTiles.set(index,[]);
+   spiralTiles.get(index).push(section);
+  }
+}
+function stairMotion(actor,dx,dy){
+ const x=actor.x/TILE,y=actor.y/TILE;
+ const winding=terrain[Math.floor(y)]?.[Math.floor(x)]==='sanctuary-spiral';
+ const flight=stairFlights.find(f=>Boolean(f.curve)===winding&&x>=f.x&&y>=f.y&&x<f.x+f.w&&y<f.y+f.h);
+ return flight?stairGeometry.motion(flight,flight.curve?stairGeometry.sample(spiralSteps,x,y):null,dx,dy):{x:dx,y:dy};
+}
 const annexByRegion=new Map(annexes.map(a=>[a.id,a]));
 const annexPassages=new Map([...annexes.flatMap(a=>a.passage?[a.passage]:[]),...paths].map(path=>[path.id,path]));
 const passages=new Set([...corridors.map(c=>c.id),...annexPassages.keys()]);
@@ -116,6 +137,12 @@ function stairConnected(a,b){
  return stairsNear(a).some(s=>s.regions.has(br))||stairsNear(b).some(s=>s.regions.has(ar));
 }
 function stairCrestClosed(stair,observer,explored){
+ if(stair.curve){
+  const landing=stair.roomIds[1];
+  if(explored.has(landing)||regionAt(observer.x,observer.y)===landing)return false;
+  if(terrain[Math.floor(observer.y/TILE)]?.[Math.floor(observer.x/TILE)]!=='sanctuary-spiral')return true;
+  return stairGeometry.sample(spiralSteps,observer.x/TILE,observer.y/TILE).index<spiralSteps.length-3;
+ }
  const row=observer.y/TILE;
  if(explored.has(stair.roomIds[1])||row<=stair.y+1.25)return false;
  return layerAt(observer.x,observer.y)<stair.upper||row<=stair.y+stair.h+1.65;
@@ -280,7 +307,12 @@ function gateBlocked(x,y){
  if(gate&&root.DungeonBoss.gateClosed(save.bossBattle)&&Math.abs(x-gate.x)<gate.face&&Math.abs(y-gate.y)<gate.span/2)return true;
  return gates.some(g=>!save.gates[g.id]&&(g.vertical?Math.abs(x/TILE-(g.x+.5))<.52&&Math.abs(y/TILE-(g.y+.5))<2.1:Math.abs(y/TILE-(g.y+.5))<.52&&Math.abs(x/TILE-(g.x+.5))<2.1));
 }
-function wall(x,y){const i=Math.floor(x/TILE),j=Math.floor(y/TILE);return i<0||j<0||i>=W||j>=H||map[j][i]===1}
+function wall(x,y){
+ const col=Math.floor(x/TILE),row=Math.floor(y/TILE);
+ if(map[row]?.[col]!==0)return true;
+ if(terrain[row]?.[col]!=='sanctuary-spiral')return false;
+ return !(spiralTiles.get(row*W+col)?.some(section=>stairGeometry.touches(section,x/TILE,y/TILE)));
+}
 
 // Dimensions measure the footprint at the base rather than the full sprite.
 const FURNITURE={
@@ -936,7 +968,7 @@ if(save.layoutRevision>=15){
  }
 }
 return {
- rooms,corridors,map,regions,gates,annexes,terrain,rest,
+ rooms,corridors,map,regions,gates,annexes,terrain,rest,stairFlights,stairMotion,
  paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,templeRegions,waterfallBanks,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
  spawn,sanctuary,smith,ward,returnPortal,keySources,keyName,keyItem,keyOffers,keyCaches,pantryKeySite,carrierFor,nearestKeyDoor,unlockDoor,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,inSanctuary,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,
