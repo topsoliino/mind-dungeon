@@ -7,7 +7,8 @@ const enemyNumbers=e=>[e.id,e.type,round(e.x),round(e.y),e.hp,e.max,q(e.size),e.
  e.batMove?[q(e.batMove.age),q(e.batMove.duration),q(e.castLength)]:null,
  e.lionMove?[e.lionMove.kind,q(e.lionMove.age),q(e.lionMove.angle),q(e.lionMove.windup),q(e.lionMove.duration),
   e.lionMove.last?[q(e.lionMove.last.time),q(e.lionMove.last.angle)]:null]:null,
- e.target?[round(e.target.x),round(e.target.y)]:null,e.dominant??null,e.veilPhase?[e.veilPhase,q(e.veilTime)]:null];
+ e.target?[round(e.target.x),round(e.target.y)]:null,e.dominant??null,e.veilPhase?[e.veilPhase,q(e.veilTime)]:null,
+ e.bossRole?[e.bossRole,e.scientist??null,Boolean(e.warded),Boolean(e.enlarged),Boolean(e.spin),e.bossPose??null]:null];
 const currentRegion=(p,e)=>gap(p,e)<900;
 function motion(p,clock){
  const t=p.vault?Math.min(1,(clock-p.vault.start)/.46):null;
@@ -51,7 +52,7 @@ export function createProjection(){
   for(const id of enemies.keys())if(!next.has(id)){enemies.delete(id);removed.push(id);}
   if(force||changed.length)base.enemies=changed;
   if(removed.length)base.removed=removed;
-  const scene={explored:[...sim.explored],gates:sim.state.gates,doors:sim.state.doors??{},access:sim.state.access??{},portal:sim.portal,completed:sim.completed,gateProgress:sim.state.gateProgress};
+  const scene={explored:[...sim.explored],gates:sim.state.gates,doors:sim.state.doors??{},access:sim.state.access??{},portal:sim.portal,completed:sim.completed,gateProgress:sim.state.gateProgress,bossBattle:sim.state.bossBattle??null};
   const sceneKey=JSON.stringify(scene);
   if(force||sceneKey!==staticState){staticState=sceneKey;Object.assign(base,scene);}
   const loot=[...sim.orbs.values()].filter(o=>(!o.seat||o.seat===p.seat)&&currentRegion(p,o));

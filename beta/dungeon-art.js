@@ -1019,7 +1019,7 @@ window.DungeonArt = (() => {
       poly([[32,24],[37,30],[35,35],[32,38],[28,33]],enamel);
       r(30,28,3,3,'#e2c398');
     }else if(type==='rest-cat'){
-      const [mode,pose='0']=id.split('-'),n=Number(pose),dark='#24212a',white='#ede2cb',shadeWhite='#c6bda9';
+      const [mode,pose='0']=id.split('-'),n=Number(pose),dark=color||'#24212a',white=color?'#f4c698':'#ede2cb',shadeWhite=color?'#d39a66':'#c6bda9';
       poly([[14,48],[49,48],[55,52],[42,55],[13,54],[9,51]],'#17121488');
       const face=(x,y,closed)=>{
         poly([[x-10,y-4],[x-11,y-13],[x-6,y-10],[x+4,y-10],[x+10,y-14],[x+11,y-6],[x+10,y+4],[x+6,y+7],[x-6,y+7],[x-10,y+4]],dark);
@@ -1078,6 +1078,8 @@ window.DungeonArt = (() => {
     }else if(type==='food'){
       if(id==='glucose'){
        for(const [x,y] of [[18,31],[32,27],[27,41]]){r(x,y,15,12,'#786368');r(x+2,y+1,11,8,'#e6d0cb');r(x+2,y+1,11,2,'#fff2e3');}
+      }else if(id==='pellet'){
+       for(const [x,y] of [[17,34],[27,23],[37,34]]){r(x,y,13,9,'#62392a');r(x+1,y,10,7,'#b67b4f');r(x+2,y,8,2,'#e2aa6d');r(x+2,y+4,2,2,'#8c583c');}
       }else if(id==='banana'){
        poly([[14,23],[20,21],[22,29],[28,34],[37,35],[44,28],[45,19],[51,20],[53,29],[48,40],[39,46],[26,46],[17,39]],'#84542d');
        poly([[17,24],[20,25],[22,34],[30,40],[40,40],[46,34],[49,22],[51,25],[47,37],[38,44],[27,44],[19,37]],'#e6bb52');

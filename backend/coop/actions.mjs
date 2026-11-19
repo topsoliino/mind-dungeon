@@ -1,10 +1,10 @@
 import {randomUUID} from 'node:crypto';
-import {run,items,foes,brewing,expedition,pools,item,cup,TILE,gap,maxHP,preparePlayer,stats,xpRequired,equipped,equip,unequip,correct,selectLoot} from './rules.mjs';
+import {run,items,foes,bossRules,brewing,expedition,pools,item,cup,TILE,gap,maxHP,preparePlayer,stats,xpRequired,equipped,equip,unequip,correct,selectLoot} from './rules.mjs';
 
 const fail=message=>{throw new Error(message);};
 const index=(list,i)=>Number.isInteger(i)&&i>=0?list[i]:undefined;
 const heal=(p,n)=>{p.hp=Math.min(maxHP(p),p.hp+n);};
-const personalFields=['inventory','consumeQueue','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','questionSeen','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil','deathRecap'];
+const personalFields=['inventory','consumeQueue','equipment','attributes','xp','level','pendingLevels','gold','bones','rubies','kills','solved','questionCount','questionReview','questionSeen','opened','searched','altarUses','gateQuestions','boneClaims','rubyClaims','templeAttempts','trials','cupClaimed','shopSold','mythicSold','brewEffects','merchantMapFound','wellOffer','wellUsed','activeBrew','combatRecord','playtime','armorCooldowns','trialCharmActive','madnessUntil','deathRecap','bossRewards','deckOrder'];
 export function personal(p){
  return {revision:p.revision,character:p.appearance,...Object.fromEntries(personalFields.map(key=>[key,p[key]]))};
 }
@@ -30,7 +30,9 @@ export function actions(sim){
  }
  function stock(p){
   const floor=floorNumber(), offers=expedition.stock(pools,sim.seed,floor,run.shuffle,run.random);
-  return {gold:items.shop(sim.state.dungeonSeed,floor,pools).slice(0,p.equipment.rings.includes('merchant')?6:3),...offers};
+  const gold=items.shop(sim.state.dungeonSeed,floor,pools).slice(0,p.equipment.rings.includes('merchant')?6:3);
+  if(floor===2)gold.push(bossRules.note);
+  return {gold,...offers};
  }
  const brewStock=(p,vessel)=>brewing.stock(sim.state.dungeonSeed,floorNumber(),p.equipment.rings.includes('brewer'),run.random,run.shuffle,vessel);
  function brewVessel(p,requested){
@@ -55,6 +57,10 @@ export function actions(sim){
    const approach={x:(g.x+.5+(g.vertical?shift:0))*TILE,y:(g.y+.5+(g.vertical?0:shift))*TILE};
    if(!near(p,approach,108)&&!(p.region===g.corridorId&&gap(p,{x:(g.x+.5)*TILE,y:(g.y+.5)*TILE})<110))fail('Du bist zu weit vom Tor entfernt.');
    zone=g.from;exclude=p.gateQuestions[i]??[];
+  }else if(reason==='boss-altar'){
+   live(p,index(floor.bossArena?.altars??[],i),100);
+   if(sim.state.bossBattle.altars[i])fail('Dieser Wissensaltar ist bereits erloschen.');
+   zone=0;
   }else if(reason==='shrine'){
    live(p,index(floor.shrines,i),103);
    if((p.altarUses[i]??0)>=2)fail('Am Altar wurden bereits zwei Fragen beantwortet.');
@@ -78,11 +84,12 @@ export function actions(sim){
   if(!options.length)fail('In diesem Fragenpaket gibt es keine passende Frage.');
   const topical=reason==='gate'||reason==='shrine'?(run.roomTopics(p.pack,floorNumber(),sim.seed)[zone]??[]).flatMap(group=>group.questions):[];
   const trialDeck=reason==='trial'?run.orderQuestions(options.filter(q=>!exclude.includes(q.id)),p,sim.seed):null;
-  const source=reason==='study'?options[0]:trialDeck?trialDeck[0]:run.nextQuestion(options,topical,exclude,p,sim.seed);
+  let source=reason==='study'?options[0]:trialDeck?trialDeck[0]:run.nextQuestion(options,topical,exclude,p,sim.seed);
   if(!source&&reason==='gate'){
    sim.state.gates[i]=true;
    return {notice:'Wissenstor geöffnet · keine fällige unbenutzte Lernkarte'};
   }
+  if(!source&&reason==='boss-altar')source=run.shuffle([...options],sim.random)[0];
   if(!source)fail('Es sind gerade keine weiteren Fragen verfügbar.');
   if(reason==='trial'&&!p.trial){
    p.trial={index:i,deadline:sim.clock+40,correct:0,target:Math.min(3,trialDeck.length),used:[],passed:false};
@@ -103,6 +110,8 @@ export function actions(sim){
   p.questionCount++;
   (p.questionSeen??={})[q.id]=p.questionCount;
   if(ok){
+   const ordinal=bossRules.assign(p.deckOrder??=[],p.pack.packId);
+   if(p.seat===1)sim.state.selectedBoss??=bossRules.choose(ordinal,run.random(sim.seed^0x78a23bc9));
    p.solved[q.id]=(p.solved[q.id]??0)+1;p.xp+=p.solved[q.id]>1?5:15+(q.difficulty||1)*5;
    while(p.xp>=xpRequired(p.level)){p.xp-=xpRequired(p.level);p.level++;p.pendingLevels++;heal(p,22);}
    preparePlayer(p);
@@ -119,6 +128,7 @@ export function actions(sim){
    const state=sim.floor.resolveAccess(site,ok);
    notice=state==='open'?'Prüfsiegel geöffnet':'Falsch · Zugang dauerhaft versiegelt';
   }
+  if(reason==='boss-altar'&&ok){sim.boss.setAltar(i);notice='Wissensaltar erloschen';}
   if(reason==='shrine'){
    (p.altarQuestions[i]??=[]).push(q.id);p.altarUses[i]=(p.altarUses[i]??0)+1;
   }
@@ -275,6 +285,7 @@ export function actions(sim){
  }
  function dispatch(p,kind,data){
   if(p.fall)fail('Du stürzt gerade.');
+  if(sim.state.bossBattle?.phase==='intro'&&kind!=='dismiss-death')fail('Der Boss tritt auf.');
   if(p.deathRecap&&kind!=='dismiss-death')fail('Schließe zuerst den Todesrückblick.');
   if(p.quiz&&!['answer','review'].includes(kind))fail('Beende zuerst das Quiz.');
   let result;
@@ -299,7 +310,7 @@ export function actions(sim){
     const currency=offer?.currency??'gold',sold=currency==='rubies'?p.mythicSold:p.shopSold;
     if(!offer||p[currency]<offer.price||sold.includes(offer.stock)||count(p)+(offer.bundle||1)>30)fail('Dieses Angebot ist nicht verfügbar.');
     for(let n=0;n<(offer.bundle||1);n++)p.inventory.push(item(offer.kind,offer.id,offer.rarity,offer.source));
-    p[currency]-=offer.price;sold.push(offer.stock);result={stock:stock(p)};break;
+    p[currency]-=offer.price;sold.push(offer.stock);result={stock:stock(p),...(offer.kind==='bossNote'?{notice:bossRules.name}:{})};break;
    }
    case 'sell':{
     live(p,sim.floor.merchant);const it=index(p.inventory,data.index);

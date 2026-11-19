@@ -157,6 +157,7 @@ export function createCoopServer({auth=supabaseAuth(),origins=[allowedDefault],m
   }
   if(!c.user||c.user.expires<=Date.now())throw new Error('Bitte melde dich erneut an.');
   if(type==='list')return {parties:await store?.list(c.user.id)??[]};
+  const deckOrder=Array.isArray(message.deckOrder)?[...new Set(message.deckOrder.filter(id=>typeof id==='string'&&id.length<=128))].slice(0,100):[];
   if(type==='create'){
    if(c.room)throw new Error('Verlasse zuerst deine bisherige Lobby.');
    if(rooms.size>=maxRooms)throw new Error('Der Gameserver ist gerade ausgelastet.');
@@ -164,7 +165,7 @@ export function createCoopServer({auth=supabaseAuth(),origins=[allowedDefault],m
    if(c.ws.readyState!==WebSocket.OPEN)return {};
    if(rooms.size>=maxRooms)throw new Error('Der Gameserver ist gerade ausgelastet.');
    let code;do{code=randomBytes(4).toString('hex').toUpperCase();}while(rooms.has(code));
-   const member={seat:1,id:c.user.id,pack,character:message.character};
+   const member={seat:1,id:c.user.id,pack,character:message.character,deckOrder};
    const room={code,seed:run.freshSeed(),mode:message.mode==='own'?'own':'same',members:new Map([[c.user.id,member]]),seen:Date.now()};
    rooms.set(code,room);attach(c,room,member);broadcastLobby(room);return lobbyPacket(room,1);
   }
@@ -179,7 +180,7 @@ export function createCoopServer({auth=supabaseAuth(),origins=[allowedDefault],m
     const pack=room.mode==='same'?room.members.values().next().value.pack:await auth.pack(message.pack,c.token);
     if(c.ws.readyState!==WebSocket.OPEN)return {};
     if(!rooms.has(room.code)||room.members.size>=2)throw new Error('Diese Lobby ist voll oder wurde geschlossen.');
-    member={seat:2,id:c.user.id,pack,character:message.character};room.members.set(c.user.id,member);
+    member={seat:2,id:c.user.id,pack,character:message.character,deckOrder};room.members.set(c.user.id,member);
    }
    attach(c,room,member);broadcastLobby(room);
    return {...lobbyPacket(room,member.seat),pack:member.pack.packId};

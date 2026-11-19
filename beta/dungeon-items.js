@@ -21,6 +21,7 @@ window.DungeonItems = (() => {
  const food={
   glucose:{name:'Traubenzucker',heal:9},
   banana:{name:'Banane',heal:15},
+  pellet:{name:'Futterpellet',heal:30},
   bread:{name:'Brot',heal:23},
   chicken:{name:'Hühnchen',heal:34}
  };
@@ -272,7 +273,7 @@ window.DungeonItems = (() => {
   actor.dominant=Object.keys(actor.damageTypes).reduce((best,type)=>actor.damageTypes[type]>actor.damageTypes[best]?type:best,hit.type);
  }
  function price(item,depth){
-  const base={weapon:38,ring:32,armor:28,food:7,cup:5,potion:17}[item.kind]+Math.max(0,depth-1)*5;
+  const base={weapon:38,ring:32,armor:28,food:7,cup:5,potion:17,bossNote:50}[item.kind]+Math.max(0,depth-1)*5;
   return Math.round(base*rarity[rank(item)].value);
  }
  function shop(seed,depth,pools){

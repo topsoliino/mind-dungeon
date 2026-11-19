@@ -312,7 +312,7 @@ test('legacy combination cards become independently selectable and keep their gr
 });
 
 test('server enforces combat inputs and line of sight, grants paired drops and prevents double pickup',()=>{
- const {host,guest,sim}=game();
+ const {host,guest,sim}=game(193,10);
  const target=arena(sim,host);
  const full=foes.health(0,false,1);
  const enemy={...target,id:'proof',type:0,hp:full,max:full,size:1,angle:0,phase:0,attack:0};
