@@ -6,10 +6,10 @@ window.DungeonStrataFx=(()=>{
  function shoreline(terrain,x,y){
   return [[x-1,y],[x,y-1],[x+1,y],[x,y+1]].map(([col,row])=>Number(!isSewer(terrain[row]?.[col])));
  }
- function shorePath(ctx,x,y,size,edges){
+ function shorePath(ctx,x,y,size,edges,begin=true){
   const [left,top,right,bottom]=edges;
   const radius=corner*size,inset=bank*size;
-  ctx.beginPath();
+  if(begin)ctx.beginPath();
   ctx.roundRect(x+left*inset,y+top*inset,size-(left+right)*inset,size-(top+bottom)*inset,
    [left*top*radius,right*top*radius,right*bottom*radius,left*bottom*radius]);
  }
@@ -122,10 +122,11 @@ window.DungeonStrataFx=(()=>{
    // Arena water covers carpet only after the roof opens. Sewer water already
    // has a painted base in the permanent world tiles.
    ctx.setTransform(width/w,0,0,height/h,-x*width/w,-y*height/h);
-   ctx.fillStyle='#25424be6';
+   ctx.fillStyle='#25424be6';ctx.beginPath();
    for(const tile of tiles)if(tile.type==='boss-water'){
-    shorePath(ctx,tile.x*tileSize,tile.y*tileSize,tileSize,tile.edges);ctx.fill();
+    shorePath(ctx,tile.x*tileSize,tile.y*tileSize,tileSize,tile.edges,false);
    }
+   ctx.fill();
    if(gl&&!gl.isContextLost()){
     if(gpu.width!==width||gpu.height!==height){gpu.width=width;gpu.height=height;}
     gl.viewport(0,0,width,height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);

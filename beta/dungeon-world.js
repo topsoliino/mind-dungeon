@@ -63,17 +63,30 @@ const bossArena=arenaTiles&&(()=>{
  const {cx,cy,radius,id,altars,gate}=arenaTiles;
  const origin=tileCenter({x:cx,y:cy});
  const offsets=(pairs)=>pairs.map(([x,y])=>tileCenter({x:cx+x,y:cy+y}));
- const poolTiles=[
-  [-6,-2],[-5,-3],[-5,-2],[-4,-2],[-5,-1],
-  [2,-4],[3,-5],[3,-4],[3,-3],[4,-4],
-  [3,3],[4,2],[4,3],[4,4],[5,3],
-  [-3,4],[-2,3],[-2,4],[-1,4],[-2,5],
-  [-1,-1],[0,-2],[0,-1],[0,0],[1,0]
- ].map(([x,y])=>({x:cx+x,y:cy+y}));
- const poolCells=new Set(poolTiles.map(p=>p.y*W+p.x));
+ const poolSize=TILE/3,stride=W*3,poolCells=new Set(),poolTiles=[];
+ const pools=[[-5,-1.9,79,46,.2], [3,-4.1,67,51,-.34], [4,3,86,45,.46],
+  [-2,4,72,39,-.22], [0,-1,58,45,.67]];
+ for(const [i,[ox,oy,rx,ry,tilt]] of pools.entries()){
+  const px=origin.x+ox*TILE,py=origin.y+oy*TILE;
+  const cos=Math.cos(tilt),sin=Math.sin(tilt),extent=Math.max(rx,ry)*1.25;
+  for(let y=Math.floor((py-extent)/poolSize);y<=Math.floor((py+extent)/poolSize);y++){
+   for(let x=Math.floor((px-extent)/poolSize);x<=Math.floor((px+extent)/poolSize);x++){
+    const dx=(x+.5)*poolSize-px,dy=(y+.5)*poolSize-py;
+    const u=(dx*cos+dy*sin)/rx,v=(dy*cos-dx*sin)/ry,a=Math.atan2(v,u);
+    const radius=1+Math.sin(a*3+i*2.41)*.16+Math.sin(a*5-i*1.28)*.08;
+    const cell=y*stride+x;
+    if(Math.hypot(u,v)>radius||poolCells.has(cell))continue;
+    poolCells.add(cell);poolTiles.push({x,y,type:'boss-water'});
+   }
+  }
+ }
+ for(const p of poolTiles){
+  const cell=p.y*stride+p.x;
+  p.edges=[-1,-stride,1,stride].map(offset=>Number(!poolCells.has(cell+offset)));
+ }
  return {...origin,id,radius:radius*TILE,gate:{...tileCenter(gate),vertical:true,span:3*TILE,face:16},
   altars:altars.map(tileCenter),vents:offsets([[-8,0],[-6,-6],[0,-8],[6,-6],[8,3],[6,6],[0,8],[-6,6]]),
-  poolTiles,poolCells,
+  poolSize,poolTiles,inPool:(x,y)=>poolCells.has(Math.floor(y/poolSize)*stride+Math.floor(x/poolSize)),
   labProps:offsets([[-4,-7],[-2,-8],[2,-8],[4,-7],[-7,-4],[-7,4],[6,5]]),
   benches:offsets([[0,-7],[-6,6],[2,7],[6,-5]]),
   rubble:offsets([[-4,-4],[1,-6],[5,-1],[-5,3],[1,5],[-1,-2],[5,4]]).map((p,i)=>({...p,fallDelay:.46+i*.087}))};
@@ -162,7 +175,7 @@ function doorAhead(x,y,angle,reach){
 }
 const waterAt=(x,y)=>{
  const row=Math.floor(y/TILE),col=Math.floor(x/TILE);
- if(bossArena&&save.bossBattle?.rain&&regions[row]?.[col]===bossArena.id&&bossArena.poolCells.has(row*W+col))return 'boss-water';
+ if(bossArena&&save.bossBattle?.rain&&regions[row]?.[col]===bossArena.id&&bossArena.inPool(x,y))return 'boss-water';
  const tile=terrain[row]?.[col];
  return tile?.startsWith('sewer-')?tile:null;
 };
