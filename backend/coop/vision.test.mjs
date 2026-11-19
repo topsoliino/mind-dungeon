@@ -236,3 +236,17 @@ test('entering the street reveals the pavement and building fronts without seein
   assert.equal(floor.strikeFurniture(piece,999),0);
  }
 });
+
+test('an open house shows its entrance at night and reveals the rooms upon entry',()=>{
+ const floor=geometry.build(run,run.freshRun(2));
+ const house=floor.alleys.houses[0];
+ const door=floor.doors.find(d=>d.id===house.key);
+ const view=vision.create(floor,TILE,floor.sightBarriers(),[],new Set([floor.rest.id]));
+ view.update({x:door.x,y:door.y+TILE},800,640);
+ assert.equal(floor.doorHP(door),0);
+ assert.ok(view.remembers(door.x,door.y));
+ assert.equal(knows(view,house.cx,house.cy),false);
+ view.update(center(house.cx,house.cy),800,640);
+ assert.ok(looks(view,house.x,house.y));
+ assert.ok(looks(view,house.x+house.w-1,house.y+house.h-1));
+});

@@ -384,6 +384,7 @@ test('the alleys have two time-locked houses, night-only bats and one shared epi
   const {host,sim}=game(seed);
   const {floor}=sim,street=floor.alleys;
   assert.equal(street.light,phase);
+  assert.equal(street.lights.length===0,phase==='day');
   assert.equal(street.houses.length,2);
   const outside=street.paved[Math.floor(street.paved.length/2)];
   assert.equal(floor.sightScale((outside.x+.5)*TILE,(outside.y+.5)*TILE),scale);
@@ -396,6 +397,8 @@ test('the alleys have two time-locked houses, night-only bats and one shared epi
   for(const [i,house] of street.houses.entries()){
    const door=floor.doors.find(d=>d.id===house.key),sign=i===0?-1:1;
    assert.equal(floor.layerAt(door.x,door.y),0);
+   assert.equal(floor.terrain[house.cy][house.cx],'house-boards');
+   assert.equal(floor.terrain[Math.floor(door.y/TILE)-sign][Math.floor(door.x/TILE)],'street-step-'+(door.north?'north':'south')+'-'+phase);
    Object.assign(host,{x:door.x,y:door.y-sign*TILE*1.8});
    sim.move(host,0,sign*TILE*3.5);
    assert.equal(floor.regionAt(host.x,host.y)===house.id,phase!=='day');
@@ -413,6 +416,20 @@ test('the alleys have two time-locked houses, night-only bats and one shared epi
  }
  assert.equal(items.retreatDepth(4,['avoidance',null]),4);
  assert.equal(items.retreatDepth(4,['height',null]),3);
+});
+
+test('new streets mix narrow lanes and wider areas without changing legacy street widths',()=>{
+ const spans=a=>{
+  const counts=new Map();
+  for(const {x} of a.paved)counts.set(x,(counts.get(x)??0)+1);
+  return new Set(counts.values());
+ };
+ for(const seed of [0,2,4,9,103,193]){
+  const newStreet=run.generate(seed,true,13,1).alleys;
+  const oldStreet=run.generate(seed,true,12,1).alleys;
+  assert.ok(spans(newStreet).has(3)&&spans(newStreet).has(7));
+  assert.ok(spans(oldStreet).has(4)&&!spans(oldStreet).has(3));
+ }
 });
 
 test('seeds vary the number of routes and rooms on ground and upper layers',()=>{

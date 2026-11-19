@@ -8,6 +8,8 @@ window.DungeonVision=(()=>{
   const size=W*H,opaque=new Uint8Array(size),obstacles=new Uint8Array(size),live=new Uint8Array(size),known=new Uint8Array(size);
   const seenTiles=[],roomTiles=new Map(),revealedRooms=new Set(),litRoomCells=new Uint8Array(size);
   const streetFacades=[];
+  const streetInteriors=new Set((alleys?.houses??[]).map(house=>house.id));
+  for(const barrier of barriers)if(barrier.streetHouse)streetInteriors.add(barrier.region);
   const witnessed=new Set(),reachable=new Int16Array(size),frontier=new Int32Array(size);
   const sewerSections=new Set(sewerRooms.map(room=>room.id));
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
@@ -153,10 +155,13 @@ window.DungeonVision=(()=>{
    if(key===signature)return;
    signature=key;viewOrigin=origin;live.fill(0);reached=false;
    updateObstacles(origin,closed);
+   const fromStreet=regions[row][col]===alleys?.id;
    for(let y=Math.max(0,Math.floor(sy-ry));y<=Math.min(H-1,Math.ceil(sy+ry));y++){
     for(let x=Math.max(0,Math.floor(sx-rx));x<=Math.min(W-1,Math.ceil(sx+rx));x++){
+     const id=y*W+x;
+     if(fromStreet&&streetInteriors.has(regions[y][x])&&!doorwayCells.has(id))continue;
      if(!trace(origin,x,y))continue;
-     const id=y*W+x;live[id]=1;
+     live[id]=1;
      if(!known[id])rememberFloor(id);
     }
    }
