@@ -11,7 +11,6 @@ export function personal(p){
 export function actions(sim){
  const near=(p,site,limit=96)=>Boolean(site&&gap(p,site)<=limit&&!sim.floor.gateLineBlocked(p.x,p.y,site.x,site.y));
  const live=(p,site,limit)=>{if(!near(p,site,limit))fail('Du bist zu weit entfernt.');};
- const count=p=>p.inventory.length;
  const floorNumber=()=>sim.state.floor;
  function chestFoley(pos,gold=false){
   sim.sound('chest_latch',pos,{gain:.72,priority:2});
@@ -206,7 +205,6 @@ export function actions(sim){
   const orb=sim.orbs.get(id);
   if(!orb||orb.seat&&orb.seat!==p.seat)fail('Der Seelenball ist nicht mehr verfügbar.');
   const bones=orb.item.kind==='bones',key=orb.item.kind==='key';
-  if(!bones&&!key&&count(p)>=30)fail('Dein Inventar ist voll.');
   live(p,orb,68);
   if(key)sim.keyring[orb.item.id]??='held';
   else if(bones)p.bones+=orb.item.bundle===3?3:1;
@@ -280,7 +278,7 @@ export function actions(sim){
   if(kind==='soul')return take(p,i);
   if(kind==='cup'){
    live(p,f.cupPoint,69);
-   if(p.cupClaimed||count(p)>=30)fail('Der Becher ist nicht verfügbar.');
+   if(p.cupClaimed)fail('Der Becher ist nicht verfügbar.');
    p.cupClaimed=true;p.inventory.push(cup('Ruheraum'));return {notice:'Leerer Becher aufgenommen'};
   }
   if(kind==='bones'){
@@ -332,7 +330,7 @@ export function actions(sim){
    case 'buy':{
     live(p,sim.floor.merchant);const offer=Object.values(stock(p)).flat().find(row=>row.stock===data.stock);
     const currency=offer?.currency??'gold',sold=currency==='rubies'?p.mythicSold:p.shopSold;
-    if(!offer||p[currency]<offer.price||sold.includes(offer.stock)||offer.kind!=='key'&&count(p)+(offer.bundle||1)>30)fail('Dieses Angebot ist nicht verfügbar.');
+    if(!offer||p[currency]<offer.price||sold.includes(offer.stock))fail('Dieses Angebot ist nicht verfügbar.');
     if(offer.kind==='key')sim.keyring[offer.id]='held';
     else for(let n=0;n<(offer.bundle||1);n++)p.inventory.push(item(offer.kind,offer.id,offer.rarity,offer.source));
     p[currency]-=offer.price;sold.push(offer.stock);result={stock:stock(p),...(offer.kind==='bossNote'?{notice:bossRules.name}:{})};break;

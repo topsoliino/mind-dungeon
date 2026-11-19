@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const worldContext=vm.createContext({window:{},crypto:globalThis.crypto});
-for(const file of ['boss','strata','sanctuary','run','balance','items','enemies','brewing','expedition','world','vision','enemy-sim']){
+for(const file of ['boss','strata','sanctuary','temple','run','balance','items','enemies','brewing','expedition','world','vision','enemy-sim']){
  const path=new URL('../../beta/dungeon-'+file+'.js',import.meta.url);
  vm.runInContext(readFileSync(path,'utf8'),worldContext,{filename:path.pathname});
 }

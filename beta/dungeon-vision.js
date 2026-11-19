@@ -7,13 +7,18 @@ window.DungeonVision=(()=>{
   const {map,regions,terrain,W,H,stairs,rest,rooms,annexes=[],sewerRooms=[],alleys}=world;
   const size=W*H,opaque=new Uint8Array(size),obstacles=new Uint8Array(size),live=new Uint8Array(size),known=new Uint8Array(size);
   const seenTiles=[],roomTiles=new Map(),revealedRooms=new Set(),litRoomCells=new Uint8Array(size);
+  const waterfalls=new Map();
   const streetFacades=[];
   const streetInteriors=new Set((alleys?.houses??[]).map(house=>house.id));
   for(const barrier of barriers)if(barrier.streetHouse)streetInteriors.add(barrier.region);
   const witnessed=new Set(),reachable=new Int16Array(size),frontier=new Int32Array(size);
   const sewerSections=new Set(sewerRooms.map(room=>room.id));
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-   const cell=y*W+x,region=regions[y][x];
+   const cell=y*W+x,region=regions[y][x],tile=terrain?.[y]?.[x];
+   if(tile==='waterfall'||tile==='clear-river')for(const bank of world.waterfallBanks?.get(region)??[]){
+    if(!waterfalls.has(bank))waterfalls.set(bank,[]);
+    waterfalls.get(bank).push(cell);
+   }
    if(map[y][x]===1&&!world.abyssAt((x+.5)*tileSize,(y+.5)*tileSize))opaque[cell]=1;
    if(alleys&&region===alleys.id){
     if(opaque[cell]&&terrain[y][x]?.startsWith('street-')&&!terrain[y][x].startsWith('street-backroof'))streetFacades.push(cell);
@@ -54,6 +59,7 @@ window.DungeonVision=(()=>{
    if(!cells||revealedRooms.has(region))return;
    revealedRooms.add(region);
    for(const cell of cells){litRoomCells[cell]=1;rememberFloor(cell);}
+   for(const cell of waterfalls.get(region)??[]){litRoomCells[cell]=1;rememberFloor(cell);}
    if(region===alleys?.id)for(const cell of streetFacades)remember(cell);
   }
   function updateObstacles(observer,closed){
