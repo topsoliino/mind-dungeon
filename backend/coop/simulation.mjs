@@ -57,6 +57,7 @@ export class Simulation{
    takeDamage:(p,...args)=>this.hurtPlayer(p,...args),maxHP,
    applyPoison:(p,opts)=>this.poison(p,opts),addBleed:(p,n,origin)=>this.bleed(p,n,origin),
    soundWorld:(cue,pos,mix)=>this.sound(cue,pos,mix),
+   hitFurniture:(p,damage,angle)=>this.hitFurniture(p,damage,angle),
    burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),shockWater:(...args)=>this.shockWater(...args),knockHero:(p,x,y,origin)=>this.move(p,x,y,true,origin),coopActors:()=>this.activePlayers(),
    enemyEncounterReady:()=>this.currentTarget!==null,
    rand:(a,b)=>a+this.random()*(b-a)
@@ -180,11 +181,19 @@ export class Simulation{
   p.input={...idleInput(),seq:p.input.seq};
   this.emit('travel',{seat:p.seat,x:p.x,y:p.y,link:link.kind});
  }
- hitDoor(door,attack){
-  if(door.streetHouse||this.floor.accessState(door)!=='open')return;
+ hitDoor(door,attack,angle){
+  if(door.streetHouse||this.floor.doorHP(door)<=0||this.floor.accessState(door)!=='open')return;
   const hp=this.floor.strikeDoor(attack.amount*(attack.charged?1.5:1),door);
   if(hp===0&&door.reward)this.drop({x:(door.reward.x+.5)*TILE,y:(door.reward.y+.5)*TILE},selectLoot('epic',this.state.floor,this.random));
-  this.emit('door',{x:door.x,y:door.y,id:door.id,hp});
+  this.emit('door',{x:door.x,y:door.y,id:door.id,hp,angle});
+ }
+ hitFurniture(prop,damage,angle){
+  const hp=this.floor.strikeFurniture(prop,damage);
+  if(hp!==null)this.emit('furniture',{x:prop.x,y:prop.y,id:prop.breakId,hp,angle,w:prop.w,h:prop.h});
+  else{
+   const cue=this.floor.furnitureCue(prop);
+   if(cue)this.sound(cue,prop,{gain:.58,priority:2});
+  }
  }
  shockWater(origin,impact,split,amount,owner){
   const pulse=this.floor.waterPulse(origin,impact,split,amount);
@@ -376,7 +385,7 @@ export class Simulation{
   for(let d=6;d<=122;d+=4){
    const x=p.x+dx*d,y=p.y+dy*d;
    if(floor.regionAt(x,y)!==region||[-10,0,10].some(ox=>[-5,0,5].some(oy=>floor.footWall(x+ox,y+oy)||floor.gateBlocked(x+ox,y+oy))))return null;
-   const props=floor.furniture.filter(f=>f.solid&&Math.abs(x-f.x)<f.w/2+9&&Math.abs(y-f.y)<f.h/2+6);
+   const props=floor.furniture.filter(f=>f.solid&&floor.furnitureIntact(f)&&Math.abs(x-f.x)<f.w/2+9&&Math.abs(y-f.y)<f.h/2+6);
    if(props.length){
     if(!obstacle&&d>35||props.length!==1||!vaultable.has(props[0].type)||obstacle&&props[0]!==obstacle)return null;
     obstacle=props[0];
@@ -412,31 +421,36 @@ export class Simulation{
   const contact=this.floor.meleeWall(p.x,p.y,p.dir,w,reach);
   if(contact){swing.wallAngle=contact.offset;swing.duration=geometry.wallRecoilSeconds;}
   this.emit('swing',swing);
-  if(this.floor.inRest(p.x,p.y)){
-   if(contact)this.reboundFromWall(p,contact,charged);
-   return true;
-  }
-  const hit={p,w,charged,amount:p.damage*items.madnessBonus(p,p.equipment.rings),crit:p.crit,impact:p.impact,split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
+  const rest=this.floor.inRest(p.x,p.y);
+  const hit={p,w,charged,amount:p.damage*items.madnessBonus(p,p.equipment.rings),crit:p.crit,impact:p.impact,
+   split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
   if(w.projectile){
-   this.shots.push({x:p.x,y:p.y,origin:{x:p.x,y:p.y},angle:p.dir,left:reach,speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
+   this.shots.push({x:p.x,y:p.y,origin:{x:p.x,y:p.y},angle:p.dir,left:reach,restOnly:rest,
+    speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
    return true;
   }
-  let targetHit=false,impact=null;
-  const door=this.floor.doorAhead(p.x,p.y,p.dir,reach);
+  let impact=null;
+  const obstruction=this.floor.weaponImpact(p.x,p.y,p.dir,reach);
+  const props=this.floor.meleeFurniture(p.x,p.y,p.dir,reach,w,contact,obstruction);
+  const door=rest?null:this.floor.doorAhead(p.x,p.y,p.dir,reach);
   const beforeWall=target=>this.floor.beforeMeleeWall(p.x,p.y,target.x,target.y,w,contact);
-  const doorHit=door&&beforeWall(door);
-  for(const e of this.enemies){
+  const doorHit=door&&beforeWall(door)&&!this.floor.furnitureBetween(p.x,p.y,door.x,door.y);
+  if(!rest)for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
-   if(e.hp>0&&!e.fall&&items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)&&beforeWall(e)&&
-     !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;impact??={x:e.x,y:e.y};this.weaponHit(e,hit,angle);}
+   if(e.hp<=0||e.fall||!items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)||!beforeWall(e)||
+      this.floor.gateLineBlocked(p.x,p.y,e.x,e.y))continue;
+   const cover=this.floor.furnitureBetween(p.x,p.y,e.x,e.y);
+   if(cover){props.add(cover);continue;}
+   impact??=e;
+   this.weaponHit(e,hit,angle);
   }
-  if(doorHit)this.hitDoor(door,hit);
-  this.shockWater(p,impact??(doorHit?door:null),hit.split,hit.amount,p);
+  for(const prop of props)if(!rest||this.floor.inRest(prop.x,prop.y)){
+   this.hitFurniture(prop,hit.amount*(charged?1.5:1),Math.atan2(prop.y-p.y,prop.x-p.x));
+  }
+  if(doorHit)this.hitDoor(door,hit,p.dir);
+  if(!rest)this.shockWater(p,impact??(doorHit?door:null),hit.split,hit.amount,p);
   if(contact)this.reboundFromWall(p,contact,charged);
-  else if(!targetHit&&!doorHit){
-   const prop=this.floor.weaponImpact(p.x,p.y,p.dir,reach);
-   if(prop)this.sound(prop.cue,prop,{gain:.67,priority:2});
-  }
+  else if(!impact&&!doorHit&&!props.size&&obstruction?.cue)this.sound(obstruction.cue,obstruction,{gain:.67,priority:2});
   return true;
  }
  reboundFromWall(p,contact,charged){
@@ -450,12 +464,16 @@ export class Simulation{
  updateShots(dt){
   this.shots=this.shots.filter(shot=>{
    const distance=Math.min(shot.left,shot.speed*dt),steps=Math.max(1,Math.ceil(distance/6)),stride=distance/steps;
-   const shock=(impact=shot)=>{if(shot.hit)this.shockWater(shot.origin??shot.hit.p,impact,shot.hit.split,shot.hit.amount,shot.hit.p);};
+   const shock=(impact=shot)=>{if(shot.hit&&!shot.restOnly)this.shockWater(shot.origin??shot.hit.p,impact,shot.hit.split,shot.hit.amount,shot.hit.p);};
    for(let i=0;i<steps;i++){
     shot.x+=Math.cos(shot.angle)*stride;shot.y+=Math.sin(shot.angle)*stride;
     if(this.floor.wall(shot.x,shot.y)||this.floor.gateBlocked(shot.x,shot.y)){shock();return false;}
+    if(shot.restOnly&&!this.floor.inRest(shot.x,shot.y))return false;
     const door=this.floor.doorAt(shot.x,shot.y);
-    if(door){if(shot.hit)this.hitDoor(door,shot.hit);shock();return false;}
+    if(door){if(shot.hit&&!shot.restOnly)this.hitDoor(door,shot.hit,shot.angle);shock();return false;}
+    const prop=this.floor.furnitureAt(shot.x,shot.y,2);
+    if(prop){if(shot.hit)this.hitFurniture(prop,shot.hit.amount*(shot.hit.charged?1.5:1),shot.angle);shock();return false;}
+    if(shot.restOnly)continue;
     const enemy=this.enemies.find(e=>e.hp>0&&!e.fall&&gap(e,shot)<radius(e)+5&&
      !this.floor.gateLineBlocked(shot.x,shot.y,e.x,e.y));
     if(enemy){const impact={x:enemy.x,y:enemy.y};this.weaponHit(enemy,shot.hit,shot.angle);shock(impact);return false;}

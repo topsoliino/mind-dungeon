@@ -395,7 +395,7 @@ window.DungeonRun = (() => {
   });
  }
  function floorState(seed,depth){
-  return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},doors:{},access:{},gateProgress:{},gateQuestions:{},opened:[],
+  return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},doors:{},furnitureDamage:{},access:{},gateProgress:{},gateQuestions:{},opened:[],
    defeated:[],explored:[REST_ID],seenTiles:[],seenTilesVersion:null,portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:12,bossBattle:null,bossActors:[],cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
  }
  function freshRun(seed){
