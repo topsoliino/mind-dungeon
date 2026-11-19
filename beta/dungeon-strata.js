@@ -21,7 +21,7 @@ window.DungeonStrata=(()=>{
    for(const row of grid)while(row.length<width)row.push(fill);
   }
   const links=[],doors=[],layers={},sewerRooms=[],stairs=[];
-  let roof=null,sewerRelic=null,crypt=null;
+  let roof=null,sewerRelic=null,crypt=null,bossArena=null;
   function carve(x,y,w,h,id,water=null){
    for(let iy=y;iy<y+h;iy++)for(let ix=x;ix<x+w;ix++){
     map[iy][ix]=0;regions[iy][ix]=id;terrain[iy][ix]=water;
@@ -226,7 +226,30 @@ window.DungeonStrata=(()=>{
     doors.push({id:'crypt-door',region:59,x:x-1,y:rest.cy-1,w:1,h:3,vertical:true,hp:58});
    }
   }
-  return {...base,links,doors,layers,lofts,sewerRooms,roof,sewerRelic,stairs,crypt};
+  if(revision>=11&&depth===1){
+   const extraWidth=30;
+   for(const [grid,fill] of [[map,1],[regions,-1],[terrain,null]]){
+    for(const row of grid)row.unshift(...Array(extraWidth).fill(fill));
+   }
+   for(const site of new Set([...rooms,...corridors,...gates,...annexes,...paths,...annexes.map(r=>r.passage),
+    ...doors,...links.flatMap(link=>[link.a,link.b]),...stairs.flatMap(stair=>[stair,stair.a,stair.b]),sewerRelic].filter(Boolean))){
+    site.x+=extraWidth;
+    if(Number.isFinite(site.cx))site.cx+=extraWidth;
+   }
+   const cx=11,cy=rest.cy,radius=9,id=65,gateX=cx+radius+1;
+   for(let y=cy-radius;y<=cy+radius;y++)for(let x=cx-radius;x<=cx+radius;x++){
+    if((x-cx)**2+(y-cy)**2<=radius**2)carve(x,y,1,1,id,'boss-planks');
+   }
+   carve(gateX-1,cy-1,1,3,id,'boss-planks');
+   const hall={id:66,x:gateX,y:cy-1,w:rest.x-gateX,h:3,theme:3,vertical:true};
+   for(let y=cy-1;y<=cy+1;y++)for(let x=gateX;x<rest.x;x++){
+    if(map[y][x]===1)carve(x,y,1,1,hall.id,'boss-planks');
+   }
+   paths.push(hall);
+   bossArena={id,cx,cy,radius,gate:{x:gateX,y:cy},altars:[{x:gateX+2,y:cy-1},{x:gateX+2,y:cy+1}]};
+   annexes.push({id,key:'behaviorist-arena',name:'Versuchslabor',x:cx-radius,y:cy-radius,w:2*radius+1,h:2*radius+1,cx,cy,theme:3});
+  }
+  return {...base,links,doors,layers,lofts,sewerRooms,roof,sewerRelic,stairs,crypt,bossArena};
  }
  return {extend};
 })();

@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {run,balance,items,foes,geometry,enemySim,TILE,HERO_RADIUS,fallSeconds,round,clamp,gap,remaining,normalAngle,maxHP,preparePlayer,selectLoot,cup,pools} from './rules.mjs';
+import {run,balance,items,foes,geometry,enemySim,bossRules,TILE,HERO_RADIUS,fallSeconds,round,clamp,gap,remaining,normalAngle,maxHP,preparePlayer,selectLoot,cup,pools} from './rules.mjs';
 
 const vaultable=new Set(['barrel','table','round-table','banquet','banquet-long','bench','chair','basket','straw-bed']);
 const effectKinds=['bolts','enemyHazards','webShots','webPatches','stormStrikes','waterArcs'];
@@ -24,6 +24,31 @@ export class Simulation{
   this.effects=Object.fromEntries(effectKinds.map(key=>[key,[]]));this.shots=[];this.orbs=new Map();this.portal=null;
   this.completed=false;this.explored=new Set([this.floor.rest?.id]);
   this.resistances=items.foes.map(profile=>foes.resistances(profile,floor));
+  this.boss=bossRules.create(this.floor.bossArena,this.state,{
+   players:()=>this.activePlayers(),enemies:()=>this.enemies,types:foes,random:this.random,
+   region:p=>this.floor.regionAt(p.x,p.y),move:(e,dx,dy)=>this.move(e,dx,dy),
+   teleport:(p,pos)=>{
+    Object.assign(p,pos,{input:idleInput(),dash:0,vault:null,quiz:null,chargeStart:null,moving:false});
+    p.revision++;
+   },
+   spawn:enemies=>(this.newEnemies??=[]).push(...enemies),
+   hit:(p,n,origin)=>this.hurtPlayer(p,n,{lightning:1},false,1,undefined,undefined,origin),
+   spread:(p,n)=>this.bossWaterPulse(p,n),
+   drop:(e,it,count)=>{
+    for(const p of this.activePlayers())for(let i=0;i<count;i++)this.drop({x:e.x+(i-1)*18,y:e.y+(p.seat===1?-12:12)},it,p.seat);
+   },
+   win:(arena,reward)=>{
+    this.portal={x:arena.x+80,y:arena.y};this.emit('portal',this.portal);
+    if(reward)for(const p of this.players){
+     if(!(p.bossRewards??=[]).includes(reward))p.bossRewards.push(reward);
+     p.revision++;
+    }
+   },
+   changed:phase=>{
+    if(phase==='ready'||phase==='intro')this.sound('gate_stone_motion',this.floor.bossArena.gate,{priority:3});
+    if(phase==='won')this.sound('boss_defeat',this.floor.bossArena,{priority:3});
+   }
+  });
   for(const p of this.players)this.resetAtRest(p,true);
   this.ai=enemySim.create({
    enemyRules:foes,items,balance,save:this.state,state:this.effects,floor:this.floor,getEnemies:()=>this.enemies,
@@ -81,6 +106,7 @@ export class Simulation{
   if(!count||next===this.difficulty)return;
   this.difficulty=next;
   for(const e of this.enemies){
+   if(e.bossRole)continue;
    const max=this.enemyHealth(e.type,e.boss);
    e.hp=e.hp/e.max*max;e.max=max;
   }
@@ -167,12 +193,21 @@ export class Simulation{
    this.hurtPlayer(p,pulse.power,{lightning:1},true,1,undefined,undefined,origin);
   }
   for(const e of this.enemies)if(e!==owner&&e.hp>0&&this.floor.pulseReaches(pulse,e)){
-   this.hurtEnemy(e,items.hit(pulse.power,{lightning:1},this.resistances[e.type]),owner?.seat?owner:null);
+   this.hurtEnemy(e,items.hit(pulse.power,{lightning:1},this.resistanceFor(e)),owner?.seat?owner:null);
   }
  }
+ bossWaterPulse(pos,amount){
+  const pulse=this.floor.waterPulse(pos,pos,{lightning:1},amount);
+  if(!pulse)return;
+  this.effects.waterArcs.push(pulse);
+  for(const p of this.activePlayers())if(p!==pos&&this.floor.pulseReaches(pulse,p)){
+   this.hurtPlayer(p,pulse.power,{lightning:1},true,1,undefined,undefined,{source:bossRules.name,action:'Blitz im Wasser'});
+  }
+ }
+ resistanceFor(e){return bossRules.resistance(e,this.resistances[e.type]);}
  control(p,input){
   if(!Number.isSafeInteger(input.seq)||input.seq<=p.input.seq||!Number.isFinite(input.aim))return false;
-  const blocked=Boolean(input.blocked||p.quiz||p.consume||p.fall||p.deathRecap);
+  const blocked=Boolean(this.state.bossBattle?.phase==='intro'||input.blocked||p.quiz||p.consume||p.fall||p.deathRecap);
   p.input={seq:input.seq,x:blocked?0:clampInput(input.x),y:blocked?0:clampInput(input.y),aim:normalAngle(input.aim),
    dash:Boolean(input.dash)&&!blocked,blocked,at:this.clock};
   if(blocked)p.chargeStart=null;
@@ -202,6 +237,7 @@ export class Simulation{
    if(e.hp<=0)continue;
    this.tickPoison(e,dt);
    if(e.hp<=0)continue;
+   if(e.bossRole==='scientist')continue;
    this.currentTarget=active.filter(p=>this.canTarget(e,p)).sort((a,b)=>gap(a,e)-gap(b,e))[0]??null;
    if(active[0])this.ai.act(e,dt,this.currentTarget??active[0],this.clock,1180,760);
   }
@@ -209,7 +245,10 @@ export class Simulation{
   let last=null;
   this.enemies=this.enemies.filter(e=>{if(e.hp>0)return true;last=e;this.defeat(e);return false;});
   if(this.newEnemies?.length)this.enemies.push(...this.newEnemies.splice(0));
-  if(last&&this.enemies.length===0&&!this.portal){
+  this.boss?.step(dt);
+  if(this.newEnemies?.length)this.enemies.push(...this.newEnemies.splice(0));
+  if(this.boss)this.enemies=this.enemies.filter(e=>!e.bossDiscard);
+  if(last&&this.enemies.length===0&&!this.portal&&!this.boss){
    const region=this.floor.regionAt(last.x,last.y);
    const points=[[60,0],[-60,0],[0,60],[0,-60],[0,0]].map(([dx,dy])=>({x:last.x+dx,y:last.y+dy}));
    this.portal=points.find(point=>this.floor.regionAt(point.x,point.y)===region&&this.floor.valid(point.x,point.y)&&
@@ -240,6 +279,9 @@ export class Simulation{
   this.emit('notice',{message:notice},p.seat);
  }
  stepPlayer(p,dt){
+  if(this.state.bossBattle?.phase==='intro'){
+   p.input=idleInput();p.moving=false;return;
+  }
   if(p.fall){
    p.fall.remaining-=dt;
    if(p.fall.remaining<=1e-7)this.die(p,'fall',p.fall.origin);
@@ -332,7 +374,7 @@ export class Simulation{
   return null;
  }
  charge(p,aim,vaultFirst=false){
-  if(p.fall||p.deathRecap||p.quiz||p.consume||p.attack||p.dash||p.vault||p.chargeStart!==null)return false;
+  if(this.state.bossBattle?.phase==='intro'||p.fall||p.deathRecap||p.quiz||p.consume||p.attack||p.dash||p.vault||p.chargeStart!==null)return false;
   p.dir=Number.isFinite(aim)?normalAngle(aim):p.dir;
   if(vaultFirst){
    const heading=p.input.x||p.input.y?Math.atan2(p.input.y,p.input.x):p.dir,to=this.vaultPath(p,heading);
@@ -342,7 +384,7 @@ export class Simulation{
   p.chargeStart=this.clock;return true;
  }
  attack(p,aim){
-  if(p.chargeStart===null)return false;
+  if(this.state.bossBattle?.phase==='intro'||p.chargeStart===null)return false;
   const charged=this.clock-p.chargeStart>=balance.chargeSeconds;
   p.chargeStart=null;
   if(p.fall||p.deathRecap||p.quiz||p.consume||p.dash||p.attack||p.vault||!p.weapon)return false;
@@ -393,27 +435,30 @@ export class Simulation{
   });
  }
  weaponHit(e,attack,angle){
+  if(e.warded)return;
   const {p,w,charged,amount,split}=attack,counter=e.counterUntil>this.clock,rolled=!counter&&this.random()<attack.crit;
   const crit=counter?charged?'fatal':'counter':rolled?'critical':'';
   const wet=this.floor.inRain(p.x,p.y)||this.floor.inRain(e.x,e.y);
-  const hit=items.hit(amount*balance.hitMultiplier(charged,counter,rolled,w.critFactor),wet&&split.fire?{...split,fire:split.fire*.55}:split,this.resistances[e.type]);
+  const resist=this.resistanceFor(e);
+  const hit=items.hit(amount*balance.hitMultiplier(charged,counter,rolled,w.critFactor),wet&&split.fire?{...split,fire:split.fire*.55}:split,resist);
   this.hurtEnemy(e,hit,p,crit,w.id);
   if(!hit.total)return;
   if(counter)e.counterUntil=0;
   const knock=foes.knockbackDistance(attack.impact,foes.balance(e.type,e.boss))*(w.projectile?.67:1);
   if(knock)this.move(e,Math.cos(angle)*knock,Math.sin(angle)*knock);
   if(e.hp>0&&w.status==='bleed'&&!(e.bleedUntil>this.clock)){
-   e.bleedUntil=this.clock+3;this.hurtEnemy(e,items.hit(e.max*(.08+(w.statusLevel-1)*.02),{bleed:1},this.resistances[e.type]),p);
+   e.bleedUntil=this.clock+3;this.hurtEnemy(e,items.hit(e.max*(.08+(w.statusLevel-1)*.02),{bleed:1},resist),p);
   }
-  if(e.hp>0&&w.status==='poison'&&this.resistances[e.type].poison!==1&&!e.poison)this.poison(e,{untilTick:.72,ticks:3,power:1+(w.statusLevel-1)*.25,owner:p});
+  if(e.hp>0&&w.status==='poison'&&resist.poison!==1&&!e.poison)this.poison(e,{untilTick:.72,ticks:3,power:1+(w.statusLevel-1)*.25,owner:p});
   if(p.equipment.rings.includes('faith'))p.hp=Math.min(maxHP(p),p.hp+3);
  }
  hurtEnemy(e,hit,p,critical='',weapon){
-  if(e.hp<=0)return;
+  if(e.hp<=0||e.warded)return;
   const n=Math.min(e.hp,hit.total);
   if(n>0){
    if(hit.type==='bleed')this.bloodLoss(e);
-   e.hp-=n;e.dominant=hit.type;e.hit=.22;foes.alert(e);
+   e.hp-=n;if(e.hp<=0)this.boss?.markDeath(e);
+   e.dominant=hit.type;e.hit=.22;foes.alert(e);
    if(p){p.combatRecord.dealt+=n;if(critical)p.combatRecord[critical==='critical'?'crits':'counters']++;p.revision++;}
   }
   this.emit('hit',{x:round(e.x),y:round(e.y),value:n,type:hit.type,critical,enemyType:e.type,weapon});
@@ -467,7 +512,7 @@ export class Simulation{
   else poison.untilTick=.72;
   const amount=7*(poison.power??1);
   if(actor.seat)this.hurtPlayer(actor,amount,{poison:1},true,1.1,'element_poison_tick',undefined,poison.origin);
-  else this.hurtEnemy(actor,items.hit(amount,{poison:1},this.resistances[actor.type]),poison.owner);
+  else this.hurtEnemy(actor,items.hit(amount,{poison:1},this.resistanceFor(actor)),poison.owner);
  }
  bleed(p,amount,origin){
   p.bleed=Math.min(100,p.bleed+amount);p.bleedGrace=2;
@@ -481,6 +526,7 @@ export class Simulation{
  defeat(e){
   const active=this.activePlayers();
   for(const p of active){p.kills++;p.revision++;}
+  if(e.bossRole){this.boss?.defeat(e);this.emit('defeated',{x:e.x,y:e.y,type:e.type});return;}
   if(e.type===foes.PRIEST){
    this.newEnemies??=[];
    for(const side of [-1,1]){

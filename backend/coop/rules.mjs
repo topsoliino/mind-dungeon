@@ -2,12 +2,12 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const worldContext=vm.createContext({window:{},crypto:globalThis.crypto});
-for(const file of ['strata','run','balance','items','enemies','brewing','expedition','world','enemy-sim']){
+for(const file of ['boss','strata','run','balance','items','enemies','brewing','expedition','world','enemy-sim']){
  const path=new URL('../../beta/dungeon-'+file+'.js',import.meta.url);
  vm.runInContext(readFileSync(path,'utf8'),worldContext,{filename:path.pathname});
 }
 export const {DungeonRun:run,DungeonBalance:balance,DungeonItems:items,DungeonEnemies:foes,
- DungeonWorld:geometry,DungeonBrewing:brewing,DungeonExpedition:expedition,DungeonEnemySim:enemySim}=worldContext.window;
+ DungeonWorld:geometry,DungeonBoss:bossRules,DungeonBrewing:brewing,DungeonExpedition:expedition,DungeonEnemySim:enemySim}=worldContext.window;
 export const defaultPack=run.validatePack(JSON.parse(readFileSync(new URL('../../questions/kvt3.json',import.meta.url),'utf8')));
 export const {TILE,HERO_RADIUS,fallSeconds}=geometry;
 export const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));

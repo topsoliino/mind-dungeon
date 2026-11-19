@@ -1,4 +1,4 @@
-import {run,defaultPack,makePlayer} from './rules.mjs';
+import {run,defaultPack,makePlayer,bossRules} from './rules.mjs';
 import {Simulation} from './simulation.mjs';
 import {actions} from './actions.mjs';
 
@@ -16,9 +16,12 @@ export function startParty(room){
   member.floor=1;
   member.player=makePlayer(member.seat,member.character,member.pack);
   member.player.online=Boolean(member.ws);
+  member.player.deckOrder=[...(member.deckOrder??[])];
   return member.player;
  });
- createFloor(room,1,room.seed,players);
+ const floor=createFloor(room,1,room.seed,players);
+ const host=players.find(p=>p.seat===1),ordinal=host.deckOrder.indexOf(host.pack.packId)+1;
+ if(ordinal)floor.state.selectedBoss=bossRules.choose(ordinal,run.random(room.seed^0x78a23bc9));
 }
 export function syncDifficulty(room,member){
  getFloor(room,member)?.adaptDifficulty();
@@ -28,6 +31,7 @@ export function advanceParty(room,member){
  const moving=[...room.members.values()].filter(m=>m.floor===member.floor&&m.player.online);
  const target=room.floors.get(depth)??createFloor(room,depth,
   run.differentLayoutSeed(from.state.dungeonSeed,from.floor.rooms,from.floor.gates));
+ target.state.selectedBoss??=from.state.selectedBoss;
  for(const m of moving){
   from.players=from.players.filter(p=>p!==m.player);
   target.players.push(m.player);

@@ -5,7 +5,7 @@ const TILE=48,HERO_RADIUS=14,fallSeconds=.85;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 function build(run,save){
 const furnishingSeed=save.dungeonSeed;
-const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[],roof=null,sewerRelic=null,stairs=[],crypt=null}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth,save.templeRunSeed??save.dungeonSeed);
+const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[],roof=null,sewerRelic=null,stairs=[],crypt=null,bossArena:arenaTiles}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth,save.templeRunSeed??save.dungeonSeed);
 const H=map.length,W=map[0].length;
 const annexByRegion=new Map(annexes.map(a=>[a.id,a]));
 const annexPassages=new Map([...annexes.flatMap(a=>a.passage?[a.passage]:[]),...paths].map(path=>[path.id,path]));
@@ -26,7 +26,11 @@ const outsideRegions=new Map([...annexes.filter(room=>room.currentOutdoor||['cou
 const labRoom=annexes.find(a=>a.key==='brewery');
 const lab={x:(labRoom.cx+.5)*TILE,y:(labRoom.y+2.5)*TILE};
 const pointIn=(room,dx,dy)=>({x:(room.cx+.5+dx)*TILE,y:(room.cy+.5+dy)*TILE});
-function outsideAt(x,y){return outsideRegions.get(regionAt(x,y));}
+function outsideAt(x,y){
+ const region=regionAt(x,y);
+ if(save.bossBattle?.rain&&region===bossArena?.id)return {rain:true};
+ return outsideRegions.get(region);
+}
 function inRain(x,y){return Boolean(outsideAt(x,y)?.rain);}
 const zones=rooms.map((room,i)=>{
  const [oldX,oldY]=legacyRooms[i],shrine=[[2,3],[1,3],[2,3],[1,6],[3,6]][i];
@@ -42,6 +46,15 @@ const wellArrival=rest&&pointIn(rest,-2.5,2.35);
 const inRest=(x,y)=>Boolean(rest&&regionAt(x,y)===rest.id);
 function regionAt(x,y){return regions[Math.floor(y/TILE)]?.[Math.floor(x/TILE)]??-1;}
 const tileCenter=p=>({x:(p.x+.5)*TILE,y:(p.y+.5)*TILE});
+const bossArena=arenaTiles&&(()=>{
+ const {cx,cy,radius,id,altars,gate}=arenaTiles;
+ const origin=tileCenter({x:cx,y:cy});
+ const offsets=(pairs)=>pairs.map(([x,y])=>tileCenter({x:cx+x,y:cy+y}));
+ return {...origin,id,radius:radius*TILE,gate:{...tileCenter(gate),vertical:true,span:3*TILE,face:16},
+  altars:altars.map(tileCenter),vents:offsets([[-8,3],[-6,-6],[0,-8],[6,-6],[4,7],[-4,7]]),
+  puddles:offsets([[-5,-2],[3,-4],[4,3],[-2,4],[0,-1]]).map((p,i)=>({...p,rx:75+i%3*13,ry:45+i%2*14})),
+  labProps:offsets([[-4,-7],[-2,-8],[2,-8],[4,-7],[-7,-4],[-7,4],[6,5]])};
+})();
 const layerForRegion=id=>layers[id]??0;
 const layerAt=(x,y)=>layerForRegion(regionAt(x,y));
 for(const stair of stairs){
@@ -124,6 +137,7 @@ function doorAhead(x,y,angle,reach){
  return null;
 }
 const waterAt=(x,y)=>{
+ if(save.bossBattle?.rain&&regionAt(x,y)===bossArena?.id&&bossArena.puddles.some(p=>((x-p.x)/p.rx)**2+((y-p.y)/p.ry)**2<=1))return 'boss-water';
  const tile=terrain[Math.floor(y/TILE)]?.[Math.floor(x/TILE)];
  return tile?.startsWith('sewer-')?tile:null;
 };
@@ -162,7 +176,11 @@ function barrierFloor(barrier){
  }
  return cells;
 }
-function gateBlocked(x,y){return gates.some(g=>!save.gates[g.id]&&(g.vertical?Math.abs(x/TILE-(g.x+.5))<.52&&Math.abs(y/TILE-(g.y+.5))<2.1:Math.abs(y/TILE-(g.y+.5))<.52&&Math.abs(x/TILE-(g.x+.5))<2.1))}
+function gateBlocked(x,y){
+ const gate=bossArena?.gate;
+ if(gate&&root.DungeonBoss.gateClosed(save.bossBattle)&&Math.abs(x-gate.x)<gate.face&&Math.abs(y-gate.y)<gate.span/2)return true;
+ return gates.some(g=>!save.gates[g.id]&&(g.vertical?Math.abs(x/TILE-(g.x+.5))<.52&&Math.abs(y/TILE-(g.y+.5))<2.1:Math.abs(y/TILE-(g.y+.5))<.52&&Math.abs(x/TILE-(g.x+.5))<2.1));
+}
 function wall(x,y){const i=Math.floor(x/TILE),j=Math.floor(y/TILE);return i<0||j<0||i>=W||j>=H||map[j][i]===1}
 
 // Dimensions measure the footprint at the base rather than the full sprite.
@@ -544,7 +562,7 @@ return {
  rooms,corridors,map,regions,gates,annexes,terrain,rest,
  paths,H,W,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,zones,
- spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,
+ spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,
  regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition
