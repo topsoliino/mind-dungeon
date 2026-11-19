@@ -1536,7 +1536,9 @@ test('a saved party resumes after server replacement and reunites without reroll
  await wait(()=>guest.latest?.floor===2&&guest.latest.peer);
  assert.equal(guest.latest.seed,secondFloor.state.dungeonSeed);
  assert.equal(guest.latest.gateProgress.test,1);
- const scaled=guest.latest.enemies.find(row=>row[0]===enemy.id);
+ assert.deepEqual(guest.latest.enemies,[]);
+ await wait(()=>host.latest?.peer&&host.latest.enemies.some(row=>row[0]===enemy.id));
+ const scaled=host.latest.enemies.find(row=>row[0]===enemy.id);
  assert.equal(scaled[5],foes.health(enemy.type,enemy.boss,2));
  assert.equal(scaled[4]/scaled[5],.5);
  await host.call('leave');
