@@ -35,6 +35,33 @@ function settleHits(sim,p){
  for(const hit of items.takeDueDamage(p,1))if(sim.settleDamage(p,hit))break;
 }
 
+test('controller axes preserve movement strength and a tap dodges once even when followed by another input',()=>{
+ const {host,sim}=game();
+ arena(sim,host);sim.enemies=[];
+ const start={x:host.x,y:host.y};
+ let seq=0;
+ const control=(x=0,y=0,dodge=false)=>sim.control(host,{seq:++seq,aim:0,x,y,dodge});
+ control(.5);sim.step(1/30);
+ const half=host.x-start.x;
+ Object.assign(host,start);control(1);sim.step(1/30);
+ assert.ok(half>0);
+ assert.ok(Math.abs(host.x-start.x-2*half)<.001);
+ control(0,0,true);
+ control();
+ sim.step(1/30);
+ assert.ok(host.dash>0);
+ assert.equal(host.dashX,-1);
+ assert.equal(host.input.dodge,false);
+ const dashEvents=()=>sim.events.filter(e=>e.kind==='dash'&&e.seat===host.seat).length;
+ assert.equal(dashEvents(),1);
+ for(let i=0;i<34;i++){control();sim.step(1/30);}
+ assert.equal(dashEvents(),1);
+ control(0,.3,true);sim.step(1/30);
+ assert.equal(host.dashX,0);
+ assert.equal(host.dashY,1);
+ assert.equal(dashEvents(),2);
+});
+
 test('the private death recap keeps the five latest damaging actions, actual losses and the card state',()=>{
  const {host,guest,sim}=game();
  arena(sim,host);sim.enemies=[];

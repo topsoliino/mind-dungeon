@@ -624,3 +624,19 @@ button.bad { background:#643730!important; }
 .keyring { color: #e5c389; margin: 0 0 8px; }
 .keyring summary { cursor: pointer; }
 .keyring ul { margin: 5px 0 0; padding-left: 22px; }
+
+#controller-target {
+ position: fixed;
+ z-index: 8;
+ width: 12px;
+ height: 12px;
+ transform: translate(-50%, -50%);
+ border: 1.5px solid #ffe1a6;
+ border-radius: 50%;
+ box-shadow: 0 0 6px #ecbd77;
+ pointer-events: none;
+}
+.controller-input #modal :is(button, input, select, textarea, summary, a):focus {
+ outline: 2px solid #ffe1a6;
+ outline-offset: 2px;
+}

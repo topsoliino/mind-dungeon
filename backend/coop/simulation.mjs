@@ -231,7 +231,7 @@ export class Simulation{
   if(!Number.isSafeInteger(input.seq)||input.seq<=p.input.seq||!Number.isFinite(input.aim))return false;
   const blocked=Boolean(this.state.bossBattle?.phase==='intro'||input.blocked||p.quiz||p.consume||p.fall||p.deathRecap);
   p.input={seq:input.seq,x:blocked?0:clampInput(input.x),y:blocked?0:clampInput(input.y),aim:normalAngle(input.aim),
-   dash:Boolean(input.dash)&&!blocked,blocked,at:this.clock};
+   dash:Boolean(input.dash)&&!blocked,dodge:!blocked&&(input.dodge===true||p.input.dodge===true),blocked,at:this.clock};
   if(blocked)p.chargeStart=null;
   return true;
  }
@@ -353,14 +353,16 @@ export class Simulation{
   p.combat=threat?1.35:remaining(p.combat,dt);
   if(p.attack||p.dash||p.wallRecoil||p.chargeStart!==null)p.staminaRest=0;
   else if((p.staminaRest+=dt)>.45)p.stamina=Math.min(p.staminaMax,p.stamina+dt*(10+p.attributes.endurance*.6)*Math.min(2.8,1+(p.staminaRest-.45)*2.2)*p.mods.regen);
-  let {x,y,aim,dash,at,blocked}=p.input;
-  if(p.quiz||p.consume||blocked||this.clock-at>.35){x=0;y=0;dash=false;}
+  let {x,y,aim,dash,dodge,at,blocked}=p.input;
+  p.input.dodge=false;
+  if(p.quiz||p.consume||blocked||this.clock-at>.35){x=0;y=0;dash=false;dodge=false;}
   else p.dir=aim;
   if(p.chargeStart!==null&&this.clock-at>.5)p.chargeStart=null;
   if(p.wallRecoil>geometry.wallRecoilSeconds-.13){x=0;y=0;}
-  const length=Math.hypot(x,y)||1;x/=length;y/=length;
-  if(!p.vault&&!p.wallRecoil&&!p.dashCooldown&&dash&&(x||y)&&this.cost(p,Math.round((p.equipment.rings.includes('dodge')?17:25)*p.mods.cost))){
-   p.chargeStart=null;p.dash=p.load.dashTime;p.dashCooldown=.85*p.mods.dashCooldown*items.dashCooldown(p.equipment.armor)*(p.weapon?.malus?balance.weaponMythicDash:1);p.dashX=x;p.dashY=y;
+  const length=Math.hypot(x,y),scale=Math.max(1,length);
+  x/=scale;y/=scale;
+  if(!p.vault&&!p.wallRecoil&&!p.dashCooldown&&(dodge||dash&&length)&&this.cost(p,Math.round((p.equipment.rings.includes('dodge')?17:25)*p.mods.cost))){
+   p.chargeStart=null;p.dash=p.load.dashTime;p.dashCooldown=.85*p.mods.dashCooldown*items.dashCooldown(p.equipment.armor)*(p.weapon?.malus?balance.weaponMythicDash:1);p.dashX=length?x*scale/length:-Math.cos(p.dir);p.dashY=length?y*scale/length:-Math.sin(p.dir);
    this.emit('dash',{seat:p.seat,x:p.x,y:p.y});
   }
   if(p.dash&&!p.quiz){x=p.dashX;y=p.dashY;}
@@ -379,7 +381,7 @@ export class Simulation{
   }
   const face=Math.cos(p.dir);if(Math.abs(face)>.23&&!p.wallRecoil)p.weaponSide=Math.sign(face);
   p.moving=gap(p,before)>.08;
-  if(p.moving)p.walk+=dt*(p.dash?23:12);
+  if(p.moving)p.walk+=dt*(p.dash?23:12*Math.min(1,length));
   const region=this.floor.regionAt(p.x,p.y);
   if(p.region!==region){
    p.region=region;p.entered=this.clock;
