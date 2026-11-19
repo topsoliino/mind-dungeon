@@ -3,7 +3,7 @@
 const lionRake={duration:.63,pace:.19,reach:102,spread:.86,bleed:27};
 function create(api){
  const {enemyRules,items,balance,save,state,floor,getEnemies,moveActor,actorRadius,nearActor,takeDamage,applyPoison,addBleed,
-  soundWorld,hitFurniture,burst,hurtEnemy,shockWater,knockHero,coopActors,enemyEncounterReady,rand}=api;
+  soundWorld,hitFurniture,landArrow,burst,hurtEnemy,shockWater,knockHero,coopActors,enemyEncounterReady,rand}=api;
  const {W,H,rooms,regionAt,inRest,outsideAt,pointIn,valid,furnitureBlocked,furnitureAt,furnitureBetween,gateLineBlocked,gateBlocked,wall,pressurePlates}=floor;
  const {SNAKE,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,STREET_DOG}=enemyRules;
  const isBat=e=>e.type===BAT||e.type===STORM_BAT,isLion=e=>e.type===LION||e.type===LIONESS;
@@ -546,10 +546,11 @@ function fireBolt(e,type){
 }
 function updateBolts(dt){
  state.bolts=state.bolts.filter(p=>{
-  p.life-=dt;
   if(p.life<=0)return false;
-  const dx=Math.cos(p.angle)*p.speed*dt,dy=Math.sin(p.angle)*p.speed*dt;
-  const steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/5));
+  const travel=p.speed*Math.min(dt,p.life);
+  p.life-=dt;
+  const dx=Math.cos(p.angle)*travel,dy=Math.sin(p.angle)*travel;
+  const steps=Math.max(1,Math.ceil(travel/5));
   for(let i=0;i<steps;i++){
    const x=p.x+dx/steps,y=p.y+dy/steps;
    const approaching=p.type==='trap'&&(p.angle===0?x<p.entryX:x>p.entryX);
@@ -576,7 +577,9 @@ function updateBolts(dt){
     return false;
    }
   }
-  return p.life>0;
+  if(p.life>0)return true;
+  landArrow?.(p);
+  return false;
  });
 }
 function fireWeb(e){

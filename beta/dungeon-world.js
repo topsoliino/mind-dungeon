@@ -2,6 +2,7 @@
 root.DungeonWorld=(()=>{
 'use strict';
 const TILE=48,HERO_RADIUS=14,fallSeconds=.85,wallRecoilSeconds=.32;
+const wallGrazeDepth=9*1.4,wallGrazeReach=23*1.4;
 const wallRecoilForce=charged=>charged?25:18;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 function fallEnemy(actor,dt){
@@ -441,7 +442,9 @@ function meleeWall(x,y,dir,weapon,reach){
    if(doorAt(px,py)||gateBlocked(px,py)||furnitureAt(px,py,2))break;
    if(!stoneAt(px,py)){first=0;continue;}
    if(!first)first=step;
-   if(step-first<9||extent-first<23)continue;
+   if(extent-first<wallGrazeReach)continue;
+   const depth=first+wallGrazeDepth;
+   if(step<depth&&(step+3<depth||!stoneAt(x+dx*depth,y+dy*depth)))continue;
    const hitX=x+dx*first,hitY=y+dy*first;
    const crossedX=!stoneAt(hitX-3*dx,hitY),crossedY=!stoneAt(hitX,hitY-3*dy);
    const horizontal=crossedX===crossedY?Math.abs(dx)>Math.abs(dy):crossedX;
