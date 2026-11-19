@@ -95,10 +95,16 @@ test('the private death recap keeps the five latest damaging actions, actual los
 
 test('stair landings stay in one combat area and an unalerted foe can attack across the layer boundary',()=>{
  const {host,sim}=game(103);
- const stair=sim.floor.stairs[0],x=(stair.a.x+.5)*TILE,split=Math.floor((stair.y*2+stair.h-1)/2)*TILE;
- Object.assign(host,{x,y:split+14,inv:0,entryGrace:.4});
- const rat={x,y:split-19,type:foes.RAT,hp:70,max:70,size:1,phase:0,angle:Math.PI/2,attack:1,windup:.01};
- assert.notEqual(sim.floor.layerAt(x,rat.y),sim.floor.layerAt(x,host.y));
+ const stair=sim.floor.stairs[0],centers=stair.edges.map(([a,b])=>({x:(a[0]+b[0])*TILE/2,y:(a[1]+b[1])*TILE/2}));
+ const stride=centers.slice(1).flatMap((end,i)=>{
+  const start=centers[i],dx=end.x-start.x,dy=end.y-start.y,n=Math.ceil(Math.hypot(dx,dy));
+  return Array.from({length:n},(_,step)=>({x:start.x+dx*step/n,y:start.y+dy*step/n}));
+ });
+ const split=stride.findIndex(p=>sim.floor.layerAt(p.x,p.y)===stair.upper);
+ Object.assign(host,stride[split-14],{inv:0,entryGrace:.4});
+ const rat={...stride[split+19],type:foes.RAT,hp:70,max:70,size:1,phase:0,attack:1,windup:.01};
+ rat.angle=Math.atan2(host.y-rat.y,host.x-rat.x);
+ assert.notEqual(sim.floor.layerAt(rat.x,rat.y),sim.floor.layerAt(host.x,host.y));
  assert.ok(sim.floor.stairsNear(host)[0].regions.has(sim.floor.rest.id));
  assert.ok(sim.floor.stairConnected(host,rat));
  assert.ok(sim.canTarget(rat,host));
@@ -304,7 +310,7 @@ test('drinking keeps movement responsive at a slower pace without allowing a das
 });
 
 test('new starts give up to four exits and wide stairs connect floors by walking',()=>{
- const {host,guest,sim}=game(103);
+ const {host,guest,sim}=game(103,19);
  const {floor}=sim,{rest}=floor;
  assert.equal([[rest.x-1,rest.cy],[rest.x+rest.w,rest.cy],[rest.cx,rest.y-1],[rest.cx,rest.y+rest.h]]
   .filter(([x,y])=>floor.map[y][x]===0).length,4);
@@ -391,7 +397,7 @@ test('the garden staircase reaches a protected apothecary landing two storeys ab
 });
 
 test('stair movement follows the drawn grade while preserving lateral clearance',()=>{
- const {sim}=game(103),f=sim.floor;
+ const {sim}=game(103,19),f=sim.floor;
  const center=flight=>({x:(flight.x+flight.w/2)*TILE,y:(flight.y+flight.h/2)*TILE});
  const north=f.stairFlights.find(flight=>flight.direction==='n');
  assert.deepEqual({...f.stairMotion(center(north),10,0)},{x:10,y:0});
@@ -401,6 +407,70 @@ test('stair movement follows the drawn grade while preserving lateral clearance'
  const climbing=f.stairMotion(center(east),10,0),descending=f.stairMotion(center(east),-10,0);
  assert.ok(climbing.x>0&&climbing.y<0&&descending.x<0&&descending.y>0);
  assert.deepEqual({...f.stairMotion(f.spawn,4,8)},{x:4,y:8});
+});
+
+test('raised sanctuary terraces have no open bypass and keep their stations reachable',()=>{
+ const {host,sim}=game(103,20,2),f=sim.floor,s=f.sanctuary;
+ const steps=new Set(f.stairs.filter(stair=>stair.id.startsWith('sanctuary-')).flatMap(stair=>[...stair.stepIds]));
+ const left=s.spawn.x-20;
+ for(let y=0;y<34;y++)for(let x=left;x<f.W-1;x++){
+  if(f.map[y][x]!==0)continue;
+  const a=f.regions[y][x];
+  for(const [dx,dy] of [[1,0],[0,1]]){
+   const b=f.regions[y+dy][x+dx];
+   if(f.map[y+dy][x+dx]===0&&f.layerForRegion(a)!==f.layerForRegion(b)){
+    assert.ok(steps.has(a)||steps.has(b),`Bypass at ${x-left},${y}`);
+   }
+  }
+ }
+ assert.ok(s.terraces.some(p=>p.face==='s'&&p.level===1));
+ assert.ok(s.terraces.some(p=>p.face==='s'&&p.level===2));
+ const center=p=>({x:(p.x+.5)*TILE,y:(p.y+.5)*TILE});
+ for(const p of [f.smith,f.wellUse,f.wellArrival,f.glossaryStand,f.returnPortal,...s.seats.map(center)]){
+  assert.ok(f.inSanctuary(p.x,p.y)&&f.canReachSpawn(p.x,p.y)&&f.valid(p.x,p.y,14,false,true));
+ }
+ const garden=f.stairs.find(stair=>stair.id==='sanctuary-garden-stair');
+ Object.assign(host,center(garden.a));sim.enemies=[];
+ for(const [a,b] of garden.edges){
+  const x=(a[0]+b[0])*TILE/2,y=(a[1]+b[1])*TILE/2;
+  assert.ok(sim.move(host,x-host.x,y-host.y)&&Math.hypot(host.x-x,host.y-y)<.01);
+ }
+ assert.equal(f.layerAt(host.x,host.y),1);
+});
+
+test('new generated stairs land at usable room edges with different widths, bends and intermediate landings',()=>{
+ const widths=new Set(),shapes=new Set();
+ for(let i=1;i<=24;i++){
+  const seed=Math.imul(i,0x9e3779b9);
+  for(const depth of new Set([1,run.templeDepth(seed)])){
+   const plan=run.generate(seed,true,20,depth,run.templeDepth(seed),seed);
+   for(const stair of plan.stairs.filter(stair=>stair.gateways)){
+    widths.add(stair.width);
+    const midpoint=edge=>(edge[0][0]+edge[1][0])/2;
+    shapes.add(Math.abs(midpoint(stair.edges[0])-midpoint(stair.edges.at(-1)))>.1?'bend':'straight');
+    if(stair.landing)shapes.add('landing');
+    if(stair.style==='jungle')shapes.add('temple');
+    for(const [p,layer] of [[stair.a,stair.lower],[stair.b,stair.upper]]){
+     assert.equal(plan.map[p.y][p.x],0);
+     assert.equal(plan.layers[plan.regions[p.y][p.x]]??0,layer);
+    }
+    for(const [a,b] of stair.edges)assert.ok(Math.abs(Math.hypot(a[0]-b[0],a[1]-b[1])-stair.width)<.001);
+   }
+  }
+ }
+ assert.equal(widths.size,4);
+ assert.deepEqual([...shapes].sort(),['bend','landing','straight','temple']);
+ const {host,sim}=game(103,20),f=sim.floor;
+ sim.enemies=[];
+ for(const stair of f.stairs.filter(stair=>stair.gateways)){
+  const center=p=>({x:(p.x+.5)*TILE,y:(p.y+.5)*TILE});
+  const start=center(stair.a),end=center(stair.b);
+  Object.assign(host,start);
+  const curve=stair.edges.map(([a,b])=>({x:(a[0]+b[0])*TILE/2,y:(a[1]+b[1])*TILE/2}));
+  for(const point of [...curve,end,...curve.reverse(),start]){
+   assert.ok(sim.move(host,point.x-host.x,point.y-host.y)&&Math.hypot(host.x-point.x,host.y-point.y)<.01);
+  }
+ }
 });
 
 test('the smith checks location, materials and item identity and updates the equipped weapon in place',()=>{
