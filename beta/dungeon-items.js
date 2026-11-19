@@ -87,6 +87,9 @@ window.DungeonItems = (() => {
  const merchantRing={id:'merchant',name:'Händlerring',desc:'Ausgerüstet zeigt der Händler je eine zusätzliche Waffe, einen Ring und ein Rüstungsteil.',bonus:'merchant'};
  const heightRing={id:'height',name:'Ring der Höhe',desc:'Fängt dich beim Laufen und Ausweichen am Abgrund ab. Rückstoß kann dich über die Kante stoßen.',bonus:'height'};
  const madnessRing={id:'madness',name:'Ring des Wahns',desc:'Blutverlust im Umkreis von 220 erhöht deine Angriffskraft für 20 Sekunden um 20 %.',bonus:'madness'};
+ const avoidanceRing={id:'avoidance',name:'Ring der Vermeidung',desc:'Ausgerüstet bleibst du nach dem Tod auf derselben Tiefe. Die übrigen Todesverluste gelten weiterhin.',bonus:'avoidance'};
+ const alleyRing={kind:'ring',id:avoidanceRing.id,rarity:'epic',source:'Die Gassen'};
+ const retreatDepth=(floor,rings)=>rings.includes(avoidanceRing.id)?floor:Math.max(1,floor-1);
  const trialCharm={kind:'trialCharm',id:'sewer-trials',rarity:'rare',source:'Kanalisation'};
  function markTrials(actor,total,hasLaterDepth){
   if(actor.trialCharmActive)return false;
@@ -222,7 +225,7 @@ window.DungeonItems = (() => {
   {fire:.45,frost:-.35},{lightning:.45,fire:-.30},
   {fire:-.22,bleed:-.12},{lightning:.48,frost:-.16},
   {physical:.08,frost:-.15},{frost:.65,fire:-.40},{frost:.60,fire:-.34},
-  {dark:.32,poison:.65,fire:-.23},{dark:.38,poison:.65,fire:-.25}
+  {dark:.32,poison:.65,fire:-.23},{dark:.38,poison:.65,fire:-.25},{physical:.07,fire:-.22}
  ];
  const foeAttack=[
   {physical:1},{physical:.35,fire:.65},{physical:.75,dark:.25},
@@ -305,5 +308,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

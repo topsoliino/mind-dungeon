@@ -20,7 +20,8 @@ window.DungeonEnemies = (() => {
   {id:'grab',range:100,windup:.64,recovery:.50,color:'#a7e4ff',speed:46},
   {id:'crossbow',range:315,windup:.86,recovery:.73,color:'#a7e4ff',speed:40},
   {id:'veil',range:76,windup:.54,recovery:.76,color:'#ded2bc',speed:96},
-  {id:'veil',range:76,windup:.54,recovery:.76,color:'#b48bbd',speed:108}
+  {id:'veil',range:76,windup:.54,recovery:.76,color:'#b48bbd',speed:108},
+  {id:'dog-bite',range:58,windup:.35,recovery:.46,color:'#bd9574',speed:136}
  ];
  const depthFactor=depth=>1.5**Math.max(0,depth-1);
  const profiles=[
@@ -37,7 +38,7 @@ window.DungeonEnemies = (() => {
   {hp:31,balance:16,sight:.63},{hp:35,balance:18,sight:.67},
   {hp:49,balance:25,sight:.48},{hp:122,balance:50,sight:.55},
   {hp:105,balance:31,sight:.55},{hp:145,balance:54,sight:.30},{hp:125,balance:46,sight:.68},
-  {hp:88,balance:37,sight:.65},{hp:96,balance:42,sight:.68}
+  {hp:88,balance:37,sight:.65},{hp:96,balance:42,sight:.68},{hp:72,balance:29,sight:.59}
  ];
  function health(type,boss,depth){
   return Math.round((profiles[type].hp+(type===BAT||type===STORM_BAT||type===RAT?14:50)*Math.max(0,depth-1))*(boss?1.5:1));
@@ -74,11 +75,11 @@ window.DungeonEnemies = (() => {
   return Math.floor(e.phase*(e.moving?11:3))%4;
  }
  const PRIEST=1,SKELETON=3,ZOMBIE=5,SNAKE=6,ARCHER=7,CROSSBOW=8,LION=9,LIONESS=10,BAT=11,STORM_BAT=12,RAT=13,ELECTRO_RAT=14,EAGLE=15,FROST_ZOMBIE=16,FROST_CROSSBOW=17;
- const WHITE_ORC=18,BLACK_ORC=19;
+ const WHITE_ORC=18,BLACK_ORC=19,STREET_DOG=20;
  const isOrc=e=>e.type===WHITE_ORC||e.type===BLACK_ORC;
  const names=['Anstürmer','Dunkelpriester','Spinne','Skelett','Frostgeist','Zombie','Schlange','Skelettbogenschütze',
   'Armbrustzombie','Löwe','Löwin','Feuerfledermaus','Sturmfledermaus','Kleine Ratte','Elektrodenratte','Adler',
-  'Eiszombie','Armbrust-Eiszombie','Ork in weißer Robe','Ork in schwarzer Robe'];
+  'Eiszombie','Armbrust-Eiszombie','Ork in weißer Robe','Ork in schwarzer Robe','Straßenhund'];
  function damageOrigin(enemy,action){
   const name=enemy?.type===SNAKE&&enemy.fireSnake?'Feuerschlange':names[enemy?.type];
   return {source:name?(enemy.boss?'Elite · ':'')+name:'Umgebung',action};
@@ -95,7 +96,7 @@ window.DungeonEnemies = (() => {
  }
  function encounterReady(enemy,hero,floor,grace,visible=false,clock=0){
   const region=floor.regionAt(hero.x,hero.y);
-  if(hero.fall||region<0||floor.inRest(hero.x,hero.y))return false;
+  if(hero.fall||enemy.fall||region<0||floor.inRest(hero.x,hero.y))return false;
   const distance=Math.hypot(hero.x-enemy.x,hero.y-enemy.y);
   if(distance<420&&floor.stairConnected(enemy,hero)&&!floor.gateLineBlocked(enemy.x,enemy.y,hero.x,hero.y))return true;
   if(floor.layerAt(enemy.x,enemy.y)!==floor.layerAt(hero.x,hero.y)){
@@ -103,6 +104,9 @@ window.DungeonEnemies = (() => {
    return Boolean(enemy.aggro>0&&stairs&&Math.hypot(enemy.x-stairs.x,enemy.y-stairs.y)<480);
   }
   if(enemy.aggro>0&&distance<960)return true;
+  if(floor.outsideAt?.(enemy.x,enemy.y)?.light&&
+    (distance>eyeRange(enemy.type,enemy.boss,1180,760,Math.atan2(hero.y-enemy.y,hero.x-enemy.x))*floor.sightScale(enemy.x,enemy.y)||
+     floor.gateLineBlocked(enemy.x,enemy.y,hero.x,hero.y)))return false;
   const sameRoom=region===floor.regionAt(enemy.x,enemy.y);
   if(visible&&(sameRoom||distance<550)&&Number.isFinite(enemy.revealedAt)){
    if(clock<enemy.revealedAt+entryGrace)return false;
@@ -122,5 +126,5 @@ window.DungeonEnemies = (() => {
   const bundle=large&&random()<.5?3:1;
   return {kind:'bones',id:'bones',rarity:'common',bundle,source:'Skelettbeute'};
  }
- return {physicalImpactCue,damageOrigin,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,entryGrace,encounterReady,reveal,alert,boneDrop,PRIEST,SKELETON,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,WHITE_ORC,BLACK_ORC,isOrc};
+ return {physicalImpactCue,damageOrigin,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,entryGrace,encounterReady,reveal,alert,boneDrop,PRIEST,SKELETON,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,WHITE_ORC,BLACK_ORC,STREET_DOG,isOrc};
 })();

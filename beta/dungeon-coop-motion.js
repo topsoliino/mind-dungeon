@@ -3,7 +3,7 @@ window.DungeonCoopMotion = (() => {
  const cadence=50,idleCadence=360;
  const mix=(a,b,t)=>a+(b-a)*t;
  const turn=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;
- const goodPoint=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.y>=0&&p.x<=8192&&p.y<=6144;
+ const goodPoint=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&p.x>=0&&p.y>=0&&p.x<=8192&&p.y<=8192;
  const bounded=(value,min,max)=>Number.isFinite(value)&&value>=min&&value<=max;
  const active=p=>p.wallRecoil>0||p.moving||p.attack>0||p.dash>0||p.lift>0||p.charge>=0||p.pose>=0;
 

@@ -8,7 +8,7 @@ window.DungeonStrata=(()=>{
  const edges=[[1,0],[-1,0],[0,1],[0,-1]];
  function extend(base,seed,depth,random,shuffle,revision,sewerAt,hasCrypt){
   const {rooms,corridors,map,regions,gates,terrain,annexes,paths,rest}=base;
-  const continuous=revision>=10;
+  const continuous=revision>=10,varied=revision>=12;
   const rng=random(Math.imul(seed^0x2bb5c943,1597334677));
   const minX=map[0].length+6,cols=8+Math.floor(rng()*3),rows=3+Math.floor(rng()*2);
   const roll=random(Math.imul(seed^0x2d3c461b,0x45d9f3b))();
@@ -16,16 +16,26 @@ window.DungeonStrata=(()=>{
   const hasSewer=revision>=9?depth===sewerAt:null;
   const groundWidth=map[0].length,cryptWidth=13,cryptGap=13;
   const strataWidth=stories===1&&hasSewer===false?groundWidth:minX+Math.max(cols*4+2,revision>=9?39:0);
-  const width=Math.max(strataWidth,hasCrypt?rest.x+rest.w+cryptGap+4+cryptWidth+2:0,continuous&&stories>1?rest.cx+24:0);
+  const width=Math.max(strataWidth,hasCrypt?rest.x+rest.w+cryptGap+4+cryptWidth+2:0,continuous&&stories>1?rest.cx+(varied?62:24):0);
   for(const [grid,fill] of [[map,1],[regions,-1],[terrain,null]]){
    for(const row of grid)while(row.length<width)row.push(fill);
   }
   const links=[],doors=[],layers={},sewerRooms=[],stairs=[];
-  let roof=null,sewerRelic=null,crypt=null,bossArena=null;
+  let roof=null,sewerRelic=null,crypt=null,bossArena=null,alleys=null;
+  const extraRooms=[];
+  const variation=random(Math.imul(seed^0x3e2a0be7,0x45d9f3b));
+  const rollInt=(min,max)=>min+Math.floor(variation()*(max-min+1));
+  const roomTypes=[...layouts.filter(room=>room.group!=='storage'),{name:'Vorratskammer',theme:4,group:'storage'}];
+  const roomType=(storage=.2)=>variation()<storage?roomTypes.at(-1):roomTypes[rollInt(0,roomTypes.length-2)];
   function carve(x,y,w,h,id,water=null){
    for(let iy=y;iy<y+h;iy++)for(let ix=x;ix<x+w;ix++){
     map[iy][ix]=0;regions[iy][ix]=id;terrain[iy][ix]=water;
    }
+  }
+  function addRoom(id,x,y,w,h,nameplate,key,layer){
+   const room={...nameplate,id,key,x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)};
+   carve(x,y,w,h,id);layers[id]=layer;annexes.push(room);
+   return room;
   }
   const nameplates=shuffle([...layouts],rng);
   const loftWidth=10+Math.floor(rng()*3),loftDepth=8+Math.floor(rng()*3);
@@ -140,11 +150,6 @@ window.DungeonStrata=(()=>{
     if(Number.isFinite(site.cy))site.cy+=headroom;
    }
    const cx=rest.cx;
-   function addRoom(id,x,y,w,h,nameplate,key,layer){
-    const room={...nameplate,id,key,x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)};
-    carve(x,y,w,h,id);layers[id]=layer;annexes.push(room);
-    return room;
-   }
    function addStairs(id,position,top,bottom,upper,lower,roomIds){
     const w=4,x=position-2,split=Math.floor((top+bottom)/2);
     for(let y=top;y<=bottom;y++){
@@ -158,9 +163,22 @@ window.DungeonStrata=(()=>{
     stairs.push(run);
     for(const offset of [0,1])paths.push({id:id+offset,x,y:offset?split:top,w,h:offset?bottom-split+1:split-top,theme:3});
    }
+   function branchingRooms(from,layer,id,count){
+    for(let i=0;i<count;i++){
+     const gap=rollInt(1,4),w=rollInt(7,10),h=rollInt(6,8),x=from.x+from.w+gap;
+     const y=layer===1?rollInt(28,30):rollInt(16,17),room=addRoom(id+i*2,x,y,w,h,roomType(),'wing-'+(id+i*2),layer);
+     const entryY=Math.max(from.y,room.y)+2,passage={id:room.id+1,x:x-gap,y:entryY,w:gap,h:2,theme:room.theme,vertical:true};
+     carve(passage.x,passage.y,passage.w,passage.h,passage.id);
+     paths.push(passage);layers[passage.id]=layer;lofts.push(room);
+     if(variation()<.45)doors.push({...passage,id:'wing-door-'+room.id,region:passage.id,w:1,hp:38});
+     from=room;
+    }
+   }
    if(stories>1){
-    const start=addRoom(30,cx-5,29,11,9,nameplates[0],'upper-0',1);
-    const end=addRoom(31,start.x+start.w+1,29,12,9,nameplates[1],'upper-1',1);
+    const startW=varied?rollInt(10,13):11,startY=varied?rollInt(27,30):29;
+    const start=addRoom(30,cx-Math.floor(startW/2),startY,startW,38-startY,nameplates[0],'upper-0',1);
+    const gap=varied?rollInt(1,4):1, endY=varied?rollInt(28,31):29;
+    const end=addRoom(31,start.x+start.w+gap,endY,varied?rollInt(11,15):12,varied?rollInt(7,9):9,nameplates[1],'upper-1',1);
     lofts.push(start,end);
     addStairs(50,cx,36,43,1,0,[rest.id,start.id]);
     const walkX=rest.x-2,landing=44,approachY=rooms[0].y+2;
@@ -170,26 +188,39 @@ window.DungeonStrata=(()=>{
      if(map[y][x]===1&&!terrain[y][x])carve(x,y,1,1,60);
     }
     paths.push({id:60,x:walkX,y:landing,w:2,h:approachY-landing+2,theme:3});
-    carve(end.x-1,32,1,3,32);layers[32]=1;
-    paths.push({id:32,x:end.x-1,y:32,w:1,h:3,theme:start.theme});
+    carve(end.x-gap,32,gap,3,32);layers[32]=1;
+    paths.push({id:32,x:end.x-gap,y:32,w:gap,h:3,theme:start.theme,...(varied?{vertical:true}:{})});
     doors.push({id:'upper-door',region:32,x:end.x-1,y:32,w:1,h:3,vertical:true,hp:44});
     links.push({id:'upper-ladder',kind:'ladder',seal:rng()<.55?'quiz-ladder':null,
      a:anchor(rooms[1]),b:{x:end.x+2,y:end.cy}});
-    const wallX=end.x+7;
-    for(let y=end.y;y<end.y+end.h;y++){
-     map[y][wallX]=1;terrain[y][wallX]='stair-wall';
+    let onward=end;
+    if(!varied||variation()<.65){
+     const wallX=end.x+(varied?rollInt(6,7):7);
+     for(let y=end.y;y<end.y+end.h;y++){
+      map[y][wallX]=1;terrain[y][wallX]='stair-wall';
+     }
+     const pocket=addRoom(62,wallX+1,end.y,end.x+end.w-wallX-1,end.h,
+      {name:'Nebenraum',theme:end.theme},'upper-pocket',1);
+     carve(wallX,end.cy,1,2,61);layers[61]=1;
+     paths.push({id:61,x:wallX,y:end.cy,w:1,h:2,theme:pocket.theme,...(varied?{vertical:true}:{})});
+     doors.push({id:'upper-inner-door',region:61,x:wallX,y:end.cy,w:1,h:2,vertical:true,hp:40});
+     onward={...pocket,w:end.x+end.w-pocket.x};
     }
-    const pocket=addRoom(62,wallX+1,end.y,end.x+end.w-wallX-1,end.h,
-     {name:'Nebenraum',theme:end.theme},'upper-pocket',1);
-    carve(wallX,end.cy,1,2,61);layers[61]=1;
-    paths.push({id:61,x:wallX,y:end.cy,w:1,h:2,theme:pocket.theme});
-    doors.push({id:'upper-inner-door',region:61,x:wallX,y:end.cy,w:1,h:2,vertical:true,hp:40});
+    if(varied){
+     branchingRooms(onward,1,70,rollInt(0,2));
+     const x=start.x+2,y=start.y+2;
+     if(x<cx-3&&y<35){
+      map[y][x]=map[y+1][x]=1;terrain[y][x]=terrain[y+1][x]='partition';
+     }
+    }
     if(stories>=3){
-     const extra=addRoom(33,cx-5,17,11,8,nameplates[2],'upper-tower',2);
+     const towerW=varied?rollInt(10,14):11,towerY=varied?rollInt(15,17):17;
+     const extra=addRoom(33,cx-Math.floor(towerW/2),towerY,towerW,25-towerY,nameplates[2],'upper-tower',2);
      lofts.push(extra);addStairs(52,cx,23,30,2,1,[start.id,extra.id]);
+     if(varied)branchingRooms(extra,2,74,rollInt(0,2));
      if(stories===4){
       const weather=rng();
-      roof=addRoom(35,cx-5,5,11,8,{name:'Turmspitze',theme:4,currentOutdoor:true,
+      roof=addRoom(35,cx-5,5,varied?rollInt(10,14):11,varied?rollInt(8,9):8,{name:'Turmspitze',theme:4,currentOutdoor:true,
        rain:weather<.33,hail:weather>=.33&&weather<.77},'tower-roof',3);
       carve(roof.x,roof.y,roof.w,roof.h,35,'roof-stone');
       for(let y=roof.y-1;y<=roof.y+roof.h;y++)for(let x=roof.x-1;x<=roof.x+roof.w;x++){
@@ -249,7 +280,83 @@ window.DungeonStrata=(()=>{
    bossArena={id,cx,cy,radius,gate:{x:gateX,y:cy},altars:[{x:gateX+2,y:cy-1},{x:gateX+2,y:cy+1}]};
    annexes.push({id,key:'behaviorist-arena',name:'Versuchslabor',x:cx-radius,y:cy-radius,w:2*radius+1,h:2*radius+1,cx,cy,theme:3});
   }
-  return {...base,links,doors,layers,lofts,sewerRooms,roof,sewerRelic,stairs,crypt,bossArena};
+  if(varied){
+   const south=map.length,castle=annexes.filter(room=>['pantry','brewery'].includes(room.key)).sort((a,b)=>a.cx-b.cx);
+   const [west,east]=castle;
+   const wingCount=rollInt(0,3),hasAlleys=depth===1||random(Math.imul(seed^0x291cba7^Math.imul(depth,1597334677),0x45d9f3b))()<.27;
+   const alleyY=south+15,swing=rollInt(-4,4),eastY=alleyY+swing,center=Math.round((west.cx+east.cx)/2);
+   const right=Math.max(map[0].length,east.cx+16,east.cx+9+wingCount*14+3);
+   for(const [grid,fill] of [[map,1],[regions,-1],[terrain,null]]){
+    for(const row of grid)while(row.length<right)row.push(fill);
+    const end=hasAlleys?Math.max(alleyY,eastY)+14:wingCount?south+18:south;
+    while(grid.length<end)grid.push(Array(right).fill(fill));
+   }
+   function passage(id,x,y,w,h,vertical,theme=3,tile=null,outdoor=null){
+    const path={id,x,y,w,h,vertical,theme,...outdoor};
+    for(let row=y;row<y+h;row++)for(let col=x;col<x+w;col++){
+     if(map[row][col]===1&&!terrain[row][col])carve(col,row,1,1,id,tile);
+    }
+    paths.push(path);
+   }
+   const wingY=south+3;
+   if(wingCount||hasAlleys)passage(84,east.cx-1,east.y+east.h,3,(hasAlleys?eastY+2:wingY+3)-east.y-east.h,false,1);
+   if(wingCount){
+    let start=east.cx+2;
+    for(let i=0;i<wingCount;i++){
+     const id=85+i*2,gap=rollInt(2,5),w=rollInt(7,9),h=rollInt(6,9),x=start+gap,y=wingY-rollInt(0,2);
+     const room=addRoom(id,x,y,w,h,roomType(),'ground-wing-'+i,0);
+     extraRooms.push(room);
+     passage(id+1,start,wingY,gap,3,true,room.theme);
+     if(variation()<.48)doors.push({id:'ground-door-'+i,region:id+1,x:x-1,y:wingY,w:1,h:3,vertical:true,hp:36+depth*4});
+     start=x+w;
+    }
+   }
+   if(hasAlleys){
+    const light=['day','evening','night'][rollInt(0,2)],weather=variation();
+    const phase={name:'Die Gassen',outdoors:true,light,rain:weather<.43,storm:weather<.17,hail:weather>.90};
+    const id=93,tile='street-'+light;
+    passage(92,west.cx-1,west.y+west.h,3,alleyY+2-west.y-west.h,false);
+    const first=Math.max(1,west.cx-11),last=east.cx+12;
+    passage(id,first,alleyY,center-first+2,4,true,5,tile,phase);
+    passage(id,center-1,Math.min(alleyY,eastY),4,Math.abs(swing)+4,false,5,tile,phase);
+    passage(id,center-1,eastY,last-center+1,4,true,5,tile,phase);
+    const paved=[];
+    for(let y=Math.min(alleyY,eastY);y<Math.max(alleyY,eastY)+4;y++)for(let x=first;x<last;x++){
+     if(map[y][x]===0&&(regions[y][x]===id||regions[y][x]===84||regions[y][x]===92)){
+      regions[y][x]=id;terrain[y][x]=tile;paved.push({x,y});
+     }
+    }
+    alleys={id,...phase,paved,houses:[]};
+    const buildHouse=(index,centerX,edge,north)=>{
+     const w=rollInt(5,centerX<6?5:7),h=rollInt(5,6),x=centerX-Math.floor(w/2),y=north?edge-h-2:edge+2;
+     const room=addRoom(94+index*2,x,y,w,h,roomType(.30),'street-house-'+index,0);
+     const threshold=north?edge-2:edge,houseId=room.id+1;
+     const door={id:room.key,region:houseId,x:centerX-1,y:threshold,w:2,h:1,vertical:false,hp:1,streetHouse:true};
+     carve(centerX-1,threshold,2,2,houseId);
+     paths.push({id:houseId,x:centerX-1,y:threshold,w:2,h:2,theme:room.theme});
+     doors.push(door);alleys.houses.push(room);
+     for(let col=x-1;col<=x+w;col++)for(let row=threshold;row<threshold+2;row++){
+      if(map[row][col]!==1)continue;
+      const windowRow=north?threshold+1:threshold;
+      terrain[row][col]=row===windowRow?'street-home-'+light:'street-roof-'+light;
+      regions[row][col]=id;
+     }
+    };
+    buildHouse(0,west.cx-6,alleyY,true);
+    buildHouse(1,east.cx+7,eastY+4,false);
+    for(const {x,y} of paved){
+     if(x%7===0||x===center)continue;
+     const edges=[[-1,'facade'],[-2,'upper'],[-3,'roof'],[1,'facade'],[2,'roof']];
+     for(const [dy,tier] of edges){
+      const step=Math.sign(dy);
+      if(map[y+step][x]!==1||map[y+dy][x]!==1||terrain[y+dy][x])continue;
+      if(Math.abs(dy)>1&&map[y+dy-step][x]!==1)continue;
+      terrain[y+dy][x]='street-'+tier+'-'+light;regions[y+dy][x]=id;
+     }
+    }
+   }
+  }
+  return {...base,links,doors,layers,lofts,sewerRooms,roof,sewerRelic,stairs,crypt,bossArena,extraRooms,alleys};
  }
  return {extend};
 })();
