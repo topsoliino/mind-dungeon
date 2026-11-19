@@ -145,8 +145,13 @@
   if(counter)return charged?4:2;
   return (charged?1.5:1)*(rolled?critFactor:1);
  }
+ const xpRequired=level=>55+16*level+3*level*(level-1);
+ function questionXP(difficulty,repeated,reason){
+  const base=repeated?5:15+(difficulty||1)*5;
+  return base*(reason==='shrine'||reason==='boss-altar'?2.5:1);
+ }
  const capacity=burden=>40+2*Math.max(0,burden);
  const knockbackBase=burden=>3*Math.max(0,burden);
  root.DungeonBalance={budgets,ranks,scalingCost,weaponTable,armorTable,capacity,knockbackBase,buildWeapon,hitMultiplier,
-  chargeSeconds,counterSeconds,damageStarCost,weaponMythicDash,armorMythicMove};
+  xpRequired,questionXP,chargeSeconds,counterSeconds,damageStarCost,weaponMythicDash,armorMythicMove};
 })(typeof window==='object'?window:globalThis);

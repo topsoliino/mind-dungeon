@@ -14,7 +14,7 @@ export const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 export const gap=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export const remaining=(value,dt)=>Math.max(0,(value||0)-dt);
 export const round=(value,digits=10)=>Math.round(value*digits)/digits;
-export const xpRequired=level=>60+level*38+level*level*5;
+export const {xpRequired}=balance;
 export const maxHP=p=>32+p.attributes.vigor*3;
 export const normalAngle=angle=>Math.atan2(Math.sin(angle),Math.cos(angle));
 export const slotOf=id=>id.split('-').at(-1);

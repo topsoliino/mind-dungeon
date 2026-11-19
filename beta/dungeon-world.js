@@ -175,10 +175,14 @@ function resolveAccess(site,correct){
  if(save.accessByDepth)(save.accessByDepth[save.floor+'-'+save.dungeonSeed]??={})[site.seal]=state;
  return state;
 }
-const dropTerrain=new Set(['abyss','river','clear-river','waterfall']);
+const dropTerrain=new Set(['abyss','river','clear-river','waterfall','tower-sky']);
 function abyssAt(x,y){
  const row=Math.floor(y/TILE),col=Math.floor(x/TILE);
  return map[row]?.[col]===1&&dropTerrain.has(terrain[row]?.[col]);
+}
+function towerAir(x,y){
+ const tile=terrain[Math.floor(y/TILE)]?.[Math.floor(x/TILE)];
+ return Boolean(roof&&regionAt(x,y)===roof.id&&(tile==='abyss'||tile==='tower-sky'));
 }
 function pastLedge(x,y,bodyRadius=Infinity){
  const margin=Math.min(TILE*.28,bodyRadius*.46);
@@ -233,7 +237,7 @@ function pulseReaches(pulse,actor){
  return Math.hypot(actor.x-pulse.x,actor.y-pulse.y)<pulse.radius&&
   !gateLineBlocked(pulse.x,pulse.y,actor.x,actor.y);
 }
-function gateLineBlocked(x1,y1,x2,y2){const n=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/12));for(let i=0;i<=n;i++){const t=i/n,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(gateBlocked(x,y)||wall(x,y)||doorAt(x,y))return true}return false}
+function gateLineBlocked(x1,y1,x2,y2,aerial=false){const n=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/12));for(let i=0;i<=n;i++){const t=i/n,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t;if(gateBlocked(x,y)||wall(x,y)&&!(aerial&&towerAir(x,y))||doorAt(x,y))return true}return false}
 function barrierVisible(actor,barrier){
  const {x,y,vertical,span,face}=barrier;
  if(layerAt(actor.x,actor.y)!==layerAt(x,y))return false;
@@ -487,7 +491,7 @@ function boneDropPosition(origin){
  }
  return origin;
 }
-const shrines=zones.map((z,i)=>({...accessiblePoint((z.x+.5)*TILE,(z.y+.5)*TILE),i}));
+const shrines=save.layoutRevision>=15?[]:zones.map((z,i)=>({...accessiblePoint((z.x+.5)*TILE,(z.y+.5)*TILE),i,topic:i,theme:i}));
 const chestReservations=[...links,...shrines,...stairs.flatMap(s=>[tileCenter(s.a),tileCenter(s.b)])];
 const chests=[[10.5,7.5],[23.5,4.5],[38.5,9.5],[22.5,25.5],[37.5,25.5]].map(([x,y],i)=>{
  const room=rooms[i],preferred=accessiblePoint((x+zones[i].offsetX)*TILE,(y+zones[i].offsetY)*TILE);
@@ -852,6 +856,12 @@ function lootPosition(origin,anchor=origin){
  const safe=candidates[0];
  return safe?{x:safe.x,y:safe.y}:null;
 }
+function portalPosition(origin){
+ const {x,y}=origin,region=regionAt(x,y);
+ const options=[[60,0],[-60,0],[0,60],[0,-60],[0,0]].map(([dx,dy])=>({x:x+dx,y:y+dy}));
+ return options.find(p=>regionAt(p.x,p.y)===region&&valid(p.x,p.y)&&!gateLineBlocked(x,y,p.x,p.y))??
+  lootPosition(origin)??(roof&&region===roof.id?lootPosition(tileCenter({x:roof.cx,y:roof.cy})):null)??spawn;
+}
 function inTempleLine(x1,y,x2){
  const n=Math.ceil(Math.abs(x2-x1)/12);
  for(let i=0;i<=n;i++)if(wall(x1+(x2-x1)*i/Math.max(1,n),y))return false;
@@ -873,13 +883,36 @@ const pressurePlates=templeRooms.flatMap(room=>{
   return {...pos,origin,angle:x0<pos.x?0:Math.PI,pressed:false,timer:0,cooldown:0};
  }).filter(p=>Number.isFinite(p.origin.x)&&valid(p.x,p.y,5,true));
 });
+if(save.layoutRevision>=15){
+ const random=run.random(furnishingSeed^0x25c3315d),count=3+Math.floor(random()*4);
+ const reserved=[...landmarks,lab,...pressurePlates,cupPoint,glossaryStand].filter(Boolean);
+ const areas=new Map([...rooms.map(room=>[room.i,room.i]),...annexes.filter(room=>room.id!==bossArena?.id).map(room=>[room.id,room.theme]),
+  ...(alleys?[[alleys.id,5]]:[])]);
+ const candidates=new Map([...areas.keys()].map(id=>[id,[]]));
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+  const cell=candidates.get(regions[y][x]),tile=terrain[y][x];
+  if(!cell||map[y][x]||tile?.startsWith('bridge-')||tile==='sewer-pool')continue;
+  const p=tileCenter({x,y});
+  if(canReachSpawn(p.x,p.y)&&valid(p.x,p.y,17,true,false,false,true)&&reserved.every(o=>Math.hypot(o.x-p.x,o.y-p.y)>=64))cell.push(p);
+ }
+ const ids=run.shuffle([...areas.keys()].filter(id=>candidates.get(id).length),random);
+ const varied=ids.find(id=>id===alleys?.id||layerForRegion(id)!==0);
+ const selected=[...(ids.includes(0)?[0]:[]),...(varied===undefined?[]:[varied]),...ids];
+ for(const id of new Set(selected)){
+  const p=run.shuffle(candidates.get(id),random).find(p=>shrines.every(o=>Math.hypot(o.x-p.x,o.y-p.y)>=95));
+  if(!p)continue;
+  const shrine={...p,i:shrines.length,theme:areas.get(id),topic:id<rooms.length?id:Math.floor(random()*rooms.length)};
+  shrines.push(shrine);landmarks.push(shrine);
+  if(shrines.length===count)break;
+ }
+}
 return {
  rooms,corridors,map,regions,gates,annexes,terrain,rest,
  paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
  spawn,returnPortal,keySources,keyName,keyItem,keyOffers,keyCaches,pantryKeySite,carrierFor,nearestKeyDoor,unlockDoor,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,
  regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,heroClearsDoor,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,furnitureAt,furnitureBetween,furnitureHP,furnitureIntact,furnitureCue,strikeFurniture,meleeFurniture,footWall,valid,weaponImpact,weaponClearance,weaponCover,meleeWall,beforeMeleeWall,
- merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
+ merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,towerAir,portalPosition,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition,sightBarriers,lootPosition
 };
 }

@@ -16,7 +16,8 @@ window.DungeonStrata=(()=>{
   const hasSewer=revision>=9?depth===sewerAt:null;
   const groundWidth=map[0].length,cryptWidth=13,cryptGap=13;
   const strataWidth=stories===1&&hasSewer===false?groundWidth:minX+Math.max(cols*4+2,revision>=9?39:0);
-  const width=Math.max(strataWidth,hasCrypt?rest.x+rest.w+cryptGap+4+cryptWidth+2:0,continuous&&stories>1?rest.cx+(varied?62:24):0);
+  const upperExtent=revision>=15?Math.max(...rooms.map(room=>room.cx))+62:rest.cx+(varied?62:24);
+  const width=Math.max(strataWidth,hasCrypt?rest.x+rest.w+cryptGap+4+cryptWidth+2:0,continuous&&stories>1?upperExtent:0);
   for(const [grid,fill] of [[map,1],[regions,-1],[terrain,null]]){
    for(const row of grid)while(row.length<width)row.push(fill);
   }
@@ -149,7 +150,14 @@ window.DungeonStrata=(()=>{
     site.y+=headroom;
     if(Number.isFinite(site.cy))site.cy+=headroom;
    }
-   const cx=rest.cx;
+   const stairRandom=random(seed^0x3cfc29fb);
+   const stairEntries=revision>=15&&stories>1?rooms.filter(room=>room.i!==0&&room.cy===rooms[0].cy&&(!hasCrypt||room.cx<rest.cx)).flatMap(room=>
+    [-2,0,2].map(dx=>({room,x:room.cx+dx})).filter(({x})=>{
+     for(let y=40;y<room.y;y++)for(let col=x-3;col<=x+2;col++)if(map[y][col]!==1||terrain[y][col])return false;
+     return [room.y,room.y+1].every(y=>[x-1,x].every(col=>map[y][col]===0&&regions[y][col]===room.i));
+    })):[];
+   const otherEntry=stairRandom()<.72?shuffle(stairEntries,stairRandom)[0]:null;
+   const cx=otherEntry?.x??rest.cx;
    function addStairs(id,position,top,bottom,upper,lower,roomIds){
     const w=4,x=position-2,split=Math.floor((top+bottom)/2);
     for(let y=top;y<=bottom;y++){
@@ -180,14 +188,16 @@ window.DungeonStrata=(()=>{
     const gap=varied?rollInt(1,4):1, endY=varied?rollInt(28,31):29;
     const end=addRoom(31,start.x+start.w+gap,endY,varied?rollInt(11,15):12,varied?rollInt(7,9):9,nameplates[1],'upper-1',1);
     lofts.push(start,end);
-    addStairs(50,cx,36,43,1,0,[rest.id,start.id]);
-    const walkX=rest.x-2,landing=44,approachY=rooms[0].y+2;
-    carve(walkX,landing,cx-walkX+2,2,60);
-    carve(walkX,landing,2,approachY-landing+2,60);
-    for(let y=approachY;y<approachY+2;y++)for(let x=walkX;x<rooms[0].x+1;x++){
-     if(map[y][x]===1&&!terrain[y][x])carve(x,y,1,1,60);
+    addStairs(50,cx,36,otherEntry?otherEntry.room.y-1:43,1,0,[otherEntry?.room.i??rest.id,start.id]);
+    if(!otherEntry){
+     const walkX=rest.x-2,landing=44,approachY=rooms[0].y+2;
+     carve(walkX,landing,cx-walkX+2,2,60);
+     carve(walkX,landing,2,approachY-landing+2,60);
+     for(let y=approachY;y<approachY+2;y++)for(let x=walkX;x<rooms[0].x+1;x++){
+      if(map[y][x]===1&&!terrain[y][x])carve(x,y,1,1,60);
+     }
+     paths.push({id:60,x:walkX,y:landing,w:2,h:approachY-landing+2,theme:3});
     }
-    paths.push({id:60,x:walkX,y:landing,w:2,h:approachY-landing+2,theme:3});
     carve(end.x-gap,32,gap,3,32);layers[32]=1;
     paths.push({id:32,x:end.x-gap,y:32,w:gap,h:3,theme:start.theme,...(varied?{vertical:true}:{})});
     doors.push({id:'upper-door',region:32,x:end.x-1,y:32,w:1,h:3,vertical:true,hp:44});
@@ -223,7 +233,7 @@ window.DungeonStrata=(()=>{
       roof=addRoom(35,cx-5,5,varied?rollInt(10,14):11,varied?rollInt(8,9):8,{name:'Turmspitze',theme:4,currentOutdoor:true,
        rain:weather<.33,hail:weather>=.33&&weather<.77},'tower-roof',3);
       carve(roof.x,roof.y,roof.w,roof.h,35,'roof-stone');
-      for(let y=roof.y-1;y<=roof.y+roof.h;y++)for(let x=roof.x-1;x<=roof.x+roof.w;x++){
+      if(revision<15)for(let y=roof.y-1;y<=roof.y+roof.h;y++)for(let x=roof.x-1;x<=roof.x+roof.w;x++){
        if(map[y][x]===1){regions[y][x]=35;terrain[y][x]='abyss';}
       }
       addStairs(54,cx,11,18,3,2,[extra.id,roof.id]);
@@ -231,8 +241,8 @@ window.DungeonStrata=(()=>{
     }
    }
    for(const side of [-1,1]){
-    const target=rooms.find(r=>r.cx===cx+side*18&&r.cy===rooms[0].cy);
-    if(!target||side===1&&hasCrypt||rng()<.23)continue;
+    const target=rooms.find(r=>r.cx===rest.cx+side*18&&r.cy===rooms[0].cy);
+    if(!target||target===otherEntry?.room||side===1&&hasCrypt||rng()<.23)continue;
     const edge=side<0?rest.x:rest.x+rest.w;
     const x=Math.min(edge,target.cx-1),end=Math.max(edge,target.cx+2),y=rest.cy-1,id=side<0?56:57;
     carve(x,y,end-x,3,id);carve(target.cx-1,y,3,target.y-y,id);
@@ -423,6 +433,15 @@ window.DungeonStrata=(()=>{
     paths.push({id:id+1,x,y:doorY,w:1,h:1,theme:4});
     doors.push({id:room.key,lock,region:id+1,x,y:doorY,w:1,h:1,vertical:false,north:side<0,
      hp:1,style:lock==='earlier'?'limestone':'timber',cache:{x:room.cx,y:room.cy}});
+   }
+  }
+  if(roof&&revision>=15){
+   const {x,y,w,h,id}=roof,rim=3;
+   for(let row=0;row<y+h+5;row++)for(let col=Math.max(0,x-12);col<Math.min(map[0].length,x+w+12);col++){
+    if(map[row][col]!==1||terrain[row][col])continue;
+    const nearLowerFloor=edges.some(([dx,dy])=>map[row+dy]?.[col+dx]===0&&layers[regions[row+dy][col+dx]]!==3);
+    const air=!nearLowerFloor&&row>=y-rim&&row<y+h+rim&&col>=x-rim&&col<x+w+rim;
+    regions[row][col]=id;terrain[row][col]=air?'tower-sky':'tower-horizon';
    }
   }
   return {...base,links,doors,layers,lofts,sewerRooms,roof,sewerRelic,stairs,crypt,bossArena,extraRooms,alleys};

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import test from 'node:test';
 import {WebSocket} from 'ws';
-import {run,geometry,defaultPack,makePlayer,items,foes,brewing,TILE,fallSeconds,gap,maxHP,preparePlayer,pools} from './rules.mjs';
+import {run,balance,geometry,defaultPack,makePlayer,items,foes,brewing,TILE,fallSeconds,gap,maxHP,preparePlayer,pools} from './rules.mjs';
 import {Simulation} from './simulation.mjs';
 import {actions} from './actions.mjs';
 import {createCoopServer} from './server.mjs';
@@ -1093,6 +1093,53 @@ test('a run has exactly one sewer and can generate all four tower heights',()=>{
  assert.deepEqual([...heights].sort(),[1,2,3,4]);
 });
 
+test('procedural stairs connect different chambers without cutting through the crypt or an existing floor',()=>{
+ const entries=new Set();
+ for(let i=1;i<=100;i++)for(let depth=1;depth<=run.LAST_DEPTH;depth++){
+  const seed=Math.imul(i,0x9e3779b9);
+  const d=run.generate(seed,true,15,depth,run.templeDepth(seed),seed);
+  if(d.stairs.length)entries.add(d.stairs[0].roomIds[0]);
+  for(const s of d.stairs){
+   assert.equal(d.map[s.a.y][s.a.x],0);
+   assert.equal(d.map[s.b.y][s.b.x],0);
+   assert.equal(d.layers[d.regions[s.b.y][s.b.x]],s.upper);
+   for(let y=s.y;y<s.y+s.h;y++)assert.ok(s.stepIds.includes(d.regions[y][s.a.x]));
+  }
+ }
+ assert.ok(entries.has(15)&&[...entries].filter(id=>id<5).length>=3);
+ const {host,sim}=game(-731389592),{floor}=sim,s=floor.stairs[0];
+ assert.notEqual(s.roomIds[0],floor.rest.id);
+ Object.assign(host,{x:(s.a.x+.5)*TILE,y:(s.a.y+.5)*TILE});
+ assert.ok(floor.canReachSpawn(host.x,host.y));
+ sim.enemies=[];
+ assert.ok(sim.move(host,0,(s.b.y-s.a.y)*TILE));
+ assert.equal(floor.layerAt(host.x,host.y),1);
+});
+
+test('an eagle flies across the tower edge and can still be hit from the battlements',()=>{
+ const {host,guest,sim}=game(-731389592),{floor}=sim,{roof}=floor;
+ const left=roof.x*TILE,y=(roof.cy+.5)*TILE;
+ guest.online=false;Object.assign(host,{x:left+38,y:y+70});
+ const eagle={id:'swoop',type:foes.EAGLE,x:left+22,y,hp:80,max:80,size:1,roomId:0,
+  phase:0,hit:0,attack:10,windup:0,angle:Math.PI,runAttack:.65,runDuration:.65};
+ sim.enemies=[eagle];sim.currentTarget=host;
+ sim.ai.act(eagle,.12,host,0,1180,760);
+ assert.ok(floor.towerAir(eagle.x,eagle.y));
+ assert.equal(floor.layerAt(eagle.x,eagle.y),3);
+ assert.ok(!eagle.fall&&eagle.runAttack>0);
+ assert.ok(foes.spriteFrame(eagle)>=12&&foes.spriteFrame(eagle)<18);
+ sim.move(eagle,-18,0,true);
+ assert.ok(floor.towerAir(eagle.x,eagle.y)&&!eagle.fall);
+ Object.assign(host,{y,equipment:{...host.equipment,weapon:'bow'}});preparePlayer(host);
+ assert.ok(floor.gateLineBlocked(host.x,host.y,eagle.x,eagle.y));
+ assert.ok(sim.charge(host,Math.PI)&&sim.attack(host,Math.PI));
+ sim.updateShots(.26);
+ assert.ok(eagle.hp<80);
+ const portal=floor.portalPosition(eagle);
+ assert.ok(floor.valid(portal.x,portal.y)&&floor.canReachSpawn(portal.x,portal.y));
+ assert.equal(floor.regionAt(portal.x,portal.y),roof.id);
+});
+
 test('the hero can return from the lip, and an eagle can defeat the Ring der Höhe with knockback',()=>{
  const {host,guest,sim}=game(-731389592,9);
  const roof=sim.floor.roof;
@@ -1228,7 +1275,9 @@ test('shared layouts, private questions and server-graded answers',()=>{
   assert.ok(start.question.prompt);assert.equal(start.question.correctIndex,undefined);assert.equal(start.question.answers,undefined);
   assert.throws(()=>sim.actions.dispatch(player,'answer',{quiz:'someone-elses',choice:1}),/nicht mehr offen/);
   const response=sim.actions.dispatch(player,'answer',{quiz:start.quiz,choice:choice(player.quiz.q)});
-  assert.equal(response.ok,true);assert.ok(player.xp>0);
+  assert.equal(response.ok,true);
+  const awarded=player.xp+(player.level>1?balance.xpRequired(1):0);
+  assert.equal(awarded,(15+(start.question.difficulty||1)*5)*2.5);
   assert.throws(()=>sim.actions.dispatch(player,'answer',{quiz:start.quiz,choice:choice(player.quiz.q)}),/nicht mehr offen/);
   sim.actions.dispatch(player,'review',{quiz:start.quiz,color:'yellow'});
   assert.equal(player.altarUses[0],1);
@@ -1237,6 +1286,31 @@ test('shared layouts, private questions and server-graded answers',()=>{
  const solo=geometry.spawnEnemies(run,foes,{...run.floorState(193,1)},legacy,false);
  assert.equal(solo[0].max,Math.round(foes.health(solo[0].type,solo[0].boss,1)*.5));
  assert.equal(p.level,q.level);
+});
+
+test('seeded knowledge altars can appear in the alleys, sewer and upper floors, with increasing XP thresholds',()=>{
+ const locations=new Set(),counts=new Set();
+ for(const [seed,depth] of [[193,1],[1,3],[1013904242,2],[-731389592,1]]){
+  const {sim}=game(seed,15,depth),{floor}=sim;
+  counts.add(floor.shrines.length);
+  assert.ok(floor.shrines.length>=3&&floor.shrines.length<=6);
+  const rebuilt=geometry.build(run,sim.state);
+  assert.deepEqual(floor.shrines,rebuilt.shrines);
+  for(const [i,shrine] of floor.shrines.entries()){
+   const region=floor.regionAt(shrine.x,shrine.y);
+   assert.equal(shrine.i,i);
+   assert.ok(shrine.topic>=0&&shrine.topic<floor.rooms.length);
+   assert.ok(floor.valid(shrine.x,shrine.y,14)&&floor.canReachSpawn(shrine.x,shrine.y));
+   locations.add(region===floor.alleys?.id?'street':floor.layerForRegion(region));
+  }
+  assert.ok(floor.rooms.some(room=>!floor.shrines.some(p=>floor.regionAt(p.x,p.y)===room.i)));
+ }
+ assert.ok(['street',-1,1,3].every(location=>locations.has(location)));
+ assert.ok(counts.size>1);
+ assert.equal(balance.questionXP(2,false,'shrine'),62.5);
+ assert.equal(balance.questionXP(2,true,'boss-altar'),12.5);
+ assert.equal(balance.questionXP(2,false,'gate'),25);
+ assert.deepEqual([1,2,3,5,10].map(balance.xpRequired),[71,93,121,195,485]);
 });
 
 test('render packets preserve visibility, carry deltas and allow another floor',()=>{
