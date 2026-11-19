@@ -1139,6 +1139,37 @@ test('temple trap audio follows the plate and projectile launch separately',()=>
  assert.equal(launch.y,Math.round(plate.origin.y*10)/10);
 });
 
+test('combat audio fires with projectile release, web landing and the start of fire breath',()=>{
+ const {host,sim}=game(),pos=arena(sim,host);
+ sim.currentTarget=host;
+ const enemy=(type)=>({...pos,type,size:1,hp:100,phase:0,hit:0,angle:Math.PI,windup:.01,attack:0});
+ const heard=cue=>sim.events.filter(event=>event.kind==='sound'&&event.cue===cue);
+ const act=(foe)=>sim.ai.act(foe,.02,host,0,960,640);
+
+ act(enemy(2));
+ assert.equal(heard('enemy_spider_web').length,1);
+ assert.equal(heard('enemy_spider_web_land').length,0);
+ for(let i=1;i<=60;i++)sim.ai.moveFrom(.025,host,i*.025,960,640);
+ const [landing]=heard('enemy_spider_web_land');
+ assert.equal(heard('enemy_spider_web_land').length,1);
+ const [patch]=sim.effects.webPatches;
+ assert.equal(landing.x,Math.round(patch.x*10)/10);
+ assert.equal(landing.y,Math.round(patch.y*10)/10);
+
+ act(enemy(foes.ARCHER));
+ act(enemy(foes.CROSSBOW));
+ act(enemy(foes.FROST_CROSSBOW));
+ assert.equal(heard('bow_release').length,1);
+ assert.equal(heard('crossbow_release').length,2);
+
+ const bat=enemy(foes.BAT);
+ bat.batMove={age:foes.attacks[foes.BAT].windup-.03,next:0,duration:.71};
+ act(bat);
+ assert.equal(heard('element_fire_cone').length,0);
+ act(bat);act(bat);
+ assert.equal(heard('element_fire_cone').length,1);
+});
+
 test('opening a co-op chest emits latch, lid and gold once in playback order',()=>{
  const {host,sim}=game();
  const index=sim.floor.chests.findIndex((_,i)=>i!==sim.floor.trialIndex);
