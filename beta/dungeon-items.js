@@ -25,7 +25,7 @@ window.DungeonItems = (() => {
   bread:{name:'Brot',heal:23},
   chicken:{name:'Hühnchen',heal:34}
  };
- const foodSeconds=1.5,damageDelay=1;
+ const foodSeconds=1.5,foodMove=.3,damageDelay=1;
  const foodPower=(item,multiplier)=>Math.round((food[item.id]?.heal??0)*multiplier);
  function foodNeeded(actor,max,queue,multiplier){
   return Math.max(0,max-actor.hp+(actor.damageQueue??[]).reduce((sum,hit)=>sum+hit.amount,0)-
@@ -308,5 +308,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodMove,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

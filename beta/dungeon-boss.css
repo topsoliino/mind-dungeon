@@ -20,3 +20,11 @@
 @keyframes boss-arrival{from{transform:translateY(16px) scale(.93);opacity:.2}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.boss-lineup,.boss-lineup img{animation:none;transition:none}}
 body:has(#boss-intro:not([hidden])) :is(#notice,#dungeonPrompt,#right,#hud,#wallet){visibility:hidden}
+
+#boss-skip {
+ pointer-events: auto;
+ position: absolute;
+ right: max(20px, env(safe-area-inset-right));
+ bottom: max(20px, env(safe-area-inset-bottom));
+ z-index: 1;
+}

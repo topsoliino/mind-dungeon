@@ -140,6 +140,29 @@ test('the coop boss gate needs two correct answers and a cleared floor, then the
  assert.deepEqual(guest.bossRewards,['white-rabbit']);
 });
 
+test('the shared intro can be skipped after a second and spawned rats clear the laboratory furniture',()=>{
+ const {sim,players:[host,guest]}=party();
+ const {bossArena:arena}=sim.floor,battle=sim.state.bossBattle;
+ sim.enemies=[];
+ battle.phase='ready';Object.assign(host,{x:arena.x,y:arena.y});
+ sim.step(1/30);
+ assert.equal(battle.phase,'intro');
+ assert.throws(()=>sim.actions.dispatch(host,'skip-intro',{}),/nicht übersprungen/);
+ stepUntil(sim,()=>battle.time>=1,2);
+ sim.actions.dispatch(guest,'skip-intro',{});
+ assert.equal(battle.phase,'waves');
+ sim.step(1/30);
+ const rats=sim.enemies.filter(e=>e.bossRole==='rat');
+ assert.equal(rats.length,6);
+ assert.ok(rats.every(rat=>sim.floor.valid(rat.x,rat.y,8)));
+ assert.throws(()=>sim.actions.dispatch(host,'skip-intro',{}),/nicht übersprungen/);
+ const rat=rats[0];
+ Object.assign(rat,arena.benches[1],{emerge:0,aggro:0});
+ sim.step(1/30);
+ assert.ok(sim.floor.valid(rat.x,rat.y,8));
+ stepUntil(sim,()=>rat.aggro>0&&rat.moving,4);
+});
+
 test('small rats roll one chance in three and the merchant note costs 50 gold on floor two',()=>{
  const drops=[],rolls=[0,1/3,.85,.25];
  const encounter=bossRules.create({}, {},{random:()=>rolls.shift(),drop:(_,it,count)=>drops.push([it.id,count])});

@@ -210,6 +210,11 @@ window.DungeonVision=(()=>{
    }
    return reachable[cell]>0;
   }
+  function seesLoot(x,y){
+   if(sees(x,y))return true;
+   const row=Math.floor(y/tileSize),col=Math.floor(x/tileSize);
+   return inside(col,row)&&Boolean(known[row*W+col])&&connectsAroundCorner(row*W+col);
+  }
   function seesEnemy(e){
    if(!viewOrigin)return false;
    const x=e.x/tileSize,y=e.y/tileSize,col=Math.floor(x),row=Math.floor(y),cell=row*W+col;
@@ -224,7 +229,7 @@ window.DungeonVision=(()=>{
    if(!known[cell])rememberFloor(cell);
    return true;
   }
-  return {update,seenTiles,known,get revision(){return revision;},sees,remembers,
+  return {update,seenTiles,known,get revision(){return revision;},sees,seesLoot,remembers,
    seesEnemy,observeEnemy,barrierVisible:barrier=>visibleBarriers.has(barrier)};
  }
  return {create,memoryVersion};
