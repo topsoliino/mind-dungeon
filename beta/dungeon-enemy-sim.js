@@ -5,7 +5,7 @@ function create(api){
  const {enemyRules,items,balance,save,state,floor,getEnemies,moveActor,actorRadius,nearActor,takeDamage,applyPoison,addBleed,
   soundWorld,burst,hurtEnemy,shockWater,knockHero,coopActors,enemyEncounterReady,rand}=api;
  const {W,H,rooms,regionAt,inRest,outsideAt,pointIn,valid,furnitureBlocked,gateLineBlocked,gateBlocked,wall,pressurePlates}=floor;
- const {SNAKE,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW}=enemyRules;
+ const {SNAKE,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,STREET_DOG}=enemyRules;
  const isBat=e=>e.type===BAT||e.type===STORM_BAT,isLion=e=>e.type===LION||e.type===LIONESS;
  const movementCue={lion:'lion_paw',lioness:'lion_paw','bat-fire':'bat_wings','bat-lightning':'bat_wings'};
  const windupCue={rift:'enemy_priest_voice',bow:'bow_draw',bite:'snake_hiss'};
@@ -14,6 +14,7 @@ function create(api){
  let player,combatClock=0,cw=1280,ch=720;
  function asHero(actor,action){const prior=player;player=actor;try{return action();}finally{player=prior;}}
  const origin=enemyRules.damageOrigin;
+ const eyeRange=(e,angle)=>enemyRules.eyeRange(e.type,e.boss,Math.min(cw,W*TILE),Math.min(ch,H*TILE),angle)*(floor.sightScale?.(e.x,e.y)??1);
  const damageActive=(source,amount,split,status,depth,cue,critical)=>takeDamage(player,amount,split,status,depth,cue,critical,source);
  const bleedActive=(e,amount)=>addBleed(player,amount,origin(e,'Blutverlust'));
  const poison=(actor,options)=>applyPoison(actor,options);
@@ -70,7 +71,7 @@ function updateEnemy(e,dt){
  if(e.emerge>0){e.emerge=Math.max(0,e.emerge-dt);return;}
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
- const range=enemyRules.eyeRange(e.type,e.boss,Math.min(cw,W*TILE),Math.min(ch,H*TILE),angle);
+ const range=eyeRange(e,angle);
  const line=d<range*1.22&&!gateLineBlocked(e.x,e.y,player.x,player.y);
  const spotted=line&&d<=range;
  if(spotted)enemyRules.alert(e);
@@ -79,10 +80,10 @@ function updateEnemy(e,dt){
   e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
  }
  const clear=line&&e.aggro>0;
- if(e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&e.type!==EAGLE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))damageActive(origin(e,'Nahkampftreffer'),9+(e.boss?5:0),items.foeAttack[e.type]);
+ if(e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&e.type!==EAGLE&&e.type!==STREET_DOG&&clear&&nearActor(e,player,5)&&!(e.runAttack>0))damageActive(origin(e,'Nahkampftreffer'),9+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.runAttack>0){
   if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'||spec.id==='eagle'){advanceRush(e,spec,dt,angle);return;}
-  if(['web','frost','bow','crossbow','electrode','rat-bite'].includes(spec.id)){
+  if(['web','frost','bow','crossbow','electrode','rat-bite','dog-bite'].includes(spec.id)){
    e.runAttack=Math.max(0,e.runAttack-dt);
    if(!e.runAttack)recover(e,spec.recovery);
    return;
@@ -123,7 +124,7 @@ function updateOrc(e,dt,sameLayer=true){
  const spec=enemyRules.attacks[e.type];
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
- const clear=sameLayer&&d<Math.min(470,enemyRules.eyeRange(e.type,false,cw,ch,angle))&&!gateLineBlocked(e.x,e.y,player.x,player.y);
+ const clear=sameLayer&&d<Math.min(470*(floor.sightScale?.(e.x,e.y)??1),eyeRange(e,angle))&&!gateLineBlocked(e.x,e.y,player.x,player.y);
  if(clear)enemyRules.alert(e);
  else e.aggro=Math.max(0,(e.aggro||0)-dt);
  if(e.veilPhase){
@@ -147,13 +148,14 @@ function updateOrc(e,dt,sameLayer=true){
 }
 function executeEnemyAttack(e,spec){
  e.attack=(e.boss?2.25:2.85)-(save.floor-1)*.12;
- if(e.type===RAT||e.type===ELECTRO_RAT){
-  const electric=e.type===ELECTRO_RAT,amount=electric?16:7;
+ if(e.type===RAT||e.type===ELECTRO_RAT||e.type===STREET_DOG){
+  const electric=e.type===ELECTRO_RAT,dog=e.type===STREET_DOG,amount=electric?16:dog?13:7;
   const split=electric?{physical:.3,lightning:.7}:{physical:1};
   const dx=player.x-e.x,dy=player.y-e.y;
   const hit=Math.hypot(dx,dy)<spec.range+11&&Math.cos(Math.atan2(dy,dx)-e.angle)>.5&&
    !gateLineBlocked(e.x,e.y,player.x,player.y);
-  if(hit&&damageActive(origin(e,electric?'Elektrodenstoß':'Biss'),amount,split)&&!electric)bleedActive(e,31);
+  if(hit&&damageActive(origin(e,electric?'Elektrodenstoß':'Biss'),amount,split)&&!electric)bleedActive(e,dog?16:31);
+  if(dog)soundWorld('hit_body',e,{gain:.42,priority:1,cooldown:.24});
   if(electric){
    soundWorld('element_lightning_charge',e,{gain:.66,priority:2,cooldown:.17});
    shockWater(e,hit?player:null,split,amount,e);
@@ -292,7 +294,7 @@ function updateLion(e,dt){
  const spec=enemyRules.attacks[e.type];
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
- const clear=d<=enemyRules.eyeRange(e.type,false,cw,ch,angle)&&!gateLineBlocked(e.x,e.y,player.x,player.y);
+ const clear=d<=eyeRange(e,angle)&&!gateLineBlocked(e.x,e.y,player.x,player.y);
  if(clear)enemyRules.alert(e);
  e.called=Math.max(0,(e.called||0)-dt);
  if(!clear)e.aggro=Math.max(e.called,(e.aggro||0)-dt);
@@ -342,7 +344,7 @@ function updateBat(e,dt){
  const spec=enemyRules.attacks[e.type],lightning=e.type===STORM_BAT;
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
- const clear=d<=enemyRules.eyeRange(e.type,false,cw,ch,angle)&&!gateLineBlocked(e.x,e.y,player.x,player.y);
+ const clear=d<=eyeRange(e,angle)&&!gateLineBlocked(e.x,e.y,player.x,player.y);
  if(clear)enemyRules.alert(e);
  if(!clear)e.aggro=Math.max(0,(e.aggro||0)-dt);
  const move=e.batMove;

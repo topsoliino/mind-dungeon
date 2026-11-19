@@ -4,7 +4,7 @@ window.DungeonVision=(()=>{
  const nearWalls=[...adjacent,[1,1],[1,-1],[-1,1],[-1,-1]];
  const memoryVersion=1;
  function create(world,tileSize,barriers,prior,explored){
-  const {map,regions,W,H,stairs,rest,rooms,annexes=[],sewerRooms=[]}=world;
+  const {map,regions,terrain,W,H,stairs,rest,rooms,annexes=[],sewerRooms=[],alleys}=world;
   const size=W*H,opaque=new Uint8Array(size),obstacles=new Uint8Array(size),live=new Uint8Array(size),known=new Uint8Array(size);
   const seenTiles=[],roomTiles=new Map(),revealedRooms=new Set(),litRoomCells=new Uint8Array(size);
   const witnessed=new Set(),reachable=new Int16Array(size),frontier=new Int32Array(size);
@@ -40,6 +40,14 @@ window.DungeonVision=(()=>{
    for(const [dx,dy] of nearWalls){
     const col=x+dx,row=y+dy,neighbor=row*W+col;
     if(inside(col,row)&&opaque[neighbor])remember(neighbor);
+   }
+   if(alleys&&regions[y][x]===alleys.id){
+    // A visible facade exposes its upper stories without exposing the house behind the door.
+    for(const direction of [-1,1])for(let distance=1;distance<=3;distance++){
+     const row=y+direction*distance,wall=row*W+x;
+     if(!opaque[wall]||!terrain[row]?.[x]?.startsWith('street-'))break;
+     remember(wall);
+    }
    }
   }
   function revealRoom(region){

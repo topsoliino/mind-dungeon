@@ -310,6 +310,85 @@ test('water beside both bridges drops the hero while sewer water remains walkabl
  assert.equal(sewer.abyssAt((x+.5)*TILE,(y+.5)*TILE),false);
 });
 
+test('enemy knockback can cause a lethal fall and leaves the loot on reachable ground',()=>{
+ const {host,sim}=game(193,12,run.templeDepth(193));
+ const {terrain}=sim.floor;
+ const y=terrain.findIndex((row,i)=>row.some((tile,x)=>tile==='clear-river'&&terrain[i+1]?.[x]==='bridge-x'));
+ const x=terrain[y].findIndex((tile,i)=>tile==='clear-river'&&terrain[y+1][i]==='bridge-x');
+ const start={x:(x+.5)*TILE,y:(y+1)*TILE+15};
+ const foe={...start,id:'test-ledge',type:foes.SKELETON,roomId:0,hp:100,max:100,size:1,phase:0,angle:0,hit:0};
+ Object.assign(host,{x:start.x,y:start.y+42});
+ sim.enemies=[foe];
+ assert.ok(sim.floor.valid(foe.x,foe.y,14));
+ sim.move(foe,0,-22);
+ assert.ok(!foe.fall&&!sim.floor.abyssAt(foe.x,foe.y));
+ Object.assign(foe,start);
+ sim.weaponHit(foe,{p:host,w:items.weapon('great-scythe'),charged:false,amount:10,split:{physical:1},impact:100,crit:0},-Math.PI/2);
+ assert.ok(foe.fall&&foe.hp>0);
+ assert.equal(createProjection()(sim,host,true).enemies.find(row=>row[0]===foe.id).at(-1)[0],0);
+ sim.step(.4);
+ assert.equal(sim.enemies.length,1);
+ sim.step(.46);
+ assert.ok(!sim.enemies.includes(foe));
+ assert.ok(sim.events.some(e=>e.kind==='defeated'&&e.y>=start.y-1));
+ const loot=[...sim.orbs.values()];
+ assert.ok(loot.length);
+ assert.ok(loot.every(o=>sim.floor.valid(o.x,o.y)&&sim.floor.canReachSpawn(o.x,o.y)));
+});
+
+test('the alleys have two time-locked houses, night-only bats and one shared epic ring',()=>{
+ for(const [seed,phase,scale] of [[0,'evening',1],[2,'night',.59],[4,'day',1.25]]){
+  const {host,sim}=game(seed);
+  const {floor}=sim,street=floor.alleys;
+  assert.equal(street.light,phase);
+  assert.equal(street.houses.length,2);
+  const outside=street.paved[Math.floor(street.paved.length/2)];
+  assert.equal(floor.sightScale((outside.x+.5)*TILE,(outside.y+.5)*TILE),scale);
+  const bats=sim.enemies.filter(e=>e.id.startsWith('street-')&&[foes.BAT,foes.STORM_BAT].includes(e.type));
+  assert.equal(bats.length,phase==='night'?2:0);
+  assert.equal(sim.enemies.filter(e=>e.type===foes.STREET_DOG).length,3);
+  const carrier=sim.enemies.find(e=>e.alleyRing);
+  assert.ok(carrier&&floor.canReachSpawn(carrier.x,carrier.y));
+  sim.enemies=[];
+  for(const [i,house] of street.houses.entries()){
+   const door=floor.doors.find(d=>d.id===house.key),sign=i===0?-1:1;
+   assert.equal(floor.layerAt(door.x,door.y),0);
+   Object.assign(host,{x:door.x,y:door.y-sign*TILE*1.8});
+   sim.move(host,0,sign*TILE*3.5);
+   assert.equal(floor.regionAt(host.x,host.y)===house.id,phase!=='day');
+   if(phase==='day'){
+    assert.equal(floor.strikeDoor(999,door),door.hp);
+    assert.ok(floor.doorAt(door.x,door.y));
+   }
+  }
+  sim.defeat(carrier);
+  sim.defeat(carrier);
+  const rings=[...sim.orbs.values()].filter(o=>o.item.id==='avoidance');
+  assert.equal(rings.length,1);
+  assert.equal(rings[0].seat,0);
+  assert.equal(rings[0].item.rarity,'epic');
+ }
+ assert.equal(items.retreatDepth(4,['avoidance',null]),4);
+ assert.equal(items.retreatDepth(4,['height',null]),3);
+});
+
+test('seeds vary the number of routes and rooms on ground and upper layers',()=>{
+ const ground=new Set(),upper=new Set(),paths=new Set(),tower=new Set();
+ for(let seed=0;seed<80;seed++){
+  const first=run.generate(seed,true,12,1),later=run.generate(seed,true,12,3);
+  for(const layout of [first,later]){
+   ground.add(layout.extraRooms.length);
+   paths.add(layout.paths.filter(p=>layout.layers[p.id]===1).length);
+   upper.add(layout.lofts.filter(room=>layout.layers[room.id]===1).length);
+   tower.add(layout.lofts.filter(room=>layout.layers[room.id]===2).length);
+   assert.ok(layout.map.every(row=>row.length===layout.map[0].length));
+  }
+ }
+ assert.equal(ground.size,4);
+ assert.ok(upper.size>=4&&paths.size>=4&&tower.size>=3);
+ assert.equal(run.generate(103,true,11,1).alleys,null);
+});
+
 test('new seeds vary the deck and room topics while due cards return after their review interval',()=>{
  const qs=defaultPack.questions;
  const progress={questionSeen:{},questionReview:{},questionCount:0};

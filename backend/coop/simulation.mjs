@@ -153,20 +153,21 @@ export class Simulation{
   if(actor.fall)return false;
   const hero=Boolean(actor.seat),others=hero?this.enemies:this.players;
   const clear=(x,y,other)=>{
-   if(other===actor||other.hp<=0||!hero&&!other.online)return true;
+   if(other===actor||other.hp<=0||other.fall||!hero&&!other.online)return true;
    const r=radius(actor)+radius(other),ox=Math.abs(actor.x-other.x),oy=Math.abs(actor.y-other.y);
    const sx=Math.abs(x-other.x),sy=Math.abs(y-other.y);
    return sx>=r||sy>=r||ox<r&&oy<r&&sx>=ox&&sy>=oy&&(sx>ox||sy>oy);
   };
-  const canFall=hero&&(knockback||!actor.equipment.rings.includes('height'));
-  const pass=(x,y)=>this.floor.valid(x,y,radius(actor),false,hero,canFall)&&(hero||!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
+  const canFall=knockback||hero&&!actor.equipment.rings.includes('height');
+  const safe={x:actor.x,y:actor.y},bodyRadius=radius(actor);
+  const pass=(x,y)=>this.floor.valid(x,y,bodyRadius,false,hero,canFall)&&(hero||!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
   const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
   for(let i=0;i<steps;i++){
    const x=actor.x+dx/steps,y=actor.y+dy/steps;
    if(dx&&pass(x,actor.y))actor.x=x;
    if(dy&&pass(actor.x,y))actor.y=y;
-   if(canFall&&this.floor.pastLedge(actor.x,actor.y)){
-    actor.fall={remaining:fallSeconds,origin,heading:Math.atan2(dy,dx)};
+   if(canFall&&this.floor.pastLedge(actor.x,actor.y,hero?undefined:bodyRadius)){
+    actor.fall={remaining:fallSeconds,origin,heading:Math.atan2(dy,dx),...(hero?{}:{safe})};
     actor.attack=0;actor.dash=0;actor.chargeStart=null;actor.moving=false;
     this.sound('hero_fall',actor,{priority:4,gain:.85});
     return false;
@@ -180,7 +181,7 @@ export class Simulation{
   this.emit('travel',{seat:p.seat,x:p.x,y:p.y,link:link.kind});
  }
  hitDoor(door,attack){
-  if(this.floor.accessState(door)!=='open')return;
+  if(door.streetHouse||this.floor.accessState(door)!=='open')return;
   const hp=this.floor.strikeDoor(attack.amount*(attack.charged?1.5:1),door);
   if(hp===0&&door.reward)this.drop({x:(door.reward.x+.5)*TILE,y:(door.reward.y+.5)*TILE},selectLoot('epic',this.state.floor,this.random));
   this.emit('door',{x:door.x,y:door.y,id:door.id,hp});
@@ -216,7 +217,7 @@ export class Simulation{
   return true;
  }
  canTarget(e,p){
-  return p.online&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&foes.encounterReady(e,p,this.floor,p.entryGrace??0,
+  return p.online&&!e.fall&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&foes.encounterReady(e,p,this.floor,p.entryGrace??0,
    !e.bossRole&&this.sights.get(p.seat)?.seesEnemy(e),this.clock);
  }
  updateSight(p){
@@ -247,6 +248,7 @@ export class Simulation{
   this.updateShots(dt);
   for(const e of this.enemies){
    if(e.hp<=0)continue;
+   if(geometry.fallEnemy(e,dt)){if(e.hp<=0)this.boss?.markDeath(e);continue;}
    this.tickPoison(e,dt);
    if(e.hp<=0)continue;
    if(e.bossRole==='scientist'||e.bossEntrance)continue;
@@ -425,7 +427,7 @@ export class Simulation{
   const doorHit=door&&beforeWall(door);
   for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
-   if(e.hp>0&&items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)&&beforeWall(e)&&
+   if(e.hp>0&&!e.fall&&items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)&&beforeWall(e)&&
      !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;impact??={x:e.x,y:e.y};this.weaponHit(e,hit,angle);}
   }
   if(doorHit)this.hitDoor(door,hit);
@@ -454,7 +456,7 @@ export class Simulation{
     if(this.floor.wall(shot.x,shot.y)||this.floor.gateBlocked(shot.x,shot.y)){shock();return false;}
     const door=this.floor.doorAt(shot.x,shot.y);
     if(door){if(shot.hit)this.hitDoor(door,shot.hit);shock();return false;}
-    const enemy=this.enemies.find(e=>e.hp>0&&gap(e,shot)<radius(e)+5&&
+    const enemy=this.enemies.find(e=>e.hp>0&&!e.fall&&gap(e,shot)<radius(e)+5&&
      !this.floor.gateLineBlocked(shot.x,shot.y,e.x,e.y));
     if(enemy){const impact={x:enemy.x,y:enemy.y};this.weaponHit(enemy,shot.hit,shot.angle);shock(impact);return false;}
    }
@@ -463,7 +465,7 @@ export class Simulation{
   });
  }
  weaponHit(e,attack,angle){
-  if(e.warded)return;
+  if(e.warded||e.fall)return;
   const {p,w,charged,amount,split}=attack,counter=e.counterUntil>this.clock,rolled=!counter&&this.random()<attack.crit;
   const crit=counter?charged?'fatal':'counter':rolled?'critical':'';
   const wet=this.floor.inRain(p.x,p.y)||this.floor.inRain(e.x,e.y);
@@ -473,7 +475,7 @@ export class Simulation{
   if(!hit.total)return;
   if(counter)e.counterUntil=0;
   const knock=foes.knockbackDistance(attack.impact,foes.balance(e.type,e.boss))*(w.projectile?.67:1);
-  if(knock)this.move(e,Math.cos(angle)*knock,Math.sin(angle)*knock);
+  if(knock&&e.hp>0)this.move(e,Math.cos(angle)*knock,Math.sin(angle)*knock,true);
   if(e.hp>0&&w.status==='bleed'&&!(e.bleedUntil>this.clock)){
    e.bleedUntil=this.clock+3;this.hurtEnemy(e,items.hit(e.max*(.08+(w.statusLevel-1)*.02),{bleed:1},resist),p);
   }
@@ -481,7 +483,7 @@ export class Simulation{
   if(p.equipment.rings.includes('faith'))p.hp=Math.min(maxHP(p),p.hp+3);
  }
  hurtEnemy(e,hit,p,critical='',weapon){
-  if(e.hp<=0||e.warded)return;
+  if(e.hp<=0||e.warded||e.fall)return;
   const n=Math.min(e.hp,hit.total);
   if(n>0){
    if(hit.type==='bleed')this.bloodLoss(e);
@@ -550,7 +552,7 @@ export class Simulation{
   return this.floor.lootPosition(pos,anchor)??this.floor.lootPosition(anchor)??this.floor.spawn;
  }
  drop(pos,item,owner=0,anchor=pos){
-  if(this.orbs.size>=180)return false;
+  if(this.orbs.size>=180&&item!==items.alleyRing)return false;
   const id=this.id();this.orbs.set(id,{id,seat:owner,...this.lootAt(pos,anchor),item});
   return true;
  }
@@ -558,6 +560,9 @@ export class Simulation{
   const active=this.activePlayers();
   for(const p of active){p.kills++;p.revision++;}
   if(e.bossRole){this.boss?.defeat(e);this.emit('defeated',{x:e.x,y:e.y,type:e.type});return;}
+  if(e.alleyRing&&!this.state.alleyRingAwarded){
+   this.state.alleyRingAwarded=this.drop(e,items.alleyRing);
+  }
   if(e.type===foes.PRIEST){
    this.newEnemies??=[];
    for(const side of [-1,1]){
