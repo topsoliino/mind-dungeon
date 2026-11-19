@@ -9,7 +9,7 @@
   --paper: Georgia, "Times New Roman", serif;
 }
 html,body { background:#101212; color:var(--text); font-family:var(--paper); }
-#game,#phaser-host canvas { image-rendering:pixelated; }
+#game,#phaser-host canvas { image-rendering:auto; }
 #hud,#right,#help { filter:drop-shadow(0 3px 3px #080707b0); }
 .panel,#modal,#dungeonPrompt {
   border:1px solid var(--line);

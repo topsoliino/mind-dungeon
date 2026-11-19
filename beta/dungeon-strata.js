@@ -8,7 +8,7 @@ window.DungeonStrata=(()=>{
  const edges=[[1,0],[-1,0],[0,1],[0,-1]];
  function extend(base,seed,depth,random,shuffle,revision,sewerAt,hasCrypt){
   const {rooms,corridors,map,regions,gates,terrain,annexes,paths,rest}=base;
-  const continuous=revision>=10,varied=revision>=12;
+  const continuous=revision>=10,varied=revision>=12,variedAlleys=revision>=13;
   const rng=random(Math.imul(seed^0x2bb5c943,1597334677));
   const minX=map[0].length+6,cols=8+Math.floor(rng()*3),rows=3+Math.floor(rng()*2);
   const roll=random(Math.imul(seed^0x2d3c461b,0x45d9f3b))();
@@ -288,7 +288,7 @@ window.DungeonStrata=(()=>{
    const right=Math.max(map[0].length,east.cx+16,east.cx+9+wingCount*14+3);
    for(const [grid,fill] of [[map,1],[regions,-1],[terrain,null]]){
     for(const row of grid)while(row.length<right)row.push(fill);
-    const end=hasAlleys?Math.max(alleyY,eastY)+14:wingCount?south+18:south;
+    const end=hasAlleys?Math.max(alleyY,eastY)+(variedAlleys?19:14):wingCount?south+18:south;
     while(grid.length<end)grid.push(Array(right).fill(fill));
    }
    function passage(id,x,y,w,h,vertical,theme=3,tile=null,outdoor=null){
@@ -314,43 +314,88 @@ window.DungeonStrata=(()=>{
    if(hasAlleys){
     const light=['day','evening','night'][rollInt(0,2)],weather=variation();
     const phase={name:'Die Gassen',outdoors:true,light,rain:weather<.43,storm:weather<.17,hail:weather>.90};
-    const id=93,tile='street-'+light;
+    const id=93,tile='street-'+light,streetRandom=random(Math.imul(seed^0xa915f2a3,0x45d9f3b));
     passage(92,west.cx-1,west.y+west.h,3,alleyY+2-west.y-west.h,false);
     const first=Math.max(1,west.cx-11),last=east.cx+12;
-    passage(id,first,alleyY,center-first+2,4,true,5,tile,phase);
-    passage(id,center-1,Math.min(alleyY,eastY),4,Math.abs(swing)+4,false,5,tile,phase);
-    passage(id,center-1,eastY,last-center+1,4,true,5,tile,phase);
-    const paved=[];
-    for(let y=Math.min(alleyY,eastY);y<Math.max(alleyY,eastY)+4;y++)for(let x=first;x<last;x++){
-     if(map[y][x]===0&&(regions[y][x]===id||regions[y][x]===84||regions[y][x]===92)){
-      regions[y][x]=id;terrain[y][x]=tile;paved.push({x,y});
+    const widths=shuffle([3,4,5,6,7],streetRandom);
+    const corners=widths.slice(1).map((_,i)=>Math.round(first+(last-first)*(i+1)/5+streetRandom()*4-2));
+    const streetWidth=x=>widths[corners.filter(edge=>edge<=x).length];
+    if(variedAlleys){
+     const top=Math.min(alleyY,eastY),bottom=Math.max(alleyY,eastY)+7;
+     paths.push({id,x:first,y:top,w:last-first,h:bottom-top,vertical:true,theme:5,...phase});
+     for(let x=first;x<last;x++){
+      const y=x<center?alleyY:eastY;
+      const begin=x>=center-2&&x<center+2?top:y;
+      const end=x>=center-2&&x<center+2?Math.max(alleyY+streetWidth(center-2),eastY+streetWidth(center+1)):y+streetWidth(x);
+      for(let row=begin;row<end;row++){
+       if(map[row][x]===1&&!terrain[row][x])carve(x,row,1,1,id,tile);
+      }
      }
+    }else{
+     passage(id,first,alleyY,center-first+2,4,true,5,tile,phase);
+     passage(id,center-1,Math.min(alleyY,eastY),4,Math.abs(swing)+4,false,5,tile,phase);
+     passage(id,center-1,eastY,last-center+1,4,true,5,tile,phase);
     }
-    alleys={id,...phase,paved,houses:[]};
-    const buildHouse=(index,centerX,edge,north)=>{
-     const w=rollInt(5,centerX<6?5:7),h=rollInt(5,6),x=centerX-Math.floor(w/2),y=north?edge-h-2:edge+2;
+    const paved=[];
+    const streetEdges=new Map();
+    for(let y=Math.min(alleyY,eastY);y<Math.max(alleyY,eastY)+(variedAlleys?7:4);y++)for(let x=first;x<last;x++){
+     if(map[y][x]!==0||![id,84,92].includes(regions[y][x]))continue;
+     regions[y][x]=id;terrain[y][x]=tile;paved.push({x,y});
+     const bounds=streetEdges.get(x);
+     if(bounds)bounds.south=y+1;else streetEdges.set(x,{north:y,south:y+1});
+    }
+    alleys={id,...phase,paved,houses:[],lights:[]};
+    const styles=['timber','limestone','brick'];
+    const styleOrder=shuffle([...styles],streetRandom);
+    const styleAt=x=>styleOrder[Math.floor((x-first+3)/5)%styles.length];
+    function wallTile(x,y,tier,style,mark='plain'){
+     if(map[y]?.[x]!==1||terrain[y][x])return false;
+     terrain[y][x]='street-'+tier+'-'+style+'-'+mark+'-'+light;regions[y][x]=id;
+     return true;
+    }
+    function facade(x,y,direction,style,mark){
+     if(!wallTile(x,y,'facade',style,mark))return false;
+     if(light!=='day'&&(mark==='lamp'||mark==='lit')){
+      alleys.lights.push({x:x+.5,y:y+.5-direction*.7,window:mark==='lit'});
+     }
+     return true;
+    }
+    const buildHouse=(index,centerX,fixedEdge,north)=>{
+     const w=rollInt(5,centerX<6?5:7),h=rollInt(5,6),x=centerX-Math.floor(w/2);
+     const side=north?'north':'south',edge=variedAlleys?streetEdges.get(centerX)[side]:fixedEdge;
+     const houseEdges=Array.from({length:w},(_,i)=>streetEdges.get(x+i)?.[side]??edge);
+     const wallEdge=variedAlleys?(north?Math.min(...houseEdges):Math.max(...houseEdges)):edge;
+     const y=north?wallEdge-h-2:wallEdge+2;
      const room=addRoom(94+index*2,x,y,w,h,roomType(.30),'street-house-'+index,0);
-     const threshold=north?edge-2:edge,houseId=room.id+1;
-     const door={id:room.key,region:houseId,x:centerX-1,y:threshold,w:2,h:1,vertical:false,hp:1,streetHouse:true};
-     carve(centerX-1,threshold,2,2,houseId);
-     paths.push({id:houseId,x:centerX-1,y:threshold,w:2,h:2,theme:room.theme});
+     carve(x,y,w,h,room.id,'house-boards');
+     const threshold=north?edge-2:edge;
+     const doorY=variedAlleys&&north?edge-1:threshold,houseId=room.id+1;
+     const doorX=variedAlleys?centerX:centerX-1,doorWidth=variedAlleys?1:2,style=styleOrder[index];
+     const begin=north?y+h:edge,end=north?edge:y;
+     const door={id:room.key,region:houseId,x:doorX,y:doorY,w:doorWidth,h:1,vertical:false,hp:1,streetHouse:true,style,north};
+     carve(doorX,begin,doorWidth,end-begin,houseId,'house-boards');
+     paths.push({id:houseId,x:doorX,y:begin,w:doorWidth,h:end-begin,theme:room.theme});
      doors.push(door);alleys.houses.push(room);
-     for(let col=x-1;col<=x+w;col++)for(let row=threshold;row<threshold+2;row++){
-      if(map[row][col]!==1)continue;
-      const windowRow=north?threshold+1:threshold;
-      terrain[row][col]=row===windowRow?'street-home-'+light:'street-roof-'+light;
-      regions[row][col]=id;
+     const stepY=north?edge:edge-1;
+     for(let col=doorX;col<doorX+doorWidth;col++)if(regions[stepY]?.[col]===id)terrain[stepY][col]='street-step-'+side+'-'+light;
+     for(let col=x-1;col<=x+w;col++){
+      const front=north?edge-1:edge,back=north?-1:1;
+      const nearDoor=col===doorX-1||col===doorX+doorWidth;
+      facade(col,front,back,style,nearDoor?'lamp':col%2?'lit':'window');
+      wallTile(col,front+back,'roof',style);
      }
     };
     buildHouse(0,west.cx-6,alleyY,true);
     buildHouse(1,east.cx+7,eastY+4,false);
-    for(const {x,y} of paved){
-     const edges=[[-1,'facade'],[-2,'upper'],[-3,'roof'],[1,'facade'],[2,'roof']];
-     for(const [dy,tier] of edges){
-      const step=Math.sign(dy);
-      if(map[y+step][x]!==1||map[y+dy][x]!==1||terrain[y+dy][x])continue;
-      if(Math.abs(dy)>1&&map[y+dy-step][x]!==1)continue;
-      terrain[y+dy][x]='street-'+tier+'-'+light;regions[y+dy][x]=id;
+    for(const [x,bounds] of streetEdges){
+     for(const dir of [-1,1]){
+      const y=dir===-1?bounds.north-1:bounds.south;
+      const style=styleAt(x+(dir>0?3:0)),bay=(x-first)%5;
+      const mark=bay===1?'lamp':bay===2?'lit':bay>=3?'window':'plain';
+      if(!facade(x,y,dir,style,mark))continue;
+      const tall=style==='timber'||style==='brick'&&dir<0;
+      if(tall)wallTile(x,y+dir,'upper',style,bay>=2?'window':'plain');
+      wallTile(x,y+dir*(tall?2:1),'roof',style);
      }
     }
    }
