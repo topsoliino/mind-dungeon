@@ -1476,14 +1476,44 @@ window.DungeonArt = (() => {
     }
     iconCache.set(key,c);return c;
   }
-  function gate(vertical,color) {
-    const c=surface(vertical?52:272,vertical?272:52),{g,r}=brush(c);
-    if(vertical){g.translate(52,0);g.rotate(Math.PI/2);}
-    r(4,8,264,36,'#151318');r(8,12,256,28,'#302d32');r(9,14,254,3,'#867367');
-    r(9,36,254,3,'#706257');
-    for(let x=12;x<260;x+=15){r(x,18,3,18,'#999083');r(x+3,18,2,18,'#4c4545');r(x,21,2,2,color);}
-    for(const x of [4,250]){r(x,5,18,42,'#4c4547');r(x+2,6,14,4,'#877671');r(x+6,20,6,10,color);}
-    g.drawImage(icon('seal','',color),111,1,50,50);
+  function gate(vertical,color,progress=0) {
+    const c=surface(vertical?64:272,vertical?272:64),{g,r,poly}=brush(c);
+    if(vertical){g.translate(64,0);g.rotate(Math.PI/2);}
+    const slide=Math.min(1,Math.max(0,(progress-.12)/.88));
+    const travel=Math.round(116*slide*slide*(3-2*slide));
+    const seal=icon('seal','',color);
+    g.save();g.beginPath();g.rect(16,0,240,64);g.clip();
+    for(const [left,dir] of [[20,-1],[136,1]]){
+      g.save();g.translate(dir*travel,0);g.beginPath();g.rect(left,0,116,64);g.clip();
+      r(left,7,116,50,'#1c191f');r(left+2,11,112,42,'#413b40');
+      for(let y=14;y<52;y+=12){
+        for(let x=left-15+(y%24?9:0);x<left+116;x+=25){
+          r(x,y,23,10,'#585057');r(x+1,y,21,2,'#756960');
+          r(x+22,y+2,1,7,'#383038');
+        }
+      }
+      r(left+1,9,114,4,'#9a8673');r(left+1,51,114,4,'#675752');
+      r(dir<0?132:136,10,4,43,'#2f282e');
+      g.globalAlpha=Math.max(0,1-Math.max(0,(progress-.09)*1.28));
+      g.drawImage(seal,111,6,50,50);g.restore();
+    }
+    g.restore();
+    for(const x of [1,249]){
+      r(x,3,22,58,'#24202a');r(x+3,5,17,52,'#4a444c');
+      r(x+4,7,14,6,'#938176');r(x+2,48,18,8,'#675a56');
+      r(x+6,16,10,28,'#302b32');r(x+8,18,6,24,'#585057');
+      poly([[x+11,20],[x+15,27],[x+11,35],[x+7,27]],color+(progress>=1?'55':'bb'));
+    }
+    return c;
+  }
+  function crackedFurniture(bitmap){
+    const c=surface(bitmap.width,bitmap.height),{g}=brush(c);
+    g.drawImage(bitmap,0,0);g.globalCompositeOperation='source-atop';
+    for(const [dx,dy] of [[0,0],[23,6]]){
+      g.beginPath();g.moveTo(44+dx,26+dy);g.lineTo(54+dx,35+dy);
+      g.lineTo(52+dx,41+dy);g.lineTo(64+dx,48+dy);
+      g.lineWidth=2.5;g.strokeStyle='#2e1c19';g.stroke();
+    }
     return c;
   }
   function woodenDoor(vertical,span,damaged=false){
@@ -1510,5 +1540,5 @@ window.DungeonArt = (() => {
     if(!urls.has(key))urls.set(key,icon(type,id,color).toDataURL());
     return urls.get(key);
   }
-  return {world,furniture,partition,actor,icon,gate,woodenDoor,url};
+  return {world,furniture,partition,actor,icon,gate,crackedFurniture,woodenDoor,url};
 })();

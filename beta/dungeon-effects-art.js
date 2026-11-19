@@ -17,6 +17,17 @@ window.DungeonEffectsArt = (() => {
     for(let i=0;i+1<bounds.length;i+=2)pixel(bounds[i],y,Math.round(bounds[i+1])-Math.round(bounds[i]),1,color);
    }
   }
+  if(type==='wood-shard'){
+   const palette=[
+    ['#341f1d','#895331','#cc9964'],['#3d2821','#674330','#b87d4e'],['#432b22','#9a6038','#deb07a']
+   ][frame%3];
+   const edge=frame<3?22:15,grain=frame<3?14:9;
+   shape([[4,28],[edge,10],[60,24],[47,44],[20,53],[13,42]],palette[0]);
+   shape([[6,28],[edge,13],[56,25],[43,41],[20,50],[15,40]],palette[1]);
+   shape([[8,29],[edge,14],[51,25],[47,29],[28,25],[grain,33]],palette[2]);
+   shape([[20,42],[32,33],[49,33],[45,37],[33,38],[22,47]],palette[2]);
+   return c;
+  }
   if(type.startsWith('boss-triangle-')){
    const blue=type.endsWith('blue');
    const halo=blue?'#397edf':'#c03850',rim=blue?'#71cbff':'#ff8879',core=blue?'#ecfdff':'#fff2d5';
@@ -274,7 +285,7 @@ window.DungeonEffectsArt = (() => {
   }
   return c;
  }
- const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','frost-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark','boss-shockwave','boss-triangle-red','boss-triangle-blue'];
+ const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','frost-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark','boss-shockwave','boss-triangle-red','boss-triangle-blue','wood-shard'];
  const flameFrames=24;
  const spread=t=>4+t*52;
  const emberSeeds=Array.from({length:32},(_,i)=>({phase:(i*.61803399)%1,side:Math.sin(i*53.17),turn:i*2.9}));

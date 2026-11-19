@@ -710,6 +710,53 @@ test('closed wood blocks arrows and movement until projectile and melee damage d
  assert.equal(frame.doors[door.id],0);
 });
 
+test('breakable furniture stops attacks and bolts until its hit points run out',()=>{
+ const {host,guest,sim}=game(),floor=sim.floor;
+ let cover,start,far,aim;
+ for(const prop of floor.furniture.filter(p=>p.type==='barrel'&&!floor.inRest(p.x,p.y))){
+  for(const [dx,dy] of [[1,0],[0,1]]){
+   const distance=(dx?prop.w:prop.h)/2+24;
+   const from={x:prop.x-dx*distance,y:prop.y-dy*distance},to={x:prop.x+dx*distance,y:prop.y+dy*distance};
+   if(!floor.valid(from.x,from.y,14)||!floor.valid(to.x,to.y,14)||
+    floor.gateLineBlocked(from.x,from.y,to.x,to.y)||floor.furnitureBetween(from.x,from.y,to.x,to.y)!==prop)continue;
+   cover=prop;start=from;far=to;aim=Math.atan2(dy,dx);break;
+  }
+  if(cover)break;
+ }
+ assert.ok(cover);
+ const enemy={...far,id:'cover-target',type:foes.SKELETON,roomId:0,hp:90,max:90,size:1,phase:0};
+ guest.online=false;
+ sim.enemies=[enemy];
+ Object.assign(host,start,{region:floor.regionAt(start.x,start.y),damage:8,crit:0});
+ const attack=()=>{
+  host.attack=0;
+  assert.ok(sim.charge(host,aim)&&sim.attack(host,aim));
+ };
+ assert.equal(floor.furnitureHP(cover),24);
+ assert.ok(floor.furnitureBlocked(cover.x,cover.y,0));
+ attack();
+ assert.equal(enemy.hp,90);
+ assert.equal(floor.furnitureHP(cover),16);
+
+ sim.effects.bolts.push({...far,type:'bow',angle:aim+Math.PI,speed:330,life:1.2});
+ sim.ai.moveFrom(.27,host,.27,1180,760);
+ assert.equal(sim.effects.bolts.length,0);
+ assert.equal(host.damageQueue.length,0);
+ assert.equal(floor.furnitureHP(cover),5);
+ Object.assign(enemy,{angle:aim+Math.PI,runAttack:.2,runDuration:.36,hit:0,attack:4});
+ sim.currentTarget=host;sim.ai.act(enemy,.035,host,.305,1180,760);sim.currentTarget=null;
+ assert.equal(host.damageQueue.length,0);
+ assert.equal(floor.furnitureHP(cover),0);
+ assert.ok(!floor.furnitureBlocked(cover.x,cover.y,0));
+ assert.ok(!sim.vaultPath(host,aim));
+ assert.ok(sim.events.some(e=>e.kind==='furniture'&&e.hp===0&&e.id===cover.breakId));
+ assert.equal(createProjection()(sim,host,true).furnitureDamage[cover.breakId],0);
+ const restored=geometry.build(run,JSON.parse(JSON.stringify(sim.state)));
+ assert.ok(!restored.furnitureBlocked(cover.x,cover.y,0));
+ attack();
+ assert.ok(enemy.hp<90);
+});
+
 test('sewer water amplifies electricity and a live weapon sends a second pulse across the channel',()=>{
  const {host,guest,sim}=game(193,8);
  const {floor}=sim;

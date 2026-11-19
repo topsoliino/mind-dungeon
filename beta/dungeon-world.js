@@ -221,32 +221,62 @@ const FURNITURE={
  grave:{w:45,h:29,solid:true},'jungle-shrine':{w:45,h:28,solid:true,light:92},rubble:{w:47,h:23,solid:true},basket:{w:32,h:20,solid:true},bush:{w:36,h:23},vines:{w:22,h:12},bench:{w:55,h:22,solid:true},campfire:{w:47,h:34,solid:true,light:210},well:{w:72,h:43,solid:true,light:156}
 };
 const furniture=[];
+const breakableHP={chair:14,barrel:24,bench:26,table:42,'round-table':38,banquet:56,'banquet-long':68,
+ 'straw-bed':34,fence:30,'fence-end':30,dresser:46,'weapon-rack':36,'armor-rack':42};
 let solidTiles=null;
 const stoneProps=new Set(['sarcophagus','crystal','statue','grave','jungle-shrine','rubble','well']);
 const woodProps=new Set(['table','chair','bookcase','cabinet','barrel','lectern','tree','pine','birch','roots',
  'provisions','alchemy','banquet','market','round-table','banquet-long','fence','fence-end','weapon-rack',
  'armor-rack','shelf','display','dresser','bench','basket','straw-bed']);
 const reducedDepth=new Set(['cabinet','bookcase','shelf','dresser','display','weapon-rack','armor-rack','statue']);
-function furnitureBlocked(x,y,rx=12,ry=rx){
+const furnitureHP=p=>p.breakId?(save.furnitureDamage?.[p.breakId]??breakableHP[p.type]):null;
+const furnitureIntact=p=>furnitureHP(p)!==0;
+function strikeFurniture(p,damage){
+ const before=furnitureHP(p);
+ if(!before||!Number.isFinite(damage)||damage<=0)return null;
+ const hp=Math.max(0,before-Math.max(1,Math.round(damage)));
+ (save.furnitureDamage??={})[p.breakId]=hp;
+ return hp;
+}
+function furnitureAt(x,y,rx=12,ry=rx,original=false){
  const candidates=solidTiles&&rx<=40&&ry<=40?solidTiles.get(Math.floor(y/TILE)*W+Math.floor(x/TILE))??[]:furniture;
- return candidates.some(p=>{
-  if(!p.solid)return false;
+ return candidates.find(p=>{
+  if(!p.solid||!original&&!furnitureIntact(p))return false;
   const inset=reducedDepth.has(p.type)?Math.min(7,p.h*.24):0;
   return Math.abs(x-p.x)<p.w/2+rx&&Math.abs(y-p.y-inset)<p.h/2-inset+ry;
  });
 }
-function weaponImpact(x,y,angle,reach){
- const dx=Math.cos(angle),dy=Math.sin(angle);
- for(let step=12;step<=reach;step+=6){
-  const px=x+step*dx,py=y+step*dy;
-  if(stoneAt(px,py)||gateBlocked(px,py))return {x:px,y:py,cue:'hit_stone'};
-  if(furnitureBlocked(px,py,2)){
-   const prop=furniture.find(p=>p.solid&&Math.abs(px-p.x)<p.w/2+2&&Math.abs(py-p.y)<p.h/2+2);
-   const cue=stoneProps.has(prop?.type)?'hit_stone':woodProps.has(prop?.type)?'hit_wood':null;
-   return cue?{x:px,y:py,cue}:null;
-  }
+function furnitureBlocked(x,y,rx=12,ry=rx,original=false){return Boolean(furnitureAt(x,y,rx,ry,original));}
+function furnitureBetween(x,y,tx,ty,radius=2){
+ const steps=Math.max(1,Math.ceil(Math.hypot(tx-x,ty-y)/5));
+ for(let i=1;i<=steps;i++){
+  const t=i/steps,prop=furnitureAt(x+(tx-x)*t,y+(ty-y)*t,radius);
+  if(prop)return prop;
  }
  return null;
+}
+const furnitureCue=p=>stoneProps.has(p.type)?'hit_stone':woodProps.has(p.type)?'hit_wood':null;
+function weaponImpact(x,y,angle,reach){
+ const dx=Math.cos(angle),dy=Math.sin(angle);
+ for(let step=6;step<=reach;step+=5){
+  const px=x+step*dx,py=y+step*dy;
+  if(doorAt(px,py))return null;
+  if(stoneAt(px,py)||gateBlocked(px,py))return {x:px,y:py,cue:'hit_stone'};
+  const prop=furnitureAt(px,py,2);
+  if(prop)return {x:px,y:py,prop,cue:furnitureCue(prop)};
+ }
+ return null;
+}
+function meleeFurniture(x,y,angle,reach,weapon,contact,impact){
+ const hits=new Set();
+ if(impact?.prop&&beforeMeleeWall(x,y,impact.x,impact.y,weapon,contact))hits.add(impact.prop);
+ for(const prop of furniture){
+  if(!furnitureHP(prop)||!root.DungeonItems.meleeHit(weapon,prop.x-x,prop.y-y,angle,reach)||
+   !beforeMeleeWall(x,y,prop.x,prop.y,weapon,contact)||gateLineBlocked(x,y,prop.x,prop.y))continue;
+  const first=furnitureBetween(x,y,prop.x,prop.y);
+  if(first===prop)hits.add(prop);
+ }
+ return hits;
 }
 function partitionBounds(tx,ty){
  const row=terrain[ty],west=row[tx-1]==='partition',east=row[tx+1]==='partition';
@@ -339,7 +369,7 @@ function meleeWall(x,y,dir,weapon,reach){
   let first=0;
   for(let step=4;step<=extent;step+=3){
    const px=x+dx*step,py=y+dy*step;
-   if(doorAt(px,py)||gateBlocked(px,py))break;
+   if(doorAt(px,py)||gateBlocked(px,py)||furnitureAt(px,py,2))break;
    if(!stoneAt(px,py)){first=0;continue;}
    if(!first)first=step;
    if(step-first<9||extent-first<23)continue;
@@ -360,12 +390,12 @@ function beforeMeleeWall(x,y,tx,ty,weapon,contact){
  const turn=Math.atan2(Math.sin(offset),Math.cos(offset));
  return turn<contact.offset-.05||turn<=contact.offset+.05&&Math.hypot(dx,dy)<contact.distance;
 }
-function valid(x,y,r=12,ignoreSeals=false,feet=false,allowFall=false){
+function valid(x,y,r=12,ignoreSeals=false,feet=false,allowFall=false,originalFurniture=false){
  const rx=feet?10:r,ry=feet?5:r,solid=feet?footWall:wall;
  for(const dx of [-rx,0,rx])for(const dy of [-ry,0,ry]){
   if(solid(x+dx,y+dy)&&!(allowFall&&abyssAt(x+dx,y+dy))||!ignoreSeals&&(gateBlocked(x+dx,y+dy)||doorAt(x+dx,y+dy)))return false;
  }
- return !furnitureBlocked(x,y,feet?9:r,feet?6:r);
+ return !furnitureBlocked(x,y,feet?9:r,feet?6:r,originalFurniture);
 }
 const merchantRandom=run.random(furnishingSeed^0x7157be6a);
 const preferredMerchantRoom=1+Math.floor(merchantRandom()*4);
@@ -647,7 +677,7 @@ function reachableSpawnTiles(){
   const id=y*cols+x;
   if(seen[id])return;
   seen[id]=1;
-  if(valid(x*step,y*step,HERO_RADIUS,true,true)){seen[id]=2;frontier.push(id);}
+  if(valid(x*step,y*step,HERO_RADIUS,true,true,false,true)){seen[id]=2;frontier.push(id);}
  };
  enqueue(Math.round(spawn.x/step),Math.round(spawn.y/step));
  for(const p of links)enqueue(Math.round(p.exit.x/step),Math.round(p.exit.y/step));
@@ -660,6 +690,7 @@ function reachableSpawnTiles(){
 solidTiles=new Map();
 for(const piece of furniture){
  if(!piece.solid)continue;
+ if(Object.hasOwn(breakableHP,piece.type))piece.breakId=piece.type+'@'+Math.round(piece.x*10)+','+Math.round(piece.y*10);
  for(let ty=Math.floor((piece.y-piece.h/2-40)/TILE);ty<=Math.floor((piece.y+piece.h/2+40)/TILE);ty++)
   for(let tx=Math.floor((piece.x-piece.w/2-40)/TILE);tx<=Math.floor((piece.x+piece.w/2+40)/TILE);tx++){
    if(tx<0||tx>=W||ty<0||ty>=H)continue;
@@ -715,14 +746,15 @@ return {
  paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
  spawn,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,
- regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,weaponClearance,weaponCover,meleeWall,beforeMeleeWall,
+ regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,furnitureAt,furnitureBetween,furnitureHP,furnitureIntact,furnitureCue,strikeFurniture,meleeFurniture,footWall,valid,weaponImpact,weaponClearance,weaponCover,meleeWall,beforeMeleeWall,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition,sightBarriers,lootPosition
 };
 }
 function spawnEnemies(run,enemyRules,save,floor,coop){
  const {ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,WHITE_ORC,BLACK_ORC,STREET_DOG}=enemyRules;
- const {rooms,templeRooms,court,cemetery,canReachSpawn,regionAt,valid,landmarks,spawn}=floor;
+ const {rooms,templeRooms,court,cemetery,canReachSpawn,regionAt,landmarks,spawn}=floor;
+ const valid=(x,y,r,ignoreSeals)=>floor.valid(x,y,r,ignoreSeals,false,false,true);
  const enemies=[],defeated=new Set(save.defeated),furnishingSeed=save.dungeonSeed,TAU=2*Math.PI;
  const enemyHealth=(type,boss)=>Math.max(1,Math.round(enemyRules.health(type,boss,save.floor)*(coop?1:.5)));
 const rangedRandom=run.random(furnishingSeed^0xc48ff2a3);
