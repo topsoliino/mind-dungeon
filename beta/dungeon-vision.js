@@ -7,12 +7,16 @@ window.DungeonVision=(()=>{
   const {map,regions,terrain,W,H,stairs,rest,rooms,annexes=[],sewerRooms=[],alleys}=world;
   const size=W*H,opaque=new Uint8Array(size),obstacles=new Uint8Array(size),live=new Uint8Array(size),known=new Uint8Array(size);
   const seenTiles=[],roomTiles=new Map(),revealedRooms=new Set(),litRoomCells=new Uint8Array(size);
+  const streetFacades=[];
   const witnessed=new Set(),reachable=new Int16Array(size),frontier=new Int32Array(size);
   const sewerSections=new Set(sewerRooms.map(room=>room.id));
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
    const cell=y*W+x,region=regions[y][x];
    if(map[y][x]===1&&!world.abyssAt((x+.5)*tileSize,(y+.5)*tileSize))opaque[cell]=1;
-   if(region<0||world.isPassage(region)||sewerSections.has(region))continue;
+   if(alleys&&region===alleys.id){
+    if(opaque[cell]&&terrain[y][x]?.startsWith('street-'))streetFacades.push(cell);
+    if(opaque[cell])continue;
+   }else if(region<0||world.isPassage(region)||sewerSections.has(region))continue;
    if(!roomTiles.has(region))roomTiles.set(region,[]);
    roomTiles.get(region).push(cell);
   }
@@ -41,20 +45,13 @@ window.DungeonVision=(()=>{
     const col=x+dx,row=y+dy,neighbor=row*W+col;
     if(inside(col,row)&&opaque[neighbor])remember(neighbor);
    }
-   if(alleys&&regions[y][x]===alleys.id){
-    // A visible facade exposes its upper stories without exposing the house behind the door.
-    for(const direction of [-1,1])for(let distance=1;distance<=3;distance++){
-     const row=y+direction*distance,wall=row*W+x;
-     if(!opaque[wall]||!terrain[row]?.[x]?.startsWith('street-'))break;
-     remember(wall);
-    }
-   }
   }
   function revealRoom(region){
    const cells=roomTiles.get(region);
    if(!cells||revealedRooms.has(region))return;
    revealedRooms.add(region);
    for(const cell of cells){litRoomCells[cell]=1;rememberFloor(cell);}
+   if(region===alleys?.id)for(const cell of streetFacades)remember(cell);
   }
   function updateObstacles(observer,closed){
    obstacles.set(opaque);

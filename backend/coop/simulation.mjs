@@ -1,7 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {run,balance,items,foes,geometry,vision,enemySim,bossRules,TILE,HERO_RADIUS,fallSeconds,round,clamp,gap,remaining,normalAngle,maxHP,preparePlayer,selectLoot,cup,pools} from './rules.mjs';
 
-const vaultable=new Set(['barrel','table','round-table','banquet','banquet-long','bench','chair','basket','straw-bed']);
+const vaultable=new Set(['barrel','large-barrel','table','round-table','banquet','banquet-long','bench','chair','basket','straw-bed']);
 const effectKinds=['bolts','enemyHazards','webShots','webPatches','stormStrikes','waterArcs'];
 const radius=e=>e.seat?HERO_RADIUS:e.type===foes.SNAKE||[foes.BAT,foes.STORM_BAT,foes.RAT,foes.EAGLE].includes(e.type)?8:e.boss?19:14;
 const nearActor=(a,b,extra=0)=>Math.abs(a.x-b.x)<radius(a)+radius(b)+extra&&Math.abs(a.y-b.y)<radius(a)+radius(b)+extra;
@@ -28,12 +28,17 @@ export class Simulation{
   this.boss=bossRules.create(this.floor.bossArena,this.state,{
    players:()=>this.activePlayers(),enemies:()=>this.enemies,types:foes,random:this.random,
    region:p=>this.floor.regionAt(p.x,p.y),move:(e,dx,dy)=>this.move(e,dx,dy),
+   open:p=>this.floor.valid(p.x,p.y,18),
    teleport:(p,pos)=>{
     Object.assign(p,pos,{input:idleInput(),dash:0,vault:null,quiz:null,chargeStart:null,moving:false});
     p.revision++;
    },
    spawn:enemies=>(this.newEnemies??=[]).push(...enemies),
    hit:(p,n,origin)=>this.hurtPlayer(p,n,{lightning:1},false,1,undefined,undefined,origin),
+   beam:cue=>{for(const prop of this.floor.bossBeamFurniture(cue))this.hitFurniture(prop,cue.damage*1.75,cue.angle);},
+   roofLanding:rock=>{
+    for(const actor of [...this.activePlayers(),...this.enemies.filter(e=>e.hp>0)])this.floor.clearRoofLanding(actor,rock,radius(actor));
+   },
    spread:(p,n)=>this.bossWaterPulse(p,n),
    drop:(e,it,count)=>{
     for(const p of this.activePlayers())for(let i=0;i<count;i++)this.drop({x:e.x+(i-1)*18,y:e.y+(p.seat===1?-12:12)},it,p.seat,e);
@@ -47,6 +52,8 @@ export class Simulation{
    },
    changed:phase=>{
     if(phase==='ready'||phase==='intro')this.sound('gate_stone_motion',this.floor.bossArena.gate,{priority:3});
+    if(phase==='roof')this.sound('hit_stone',this.floor.bossArena,{priority:4,gain:.96,rate:.65});
+    if(phase==='retry')this.floor.resetBossFurniture();
     if(phase==='won')this.sound('boss_defeat',this.floor.bossArena,{priority:3});
    }
   });
@@ -189,7 +196,7 @@ export class Simulation{
  }
  hitFurniture(prop,damage,angle){
   const hp=this.floor.strikeFurniture(prop,damage);
-  if(hp!==null)this.emit('furniture',{x:prop.x,y:prop.y,id:prop.breakId,hp,angle,w:prop.w,h:prop.h});
+  if(hp!==null)this.emit('furniture',{x:prop.x,y:prop.y,id:prop.breakId,type:prop.type,hp,angle,w:prop.w,h:prop.h});
   else{
    const cue=this.floor.furnitureCue(prop);
    if(cue)this.sound(cue,prop,{gain:.58,priority:2});

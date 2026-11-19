@@ -93,10 +93,9 @@ test('the coop boss gate needs two correct answers and a cleared floor, then the
  assert.equal(battle.phase,'fight');
  const scientists=sim.enemies.filter(e=>e.bossRole==='scientist');
  kill(sim,scientists[0]);sim.step(1/30);
- assert.equal(battle.rain,true);
- const wet=arena.puddles[0];
- assert.equal(floor.waterAt(wet.x,wet.y),'boss-water');
- assert.equal(floor.waterLightning({lightning:1},wet.x,wet.y).lightning,1.35);
+ const tile=arena.poolTiles[0],wet={x:(tile.x+.5)*geometry.TILE,y:(tile.y+.5)*geometry.TILE};
+ assert.ok(!battle.rain);
+ assert.equal(floor.waterAt(wet.x,wet.y),null);
  const rat=sim.enemies.find(e=>e.bossRole==='giant-rat');
  assert.ok(rat.x>arena.gate.x);
  assert.ok(rat.warded);
@@ -108,10 +107,32 @@ test('the coop boss gate needs two correct answers and a cleared floor, then the
  kill(sim,rat);sim.step(1/30);
  assert.equal(sim.orbs.size-lootBefore,6);
  assert.ok([...sim.orbs.values()].slice(-6).every(o=>o.item.id==='pellet'));
+ battle.cues.push({kind:'storm',x:arena.x,y:arena.y,scientist:1,bolt:0,r:146,damage:14,hit:battle.time,end:battle.time+.46});
+ sim.step(1/30);
+ assert.equal(battle.roofDust.at(-1).bolt,0);
  kill(sim,scientists[2]);sim.step(1/30);
  const watson=scientists[1];
  assert.equal(watson.enlarged,true);
  assert.equal(sim.resistanceFor(watson).lightning,.35);
+ assert.equal(battle.rain,true);
+ assert.equal(floor.waterAt(wet.x,wet.y),'boss-water');
+ assert.equal(floor.waterLightning({lightning:1},wet.x,wet.y).lightning,1.35);
+ const rock=floor.furniture.find(p=>p.type==='roof-rubble');
+ const bench=floor.furniture.find(p=>p.type==='lab-bench');
+ assert.equal(floor.furnitureAt(rock.x,rock.y,0),undefined);
+ Object.assign(host,rock);
+ stepUntil(sim,()=>floor.furnitureAt(rock.x,rock.y,0)===rock,2);
+ assert.ok(floor.valid(host.x,host.y,14));
+ for(const prop of [rock,bench]){
+  const from={x:prop.x-70,y:prop.y},to={x:prop.x+70,y:prop.y};
+  for(let i=0;i<2;i++){
+   battle.cues.push({kind:'beam',from,to,width:21,damage:15,angle:0,hit:battle.time,end:battle.time+.23});
+   sim.step(1/30);
+  }
+  assert.equal(floor.furnitureHP(prop),0);
+  assert.equal(floor.furnitureAt(prop.x,prop.y,0),undefined);
+ }
+ assert.equal(createProjection()(sim,guest,true).furnitureDamage[rock.breakId],0);
  kill(sim,watson);sim.step(1/30);
  assert.equal(battle.phase,'won');
  assert.ok(sim.portal);

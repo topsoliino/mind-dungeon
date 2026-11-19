@@ -345,7 +345,6 @@ window.DungeonStrata=(()=>{
     buildHouse(0,west.cx-6,alleyY,true);
     buildHouse(1,east.cx+7,eastY+4,false);
     for(const {x,y} of paved){
-     if(x%7===0||x===center)continue;
      const edges=[[-1,'facade'],[-2,'upper'],[-3,'roof'],[1,'facade'],[2,'roof']];
      for(const [dy,tier] of edges){
       const step=Math.sign(dy);

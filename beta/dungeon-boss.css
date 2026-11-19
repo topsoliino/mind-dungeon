@@ -8,11 +8,11 @@
 #boss-intro{position:fixed;inset:0;z-index:1900;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,#4f50686b 2%,#211528ef 58%,#0a0713);display:grid;align-content:center;justify-items:center;overflow:hidden;color:#faedda}
 #boss-intro[hidden],#boss-hud[hidden],#boss-effects[hidden]{display:none}
 .boss-title{position:fixed;inset:8vh 0 auto;text-align:center;color:#ffe7ae;font:700 clamp(19px,4vw,45px) Georgia,serif;letter-spacing:.23em;text-transform:uppercase;text-shadow:0 0 35px #d389c4;margin:0}
-.boss-lineup{display:flex;align-items:end;justify-content:center;gap:0;--lineup-width:min(94vw,740px,105vh);width:var(--lineup-width);height:calc(var(--lineup-width) / 3);animation:boss-arrival .55s ease-out;transform-origin:50% 25%;transform:translate(var(--pan,0%),var(--pan-y,0%)) scale(var(--zoom,1));transition:transform .88s cubic-bezier(.32,.01,.24,1)}
+.boss-lineup{display:flex;align-items:end;justify-content:center;gap:0;--lineup-width:min(94vw,740px,105vh);width:var(--lineup-width);height:calc(var(--lineup-width) / 3);animation:boss-arrival .55s ease-out;transform-origin:center;transform:translate(calc((50% - var(--focus-x,50%)) * var(--zoom,1)),calc((50% - var(--focus-y,50%)) * var(--zoom,1))) scale(var(--zoom,1));transition:transform .88s cubic-bezier(.32,.01,.24,1)}
 .boss-lineup img{width:calc(100% / 3);height:auto;image-rendering:pixelated;transition:filter .45s,opacity .55s;filter:drop-shadow(0 0 9px #709ba7) brightness(.72)}
-#boss-intro[data-speaker="0"] .boss-lineup{--zoom:2.2;--pan:1.15%;--pan-y:25%}
-#boss-intro[data-speaker="1"] .boss-lineup{--zoom:2.35;--pan:-77.1%;--pan-y:25%}
-#boss-intro[data-speaker="2"] .boss-lineup{--zoom:2.65;--pan:89.7%;--pan-y:25%}
+#boss-intro[data-speaker="0"] .boss-lineup{--zoom:2.2;--focus-x:49.48%;--focus-y:23.44%}
+#boss-intro[data-speaker="1"] .boss-lineup{--zoom:2.35;--focus-x:82.81%;--focus-y:23.44%}
+#boss-intro[data-speaker="2"] .boss-lineup{--zoom:2.65;--focus-x:16.15%;--focus-y:23.44%}
 #boss-intro[data-speaker="0"] img:nth-child(2),#boss-intro[data-speaker="1"] img:nth-child(3),#boss-intro[data-speaker="2"] img:nth-child(1){filter:drop-shadow(0 0 11px #a0ccda) brightness(1.13)}
 .boss-subtitle{position:fixed;inset:auto 5vw max(9vh,38px);text-align:center;padding:14px 16px;background:linear-gradient(90deg,transparent,#0e0b18ed 15%,#0e0b18ed 85%,transparent);font:500 clamp(16px,2.4vw,24px) system-ui,sans-serif;text-shadow:1px 2px #09080d;z-index:3}
 .boss-subtitle[hidden]{display:none}
