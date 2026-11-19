@@ -4,6 +4,7 @@
  const foley = window.DungeonFoleyBank;
  const packages = window.DungeonPackageBank;
  const eleven = window.DungeonElevenLabsBank;
+ const soundpack4 = window.DungeonSoundpack4Bank;
  const AudioContext = window.AudioContext || window.webkitAudioContext;
  if (!bank || !AudioContext) return;
 
@@ -13,7 +14,12 @@
  const stone = foley && audioAsset('stone-steps');
  const packSfx = packages && audioAsset('pack-sfx');
  const elevenSfx = eleven && audioAsset('elevenlabs-sfx');
- const effectAssets = [effects, stone, packSfx, elevenSfx];
+ const combatSfx = soundpack4 && audioAsset('soundpack-4-sfx');
+ const effectAssets = [effects, stone, packSfx, elevenSfx, combatSfx];
+ const cues = new Map();
+ for (const [catalog, asset] of [[bank,effects],[foley,stone],[packages,packSfx],[eleven,elevenSfx],[soundpack4,combatSfx]]) {
+  for (const [id, clips] of Object.entries(catalog ?? {})) cues.set(id, { asset, clips });
+ }
  const ambient = Object.fromEntries(['jungle','waterfall','river'].map(name => [name,audioAsset(name)]));
  for (const name of ['amb_dungeon','amb_rain']) {
   ambient[name] = {...audioAsset(name), start: 0, end: 30, overlap: .8};
@@ -79,15 +85,11 @@
   });
  }
 
- function assetFor(id) {
-  return eleven?.[id] ? elevenSfx : packages?.[id] ? packSfx : foley?.[id] ? stone : effects;
- }
-
  function flushRequests() {
   if (context.state !== 'running') return;
   for (const request of heldRequests.splice(0)) {
    if (performance.now() - request.time >= 240) continue;
-   if (assetFor(request.id).buffer) play(request.id, request.options);
+   if (cues.get(request.id).asset.buffer) play(request.id, request.options);
    else heldRequests.push(request);
   }
  }
@@ -224,9 +226,9 @@
  }
 
  function play(id, options = {}) {
-  const clips = eleven?.[id] ?? packages?.[id] ?? foley?.[id] ?? bank[id];
-  if (!clips || !context || !volume || document.hidden) return false;
-  const asset = assetFor(id);
+  const entry = cues.get(id);
+  if (!entry || !context || !volume || document.hidden) return false;
+  const {asset, clips} = entry;
   const buffer = asset.buffer;
   if (!buffer || context.state !== 'running') {
    decode(asset);

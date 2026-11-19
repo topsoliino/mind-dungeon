@@ -7,7 +7,9 @@ function create(api){
  const {W,H,rooms,regionAt,inRest,outsideAt,pointIn,valid,furnitureBlocked,gateLineBlocked,gateBlocked,wall,pressurePlates}=floor;
  const {SNAKE,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,STREET_DOG}=enemyRules;
  const isBat=e=>e.type===BAT||e.type===STORM_BAT,isLion=e=>e.type===LION||e.type===LIONESS;
- const movementCue={lion:'lion_paw',lioness:'lion_paw','bat-fire':'bat_wings','bat-lightning':'bat_wings'};
+ const lionStep=['lion_paw',56,.31,.38],batFlap=['bat_wings',76,.24,.43],bones=['enemy_skeleton_rattle',37,.31,.46];
+ const movementCues={lion:lionStep,lioness:lionStep,'bat-fire':batFlap,'bat-lightning':batFlap,
+  bite:['snake_slither',103,.30,.82],reap:bones,bow:bones};
  const windupCue={rift:'enemy_priest_voice',bow:'bow_draw',bite:'snake_hiss'};
  const TILE=48,TAU=2*Math.PI,enemyDepth=enemyRules.depthFactor(save.floor);
  const foeResistances=items.foes.map(profile=>enemyRules.resistances(profile,save.floor));
@@ -35,13 +37,13 @@ function moveEnemy(e,dx,dy){
  const moved=Math.hypot(e.x-x,e.y-y);
  if(moved<=.05)return;
  e.facing=Math.atan2(e.y-y,e.x-x);e.moving=true;
- const cue=movementCue[enemyRules.attacks[e.type].id];
- if(!cue)return;
+ const movement=movementCues[enemyRules.attacks[e.type].id];
+ if(!movement)return;
+ const [cue,stride,gain,cooldown]=movement;
  e.audioStride=(e.audioStride??0)+moved;
- const stride=isBat(e)?53:35;
  if(e.audioStride>=stride){
   e.audioStride%=stride;
-  soundWorld(cue,e,{gain:isBat(e)?.24:.31,cooldown:.22});
+  soundWorld(cue,e,{gain,cooldown});
  }
 }
 function aimEnemy(e,angle){e.angle=angle;e.facing=angle;}
@@ -355,9 +357,10 @@ function updateBat(e,dt){
    return;
   }
   const age=move.age-spec.windup;
-  if(lightning&&!move.audioStarted){
+  if(!move.audioStarted){
    move.audioStarted=true;
-   soundWorld('element_lightning_beam',e,{priority:2,cooldown:.26});
+   if(lightning)soundWorld('element_lightning_beam',e,{priority:2,cooldown:.26});
+   else soundWorld('element_fire_cone',e,{gain:.78,priority:2,cooldown:.30,variation:0});
   }
   if(age<move.duration&&age>=move.next){
    move.next+=lightning?.23:.28;
@@ -442,6 +445,7 @@ function nearestLion(e){
  return best;
 }
 function fireBolt(e,type){
+ soundWorld(type==='bow'?'bow_release':'crossbow_release',e,{gain:.86,priority:2,cooldown:.08});
  const speed=type==='bow'?330:445;
  state.bolts.push({x:e.x,y:e.y,angle:e.angle,speed,life:1.23,type:e.type===FROST_CROSSBOW?'frost-crossbow':type,
   origin:origin(e,e.type===FROST_CROSSBOW?'Frostbolzen':type==='bow'?'Pfeil':'Armbrustbolzen')});
@@ -477,6 +481,7 @@ function updateBolts(dt){
  });
 }
 function fireWeb(e){
+ soundWorld('enemy_spider_web',e,{gain:.85,priority:2,cooldown:.12});
  const speed=184+save.floor*12;
  state.webShots.push({x:e.x,y:e.y,vx:Math.cos(e.angle)*speed,vy:Math.sin(e.angle)*speed,life:1.45,origin:origin(e,'Netzgeschoss')});
 }
@@ -490,7 +495,11 @@ function updateWebs(dt){
   const blocked=gateLineBlocked(p.x,p.y,x,y)||furnitureBlocked(x,y,2);
   const hit=coopActors().find(hero=>hero.dash<=0&&hero.inv<=0&&Math.hypot(x-hero.x,y-hero.y)<16);
   if(blocked||hit||p.life<=0){
-   if(!blocked||valid(p.x,p.y,3))state.webPatches.push({x:blocked?p.x:x,y:blocked?p.y:y,radius:29,life:7});
+   const landing=blocked?{x:p.x,y:p.y}:{x,y};
+   if(!blocked||valid(landing.x,landing.y,3)){
+    state.webPatches.push({...landing,radius:29,life:7});
+    soundWorld('enemy_spider_web_land',landing,{gain:.72,priority:2,cooldown:.12});
+   }
    if(hit)asHero(hit,()=>{player.webSlow=2.4;if(damageActive(p.origin,4,{dark:1})&&player.inv<1&&!player.poison)poison(player,{untilTick:.72,ticks:3,origin:{source:p.origin?.source??'Spinne',action:'Giftwirkung'}});});
    return false;
   }
