@@ -129,9 +129,39 @@ function stairsFor(actor,target){
  return links.find(s=>s.kind==='stairs'&&s.layer===layer&&
   Math.abs(layerAt(s.exit.x,s.exit.y)-goal)<Math.abs(layer-goal));
 }
-const doors=doorTiles.map(d=>({...d,x:(d.x+(save.layoutRevision>=10?d.w/2:Math.floor(d.w/2)+.5))*TILE,
+const lockName={earlier:'Schatzkammer',later:'Versiegeltes Depot','street-house-0':'Nördliches Gassenhaus','street-house-1':'Südliches Gassenhaus'};
+const lockId=(depth,lock)=>depth+':'+lock;
+const doors=doorTiles.map(d=>({...d,keyId:d.streetHouse||d.lock?lockId(save.floor,d.lock??d.id):null,x:(d.x+(save.layoutRevision>=10?d.w/2:Math.floor(d.w/2)+.5))*TILE,
  y:(d.y+(save.layoutRevision>=10?d.h/2:Math.floor(d.h/2)+.5))*TILE,span:(d.vertical?d.h:d.w)*TILE}));
-const doorHP=d=>d.streetHouse?(alleys.light==='day'?d.hp:0):save.doors?.[d.id]??d.hp;
+const doorHP=d=>save.doors?.[d.id]??d.hp;
+const returnPortal=rest&&save.floor>1?pointIn(rest,-2,-1.8):null;
+const keySources=[
+ ...(save.floor<run.LAST_DEPTH?[{id:lockId(save.floor+1,'earlier'),type:save.floor%2?'merchant':'pantry'}]:[]),
+ ...(save.floor>1?[{id:lockId(save.floor-1,'later'),type:'enemy'}]:[]),
+ ...doors.filter(d=>d.streetHouse).map(d=>({id:d.keyId,type:d.north?'pantry':'merchant'}))
+];
+const keyName=id=>{
+ const [depth,lock]=id.split(':');
+ return (lockName[lock]??'Kammer')+' · Tiefe '+depth;
+};
+const keyItem=(id,source)=>({kind:'key',id,rarity:'common',source});
+const keyOffers=(keyring,gold)=>keySources.filter(key=>key.type==='merchant'&&!keyring[key.id]).map(({id})=>({
+ ...keyItem(id,'Fledermaushändler'),stock:'key-'+id,price:Math.min(10,gold)
+}));
+function nearestKeyDoor(actor,id){
+ return doors.find(d=>d.keyId&&(id===undefined||d.id===id)&&doorHP(d)>0&&
+  Math.hypot(actor.x-d.x,actor.y-d.y)<=72&&barrierVisible(actor,{...d,face:12}));
+}
+function unlockDoor(actor,id,keyring){
+ const door=nearestKeyDoor(actor,id);
+ if(!door)return null;
+ if(keyring[door.keyId]!=='held')return {door,locked:true};
+ keyring[door.keyId]='used';
+ (save.doors??={})[door.id]=0;
+ return {door,locked:false};
+}
+const keyCaches=doors.filter(d=>d.cache).map(d=>({...tileCenter(d.cache),id:d.id}));
+const carrierFor=enemies=>enemies.find(e=>e.hp>0&&!e.bossRole&&regionAt(e.x,e.y)===0)?.id??null;
 const accessState=site=>site?.seal?(save.access?.[site.seal]??'quiz'):'open';
 function accessSite(actor,id){
  return [...links,...doors].find(site=>site.seal===id&&Math.hypot(actor.x-site.x,actor.y-site.y)<=85&&
@@ -157,7 +187,7 @@ function doorAt(x,y,radius=0){
   Math.abs(y-d.y)<9+radius&&Math.abs(x-d.x)<d.span/2));
 }
 function strikeDoor(damage,door){
- if(door.streetHouse)return doorHP(door);
+ if(door.keyId)return doorHP(door);
  if(accessState(door)!=='open')return doorHP(door);
  const hp=Math.max(0,doorHP(door)-Math.max(1,Math.round(damage)));
  (save.doors??={})[door.id]=hp;
@@ -169,7 +199,7 @@ function doorAhead(x,y,angle,reach){
   const px=x+step*dx,py=y+step*dy;
   if(wall(px,py)||gateBlocked(px,py))return null;
   const door=doorAt(px,py);
-  if(door)return door.streetHouse?null:door;
+  if(door)return door.keyId?null:door;
  }
  return null;
 }
@@ -525,7 +555,7 @@ for(const room of run.shuffle(rooms.slice(1),mapRandom)){
  }
 }
 const mapPickup=mapSites[Math.floor(mapRandom()*mapSites.length)]||pointIn(rooms[1],0,0);
-const landmarks=[...links,...(save.layoutRevision>=10?doors:[]),...stairs.flatMap(s=>[tileCenter(s.a),tileCenter(s.b)]),...(cryptAltar?[cryptAltar]:[]),...(sewerRelic?[tileCenter(sewerRelic)]:[]),...shrines,...chests,merchant,mapPickup,spawn,...bonePiles,...templeShrines,...(restCat?[restCat,wellUse,wellArrival,...(save.layoutRevision>=12?[luckyCat]:[])]:[]),market];
+const landmarks=[...links,...(returnPortal?[returnPortal]:[]),...(save.layoutRevision>=10?doors:[]),...stairs.flatMap(s=>[tileCenter(s.a),tileCenter(s.b)]),...(cryptAltar?[cryptAltar]:[]),...(sewerRelic?[tileCenter(sewerRelic)]:[]),...shrines,...chests,merchant,mapPickup,spawn,...bonePiles,...templeShrines,...(restCat?[restCat,wellUse,wellArrival,...(save.layoutRevision>=12?[luckyCat]:[])]:[]),market];
 furniture.push({type:'market',...market,zone:merchantRoomId,...FURNITURE.market});
 function placeRoomSet(pieces,ax,ay,zone){
  const group=[];
@@ -784,6 +814,11 @@ for(const piece of furniture){
   }
 }
 const canReachSpawn=save.layoutRevision>=5?reachableSpawnTiles():()=>true;
+const pantry=annexes.find(a=>a.key==='pantry');
+const pantrySites=Array.from({length:pantry.h},(_,j)=>Array.from({length:pantry.w},(_,i)=>
+ tileCenter({x:pantry.x+i,y:pantry.y+j}))).flat().filter(p=>
+  regionAt(p.x,p.y)===pantry.id&&valid(p.x,p.y,17)&&canReachSpawn(p.x,p.y));
+const pantryKeySite=id=>pantrySites[keySources.findIndex(key=>key.id===id)%pantrySites.length]??spawn;
 function lootPosition(origin,anchor=origin){
  const pos={x:Math.round(origin.x),y:Math.round(origin.y)};
  const clear=p=>valid(p.x,p.y,17)&&canReachSpawn(p.x,p.y)&&
@@ -829,7 +864,7 @@ return {
  rooms,corridors,map,regions,gates,annexes,terrain,rest,
  paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
- spawn,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,
+ spawn,returnPortal,keySources,keyName,keyItem,keyOffers,keyCaches,pantryKeySite,carrierFor,nearestKeyDoor,unlockDoor,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,
  regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,furnitureAt,furnitureBetween,furnitureHP,furnitureIntact,furnitureCue,strikeFurniture,meleeFurniture,footWall,valid,weaponImpact,weaponClearance,weaponCover,meleeWall,beforeMeleeWall,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition,sightBarriers,lootPosition

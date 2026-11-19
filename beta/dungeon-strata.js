@@ -6,7 +6,7 @@ window.DungeonStrata=(()=>{
   {name:'Vorratslager',theme:4,group:'storage'}
  ];
  const edges=[[1,0],[-1,0],[0,1],[0,-1]];
- function extend(base,seed,depth,random,shuffle,revision,sewerAt,hasCrypt){
+ function extend(base,seed,depth,random,shuffle,revision,sewerAt,hasCrypt,lastDepth){
   const {rooms,corridors,map,regions,gates,terrain,annexes,paths,rest}=base;
   const continuous=revision>=10,varied=revision>=12,variedAlleys=revision>=13;
   const rng=random(Math.imul(seed^0x2bb5c943,1597334677));
@@ -354,8 +354,8 @@ window.DungeonStrata=(()=>{
      return true;
     }
     function facade(x,y,direction,style,mark){
-     if(!wallTile(x,y,'facade',style,mark))return false;
-     if(light!=='day'&&(mark==='lamp'||mark==='lit')){
+     if(!wallTile(x,y,direction>0?'rear':'facade',style,mark))return false;
+     if(light!=='day'&&(mark==='lamp'||direction<0&&mark==='lit')){
       alleys.lights.push({x:x+.5,y:y+.5-direction*.7,window:mark==='lit'});
      }
      return true;
@@ -382,7 +382,7 @@ window.DungeonStrata=(()=>{
       const front=north?edge-1:edge,back=north?-1:1;
       const nearDoor=col===doorX-1||col===doorX+doorWidth;
       facade(col,front,back,style,nearDoor?'lamp':col%2?'lit':'window');
-      wallTile(col,front+back,'roof',style);
+      wallTile(col,front+back,north?'roof':'backroof',style);
      }
     };
     buildHouse(0,west.cx-6,alleyY,true);
@@ -393,11 +393,36 @@ window.DungeonStrata=(()=>{
       const style=styleAt(x+(dir>0?3:0)),bay=(x-first)%5;
       const mark=bay===1?'lamp':bay===2?'lit':bay>=3?'window':'plain';
       if(!facade(x,y,dir,style,mark))continue;
-      const tall=style==='timber'||style==='brick'&&dir<0;
+      const tall=dir<0&&['timber','brick'].includes(style);
       if(tall)wallTile(x,y+dir,'upper',style,bay>=2?'window':'plain');
-      wallTile(x,y+dir*(tall?2:1),'roof',style);
+      wallTile(x,y+dir*(tall?2:1),dir<0?'roof':'backroof',style);
      }
     }
+   }
+  }
+  if(revision>=14){
+   const keyRandom=random(seed^0x42f78d21);
+   const candidates=shuffle(rooms.flatMap(room=>[-1,1].flatMap(side=>
+    Array.from({length:room.w-4},(_,i)=>({room,x:room.x+i+2,y:side<0?room.y:room.y+room.h-1,side})))),keyRandom);
+   for(const [index,lock] of ['earlier','later'].entries()){
+    if(lock==='earlier'&&depth===1||lock==='later'&&depth===lastDepth)continue;
+    const site=candidates.find(({room,x,y,side})=>{
+     if(regions[y][x]!==room.i||map[y][x]!==0||map[y-side][x]!==0)return false;
+     for(let offset=1;offset<=6;offset++)for(let col=x-3;col<=x+3;col++){
+      const row=y+side*offset;
+      if(map[row]?.[col]!==1||terrain[row][col])return false;
+     }
+     return true;
+    });
+    if(!site)throw Error('Kein Platz für die verschlossene Kammer');
+    const {x,y,side}=site,id=110+index*2,doorY=y+side;
+    const room=addRoom(id,x-2,side<0?y-5:y+2,5,4,
+     {name:lock==='earlier'?'Schatzkammer':'Versiegeltes Depot',theme:4},'key-room-'+lock,0);
+    carve(room.x,room.y,room.w,room.h,id,'house-boards');
+    carve(x,doorY,1,1,id+1,'house-boards');
+    paths.push({id:id+1,x,y:doorY,w:1,h:1,theme:4});
+    doors.push({id:room.key,lock,region:id+1,x,y:doorY,w:1,h:1,vertical:false,north:side<0,
+     hp:1,style:lock==='earlier'?'limestone':'timber',cache:{x:room.cx,y:room.cy}});
    }
   }
   return {...base,links,doors,layers,lofts,sewerRooms,roof,sewerRelic,stairs,crypt,bossArena,extraRooms,alleys};

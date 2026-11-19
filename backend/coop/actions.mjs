@@ -19,19 +19,21 @@ export function actions(sim){
   if(gold)sim.sound('loot_gold',pos,{gain:.64,delay:.34});
  }
 
- function portal(p){
-  live(p,sim.portal,76);
-  if(sim.enemies.length)fail('Auf dieser Tiefe leben noch Gegner.');
-  if(sim.completed)return {victory:true};
+ function portal(p,retreat=false){
+  live(p,retreat?sim.floor.returnPortal:sim.portal,76);
+  if(!retreat&&sim.enemies.length)fail('Auf dieser Tiefe leben noch Gegner.');
+  if(!retreat&&sim.completed)return {victory:true};
   if(sim.activePlayers().some(actor=>actor.fall))fail('Warte, bis der Sturz abgeschlossen ist.');
   if(sim.activePlayers().some(actor=>actor.deathRecap))fail('Warte, bis der Todesrückblick geschlossen ist.');
   if(sim.activePlayers().some(actor=>actor.quiz))fail('Warte, bis die andere Person ihre Frage abgeschlossen hat.');
-  return {advance:true};
+  if(sim.activePlayers().some(actor=>actor.vault||actor.consume))fail('Warte, bis die Bewegung oder der Verzehr abgeschlossen ist.');
+  return retreat?{retreat:true}:{advance:true};
  }
  function stock(p){
   const floor=floorNumber(), offers=expedition.stock(pools,sim.seed,floor,run.shuffle,run.random);
   const gold=items.shop(sim.state.dungeonSeed,floor,pools).slice(0,p.equipment.rings.includes('merchant')?6:3);
   if(floor===2)gold.push(bossRules.note);
+  gold.push(...sim.floor.keyOffers(sim.keyring,p.gold));
   return {gold,...offers};
  }
  const brewStock=(p,vessel)=>brewing.stock(sim.state.dungeonSeed,floorNumber(),p.equipment.rings.includes('brewer'),run.random,run.shuffle,vessel);
@@ -202,10 +204,11 @@ export function actions(sim){
  function take(p,id){
   const orb=sim.orbs.get(id);
   if(!orb||orb.seat&&orb.seat!==p.seat)fail('Der Seelenball ist nicht mehr verfügbar.');
-  const bones=orb.item.kind==='bones';
-  if(!bones&&count(p)>=30)fail('Dein Inventar ist voll.');
+  const bones=orb.item.kind==='bones',key=orb.item.kind==='key';
+  if(!bones&&!key&&count(p)>=30)fail('Dein Inventar ist voll.');
   live(p,orb,68);
-  if(bones)p.bones+=orb.item.bundle===3?3:1;
+  if(key)sim.keyring[orb.item.id]??='held';
+  else if(bones)p.bones+=orb.item.bundle===3?3:1;
   else p.inventory.push(orb.item);
   sim.orbs.delete(id);
   return {item:orb.item};
@@ -255,7 +258,23 @@ export function actions(sim){
    return {item:brewing.goldenCup,notice:'Goldenen Becher erhalten'};
   }
   if(kind==='well'){live(p,f.wellUse);return {};}
-  if(kind==='portal')return portal(p);
+  if(kind==='portal'||kind==='return-portal')return portal(p,kind==='return-portal');
+  if(kind==='key-door'){
+   const result=f.unlockDoor(p,i,sim.keyring);
+   if(!result)fail('Diese Tür ist außer Reichweite oder bereits offen.');
+   if(result.locked)fail('Verschlossen · '+f.keyName(result.door.keyId));
+   sim.sound('chest_latch',result.door,{gain:.72,priority:2});
+   return {notice:'Tür aufgeschlossen'};
+  }
+  if(kind==='key-cache'){
+   const cache=f.keyCaches.find(site=>site.id===i);
+   live(p,cache);
+   if(sim.state.openedCaches[i])fail('Die Truhe wurde bereits geöffnet.');
+   const reward=selectLoot(floorNumber()>=3?'epic':'rare',floorNumber(),sim.random);
+   if(!sim.drop(cache,{...reward,source:'Verschlossene Kammer'}))fail('Hier liegt bereits zu viel Beute.');
+   sim.state.openedCaches[i]=true;chestFoley(cache);
+   return {notice:'Kammertruhe geöffnet'};
+  }
   if(kind==='soul')return take(p,i);
   if(kind==='cup'){
    live(p,f.cupPoint,69);
@@ -308,8 +327,9 @@ export function actions(sim){
    case 'buy':{
     live(p,sim.floor.merchant);const offer=Object.values(stock(p)).flat().find(row=>row.stock===data.stock);
     const currency=offer?.currency??'gold',sold=currency==='rubies'?p.mythicSold:p.shopSold;
-    if(!offer||p[currency]<offer.price||sold.includes(offer.stock)||count(p)+(offer.bundle||1)>30)fail('Dieses Angebot ist nicht verfügbar.');
-    for(let n=0;n<(offer.bundle||1);n++)p.inventory.push(item(offer.kind,offer.id,offer.rarity,offer.source));
+    if(!offer||p[currency]<offer.price||sold.includes(offer.stock)||offer.kind!=='key'&&count(p)+(offer.bundle||1)>30)fail('Dieses Angebot ist nicht verfügbar.');
+    if(offer.kind==='key')sim.keyring[offer.id]='held';
+    else for(let n=0;n<(offer.bundle||1);n++)p.inventory.push(item(offer.kind,offer.id,offer.rarity,offer.source));
     p[currency]-=offer.price;sold.push(offer.stock);result={stock:stock(p),...(offer.kind==='bossNote'?{notice:bossRules.name}:{})};break;
    }
    case 'sell':{

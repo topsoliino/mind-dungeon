@@ -620,3 +620,7 @@ button.bad { background:#643730!important; }
 .death-recap dd { margin:3px 0 0;font-weight:700;color:#ffe2b5; }
 .death-recap .death-progress { margin:0 0 7px;font-size:.88rem; }
 .death-recap button { justify-self:center;padding-inline:26px; }
+
+.keyring { color: #e5c389; margin: 0 0 8px; }
+.keyring summary { cursor: pointer; }
+.keyring ul { margin: 5px 0 0; padding-left: 22px; }

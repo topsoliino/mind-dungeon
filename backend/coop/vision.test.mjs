@@ -219,8 +219,10 @@ test('entering the street reveals the pavement and building fronts without seein
  view.update(center(entry.x,entry.y),640,480);
  assert.ok(alleys.paved.every(p=>knows(view,p.x,p.y)&&looks(view,p.x,p.y)));
  const fronts=terrain.flatMap((row,y)=>row.flatMap((type,x)=>
-  map[y][x]===1&&regions[y][x]===alleys.id&&type?.startsWith('street-')?[{x,y}]:[]));
+  map[y][x]===1&&regions[y][x]===alleys.id&&type?.startsWith('street-')&&!type.startsWith('street-backroof')?[{x,y}]:[]));
  assert.ok(fronts.length>20&&fronts.every(p=>knows(view,p.x,p.y)));
+ const rearRoofs=terrain.flatMap((row,y)=>row.flatMap((type,x)=>type?.startsWith('street-backroof')?[{x,y}]:[]));
+ assert.ok(rearRoofs.length>5&&rearRoofs.some(p=>!knows(view,p.x,p.y)));
  assert.ok(alleys.houses.every(house=>!knows(view,house.cx,house.cy)));
  const street=furniture.filter(p=>floor.regionAt(p.x,p.y)===alleys.id);
  for(const type of ['basket','large-barrel','street-drain','street-stalls','street-lantern']){
@@ -237,13 +239,16 @@ test('entering the street reveals the pavement and building fronts without seein
  }
 });
 
-test('an open house shows its entrance at night and reveals the rooms upon entry',()=>{
+test('a house reveals its interior only after opening the door and entering at night',()=>{
  const floor=geometry.build(run,run.freshRun(2));
  const house=floor.alleys.houses[0];
  const door=floor.doors.find(d=>d.id===house.key);
  const view=vision.create(floor,TILE,floor.sightBarriers(),[],new Set([floor.rest.id]));
  view.update({x:door.x,y:door.y+TILE},800,640);
- assert.equal(floor.doorHP(door),0);
+ assert.equal(floor.doorHP(door),door.hp);
+ const keys={[door.keyId]:'held'};
+ assert.equal(floor.unlockDoor({x:door.x,y:door.y+TILE},door.id,keys)?.locked,false);
+ view.update({x:door.x,y:door.y+TILE},800,640);
  assert.ok(view.remembers(door.x,door.y));
  assert.equal(knows(view,house.cx,house.cy),false);
  view.update(center(house.cx,house.cy),800,640);

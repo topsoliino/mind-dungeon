@@ -3,7 +3,7 @@ import {Simulation} from './simulation.mjs';
 import {actions} from './actions.mjs';
 
 function createFloor(room,depth,seed,players=[],layoutRevision){
- const sim=new Simulation(room.seed,players,{layoutRevision},depth,seed);
+ const sim=new Simulation(room.seed,players,{layoutRevision,keyring:room.keyring??={}},depth,seed);
  sim.actions=actions(sim);
  room.floors.set(depth,sim);
  return sim;
@@ -26,17 +26,26 @@ export function startParty(room){
 export function syncDifficulty(room,member){
  getFloor(room,member)?.adaptDifficulty();
 }
-export function advanceParty(room,member){
- const from=getFloor(room,member),depth=member.floor+1;
+const visitFields=['opened','searched','altarUses','altarQuestions','gateQuestions','boneClaims','rubyClaims','templeAttempts',
+ 'trials','cupClaimed','shopSold','merchantMapFound','wellUsed'];
+export function advanceParty(room,member,direction=1){
+ const from=getFloor(room,member),depth=member.floor+direction;
+ room.keyring??=from.keyring;
  const moving=[...room.members.values()].filter(m=>m.floor===member.floor&&m.player.online);
- const target=room.floors.get(depth)??createFloor(room,depth,
+ const visited=room.floors.get(depth);
+ if(!visited&&direction<0)throw Error('Die vorherige Tiefe ist nicht verfügbar.');
+ const target=visited??createFloor(room,depth,
   run.differentLayoutSeed(from.state.dungeonSeed,from.floor.rooms,from.floor.gates));
  target.state.selectedBoss??=from.state.selectedBoss;
  for(const m of moving){
-  from.players=from.players.filter(p=>p!==m.player);
-  target.players.push(m.player);
+  const p=m.player,hp=p.hp,visit=target.visits[p.seat];
+  from.visits[p.seat]=Object.fromEntries(visitFields.map(key=>[key,p[key]]));
+  from.players=from.players.filter(actor=>actor!==p);
+  target.players.push(p);
   m.floor=depth;m.force=true;
-  target.resetAtRest(m.player,true);
+  target.resetAtRest(p,!visit,true);
+  if(visit){Object.assign(p,visit);p.hp=hp;}
+  p.revision++;
  }
  from.adaptDifficulty();target.adaptDifficulty();
 }
@@ -47,13 +56,13 @@ export function partyMetadata(room){
 }
 export function partyState(room){
  return {version:1,members:[...room.members.values()].map(m=>({floor:m.floor,awayAt:m.awayAt??getFloor(room,m).clock,player:Simulation.savePlayer(m.player)})),
-  floors:[...room.floors.values()].map(sim=>sim.checkpoint())};
+  keyring:room.keyring??{},floors:[...room.floors.values()].map(sim=>sim.checkpoint())};
 }
 export function restoreParty(code,saved){
  const {meta,state,revision}=saved;
  if(state.version!==1)throw new Error('Dieser Spielstand benötigt eine andere Serverversion.');
  const {seed,mode}=meta;
- const room={code,seed,mode,members:new Map(),floors:new Map(),seen:Date.now(),revision,dirty:false};
+ const room={code,seed,mode,members:new Map(),floors:new Map(),seen:Date.now(),revision,dirty:false,keyring:state.keyring??{}};
  const bySeat=new Map();
  let hostSource;
  meta.members.forEach(({id,seat},i)=>{
