@@ -141,8 +141,10 @@ const keySources=[
  ...doors.filter(d=>d.streetHouse).map(d=>({id:d.keyId,type:d.north?'pantry':'merchant'}))
 ];
 const keyName=id=>{
+ if(typeof id!=='string')return 'Unbekanntes Schloss';
  const [depth,lock]=id.split(':');
- return (lockName[lock]??'Kammer')+' · Tiefe '+depth;
+ if(!lock||!/^\d+$/.test(depth))return 'Unbekanntes Schloss';
+ return (Object.hasOwn(lockName,lock)?lockName[lock]:'Kammer')+' · Tiefe '+depth;
 };
 const keyItem=(id,source)=>({kind:'key',id,rarity:'common',source});
 const keyOffers=(keyring,gold)=>keySources.filter(key=>key.type==='merchant'&&!keyring[key.id]).map(({id})=>({

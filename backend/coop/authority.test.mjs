@@ -456,6 +456,9 @@ test('keys stay available through cross-floor travel, merchant stock and a resto
  const party={code:'KEYS0123',seed:193,mode:'same',members:new Map([['host',host],['guest',guest]])};
  startParty(party);
  const first=getFloor(party,host),buy=first.floor.keySources.find(site=>site.id==='2:earlier');
+ assert.equal(first.floor.keyName(buy.id),'Schatzkammer · Tiefe 2');
+ assert.equal(first.floor.keyName(undefined),'Unbekanntes Schloss');
+ assert.equal(first.floor.keyName('quiz-ladder'),'Unbekanntes Schloss');
  const act=(floor,member,kind,index)=>floor.actions.dispatch(member.player,'interact',{kind,index});
  const pantry=[...first.orbs.values()].find(o=>o.item.id==='1:street-house-0');
  assert.equal(pantry.item.source,'Vorratskammer');
