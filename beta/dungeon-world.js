@@ -51,7 +51,7 @@ const bossArena=arenaTiles&&(()=>{
  const origin=tileCenter({x:cx,y:cy});
  const offsets=(pairs)=>pairs.map(([x,y])=>tileCenter({x:cx+x,y:cy+y}));
  return {...origin,id,radius:radius*TILE,gate:{...tileCenter(gate),vertical:true,span:3*TILE,face:16},
-  altars:altars.map(tileCenter),vents:offsets([[-8,3],[-6,-6],[0,-8],[6,-6],[4,7],[-4,7]]),
+  altars:altars.map(tileCenter),vents:offsets([[-8,0],[-6,-6],[0,-8],[6,-6],[8,3],[6,6],[0,8],[-6,6]]),
   puddles:offsets([[-5,-2],[3,-4],[4,3],[-2,4],[0,-1]]).map((p,i)=>({...p,rx:75+i%3*13,ry:45+i%2*14})),
   labProps:offsets([[-4,-7],[-2,-8],[2,-8],[4,-7],[-7,-4],[-7,4],[6,5]])};
 })();

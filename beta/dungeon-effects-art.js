@@ -161,6 +161,25 @@ window.DungeonEffectsArt = (() => {
     frame<3?'#e7a764b8':'#c5875c75');
    shape([[13,15+offset],[29,11],[48,16],[58,29],[55,37],[38,50],[47,33],[43,22],[28,16]],'#fff0b9');
    for(let i=0;i<7;i++)pixel(28+i*4,18+(i*19+frame*7)%32,2,2,'#ffe6a8');
+  }else if(type==='boss-shockwave'){
+   for(let y=0;y<64;y++)for(let x=0;x<64;x++){
+    const dx=x-31.5,dy=y-31.5,angle=Math.atan2(dy,dx),dist=Math.hypot(dx,dy);
+    const jag=1.65*Math.sin(angle*12+frame*.9)+1.25*Math.cos(angle*19-frame);
+    const edge=dist-28-jag;
+    if(edge>=-6&&edge<2){
+     const color=edge>-1&&edge<.65?'#f4fbef':edge>-2.7?'#7cd4ef':edge>-4.3?'#586cbbbe':'#7963a06c';
+     if(frame<4||Math.cos(angle*9-frame*.4)>-.75)pixel(x,y,1,1,color);
+    }
+   }
+   for(let i=0;i<16;i++){
+    const a=i*Math.PI/8+.17,dir=i%2?1:-1;
+    const x=31.5+Math.cos(a)*(24-(i%3)*2),y=31.5+Math.sin(a)*(24-(i%3)*2);
+    const endX=31.5+Math.cos(a+.14*dir)*30,endY=31.5+Math.sin(a+.14*dir)*30;
+    if((i+frame)%4!==0){
+     shape([[x,y],[x+dir*3,y-2],[endX,endY],[x+dir*4,y+2]],i%3?'#8ed8ee':'#e7f9e8');
+     if(frame<4)pixel(x+dir*3,y-5,2,2,'#e7c996');
+    }
+   }
   }else if(['bat-warning','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'].includes(type)){
    const ice=type==='bat-beam'||type==='bat-lightning-warning'||type.startsWith('storm');
    const tone=ice?'#78bfe9':'#df804b',hot=ice?'#d9f5ff':'#ffe2a4';
@@ -235,7 +254,7 @@ window.DungeonEffectsArt = (() => {
   }
   return c;
  }
- const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','frost-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark'];
+ const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','frost-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark','boss-shockwave'];
  const flameFrames=24;
  const spread=t=>4+t*52;
  const emberSeeds=Array.from({length:32},(_,i)=>({phase:(i*.61803399)%1,side:Math.sin(i*53.17),turn:i*2.9}));

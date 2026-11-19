@@ -154,6 +154,13 @@ window.DungeonArt = (() => {
       r(0,y+12,64,2,light);r(0,y+14,64,2,'#291f26');
       for(let i=0;i<5;i++)r(rng(59),y+7+rng(4),2+rng(6),1,'#9e8c764f');
      }
+    }else if(type==='boss-carpet'){
+     r(0,0,64,64,'#513b4c');
+     for(let i=0;i<100;i++){
+      const x=rng(62),y=rng(63);
+      r(x,y,1+rng(3),1,['#67505a5e','#74586750','#3e2c3d55','#8b6c7147'][rng(4)]);
+     }
+     for(let i=0;i<13;i++)r(rng(63),rng(62),1,2,'#ac88743a');
     }else if(type==='roof-stone'){
      r(0,0,64,64,'#464955');
      for(let row=0;row<4;row++){

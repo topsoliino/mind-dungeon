@@ -237,7 +237,7 @@ export class Simulation{
    if(e.hp<=0)continue;
    this.tickPoison(e,dt);
    if(e.hp<=0)continue;
-   if(e.bossRole==='scientist')continue;
+   if(e.bossRole==='scientist'||e.bossEntrance)continue;
    this.currentTarget=active.filter(p=>this.canTarget(e,p)).sort((a,b)=>gap(a,e)-gap(b,e))[0]??null;
    if(active[0])this.ai.act(e,dt,this.currentTarget??active[0],this.clock,1180,760);
   }
