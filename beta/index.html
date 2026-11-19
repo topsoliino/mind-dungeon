@@ -3067,8 +3067,9 @@ function knowledgeGate(g,i){
   if(!save.gates[g.id]){opened=false;start=null;return 0;}
   if(opened)return 16;
   if(start===null&&modalType)return 0;
-  start??=frame;
-  const step=Math.min(16,Math.floor((frame-start)*24));
+  const now=performance.now();
+  start??=now;
+  const step=Math.min(16,Math.floor((now-start)*.024));
   if(step===16)opened=true;
   return step;
  }};
