@@ -991,3 +991,45 @@ test('opening a co-op chest emits latch, lid and gold once in playback order',()
   ['chest_latch',0],['chest_lid',.16],['loot_gold',.34]
  ]);
 });
+
+test('seeing a skeleton from an open passage starts its grace and lets it pursue without entering the room',()=>{
+ const {host,guest,sim}=game(-1640531527);
+ const court=sim.floor.court,x=(court.cx+.5)*TILE,y=(court.y-1.5)*TILE;
+ host.online=false;
+ Object.assign(guest,{x,y});
+ const enemy={id:'doorway-skeleton',type:foes.SKELETON,hp:150,max:150,size:1,x,y:(court.y+2.5)*TILE,
+  roomId:0,phase:0,attack:5,hit:0,angle:0,windup:0};
+ sim.enemies=[enemy];
+ assert.notEqual(sim.floor.regionAt(guest.x,guest.y),court.id);
+ const originalY=enemy.y;
+ sim.step(1/30);
+ assert.ok(Number.isFinite(enemy.revealedAt));assert.equal(enemy.aggro??0,0);
+ for(let i=0;i<7;i++)sim.step(1/30);
+ assert.equal(enemy.y,originalY);
+ for(let i=0;i<28;i++)sim.step(1/30);
+ assert.ok(enemy.aggro>0&&enemy.y<originalY-20);
+ assert.equal(sim.floor.regionAt(guest.x,guest.y),court.passage.id);
+ assert.equal(sim.explored.has(court.id),false);
+});
+
+test('ladders and chests reserve separate floor, and wall-offset loot can be recovered',()=>{
+ for(const [seed,revision] of [[1,10],[8,11],[97,11],[103,11],[193,11],[-1640531527,11]]){
+  const state=run.freshRun(seed);state.layoutRevision=revision;
+  const floor=geometry.build(run,state);
+  for(const chest of floor.chests){
+   assert.ok(floor.valid(chest.x,chest.y,17),'invalid chest for seed '+seed);
+   assert.ok(floor.links.filter(l=>l.kind==='ladder').every(l=>gap(chest,l)>=62),'ladder overlaps chest for seed '+seed);
+  }
+ }
+ const {host,sim}=game();
+ const room=sim.floor.rooms[0],position={x:room.x*TILE-3,y:Math.round((room.y+1.5)*TILE)};
+ assert.ok(sim.floor.wall(position.x,position.y));
+ assert.ok(sim.drop(position,{kind:'food',id:'banana',rarity:'common'},host.seat));
+ const orb=[...sim.orbs.values()].at(-1);
+ assert.ok(sim.floor.valid(orb.x,orb.y,17));
+ assert.ok(gap(position,orb)<96);
+ assert.ok(sim.floor.canReachSpawn(orb.x,orb.y));
+ Object.assign(host,{x:orb.x,y:orb.y});
+ sim.actions.dispatch(host,'interact',{kind:'soul',index:orb.id});
+ assert.equal(host.inventory.at(-1).id,'banana');
+});

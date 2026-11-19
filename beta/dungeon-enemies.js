@@ -90,7 +90,10 @@ window.DungeonEnemies = (() => {
   return ['blade','dagger','rapier','greatsword','spear'].includes(weapon)||weapon?.endsWith('-scythe')?'hit_cut':'hit_body';
  }
  const entryGrace=.4,chaseSeconds=7;
- function encounterReady(enemy,hero,floor,grace){
+ function reveal(enemy,clock){
+  if(!Number.isFinite(enemy.revealedAt)||enemy.revealedAt>clock)enemy.revealedAt=clock;
+ }
+ function encounterReady(enemy,hero,floor,grace,visible=false,clock=0){
   const region=floor.regionAt(hero.x,hero.y);
   if(hero.fall||region<0||floor.inRest(hero.x,hero.y))return false;
   const distance=Math.hypot(hero.x-enemy.x,hero.y-enemy.y);
@@ -100,7 +103,13 @@ window.DungeonEnemies = (() => {
    return Boolean(enemy.aggro>0&&stairs&&Math.hypot(enemy.x-stairs.x,enemy.y-stairs.y)<480);
   }
   if(enemy.aggro>0&&distance<960)return true;
-  return grace<=0&&(region===floor.regionAt(enemy.x,enemy.y)||
+  const sameRoom=region===floor.regionAt(enemy.x,enemy.y);
+  if(visible&&(sameRoom||distance<550)&&Number.isFinite(enemy.revealedAt)){
+   if(clock<enemy.revealedAt+entryGrace)return false;
+   alert(enemy);
+   return true;
+  }
+  return grace<=0&&(sameRoom||
    enemy.alerted===true&&distance<550&&!floor.gateLineBlocked(enemy.x,enemy.y,hero.x,hero.y));
  }
  function alert(enemy){
@@ -113,5 +122,5 @@ window.DungeonEnemies = (() => {
   const bundle=large&&random()<.5?3:1;
   return {kind:'bones',id:'bones',rarity:'common',bundle,source:'Skelettbeute'};
  }
- return {physicalImpactCue,damageOrigin,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,entryGrace,encounterReady,alert,boneDrop,PRIEST,SKELETON,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,WHITE_ORC,BLACK_ORC,isOrc};
+ return {physicalImpactCue,damageOrigin,attacks,depthFactor,health,eyeRange,balance,knockbackDistance,resistances,turn,spriteFrame,entryGrace,encounterReady,reveal,alert,boneDrop,PRIEST,SKELETON,ZOMBIE,SNAKE,ARCHER,CROSSBOW,LION,LIONESS,BAT,STORM_BAT,RAT,ELECTRO_RAT,EAGLE,FROST_ZOMBIE,FROST_CROSSBOW,WHITE_ORC,BLACK_ORC,isOrc};
 })();

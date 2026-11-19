@@ -155,3 +155,42 @@ test('the starter stairs stay visible from a side passage and only the ascent hi
  view.update(center(across,stair.y+2),1280,768);
  assert.ok(looks(view,across,stair.b.y));
 });
+
+test('an encountered enemy stays visible around a bend while a closed door still blocks a new encounter',()=>{
+ const {world,door,view}=hallWithDoor();
+ const enemy={id:'scout',...center(11,9)};
+ view.update(center(11,6),1280,768);
+ assert.ok(view.observeEnemy(enemy));
+ view.update(center(8,5),1280,768);
+ assert.equal(looks(view,11,9),false);
+ assert.ok(view.seesEnemy(enemy));
+ Object.assign(enemy,center(11,10));
+ assert.ok(view.observeEnemy(enemy));
+ assert.equal(view.observeEnemy({id:'beyond-door',...center(15,5)}),false);
+ door.closed=false;
+ view.update(center(11,5),1280,768);
+ assert.ok(view.observeEnemy({id:'beyond-door',...center(15,5)}));
+ assert.ok(world.isPassage(2));
+});
+
+test('an open view clears the last three dark tiles in a room without requiring entry',()=>{
+ const W=17,H=13,map=Array.from({length:H},()=>Array(W).fill(1)),regions=map.map(row=>row.map(()=>-1));
+ const carve=(x,y,id)=>{map[y][x]=0;regions[y][x]=id;};
+ for(let x=2;x<=6;x++)carve(x,5,x<4?1:3);
+ const pockets=[4,5,6].map(y=>y*W+12),seen=[];
+ for(let y=3;y<=8;y++)for(let x=7;x<=13;x++){
+  if(x===8&&y>=4&&y<=6)continue;
+  carve(x,y,2);
+  if(!pockets.includes(y*W+x))seen.push(y*W+x);
+ }
+ const world={W,H,map,regions,stairs:[],rest:{id:1},rooms:[],isPassage:id=>id===3,abyssAt:()=>false,layerForRegion:()=>0};
+ const door={...center(6,5),vertical:true,span:TILE,floorCells:[5*W+6],closed:true,visible(){return this.closed;}};
+ const explored=new Set([1]),view=vision.create(world,TILE,[door],seen,explored),observer=center(5,5);
+ view.update(observer,1280,768);
+ assert.equal(knows(view,12,5),false);
+ assert.equal(view.observeEnemy({id:'across',...center(12,5)}),false);
+ door.closed=false;view.update(observer,1280,768);
+ assert.ok(pockets.every(id=>view.known[id]));
+ assert.ok(looks(view,12,5));
+ assert.equal(explored.has(2),false);
+});
