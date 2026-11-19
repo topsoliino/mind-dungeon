@@ -412,7 +412,7 @@ export class Simulation{
   const contact=this.floor.meleeWall(p.x,p.y,p.dir,w,reach);
   if(contact){swing.wallAngle=contact.offset;swing.duration=geometry.wallRecoilSeconds;}
   this.emit('swing',swing);
-  if(this.floor.inRest(p.x,p.y)||w.projectile&&contact){
+  if(this.floor.inRest(p.x,p.y)){
    if(contact)this.reboundFromWall(p,contact,charged);
    return true;
   }
@@ -442,8 +442,8 @@ export class Simulation{
  reboundFromWall(p,contact,charged){
   p.attack=0;p.wallRecoil=geometry.wallRecoilSeconds;p.recoilAngle=contact.angle;
   p.stamina=Math.max(0,p.stamina-(charged?14:9));p.staminaRest=0;
-  const force=charged?17:11;
-  this.move(p,-Math.cos(contact.angle)*force,-Math.sin(contact.angle)*force,true,
+  const force=geometry.wallRecoilForce(charged);
+  this.move(p,contact.normalX*force,contact.normalY*force,true,
    {source:'Wand',action:'Waffenabpraller'});
   this.emit('wall-recoil',{seat:p.seat,x:round(contact.x),y:round(contact.y),angle:contact.angle});
  }

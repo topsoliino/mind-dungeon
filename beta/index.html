@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=24"><link rel="stylesheet" href="beta/dungeon-boss.css?v=3"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=4"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=9"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-boss.js?v=4"></script><script src="beta/dungeon-boss-art.js?v=3"></script><script src="beta/dungeon-strata.js?v=8"></script><script src="beta/dungeon-strata-fx.js?v=3"></script><script src="beta/dungeon-run.js?v=26"></script><script src="beta/dungeon-world.js?v=15"></script><script src="beta/dungeon-vision.js?v=6"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=20"></script><script src="beta/dungeon-items.js?v=25"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=25"></script><script src="beta/dungeon-enemy-sim.js?v=12"></script><script src="beta/dungeon-effects-art.js?v=23"></script><script src="beta/dungeon-art.js?v=30"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=7"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=24"><link rel="stylesheet" href="beta/dungeon-boss.css?v=4"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=4"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=9"></script><div style="position:fixed;bottom:6px;right:10px;z-index:2000;pointer-events:none;background:#3e2458e6;color:#ffe4a6;padding:4px 9px;border:1px solid #d5ac75;border-radius:5px;font:11px system-ui">TESTVERSION v0.8 · lokale Spielstände getrennt</div><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-boss.js?v=4"></script><script src="beta/dungeon-boss-art.js?v=3"></script><script src="beta/dungeon-strata.js?v=8"></script><script src="beta/dungeon-strata-fx.js?v=3"></script><script src="beta/dungeon-run.js?v=26"></script><script src="beta/dungeon-world.js?v=16"></script><script src="beta/dungeon-vision.js?v=6"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=20"></script><script src="beta/dungeon-items.js?v=25"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=25"></script><script src="beta/dungeon-enemy-sim.js?v=12"></script><script src="beta/dungeon-effects-art.js?v=23"></script><script src="beta/dungeon-art.js?v=30"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=7"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -250,7 +250,7 @@ const realHero=player;
 const bossArena=world.bossArena;
 const bossIntro=()=>Boolean(bossArena&&save.bossBattle?.phase==='intro'&&(authorityMode||regionAt(player.x,player.y)===bossArena.id));
 const foeResistance=e=>bossRules.resistance(e,foeResistances[e.type]);
-const {fallSeconds,wallRecoilSeconds,fallEnemy}=window.DungeonWorld;
+const {fallSeconds,wallRecoilSeconds,wallRecoilForce,fallEnemy}=window.DungeonWorld;
 player.damageQueue=save.damageQueue;player.damageHistory=save.damageHistory;
 player.fall=!authorityMode&&save.fall?.remaining>0&&save.fall.remaining<=fallSeconds?save.fall:null;
 if(!Number.isFinite(player.x)||!Number.isFinite(player.y)||!valid(player.x,player.y,HERO_RADIUS,false,true,Boolean(player.fall)))Object.assign(player,spawn);
@@ -1636,7 +1636,7 @@ function strike(charged=false){
   coopLastSwing={action,at:performance.now()};
   coopRealtime?.swing(action);
  }
- if(inRest(player.x,player.y)||profile.projectile&&contact){
+ if(inRest(player.x,player.y)){
   if(contact)reboundFromWall(contact,charged);
   return;
  }
@@ -1670,8 +1670,8 @@ function reboundFromWall(contact,charged){
  player.attack=0;player.wallRecoil=wallRecoilSeconds;player.recoilAngle=contact.angle;
  player.stamina=Math.max(0,player.stamina-(charged?14:9));staminaRest=0;
  wallImpactFeedback(contact);
- const force=charged?17:11;
- moveActor(player,-Math.cos(contact.angle)*force,-Math.sin(contact.angle)*force,true,
+ const force=wallRecoilForce(charged);
+ moveActor(player,contact.normalX*force,contact.normalY*force,true,
   {source:'Wand',action:'Waffenabpraller'});
 }
 function drawWeaponTrails(drawArc){
@@ -2790,8 +2790,7 @@ function drawCanvasPeer(avatar){
  const depth=avatar.y+(avatar.lift?55:0);
  if(!pose||pose.depth>=depth)hero();
  if(!pose)return;
- s.save();s.translate(pose.x,pose.y);s.rotate(pose.angle);
- s.drawImage(weaponBitmap(pose.id),-pose.size/2,-pose.size*pose.grip,pose.size,pose.size);s.restore();
+ drawCanvasWeapon(pose);
  if(pose.depth<depth)hero();
 }
 function positionWorldHUD(scrollX,scrollY){
@@ -3150,15 +3149,6 @@ function foeLift(e){
  if(move?.kind==='leap'&&move.age>=move.windup)return -Math.round(25*Math.sin(Math.PI*Math.min(1,(move.age-move.windup)/move.duration)));
  return Math.round(Math.sin(e.phase*4)*2-(e.windup>0?Math.min(4,7*e.windup):0));}
 const gripHeights={spear:42,dagger:46,hammer:47,staff:46,bow:32,'farm-scythe':44,'dark-scythe':44,'great-scythe':44};
-const weaponPoints={
- spear:[[0,-38],[-6,-26],[6,-26],[0,18]],
- staff:[[0,-38],[-14,-25],[12,-25],[0,13]],
- 'farm-scythe':[[4,-31],[27,-21],[-7,15]],
- 'dark-scythe':[[7,-35],[27,-21],[-5,15]],
- 'great-scythe':[[7,-35],[27,-18],[-5,15]],
- greatsword:[[0,-42],[-10,-19],[10,-19],[0,9]]
-};
-const genericWeaponPoints=[[0,-41],[-12,-19],[12,-19],[0,9]];
 function carryWeapon({x,y,dir,weaponSide,charge,attack,attackDuration,lift=0,wallRecoil,recoilAngle},id){
  const side=weaponSide||1,behind=Math.sin(dir)<-.38;
  const progress=attack>0?1-Math.min(1,attack/(attackDuration||.4)):0;
@@ -3172,27 +3162,12 @@ function carryWeapon({x,y,dir,weaponSide,charge,attack,attackDuration,lift=0,wal
  // Socket coordinates on the 64px actor sprite: palm centers at (20,41) and (45,40).
  const palmX=side<0?20:45,palmY=side<0?41:40,socketScale=74/64;
  const centerY=y+palmY*socketScale-48-lift;
- let palm=x+(palmX-32)*socketScale+Math.cos(dir)*(thrust-pull*12);
- let handY=centerY+Math.sin(dir)*(thrust-pull*12);
- const angle=id==='bow'?dir:dir+swing+Math.PI/2,grip=(gripHeights[id]??50)/64;
- let clearance=1;
- if(!lift&&id!=='bow'){
-  const c=Math.cos(angle),n=Math.sin(angle);
-  const points=weaponPoints[id]??genericWeaponPoints;
-  const fits=()=>Math.min(...points.map(([u,v])=>
-   world.weaponClearance(x,centerY,palm+u*c-v*n,handY+u*n+v*c)));
-  clearance=fits();
-  if(clearance<1){
-   const retract=Math.min(28,(1-clearance)*68);
-   const priorX=palm,priorY=handY;
-   palm-=n*retract;handY+=c*retract;
-   const tucked=fits();
-   if(tucked>=clearance)clearance=tucked;
-   else{palm=priorX;handY=priorY;}
-  }
- }
- return {id,x:x+(palm-x)*clearance,y:centerY+(handY-centerY)*clearance,angle,grip,
-  size:58*clearance,depth:y+(lift?55:0)+(behind?-.5:.5)};
+ const palm=x+(palmX-32)*socketScale+Math.cos(dir)*(thrust-pull*12);
+ const handY=centerY+Math.sin(dir)*(thrust-pull*12);
+ const angle=id==='bow'?dir:dir+swing+Math.PI/2,grip=(gripHeights[id]??50)/64,size=58;
+ const radius=Math.ceil(Math.hypot(palm-x,handY-y)+Math.hypot(size/2,size*Math.max(grip,1-grip)));
+ return {id,x:palm,y:handY,angle,grip,size,cover:world.weaponCover(x,y,radius),
+  depth:y+(lift?55:0)+(behind?-.5:.5)};
 }
 function weaponPose(){
  const dx=Math.cos(player.dir);
@@ -3214,6 +3189,18 @@ function drawCanvasFall(bitmap,x,y,progress,heading,scale=1,origin=48/74,flip=fa
  if(flip)s.scale(-1,1);
  s.drawImage(bitmap,-size/2,-size*origin,size,size);s.restore();
 }
+function drawCanvasWeapon(pose,alpha=1){
+ s.save();
+ if(pose.cover){
+  s.beginPath();
+  for(const [i,point] of pose.cover.entries()){
+   if(i===0)s.moveTo(point.x,point.y);else s.lineTo(point.x,point.y);
+  }
+  s.closePath();s.clip();
+ }
+ s.globalAlpha=alpha;s.translate(pose.x,pose.y);s.rotate(pose.angle);
+ s.drawImage(weaponBitmap(pose.id),-pose.size/2,-pose.size*pose.grip,pose.size,pose.size);s.restore();
+}
 function drawCanvasHero(){
  refreshHeroArt();
  const falling=heroFallProgress();
@@ -3226,8 +3213,7 @@ function drawCanvasHero(){
  }
  if(consumeMove||!save.equipment.weapon||authorityMode&&authorityOwn?.pose>=3&&authorityOwn?.pose<backHeroIndex){hero();s.restore();return;}
  if(pose.depth>player.y+(vault?55:0))hero();
- s.save();s.globalAlpha=alpha;s.translate(pose.x,pose.y);s.rotate(pose.angle);
- s.drawImage(weaponBitmap(pose.id),-pose.size/2,-pose.size*pose.grip,pose.size,pose.size);s.restore();
+ drawCanvasWeapon(pose,alpha);
  if(pose.depth<player.y+(vault?55:0))hero();
  s.restore();
 }
@@ -3307,11 +3293,13 @@ class DungeonScene extends Phaser.Scene{
    for(const id of weaponArtIds)this.textures.addCanvas('weapon-'+id,weaponBitmap(id));
    this.hero=this.add.image(player.x,player.y,'hero-0').setOrigin(.5,48/74).setDisplaySize(74,74);
    this.weapon=this.add.image(player.x,player.y,'weapon-'+weaponArtId(save.equipment.weapon)).setDisplaySize(58,58);
+   this.weaponClip=this.createWeaponClip();
    if(coopRoom){
     this.peerTexture=document.createElement('canvas');this.peerTexture.width=this.peerTexture.height=64;
     this.textures.addCanvas('coop-peer',this.peerTexture);
     this.peer=this.add.image(0,0,'coop-peer').setOrigin(.5,48/74).setDisplaySize(74,74).setVisible(false);
     this.peerWeapon=this.add.image(0,0,'weapon-rust').setDisplaySize(58,58).setVisible(false);
+    this.peerWeaponClip=this.createWeaponClip();
    }
    this.foes=[];this.soulSprites=[];this.combatSprites=[];
    for(const [type,frames] of Object.entries(effectArt.frames)){
@@ -3330,6 +3318,20 @@ class DungeonScene extends Phaser.Scene{
    this.cameras.main.setBackgroundColor('#101212');
    phaserActive=true;canvas.style.display='none';window.__engine='Phaser 3';
   }
+  createWeaponClip(){
+   const shape=this.make.graphics({add:false});
+   const mask=shape.createGeometryMask();
+   this.events.once('shutdown',()=>{mask.destroy();shape.destroy();});
+   return {shape,mask};
+  }
+  drawWeapon(sprite,pose,clip,alpha=1){
+   sprite.setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip).setPosition(pose.x,pose.y)
+    .setDisplaySize(pose.size,pose.size).setRotation(pose.angle).setDepth(pose.depth).setAlpha(alpha);
+   if(pose.cover){
+    clip.shape.clear().fillStyle(0xffffff).fillPoints(pose.cover,true);
+    sprite.setMask(clip.mask);
+   }else sprite.clearMask();
+  }
   update(time,delta){
    const dt=Math.min(.035,delta/1000);if(!paused)update(dt);frame+=paused?dt:0;
    refreshHeroArt(this.textures);
@@ -3341,8 +3343,8 @@ class DungeonScene extends Phaser.Scene{
     .setDepth(player.y+(vault?55:0)).setDisplaySize(fall?.size??74,fall?.size??74)
     .setRotation(fall?.angle??0).setAlpha(fall?.alpha??heroAlpha());
    const pose=weaponPose();
-   this.weapon.setVisible(!fall&&!isConsuming()&&Boolean(save.equipment.weapon)).setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
-    .setPosition(pose.x,pose.y).setDisplaySize(pose.size,pose.size).setRotation(pose.angle).setDepth(pose.depth).setAlpha(heroAlpha());
+   this.weapon.setVisible(!fall&&!isConsuming()&&Boolean(save.equipment.weapon));
+   if(this.weapon.visible)this.drawWeapon(this.weapon,pose,this.weaponClip,heroAlpha());
    if(this.peer){
     const avatar=visibleCoopPeer(),pose=avatar&&peerWeaponPose(avatar);
     this.peer.setVisible(Boolean(avatar));this.peerWeapon.setVisible(Boolean(pose));
@@ -3357,8 +3359,7 @@ class DungeonScene extends Phaser.Scene{
      this.peer.setPosition(avatar.x+(peerFall?.dx??0),avatar.y+(peerFall?.dy??-(avatar.lift||0))).setDepth(avatar.y+(avatar.lift?55:0))
       .setDisplaySize(peerFall?.size??74,peerFall?.size??74).setRotation(peerFall?.angle??0).setAlpha(peerFall?.alpha??1);
     }
-    if(pose)this.peerWeapon.setTexture('weapon-'+pose.id).setOrigin(.5,pose.grip)
-     .setPosition(pose.x,pose.y).setDisplaySize(pose.size,pose.size).setRotation(pose.angle).setDepth(pose.depth);
+    if(pose)this.drawWeapon(this.peerWeapon,pose,this.peerWeaponClip);
    }
    const quake=settings.shake&&!fall?shake:0;
    this.cameras.main.x=rand(-quake,quake);this.cameras.main.y=rand(-quake,quake);

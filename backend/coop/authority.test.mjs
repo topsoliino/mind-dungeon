@@ -113,9 +113,15 @@ test('a spear grazes a wall at full extension and rebounds only after a solid hi
    !sim.floor.gateLineBlocked(x,wallY-130,x,wallY-20);
  });
  assert.ok(x);
- assert.equal(sim.floor.meleeWall(x,wallY-spear.reach+5,aim,spear,spear.reach),null);
+ assert.equal(sim.floor.meleeWall(x,wallY-spear.reach+19,aim,spear,spear.reach),null);
  const y=wallY-90,contact=sim.floor.meleeWall(x,y,aim,spear,spear.reach);
  assert.ok(contact&&contact.y>=wallY&&contact.y<wallY+4);
+ assert.equal(contact.normalX,0);
+ assert.equal(contact.normalY,-1);
+ const diagonal=sim.floor.meleeWall(x,y,aim+.18,spear,spear.reach);
+ assert.ok(diagonal);
+ assert.equal(diagonal.normalX,0);
+ assert.equal(diagonal.normalY,-1);
  const enemy={x,y:y+48,id:'before-wall',type:foes.SKELETON,hp:80,max:80,size:1};
  const blocked={...enemy,y:wallY+16,id:'past-wall'};
  Object.assign(host,{x,y,combat:1,stamina:100});
@@ -125,16 +131,53 @@ test('a spear grazes a wall at full extension and rebounds only after a solid hi
  assert.equal(blocked.hp,80);
  assert.equal(host.stamina,100-spear.stamina-9);
  assert.equal(host.attack,0);
- assert.ok(host.wallRecoil>0&&host.y<y);
+ assert.ok(host.wallRecoil>0);
+ assert.ok(Math.abs(host.y-(y-18))<1e-6);
  assert.equal(sim.charge(host,aim),false);
  assert.ok(sim.events.some(event=>event.kind==='wall-recoil'));
- const staff=items.weapon('staff');
- assert.equal(sim.floor.meleeWall(x,y,aim,staff,staff.reach),null);
+ for(const id of ['staff','bow']){
+  const ranged=items.weapon(id);
+  assert.equal(sim.floor.meleeWall(x,wallY-9,aim,ranged,ranged.reach),null);
+  Object.assign(host,{x,y:wallY-9,attack:0,wallRecoil:0,stamina:100});
+  host.equipment.weapon=id;preparePlayer(host);
+  const before=sim.shots.length;
+  assert.ok(sim.charge(host,aim)&&sim.attack(host,aim));
+  assert.equal(sim.shots.length,before+1);
+  assert.equal(host.wallRecoil,0);
+ }
  const tx=Math.floor(x/TILE),ty=wallY/TILE;
  terrain[ty][tx]='partition';
  terrain[ty][tx+1]='partition';
  const inside=sim.floor.meleeWall(x,wallY-60,aim,spear,spear.reach);
  assert.ok(inside&&inside.y>=wallY+15&&inside.y<wallY+19);
+});
+
+test('held weapons are covered by side and south walls and closed doors',()=>{
+ const {sim}=game(103);
+ const {floor}=sim,{cx,cy}=floor.rooms[0],x=(cx+.5)*TILE,y=(cy+.5)*TILE;
+ const includes=(poly,px,py)=>{
+  if(!poly)return true;
+  let hit=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+   const a=poly[i],b=poly[j];
+   if((a.y>py)!==(b.y>py)&&px<(b.x-a.x)*(py-a.y)/(b.y-a.y)+a.x)hit=!hit;
+  }
+  return hit;
+ };
+ for(let row=cy-2;row<=cy+2;row++)for(let col=cx-2;col<=cx+2;col++){
+  floor.terrain[row][col]=null;floor.map[row][col]=row===cy-1||row===cy+1||col===cx-1||col===cx+1?1:0;
+ }
+ const cover=floor.weaponCover(x,y,65);
+ assert.ok(includes(cover,x,y-44));
+ assert.ok(includes(cover,x,y+20));
+ assert.ok(!includes(cover,x,y+44));
+ assert.ok(!includes(cover,x-44,y-4));
+ assert.ok(!includes(cover,x+44,y+4));
+
+ const door=floor.doors.find(d=>d.id==='upper-door'),anchor=door.x-28;
+ assert.ok(!includes(floor.weaponCover(anchor,door.y,66),door.x+27,door.y));
+ floor.strikeDoor(door.hp,door);
+ assert.ok(includes(floor.weaponCover(anchor,door.y,66),door.x+27,door.y));
 });
 
 test('quick food absorbs pending damage, chooses the smallest sufficient portion, and queues while stationary',()=>{
