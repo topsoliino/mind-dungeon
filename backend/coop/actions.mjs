@@ -259,6 +259,7 @@ export function actions(sim){
    return {item:brewing.goldenCup,notice:'Goldenen Becher erhalten'};
   }
   if(kind==='well'){live(p,f.wellUse);return {};}
+  if(kind==='smith'){live(p,f.smith,82);return {};}
   if(kind==='portal'||kind==='return-portal')return portal(p,kind==='return-portal');
   if(kind==='key-door'){
    const result=f.unlockDoor(p,i,sim.keyring);
@@ -351,6 +352,16 @@ export function actions(sim){
     const potion={...item('potion',duration+'-'+brew.map(e=>e.id+'-'+e.rank).join('-'),rarity,'Brauerei'),brew,duration};
     p.inventory.splice(i,1,potion);p.bones-=bones;p.brewEffects=[];
     sim.sound('brew_pour',sim.floor.lab,{gain:.81,priority:2});result={item:potion};break;
+   }
+   case 'forge':{
+    live(p,sim.floor.smith,82);
+    if(!Number.isInteger(data.index)||data.index<0)fail('Diese Waffe ist nicht verfügbar.');
+    result=items.forgeWeapon(p,data.index,data.key,data.operation,data.element);
+    if(result.error)fail(result.error);
+    preparePlayer(p);
+    sim.sound('hit_metal',sim.floor.smith,{priority:2,gain:.6});
+    result.notice=data.operation==='improve'?'Waffe verbessert':'Waffe verzaubert';
+    break;
    }
    case 'well':{
     live(p,sim.floor.wellUse);const it=index(p.inventory,data.index);

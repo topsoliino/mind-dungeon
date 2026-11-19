@@ -44,7 +44,7 @@ export function createProjection(){
   const questionKey=question?question.key+Boolean(question.feedback):'';
   if(force||peerQuiz!==questionKey){base.quiz=question;peerQuiz=questionKey;}
   if(force||revision!==p.revision){revision=p.revision;base.personal=personal(p);}
-  const visible=sim.enemies.filter(e=>currentRegion(p,e)),next=new Set();
+  const visible=sim.floor.inSanctuary(p.x,p.y)?[]:sim.enemies.filter(e=>currentRegion(p,e)),next=new Set();
   const changed=[],removed=[];
   for(const e of visible){
    const row=enemyNumbers(e);next.add(row[0]);

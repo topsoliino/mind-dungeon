@@ -139,7 +139,7 @@ export class Simulation{
   const x=this.floor.valid(spawn.x+offset,spawn.y,HERO_RADIUS,false,true)?spawn.x+offset:spawn.x;
   Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,wallRecoil:0,recoilAngle:0,attackDuration:.4,walk:0,
    moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,
-   combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null,
+   combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.regionAt(x,spawn.y),entered:this.clock,quiz:null,trial:null,consume:null,
    consumeQueue:transition?p.consumeQueue??[]:[],damageQueue:transition?p.damageQueue??[]:[],damageHistory:transition?p.damageHistory??[]:[],fall:null});
   p.input={seq:p.input.seq,x:0,y:0,aim:0,blocked:false,at:-Infinity};
   if(newFloor){
@@ -431,14 +431,16 @@ export class Simulation{
   const w=p.weapon;
   if(!this.cost(p,Math.round(w.stamina*(charged?1.28:1)*p.mods.cost)))return false;
   p.attack=p.attackDuration=w.speed*(charged?1.25:1);
-  const scale=p.mods.reach*items.arrowRange(w,p.equipment.armor),reach=w.reach*scale,type=p.mods.element??Object.keys(w.split)[0];
+  const scale=p.mods.reach*items.arrowRange(w,p.equipment.armor),reach=w.reach*scale;
+  const split=items.attackSplit(w.split,p.equipment.weaponEnchantment,p.mods.element);
+  const type=p.mods.element??p.equipment.weaponEnchantment??Object.keys(split)[0];
   const swing={seat:p.seat,id:this.id(),x:round(p.x),y:round(p.y),dir:p.dir,weapon:w.id,type,reach,scale,duration:p.attack,charged};
   const contact=this.floor.meleeWall(p.x,p.y,p.dir,w,reach);
   if(contact){swing.wallAngle=contact.offset;swing.duration=geometry.wallRecoilSeconds;}
   this.emit('swing',swing);
   const rest=this.floor.inRest(p.x,p.y);
   const hit={p,w,charged,amount:p.damage*items.madnessBonus(p,p.equipment.rings),crit:p.crit,impact:p.impact,
-   split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
+   split};
   if(w.projectile){
    this.shots.push({x:p.x,y:p.y,origin:{x:p.x,y:p.y},angle:p.dir,left:reach,restOnly:rest,
     speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
