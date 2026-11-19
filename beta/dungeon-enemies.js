@@ -67,6 +67,12 @@ window.DungeonEnemies = (() => {
  // Sprite frames 0–3 walk, 4–7 anticipate, 8–11 attack, 12–15 recover.
  function spriteFrame(e){
   const a=attacks[e.type];
+  if(e.type===EAGLE){
+   if(e.runAttack>0)return 12+Math.min(5,Math.floor((1-e.runAttack/e.runDuration)*6));
+   if(e.windup>0)return 8+Math.min(3,Math.floor((1-e.windup/a.windup)*4));
+   if(e.recover>0)return 18+Math.min(5,Math.floor((1-e.recover/a.recovery)*6));
+   return Math.floor(e.phase*(e.moving?14:10))%8;
+  }
   if(e.veilPhase==='turn')return 4+Math.min(3,Math.floor((1-e.veilTime/a.windup)*4));
   if(e.veilPhase==='strike')return 8+Math.min(3,Math.floor((1-e.veilTime/.36)*4));
   if(e.runAttack>0)return 8+Math.min(3,Math.floor((1-e.runAttack/e.runDuration)*4));

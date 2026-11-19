@@ -82,7 +82,7 @@ function updateEnemy(e,dt){
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
  const range=eyeRange(e,angle);
- const line=d<range*1.22&&!gateLineBlocked(e.x,e.y,player.x,player.y);
+ const line=d<range*1.22&&!gateLineBlocked(e.x,e.y,player.x,player.y,e.type===EAGLE);
  const spotted=line&&d<=range;
  if(spotted||labRat)enemyRules.alert(e);
  else e.aggro=Math.max(0,(e.aggro||0)-dt);
@@ -281,7 +281,7 @@ function advanceRush(e,spec,dt,targetAngle){
   e.trailTimer-=dt;
   if(e.trailTimer<=0){e.trailTimer=.12;state.enemyHazards.push({x:oldX,y:oldY,radius:25,life:3.9,wait:0,angle:e.angle,type:'dark',power:8,origin:origin(e,'Dunkle Spur')});}
  }
- if(!e.struck&&nearActor(e,player,9)&&!gateLineBlocked(e.x,e.y,player.x,player.y)){
+ if(!e.struck&&nearActor(e,player,9)&&!gateLineBlocked(e.x,e.y,player.x,player.y,e.type===EAGLE)){
   const dark=spec.id==='rift';
   const damage=spec.id==='bite'?5:spec.id==='grab'?13:spec.id==='eagle'?23:21;
   const rushName={charge:'Ansturm',rift:'Dunkler Ansturm',grab:'Griff',bite:e.fireSnake?'Feuerbiss':'Biss',eagle:'Sturzflug'}[spec.id];
@@ -305,7 +305,7 @@ function pursue(e,dt,speed,clear,goal=player){
  const radius=actorRadius(e),distance=Math.hypot(goal.x-e.x,goal.y-e.y);
  const a=Math.atan2(goal.y-e.y,goal.x-e.x),check=Math.min(distance,22);
  let target=goal;
- if(!clear||!valid(e.x+Math.cos(a)*check,e.y+Math.sin(a)*check,radius)){
+ if(!clear||!valid(e.x+Math.cos(a)*check,e.y+Math.sin(a)*check,radius,false,false,e.type===EAGLE)){
   const tile=Math.floor(goal.y/TILE)*W+Math.floor(goal.x/TILE);
   e.routeDelay=(e.routeDelay||0)-dt;
   if(e.routeGoal!==tile||e.routeDelay<=0||e.route&&Math.hypot(e.x-e.route.x,e.y-e.route.y)<5){

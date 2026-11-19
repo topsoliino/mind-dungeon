@@ -170,9 +170,12 @@ export class Simulation{
    const sx=Math.abs(x-other.x),sy=Math.abs(y-other.y);
    return sx>=r||sy>=r||ox<r&&oy<r&&sx>=ox&&sy>=oy&&(sx>ox||sy>oy);
   };
-  const canFall=knockback||hero&&!actor.equipment.rings.includes('height');
+  const flying=actor.type===foes.EAGLE;
+  const canFall=!flying&&(knockback||hero&&!actor.equipment.rings.includes('height'));
   const safe={x:actor.x,y:actor.y},bodyRadius=radius(actor);
-  const pass=(x,y)=>this.floor.valid(x,y,bodyRadius,false,hero,canFall)&&(hero?this.floor.heroClearsDoor(actor,x,y):!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
+  const pass=(x,y)=>this.floor.valid(x,y,bodyRadius,false,hero,canFall||flying)&&
+   (!flying||!this.floor.wall(x,y)||this.floor.towerAir(x,y))&&
+   (hero?this.floor.heroClearsDoor(actor,x,y):!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
   const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
   for(let i=0;i<steps;i++){
    const x=actor.x+dx/steps,y=actor.y+dy/steps;
@@ -283,10 +286,7 @@ export class Simulation{
   if(this.newEnemies?.length)this.enemies.push(...this.newEnemies.splice(0));
   if(this.boss)this.enemies=this.enemies.filter(e=>!e.bossDiscard);
   if(last&&this.enemies.length===0&&!this.portal&&!this.boss){
-   const region=this.floor.regionAt(last.x,last.y);
-   const points=[[60,0],[-60,0],[0,60],[0,-60],[0,0]].map(([dx,dy])=>({x:last.x+dx,y:last.y+dy}));
-   this.portal=points.find(point=>this.floor.regionAt(point.x,point.y)===region&&this.floor.valid(point.x,point.y)&&
-    !this.floor.gateLineBlocked(last.x,last.y,point.x,point.y))??this.floor.shrines[last.roomId];
+   this.portal=this.floor.portalPosition(last);
    if(this.state.floor===run.LAST_DEPTH)this.completed=true;
    this.emit('portal',this.portal);
   }
@@ -351,7 +351,7 @@ export class Simulation{
    p.hp=recovered;p.revision++;
    this.emit('armor',{seat:p.seat,x:round(p.x),y:round(p.y),proc:'heal'});
   }
-  const threat=this.enemies.some(e=>e.hp>0&&gap(e,p)<420&&this.canTarget(e,p)&&!this.floor.gateLineBlocked(p.x,p.y,e.x,e.y));
+  const threat=this.enemies.some(e=>e.hp>0&&gap(e,p)<420&&this.canTarget(e,p)&&!this.floor.gateLineBlocked(p.x,p.y,e.x,e.y,e.type===foes.EAGLE));
   p.combat=threat?1.35:remaining(p.combat,dt);
   if(p.attack||p.dash||p.wallRecoil||p.chargeStart!==null)p.staminaRest=0;
   else if((p.staminaRest+=dt)>.45)p.stamina=Math.min(p.staminaMax,p.stamina+dt*(10+p.attributes.endurance*.6)*Math.min(2.8,1+(p.staminaRest-.45)*2.2)*p.mods.regen);
@@ -453,7 +453,7 @@ export class Simulation{
   if(!rest)for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
    if(e.hp<=0||e.fall||!items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)||!beforeWall(e)||
-      this.floor.gateLineBlocked(p.x,p.y,e.x,e.y))continue;
+      this.floor.gateLineBlocked(p.x,p.y,e.x,e.y,e.type===foes.EAGLE))continue;
    const cover=this.floor.furnitureBetween(p.x,p.y,e.x,e.y);
    if(cover){props.add(cover);continue;}
    impact??=e;
@@ -485,7 +485,7 @@ export class Simulation{
    const shock=(impact=shot)=>{if(shot.hit&&!shot.restOnly)this.shockWater(shot.origin??shot.hit.p,impact,shot.hit.split,shot.hit.amount,shot.hit.p);};
    for(let i=0;i<steps;i++){
     shot.x+=Math.cos(shot.angle)*stride;shot.y+=Math.sin(shot.angle)*stride;
-    if(this.floor.wall(shot.x,shot.y)||this.floor.gateBlocked(shot.x,shot.y)){shock();return false;}
+    if(this.floor.wall(shot.x,shot.y)&&!this.floor.towerAir(shot.x,shot.y)||this.floor.gateBlocked(shot.x,shot.y)){shock();return false;}
     if(shot.restOnly&&!this.floor.inRest(shot.x,shot.y))return false;
     const door=this.floor.doorAt(shot.x,shot.y);
     if(door){if(shot.hit&&!shot.restOnly)this.hitDoor(door,shot.hit,shot.angle);shock();return false;}
@@ -493,7 +493,7 @@ export class Simulation{
     if(prop){if(shot.hit)this.hitFurniture(prop,shot.hit.amount*(shot.hit.charged?1.5:1),shot.angle);shock();return false;}
     if(shot.restOnly)continue;
     const enemy=this.enemies.find(e=>e.hp>0&&!e.fall&&gap(e,shot)<radius(e)+5&&
-     !this.floor.gateLineBlocked(shot.x,shot.y,e.x,e.y));
+     !this.floor.gateLineBlocked(shot.x,shot.y,e.x,e.y,e.type===foes.EAGLE));
     if(enemy){const impact={x:enemy.x,y:enemy.y};this.weaponHit(enemy,shot.hit,shot.angle);shock(impact);return false;}
    }
    if((shot.left-=distance)>0)return true;

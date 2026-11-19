@@ -271,7 +271,7 @@ window.DungeonArt = (() => {
       r(2,y+2,split-4,2,'#767984');r(split+2,y+2,59-split,2,'#717683');
       for(let i=0;i<5;i++)r(3+rng(58),y+5+rng(7),1+rng(4),1,'#7a7d866e');
      }
-    }else if(type==='abyss'){
+    }else if(type==='abyss'||type==='tower-sky'||type==='tower-horizon'){
      r(0,0,64,64,'#11151e');
      for(let i=0;i<42;i++)r(rng(64),rng(64),2+rng(15),1+rng(3),['#1b2230','#262938','#343344'][rng(3)]);
     }else if(type.startsWith('sewer-')||type==='river'||type==='clear-river'||type==='waterfall'){
@@ -305,8 +305,60 @@ window.DungeonArt = (() => {
     }
     terrainCache.set(key,c);return c;
   }
-  function world(map,zoneAt,lights,seed,terrain,frontWalls,tileSize=SIZE) {
+  function towerBackdrop(roof,size,seed){
+    const pad=size*5,padX=size*12,top=roof.y*size,w=roof.w*size,h=roof.h*size;
+    const bitmap=surface(w+2*padX,h+top+pad),{g,r,poly}=brush(bitmap),rnd=random(seed^0x433bad);
+    g.translate(padX,top);
+    const sky=g.createLinearGradient(0,-top,0,h+pad);
+    sky.addColorStop(0,roof.hail?'#414858':'#415a6c');sky.addColorStop(.55,'#768994');sky.addColorStop(1,'#a7aba0');
+    r(-padX,-top,bitmap.width,bitmap.height,sky);
+    for(const [y,shade] of [[h*.54,'#54677a'],[h*.79,'#657789'],[h*1.12,'#798986']]){
+      const ridge=Array.from({length:22},(_,i)=>[-padX+Math.round(i*bitmap.width/21),Math.round(y-rnd(92))]);
+      poly([...ridge,[w+padX,h+pad],[-padX,h+pad]],shade);
+    }
+    for(let i=0;i<40;i++){
+      const x=rnd(bitmap.width)-padX,y=h+pad-12-rnd(pad),width=5+rnd(11),height=3+rnd(6);
+      r(x,y,width,height,'#526667');poly([[x-2,y],[x+Math.floor(width/2),y-height],[x+width+2,y]],'#58666c');
+    }
+    for(let i=0;i<22;i++){
+      const x=rnd(bitmap.width)-padX,y=rnd(bitmap.height)-top,length=34+rnd(88);
+      r(x,y,length,3,'#c2cbd236');r(x+9,y-3,length-16,3,'#c9cfd53a');r(x+14,y+3,length-21,3,'#aab9c34a');
+    }
+    const sides=[[-17,h-12],[w+17,h-12],[w-15,h+pad],[19,h+pad]];
+    g.save();g.beginPath();for(const [i,[x,y]] of sides.entries())if(i)g.lineTo(x,y);else g.moveTo(x,y);g.closePath();g.clip();
+    const face=g.createLinearGradient(0,h,0,h+pad);
+    face.addColorStop(0,'#50596a');face.addColorStop(.65,'#343d52');face.addColorStop(1,'#526676');
+    r(-17,h-12,w+34,pad+12,face);
+    for(let y=h+10;y<h+pad;y+=17){
+      r(-17,y,w+34,2,'#252e4399');r(-17,y+2,w+34,1,'#8391a039');
+      for(let x=((y-h)%2?22:3);x<w+17;x+=32)r(x,y+2,2,15,'#252d4190');
+    }
+    for(let x=30;x<w-20;x+=size*2){
+      r(x-5,h+30,17,42,'#687184');poly([[x-5,h+32],[x+3,h+22],[x+12,h+32]],'#737f8c');
+      r(x,h+34,7,33,'#242b40');r(x+2,h+46,2,18,'#121b30');r(x-6,h+70,19,3,'#858e9b');
+    }
+    for(const x of [-9,Math.round(w/2)-9,w-10]){
+      r(x,h-4,19,pad-4,'#434e63');r(x+1,h-4,5,pad-4,'#647184');r(x+15,h,4,pad,'#2b3449');
+      for(let y=h+14;y<h+pad;y+=22)r(x,y,19,2,'#283247');
+    }
+    r(-17,h,w+34,8,'#303b51');r(-17,h+2,w+34,3,'#7c8896');
+    g.restore();
+    g.clearRect(0,0,w,h);
+    const coping=(x,y,width,height)=>{
+      r(x,y,width,height,'#343943');r(x+1,y+1,width-2,height-3,'#7a8291');r(x+2,y+1,width-4,2,'#a0a6ad');
+    };
+    for(let x=5;x<w-18;x+=32){coping(x,-10,20,15);coping(x,h-6,20,13);}
+    for(let y=19;y<h-17;y+=36){coping(-9,y,13,20);coping(w-4,y,13,20);}
+    for(const x of [-13,w-19])for(const y of [-12,h-15]){
+      coping(x,y,32,26);r(x+8,y+7,16,11,'#505965');r(x+8,y+7,16,2,'#263344');
+    }
+    return {bitmap,x:roof.x*size-padX,y:roof.y*size-top};
+  }
+  function world(map,zoneAt,lights,seed,terrain,frontWalls,tileSize=SIZE,roof=null) {
     const rnd=random(seed),chunkSize=16,chunks=[],fx=window.DungeonStrataFx;
+    const tower=roof&&towerBackdrop(roof,tileSize,seed);
+    const towerTile=({x,y,surfaceType})=>tower&&(surfaceType==='roof-stone'||surfaceType==='tower-sky'||surfaceType==='tower-horizon'||
+     surfaceType==='abyss'&&x>=roof.x-1&&x<=roof.x+roof.w&&y>=roof.y-1&&y<=roof.y+roof.h);
     const tiles=map.map((row,y)=>row.map((value,x)=>{
       const v=rnd(12),surfaceType=terrain?.[y]?.[x];
       if(value===0||surfaceType==='partition')return {v,open:value===0,surfaceType};
@@ -336,6 +388,12 @@ window.DungeonArt = (() => {
          g.save();fx.shorePath(g,px,py,tileSize,fx.shoreline(terrain,x,y));g.clip();
          g.drawImage(image,px,py,tileSize,tileSize);g.restore();
         }else g.drawImage(image,px,py,tileSize,tileSize);
+      }
+      const towerCells=cells.filter(towerTile);
+      if(towerCells.length){
+        g.save();g.beginPath();
+        for(const p of towerCells)g.rect(p.x*tileSize,p.y*tileSize,tileSize,tileSize);
+        g.clip();g.drawImage(tower.bitmap,tower.x,tower.y);g.restore();
       }
       g.beginPath();
       for(const p of cells)if(p.open)g.rect(p.x*tileSize,p.y*tileSize,tileSize,tileSize);
@@ -785,7 +843,7 @@ window.DungeonArt = (() => {
     const anticipation=[0,1,3,5][step];
     const crouch=stage===1?anticipation:stage===2?-2:stage===3?3-step:Math.abs(stride);
     const y=n=>n+crouch;
-    poly([[10,51],[18,47],[48,47],[55,52],[49,56],[14,56]],'#100d13a8');
+    if(zone!==15)poly([[10,51],[18,47],[48,47],[55,52],[49,56],[14,56]],'#100d13a8');
     if(zone===20){
      const stride=stage===0?[-4,1,4,-1][step]:stage===2?4+step:0;
      const neck=stage===2?reach:stage===1?-2:0,bob=stage===1?3:stage===2?-2:crouch;
@@ -839,17 +897,34 @@ window.DungeonArt = (() => {
      return c;
     }
     if(zone===15){
-     const flight=stage===2?3:[0,4,6,2][step],crest=stage===1?4:0;
-     for(const side of [-1,1]){
-      const x=d=>32+d*side;
-      poly([[x(4),27],[x(13),18-flight],[x(24),12-flight],[x(30),15-flight],[x(27),25],[x(17),33],[x(8),36]],'#30252a');
-      poly([[x(6),28],[x(14),20-flight],[x(25),14-flight],[x(27),17-flight],[x(24),25],[x(15),31],[x(8),33]],'#896749');
-      poly([[x(14),21-flight],[x(24),16-flight],[x(25),19-flight],[x(20),24],[x(13),28]],'#b19462');
+     const flap=[-22,-18,-9,5,22,17,5,-9,-6,-14,-22,-24,-15,0,12,16,11,3,16,22,16,6,-8,-21][frame];
+     const pitch=[-4,-6,-8,-9,4,10,13,12,7,2,-2,-5,-7,-7,-5,-2][frame-8]??0;
+     const diving=frame>=12&&frame<18,fold=diving?[6,12,15,12,8,3][frame-12]:0;
+     const body=(points,color)=>poly(points.map(([x,y])=>[x,y+Math.round((x-28)*pitch/28)]),color);
+     function wing(side){
+      const near=side<0,sx=near?29:34,sy=near?30:25;
+      const span=(near?.84:.87)-fold*.014;
+      const feather=(p,color)=>poly(p.map(([u,v])=>[
+       sx+Math.round(u*(span*side-fold*.01)),sy+Math.round(v+flap*(near?1:.74)*(u/33)**1.28)
+      ]),color);
+      feather([[0,0],[9,-5],[18,-5],[32,-7],[26,-1],[33,-2],[25,4],[30,4],[22,8],[26,9],[16,12],[8,10],[1,7]],'#302429');
+      feather([[1,1],[10,-4],[18,-3],[29,-6],[19,2],[23,2],[15,7],[8,8],[2,6]],near?'#a88054':'#76583e');
+      feather([[13,0],[25,-5],[20,0],[24,0],[17,5],[21,5],[14,9],[9,8]],near?'#bd9b67':'#937454');
+      feather([[19,5],[27,3],[21,8],[24,8],[17,11],[14,10]],'#4a3430');
      }
-     poly([[24,22],[35,21],[44,27],[45,37],[35,43],[25,40],[19,44],[16,41],[22,34]],'#584031');
-     poly([[33+crest,19],[42+crest,20],[49+crest,26],[45+crest,33],[35+crest,32],[30+crest,26]],'#ded4b5');
-     r(41+crest,24,3,2,'#402e26');r(47+crest,27,8,2,'#e4ae43');r(51+crest,29,3,2,'#b98a3d');
-     if(stage===2){r(34,40,7,3,'#c79a4e');r(40,39,3,4,'#f0c368');}
+     wing(1);
+     body([[23,32],[14,33],[7,41],[13,40],[10,45],[24,40],[30,34]],'#594033');
+     body([[20,32],[26,24],[38,22],[45,28],[44,35],[36,41],[26,40],[20,36]],'#694a37');
+     body([[28,25],[37,25],[42,29],[37,35],[28,37],[23,33]],'#956b43');
+     wing(-1);
+     body([[37,24],[41,19],[49,18],[55,23],[54,29],[49,32],[42,30],[37,32],[39,27]],'#dfd0a6');
+     body([[44,19],[51,19],[55,23],[50,23],[44,22],[41,25]],'#f2e7c9');
+     body([[53,23],[59,23],[62,27],[58,30],[58,27],[53,27]],'#dead53');
+     body([[47,23],[51,23],[50,25],[47,25]],'#4a362c');
+     if(diving&&frame>=13&&frame<=16){
+      body([[32,36],[35,42],[43,41],[45,43],[43,44],[42,43],[36,45],[32,42],[29,40]],'#dfb568');
+      body([[38,35],[42,39],[49,38],[51,41],[49,42],[48,40],[42,42],[37,39]],'#f0ca74');
+     }
      return c;
     }
     if(zone===13||zone===14){

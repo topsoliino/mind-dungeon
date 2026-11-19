@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {run,items,foes,bossRules,brewing,expedition,pools,item,cup,TILE,gap,maxHP,preparePlayer,stats,xpRequired,equipped,equip,unequip,correct,selectLoot} from './rules.mjs';
+import {run,balance,items,foes,bossRules,brewing,expedition,pools,item,cup,TILE,gap,maxHP,preparePlayer,stats,xpRequired,equipped,equip,unequip,correct,selectLoot} from './rules.mjs';
 
 const fail=message=>{throw new Error(message);};
 const index=(list,i)=>Number.isInteger(i)&&i>=0?list[i]:undefined;
@@ -64,7 +64,8 @@ export function actions(sim){
    if(sim.state.bossBattle.altars[i])fail('Dieser Wissensaltar ist bereits erloschen.');
    zone=0;
   }else if(reason==='shrine'){
-   live(p,index(floor.shrines,i),103);
+   const shrine=index(floor.shrines,i);
+   live(p,shrine,103);zone=shrine.topic;
    if((p.altarUses[i]??0)>=2)fail('Am Altar wurden bereits zwei Fragen beantwortet.');
    exclude=p.altarQuestions[i]??[];
   }else if(reason==='temple'){
@@ -108,13 +109,13 @@ export function actions(sim){
   const result=p.quiz.answered?{ok:p.quiz.ok,notice:p.quiz.notice,choice:p.quiz.choice,explanation,correctIndices:correctIndices??[correctIndex].filter(Number.isInteger)}:null;
   return {question:{...visible,count:correctIndices?.length??1},quiz:id,reason,i,trial,result};
  }
- function xp(p,q,ok){
+ function xp(p,q,ok,reason){
   p.questionCount++;
   (p.questionSeen??={})[q.id]=p.questionCount;
   if(ok){
    const ordinal=bossRules.assign(p.deckOrder??=[],p.pack.packId);
    if(p.seat===1)sim.state.selectedBoss??=bossRules.choose(ordinal,run.random(sim.seed^0x78a23bc9));
-   p.solved[q.id]=(p.solved[q.id]??0)+1;p.xp+=p.solved[q.id]>1?5:15+(q.difficulty||1)*5;
+   p.solved[q.id]=(p.solved[q.id]??0)+1;p.xp+=balance.questionXP(q.difficulty,p.solved[q.id]>1,reason);
    while(p.xp>=xpRequired(p.level)){p.xp-=xpRequired(p.level);p.level++;p.pendingLevels++;heal(p,22);}
    preparePlayer(p);
   }else if(p.questionReview[q.id]?.color!=='green')p.questionReview[q.id]={color:'red',due:p.questionCount+5};
@@ -123,7 +124,7 @@ export function actions(sim){
   const qz=p.quiz;
   if(!qz||qz.id!==data.quiz||qz.answered)fail('Diese Frage ist nicht mehr offen.');
   const {q,reason,i}=qz;const ok=correct(q,data.choice);
-  qz.answered=true;xp(p,q,ok);
+  qz.answered=true;xp(p,q,ok,reason);
   let more=false,notice=ok?'Richtig · +Erfahrung':'Nicht ganz';
   if(reason==='access'){
    const site=[...sim.floor.links,...sim.floor.doors].find(candidate=>candidate.seal===i);
