@@ -187,7 +187,7 @@ window.DungeonRun = (() => {
    carve(rest,rest.id);carve(passage,passage.id);annexes.push(rest);
   }
   const paths=[];
-  if(cemetery||temple){
+  if(cemetery||temple&&revision<17){
    const parent=rooms.filter(room=>room.cx===45).sort((a,b)=>a.cy-b.cy)[0];
    const entry={id:24,from:parent.i,x:parent.x+parent.w,y:parent.cy-1,w:60-parent.x-parent.w,h:3,vertical:true};
    const top=Math.min(parent.cy,temple?19:53);
@@ -215,7 +215,7 @@ window.DungeonRun = (() => {
      for(const part of connector){Object.assign(part,{theme:5,from:parent.i,outdoors:true,rain,storm:patio.storm||grave.storm});carve(part,26);paths.push(part);}
     }
    }
-   if(temple){
+   if(temple&&revision<17){
     const entrance=passage(25,60,18,1,3,true,6);
     annex(19,'temple-entry','Tempel · Vorhof',61,13,11,12,6,entrance);
     const bridge=passage(20,72,18,5,3,true,6);
@@ -231,6 +231,7 @@ window.DungeonRun = (() => {
   const base={rooms,corridors,map,regions,gates,annexes,terrain,rest,paths};
   const layout=revision>=8?window.DungeonStrata.extend(base,seed,depth,random,shuffle,revision,sewerDepth(runSeed),
    revision>=10&&cryptDepths(runSeed).includes(depth),LAST_DEPTH):base;
+  if(temple&&revision>=17)window.DungeonTemple.extend(layout,seed,random,shuffle);
   return revision>=16?window.DungeonSanctuary.extend(layout):layout;
 
  }
@@ -397,7 +398,7 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},doors:{},furnitureDamage:{},access:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],seenTiles:[],seenTilesVersion:null,portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:16,bossBattle:null,bossActors:[],cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[],keyCarrier:null,openedCaches:{},floorEnemies:null};
+   defeated:[],explored:[REST_ID],seenTiles:[],seenTilesVersion:null,portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:17,bossBattle:null,bossActors:[],cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[],keyCarrier:null,openedCaches:{},floorEnemies:null};
  }
  function freshRun(seed){
   return {...floorState(seed,1),trialCharmActive:false,alleyRingAwarded:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionSeen:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{},floorArchives:{},keyring:{},bossOrdinal:null,selectedBoss:null,damageHistory:[],damageQueue:[],fall:null,deathRecap:null};

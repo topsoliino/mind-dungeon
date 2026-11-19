@@ -25,7 +25,7 @@ window.DungeonItems = (() => {
   bread:{name:'Brot',heal:23},
   chicken:{name:'Hühnchen',heal:34}
  };
- const foodSeconds=1.5,foodMove=.3,potionMove=.37,potionWalkRate=6,damageDelay=1;
+ const foodSeconds=1.5,foodMove=.3,potionMove=.37,potionWalkRate=7.5,damageDelay=1;
  const foodPower=(item,multiplier)=>Math.round((food[item.id]?.heal??0)*multiplier);
  function foodNeeded(actor,max,queue,multiplier){
   return Math.max(0,max-actor.hp+(actor.damageQueue??[]).reduce((sum,hit)=>sum+hit.amount,0)-
@@ -86,7 +86,7 @@ window.DungeonItems = (() => {
  const kinds={weapon:'Waffen',ring:'Ringe',armor:'Rüstung'};
  const merchantRing={id:'merchant',name:'Händlerring',desc:'Ausgerüstet zeigt der Händler je eine zusätzliche Waffe, einen Ring und ein Rüstungsteil.',bonus:'merchant'};
  const heightRing={id:'height',name:'Ring der Höhe',desc:'Fängt dich beim Laufen und Ausweichen am Abgrund ab. Rückstoß kann dich über die Kante stoßen.',bonus:'height'};
- const madnessRing={id:'madness',name:'Ring des Wahns',desc:'Blutverlust im Umkreis von 220 erhöht deine Angriffskraft für 20 Sekunden um 20 %.',bonus:'madness'};
+ const madnessRing={id:'madness',name:'Ring des Wahns',desc:'Blutverlust in der Nähe erhöht deine Angriffskraft für 20 Sekunden um 20 %.',bonus:'madness'};
  const avoidanceRing={id:'avoidance',name:'Ring der Vermeidung',desc:'Ausgerüstet bleibst du nach dem Tod auf derselben Tiefe. Die übrigen Todesverluste gelten weiterhin.',bonus:'avoidance'};
  const alleyRing={kind:'ring',id:avoidanceRing.id,rarity:'epic',source:'Die Gassen'};
  const retreatDepth=(floor,rings)=>rings.includes(avoidanceRing.id)?floor:Math.max(1,floor-1);

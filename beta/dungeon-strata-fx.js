@@ -1,6 +1,8 @@
 window.DungeonStrataFx=(()=>{
  'use strict';
  const bank=.075,corner=.2,noBanks=[0,0,0,0];
+ const shoreCache=new Map();
+ const bankCurve=(position,phase)=>.18+.085*Math.sin(position*.076+phase)+.046*Math.sin(position*.163-phase);
  const isSewer=type=>type?.startsWith('sewer-');
  const isPool=type=>type==='sewer-pool'||type==='boss-water';
  function shoreline(terrain,x,y){
@@ -12,6 +14,31 @@ window.DungeonStrataFx=(()=>{
   if(begin)ctx.beginPath();
   ctx.roundRect(x+left*inset,y+top*inset,size-(left+right)*inset,size-(top+bottom)*inset,
    [left*top*radius,right*top*radius,right*bottom*radius,left*bottom*radius]);
+ }
+ function sewerPath(ctx,x,y,size,edges){
+  const key=[x,y,size,...edges].join(',');
+  let points=shoreCache.get(key);
+  if(!points){
+   function water(u,v){
+    const sideX=u<.5?edges[0]:edges[2],sideY=v<.5?edges[1]:edges[3],radius=sideX*sideY*.12;
+    const a=radius-(sideX?Math.min(u,1-u)-bankCurve(y+v*size,1.7):1);
+    const b=radius-(sideY?Math.min(v,1-v)-bankCurve(x+u*size,.2):1);
+    return Math.hypot(Math.max(a,0),Math.max(b,0))+Math.min(Math.max(a,b),0)<=radius;
+   }
+   points=Array.from({length:64},(_,i)=>{
+    const angle=i*Math.PI/32,dx=Math.cos(angle),dy=Math.sin(angle);
+    let from=0,to=.5/Math.max(Math.abs(dx),Math.abs(dy));
+    if(!water(.5+dx*to,.5+dy*to))for(let j=0;j<10;j++){
+     const mid=(from+to)/2;
+     if(water(.5+dx*mid,.5+dy*mid))from=mid;else to=mid;
+    }
+    return [x+size*(.5+dx*to),y+size*(.5+dy*to)];
+   });
+   shoreCache.set(key,points);
+  }
+  ctx.beginPath();ctx.moveTo(...points[0]);
+  for(const point of points.slice(1))ctx.lineTo(...point);
+  ctx.closePath();
  }
  // Repeatable water frames are uploaded once and placed at world coordinates.
  // Bridges and temples do not need the interactive sewer ripple surface.
@@ -45,10 +72,14 @@ window.DungeonStrataFx=(()=>{
  uniform float uTime;
  uniform vec3 uRipples[8];
  varying vec2 vWorld,vLocal;varying float vType;varying vec4 vEdges;
- float shorelineAlpha(){
+ float bankCurve(float position,float phase){
+  return .18+.085*sin(position*.076+phase)+.046*sin(position*.163-phase);
+ }
+ float shorelineAlpha(bool boss){
   vec2 side=vec2(vLocal.x<.5?vEdges.x:vEdges.z,vLocal.y<.5?vEdges.y:vEdges.w);
-  vec2 inside=mix(vec2(1.0),min(vLocal,1.0-vLocal)-${bank},side);
-  float radius=side.x*side.y*${corner};
+  vec2 insets=boss?vec2(${bank}):vec2(bankCurve(vWorld.y,1.7),bankCurve(vWorld.x,.2));
+  vec2 inside=mix(vec2(1.0),min(vLocal,1.0-vLocal)-insets,side);
+  float radius=side.x*side.y*(boss?${corner}:.12);
   vec2 q=radius-inside;
   float dist=length(max(q,0.0))+min(max(q.x,q.y),0.0)-radius;
   return 1.0-smoothstep(-.012,.008,dist);
@@ -60,10 +91,11 @@ window.DungeonStrataFx=(()=>{
    gl_FragColor=vec4(.97,.65,.29,pow(max(0.0,1.0-d),2.8)*.31*flicker);
    return;
   }
-  bool deep=vType>3.5;
+  bool boss=vType>5.5;
+  bool deep=vType>3.5&&!boss;
   vec2 p=mod(vWorld,1536.0);
-  float flow=vType<.5?0.0:uTime*(deep?20.0:28.0);
-  vec2 uv=(vType>4.5||(vType>1.5&&vType<2.5))?p.yx:p.xy;
+  float flow=vType<.5||boss?0.0:uTime*(deep?20.0:28.0);
+  vec2 uv=(!boss&&(vType>4.5||(vType>1.5&&vType<2.5)))?p.yx:p.xy;
   float wave=sin((uv.x-flow)*.14+sin(uv.y*.11+uTime*.6)*1.8);
   float crossWave=sin(uv.y*.21-uv.x*.07+uTime*.8);
   float caustic=smoothstep(.92,1.66,wave*.87+crossWave*.72);
@@ -77,7 +109,7 @@ window.DungeonStrataFx=(()=>{
    }
   }
   vec3 color=mix(vec3(.38,.78,.72),vec3(.27,.60,.63),float(deep));
-  float mask=deep||dot(vEdges,vec4(1.0))<.5?1.0:shorelineAlpha();
+  float mask=deep||dot(vEdges,vec4(1.0))<.5?1.0:shorelineAlpha(boss);
   gl_FragColor=vec4(color+ring*.21,mask*(.07+caustic*(deep?.17:.25)+.43*min(1.0,ring)));
  }`;
  function create(){
@@ -135,7 +167,7 @@ window.DungeonStrataFx=(()=>{
      for(const [u,v] of [[0,0],[1,0],[0,1],[0,1],[1,0],[1,1]])vertices.push(px+u*size,py+v*size,type,u,v,...banks);
     }
     for(const tile of tiles)quad(tile.x*tileSize,tile.y*tileSize,tileSize,
-     isPool(tile.type)?0:tile.edges?tile.vertical?2:1:tile.vertical?5:4,tile.edges);
+     tile.type==='boss-water'?6:isPool(tile.type)?0:tile.edges?tile.vertical?2:1:tile.vertical?5:4,tile.edges);
     for(const light of lights)quad(light.x-light.radius,light.y-light.radius,light.radius*2,3);
     gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,3,gl.FLOAT,false,36,0);
@@ -151,7 +183,10 @@ window.DungeonStrataFx=(()=>{
     ctx.setTransform(width/w,0,0,height/h,-x*width/w,-y*height/h);
     for(const tile of tiles){
      const tx=tile.x*tileSize,ty=tile.y*tileSize;
-     ctx.save();shorePath(ctx,tx,ty,tileSize,tile.edges??noBanks);ctx.clip();
+     ctx.save();
+     if(isSewer(tile.type))sewerPath(ctx,tx,ty,tileSize,tile.edges??noBanks);
+     else shorePath(ctx,tx,ty,tileSize,tile.edges??noBanks);
+     ctx.clip();
      ctx.strokeStyle=tile.edges?'#90cfbd':'#73a5aa';ctx.lineWidth=2;
      if(isPool(tile.type)){
       for(const step of steps){
@@ -180,5 +215,5 @@ window.DungeonStrataFx=(()=>{
   }
   return {canvas,collect,render,get shader(){return Boolean(gl&&!gl.isContextLost());}};
  }
- return {create,isSewer,shoreline,shorePath,riverAnimation};
+ return {create,isSewer,shoreline,shorePath,sewerPath,riverAnimation};
 })();

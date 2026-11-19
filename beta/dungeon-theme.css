@@ -227,8 +227,10 @@ button.bad { background:#643730!important; }
 #catSleep { position:fixed;z-index:7;pointer-events:none;transform:translate(-50%,-50%);color:#d4dbea;font:bold italic 19px Georgia,serif;text-shadow:2px 2px #282537; }
 @media(pointer:coarse){#quickBar{bottom:55px}}
 
-#modal:has(.inventory-ledger) { width:min(1120px,96vw); }
-.inventory-ledger { grid-template-columns:minmax(230px,1fr) minmax(0,1.58fr); }
+#modal:has(.inventory-ledger) { width:min(1450px,96vw); }
+.inventory-ledger { grid-template-columns:minmax(0,1.85fr) minmax(275px,1fr); }
+.inventory-ledger .rpg-grid { grid-template-columns:repeat(var(--inventory-columns),minmax(0,1fr)); }
+.inventory-ledger .rpg-cell { aspect-ratio:1; }
 .item-comparison { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:8px;align-items:start; }
 .item-comparison section { min-width:0;padding:8px;background:#211916;border:1px solid #67513a; }
 .item-comparison section+section { border-color:#9d8354;background:#2b2219; }

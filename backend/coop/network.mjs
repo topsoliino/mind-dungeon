@@ -60,7 +60,8 @@ export function createProjection(){
   const loot=[...sim.orbs.values()].filter(o=>(!o.seat||o.seat===p.seat)&&currentRegion(p,o));
   const nextLoot=loot.map(o=>o.id).join(',');
   if(force||lootKey!==nextLoot){lootKey=nextLoot;base.loot=loot;}
-  const state=Object.fromEntries(Object.entries(sim.effects).map(([kind,rows])=>[kind,rows.filter(o=>currentRegion(p,o)).slice(0,24)]));
+  const state=Object.fromEntries(Object.entries(sim.effects).map(([kind,rows])=>[kind,rows.filter(o=>
+   o.approach>0&&o.type==='trap'?o.laneRegion===p.region:currentRegion(p,o)).slice(0,24)]));
   state.plates=sim.floor.pressurePlates.map(o=>o.pressed||o.timer>0);
   const fx=JSON.stringify(state,(key,v)=>typeof v==='number'?round(v,100):v);
   if(force||fx!==effects){effects=fx;base.effects=JSON.parse(fx);}

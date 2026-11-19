@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import test from 'node:test';
 import {WebSocket} from 'ws';
-import {run,balance,geometry,defaultPack,makePlayer,items,foes,brewing,TILE,fallSeconds,gap,maxHP,preparePlayer,pools} from './rules.mjs';
+import {run,balance,geometry,vision,defaultPack,makePlayer,items,foes,brewing,TILE,fallSeconds,gap,maxHP,preparePlayer,pools} from './rules.mjs';
 import {Simulation} from './simulation.mjs';
 import {actions} from './actions.mjs';
 import {createCoopServer} from './server.mjs';
@@ -308,7 +308,7 @@ test('new starts give up to four exits and wide stairs connect floors by walking
  const {floor}=sim,{rest}=floor;
  assert.equal([[rest.x-1,rest.cy],[rest.x+rest.w,rest.cy],[rest.cx,rest.y-1],[rest.cx,rest.y+rest.h]]
   .filter(([x,y])=>floor.map[y][x]===0).length,4);
- assert.equal(floor.stairs.length,3);
+ assert.equal(floor.stairs.filter(stair=>!stair.id.startsWith('jungle-stairs-')).length,3);
  assert.ok(floor.links.filter(link=>!link.label).every(link=>link.kind==='ladder'));
  sim.enemies=[];
  for(const stair of floor.stairs){
@@ -1566,6 +1566,65 @@ test('temple trap audio follows the plate and projectile launch separately',()=>
  assert.ok(launch);
  assert.equal(launch.x,Math.round(plate.origin.x*10)/10);
  assert.equal(launch.y,Math.round(plate.origin.y*10)/10);
+ const arrow=sim.effects.bolts[0];
+ const left=Math.max(0,Math.min(sim.floor.W*TILE-960,plate.x-480));
+ assert.ok(arrow.angle===0?arrow.x<left:arrow.x>left+960);
+ assert.equal(arrow.approach,.34);
+ Object.assign(player,{y:plate.y-45});
+ for(let i=0;i<35;i++)sim.ai.moveFrom(.03,player,.3+i*.03,960,640);
+ assert.equal(sim.effects.bolts.length,0);
+ assert.ok(sim.events.some(e=>e.kind==='arrow-land'&&e.type==='trap'));
+});
+
+test('seeded temple rooms form connected complexes with immediate waterfall reveals and optional jungle stairs',()=>{
+ const counts=new Set(),placement=new Set(),types=new Set();let multiple=false,upper=false;
+ for(const seed of [193,103,1,13,-731389592,1013904242]){
+  const depth=run.templeDepth(seed),{sim}=game(seed,17,depth),{floor}=sim;
+  counts.add(floor.templeRooms.length);multiple||=floor.waterfallBanks.size>1;
+  const trail=floor.links.find(p=>p.id==='jungle-trail-0');
+  assert.ok(floor.valid(trail.x,trail.y,14,false,true)&&floor.canReachSpawn(trail.x,trail.y));
+  placement.add(floor.regionAt(trail.x,trail.y));
+  const sx=Math.floor(trail.exit.x/TILE),sy=Math.floor(trail.exit.y/TILE),start=sy*floor.W+sx;
+  const visited=new Set([start]),frontier=[start];
+  for(let i=0;i<frontier.length;i++)for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const x=frontier[i]%floor.W+dx,y=Math.floor(frontier[i]/floor.W)+dy,id=y*floor.W+x;
+   if(floor.map[y]?.[x]!==0||!floor.templeRegions.has(floor.regions[y][x])||visited.has(id))continue;
+   visited.add(id);frontier.push(id);
+  }
+  for(const room of floor.templeRooms)assert.ok(visited.has(room.cy*floor.W+room.cx));
+  for(const e of sim.enemies)if(e.id.startsWith('temple-'))types.add(e.type);
+  for(const [river,banks] of floor.waterfallBanks){
+   const bank=floor.templeRooms.find(room=>room.id===banks[0]);
+   const sight=vision.create(floor,TILE,floor.sightBarriers(),[],new Set());
+   sight.update({x:(bank.cx+.5)*TILE,y:(bank.cy+.5)*TILE},700,480);
+   const row=floor.terrain.findIndex((row,y)=>row.some((t,x)=>t==='waterfall'&&floor.regions[y][x]===river));
+   const col=floor.terrain[row].findIndex((t,x)=>t==='waterfall'&&floor.regions[row][x]===river);
+   assert.ok(sight.remembers((col+.5)*TILE,(row+.5)*TILE));
+  }
+  upper||=floor.stairs.some(s=>s.id.startsWith('jungle-stairs-')&&s.upper===1);
+ }
+ assert.ok(counts.size>=3&&placement.size>=2&&multiple&&upper&&types.size>3);
+});
+
+test('large inventories can buy items, pick up loot and collect a cup',()=>{
+ const {host,sim}=game();
+ host.inventory=Array.from({length:84},()=>({...host.inventory[0]}));
+ host.gold=2000;
+ Object.assign(host,sim.floor.merchant);
+ const stock=sim.actions.dispatch(host,'interact',{kind:'merchant'}).stock.gold;
+ const offer=stock.find(o=>o.kind!=='key');
+ sim.actions.dispatch(host,'buy',{stock:offer.stock});
+ const purchased=host.inventory.length;
+ assert.ok(purchased>84);
+ arena(sim,host);
+ const prior=new Set(sim.orbs.keys());
+ assert.ok(sim.drop(host,{kind:'food',id:'bread',rarity:'common'},host.seat));
+ const loot=[...sim.orbs.values()].find(o=>!prior.has(o.id));
+ Object.assign(host,{x:loot.x,y:loot.y});
+ sim.actions.dispatch(host,'interact',{kind:'soul',index:loot.id});
+ Object.assign(host,sim.floor.cupPoint);
+ sim.actions.dispatch(host,'interact',{kind:'cup'});
+ assert.equal(host.inventory.length,purchased+2);
 });
 
 test('combat audio fires with projectile release, web landing and the start of fire breath',()=>{

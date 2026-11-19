@@ -28,10 +28,15 @@ const cemetery=annexes.find(a=>a.key==='cemetery');
 const templeRooms=annexes.filter(a=>a.key.startsWith('temple-'));
 const bonePiles=cemetery?[[4,3],[9,6],[13,9]].map(([x,y],i)=>({x:(cemetery.x+x+.5)*TILE,y:(cemetery.y+y+.5)*TILE,id:save.floor+'-'+i})):[];
 const templeShrineSites={'temple-entry':[3,6],'temple-court':[9,7],'temple-shrines':[7,5]};
-const templeShrines=templeRooms.map((room,id)=>{
+const templeShrines=templeRooms.flatMap(room=>{
+ if(room.shrine)return [tileCenter(room.shrine)];
+ if(room.jungle)return [];
  const [x,y]=templeShrineSites[room.key];
- return {id,x:(room.x+x+.5)*TILE,y:(room.y+y+.5)*TILE};
-});
+ return [tileCenter({x:room.x+x,y:room.y+y})];
+}).map((point,id)=>({...point,id}));
+const templeRegions=new Set([...templeRooms.map(room=>room.id),...paths.filter(path=>path.theme===6).map(path=>path.id)]);
+const waterfallBanks=new Map(paths.filter(path=>path.templeBanks).map(path=>[path.id,path.templeBanks]));
+if(save.layoutRevision<17&&templeRooms.length)waterfallBanks.set(20,templeRooms.map(room=>room.id));
 const outsideRegions=new Map([...annexes.filter(room=>room.currentOutdoor||['court','cemetery'].includes(room.key)),
  ...paths.filter(path=>path.outdoors)].map(part=>[part.id,part]));
 const labRoom=annexes.find(a=>a.key==='brewery');
@@ -735,7 +740,11 @@ annexDecor.crypt=[['sarcophagus',3,2],['sarcophagus',6,2],['sarcophagus',9,2],['
  ['torch',1.25,2.5],['torch',11.5,2.5],['torch',11.5,8.5],['rubble',4,7],['crystal',11,6]];
 for(const shrine of templeShrines)furniture.push({...shrine,type:'jungle-shrine',zone:6,...FURNITURE['jungle-shrine']});
 for(const annex of annexes){
- for(const [type,x,y] of [...(annexDecor[annex.key]||[]),...(annexAccents[annex.key]||[])])furnishRoom(type,annex,annex.x+x,annex.y+y,annex.theme);
+ const details=annex.jungle?[
+  ['vines',1.7,1.2],['vines',annex.w-1.7,1.25],['bush',1.7,annex.h-2.2],
+  ['rubble',annex.w-1.8,annex.h-2.1],['basket',annex.w-2.2,2.2],['torch',2.2,annex.h*.56]
+ ]:[...(annexDecor[annex.key]||[]),...(annexAccents[annex.key]||[])];
+ for(const [type,x,y] of details)furnishRoom(type,annex,annex.x+x,annex.y+y,annex.theme);
 }
 for(const room of [...rooms,...annexes.filter(room=>['rest','pantry','brewery'].includes(room.key))]){
  const zone=room.theme??room.i;
@@ -880,7 +889,7 @@ function inTempleLine(x1,y,x2){
  return true;
 }
 const pressurePlates=templeRooms.flatMap(room=>{
- const marks=room.key==='temple-entry'?[[5,4],[7,8]]:room.key==='temple-shrines'?[[6,2],[10,8]]:[[5,5],[8,9]];
+ const marks=room.jungle?[[Math.floor(room.w*.42),3],[Math.floor(room.w*.59),room.h-3]]:room.key==='temple-entry'?[[5,4],[7,8]]:room.key==='temple-shrines'?[[6,2],[10,8]]:[[5,5],[8,9]];
  return marks.map(([x,y])=>{
   const pos={x:(room.x+x+.5)*TILE,y:(room.y+y+.5)*TILE};
   const sites=[.65,room.w-.65,x-1.3,x+1.6];
@@ -891,9 +900,16 @@ const pressurePlates=templeRooms.flatMap(room=>{
    return Array.from({length:steps+1},(_,i)=>i).every(i=>
     !furnitureBlocked(px+(pos.x-px)*i/Math.max(1,steps),pos.y,2));
   });
-  const origin={x:x0,y:pos.y};
-  return {...pos,origin,angle:x0<pos.x?0:Math.PI,pressed:false,timer:0,cooldown:0};
- }).filter(p=>Number.isFinite(p.origin.x)&&valid(p.x,p.y,5,true));
+  if(!Number.isFinite(x0)||!valid(pos.x,pos.y,5,true))return null;
+  const origin={x:x0,y:pos.y},dir=x0<pos.x?1:-1;
+  let range=0;
+  for(let dist=5;dist<=940*1.15;dist+=5){
+   const px=x0+dir*dist;
+   if(wall(px,pos.y)||regionAt(px,pos.y)!==room.id)break;
+   range=dist;
+  }
+  return range>Math.abs(pos.x-x0)+8?{...pos,origin,region:room.id,range,angle:dir===1?0:Math.PI,pressed:false,timer:0,cooldown:0}:null;
+ }).filter(Boolean);
 });
 if(save.layoutRevision>=15){
  const random=run.random(furnishingSeed^0x25c3315d),count=3+Math.floor(random()*4);
@@ -920,7 +936,7 @@ if(save.layoutRevision>=15){
 }
 return {
  rooms,corridors,map,regions,gates,annexes,terrain,rest,
- paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
+ paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,templeRegions,waterfallBanks,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
  spawn,sanctuary,smith,ward,returnPortal,keySources,keyName,keyItem,keyOffers,keyCaches,pantryKeySite,carrierFor,nearestKeyDoor,unlockDoor,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,inSanctuary,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,
  regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,heroClearsDoor,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,furnitureAt,furnitureBetween,furnitureHP,furnitureIntact,furnitureCue,strikeFurniture,meleeFurniture,footWall,valid,weaponImpact,weaponClearance,weaponCover,meleeWall,beforeMeleeWall,
@@ -968,7 +984,13 @@ for(const room of rooms){
 function stockTempleEnemies(){
  for(const room of templeRooms){
   const entrance=room.key==='temple-entry',courtRoom=room.key==='temple-court';
-  const picks=entrance?[[2,4,SNAKE],[5,9,SNAKE],[8,3,LIONESS]]:courtRoom?
+  const rng=run.random(furnishingSeed^Math.imul(room.id,149053));
+  const roster=[SNAKE,LIONESS,LION,ARCHER,RAT,BAT,ZOMBIE];
+  const points=room.jungle?run.shuffle(Array.from({length:(room.w-4)*(room.h-4)},(_,i)=>
+   [2+i%(room.w-4),2+Math.floor(i/(room.w-4))]),rng):[];
+  const picks=room.jungle?points.slice(0,3+Math.floor(rng()*3)).map(([x,y],i)=>
+   [x,y,entrance&&i===0?SNAKE:courtRoom&&i===0?LION:roster[Math.floor(rng()*roster.length)]]):
+   entrance?[[2,4,SNAKE],[5,9,SNAKE],[8,3,LIONESS]]:courtRoom?
    [[4,3,LION],[8,6,LIONESS],[10,9,LION],[5,9,SNAKE],[9,3,SNAKE]]:
    [[3,3,SNAKE],[7,3,SNAKE],[10,3,SNAKE],[8,8,LIONESS]];
   for(const [i,[dx,dy,type]] of picks.entries()){
@@ -980,7 +1002,7 @@ function stockTempleEnemies(){
    if(!pos)continue;
    const max=enemyHealth(type,false);
    const fireSnake=type===SNAKE&&(entrance&&i===0||run.random(furnishingSeed^(room.id*719+i*9007))()<.37);
-   enemies.push({...pos,id,type,fireSnake,roomId:0,size:type===SNAKE?.58:type===LION?1.19:1.06,hp:max,max,phase:i,attack:1.4+i*.3,hit:0,angle:0,windup:0});
+   enemies.push({...pos,id,type,fireSnake,roomId:0,size:type===SNAKE||type===RAT?.58:type===BAT?.76:type===LION?1.19:1.06,hp:max,max,phase:i,attack:1.4+i*.3,hit:0,angle:0,windup:0});
   }
  }
 }

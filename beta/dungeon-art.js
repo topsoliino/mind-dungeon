@@ -139,7 +139,31 @@ window.DungeonArt = (() => {
     const key=type+variant;
     if(terrainCache.has(key))return terrainCache.get(key);
     const c=surface(),{g,r,poly}=brush(c),rng=random(variant+31);
-    if(type.startsWith('sanctuary-')){
+    if(type==='jungle-wall'||type==='jungle-stairs'||type==='jungle-mosaic'){
+     const wall=type==='jungle-wall',stairs=type==='jungle-stairs',height=stairs?16:wall?16:21;
+     r(0,0,64,64,wall?'#202b25':'#303e32');
+     for(let y=0;y<64;y+=height){
+      const seam=19+rng(24),stone=wall?(y<24?'#4a5747':'#394839'):stairs?'#59664e':'#434f3e';
+      r(1,y+1,seam-2,height-2,stone);r(seam+1,y+1,62-seam,height-2,stone);
+      r(2,y+1,seam-5,stairs?3:2,wall?'#68765a':'#69775a');r(seam+2,y+1,59-seam,stairs?3:2,'#636f53');
+      if(stairs)r(0,y+height-4,64,4,'#344238');
+     }
+     for(let i=0;i<(wall?19:12);i++){
+      const x=rng(61),y=rng(62);r(x,y,2+rng(7),1+rng(2),i%2?'#687c465e':'#273b2a66');
+     }
+     if(wall){
+      for(const x of [4+rng(17),36+rng(17)]){
+       const length=19+rng(38);
+       for(let y=0;y<length;y++){
+        const bx=x+Math.round(Math.sin(y*.15)*3);r(bx,y,2,2,'#78925a');
+        if(y%7===2){r(bx-4,y,5,2,'#557347');r(bx+2,y-2,4,2,'#91a76b');}
+       }
+      }
+      if(variant%4===0){r(26,16,13,10,'#29352b');r(28,18,9,1,'#8c9872');r(29,21,2,2,'#9aab73');r(34,21,2,2,'#9aab73');}
+     }else if(!stairs&&variant%4===0){
+      poly([[32,9],[48,30],[32,48],[16,30]],'#687654');poly([[32,13],[43,30],[32,43],[21,30]],'#44533e');
+     }
+    }else if(type.startsWith('sanctuary-')){
      const kind=type.slice(10);
      if(kind==='water'){
       r(0,0,64,64,'#295052');
@@ -396,6 +420,8 @@ window.DungeonArt = (() => {
       if(value===0||surfaceType==='partition')return {v,open:value===0,surfaceType};
       if(surfaceType)return {v,surfaceType};
       const mask=(map[y-1]?.[x]===0?1:0)|(map[y]?.[x+1]===0?2:0)|(map[y+1]?.[x]===0?4:0)|(map[y]?.[x-1]===0?8:0);
+      if(mask&&[[x,y-1],[x+1,y],[x,y+1],[x-1,y]].some(([a,b])=>map[b]?.[a]===0&&zoneAt(a,b)===6))
+       return {v,mask,surfaceType:'jungle-wall'};
       return mask?{v,mask}:null;
     }));
     for(let top=0;top<map.length;top+=chunkSize)for(let left=0;left<map[0].length;left+=chunkSize){
@@ -414,7 +440,7 @@ window.DungeonArt = (() => {
         // Filter dense patterns once at their final world resolution.
         g.imageSmoothingEnabled=Boolean(surfaceType&&
          (surfaceType.startsWith('street-')||surfaceType.startsWith('bridge-')||surfaceType==='roof-stone'||surfaceType==='house-boards'));
-        if(frontWalls&&(mask&1))frontWalls.push({x,y,bitmap:image,key:'front-wall-'+zone+'-'+mask+'-'+v%4});
+        if(frontWalls&&(mask&1))frontWalls.push({x,y,bitmap:image,key:'front-wall-'+(surfaceType??zone)+'-'+mask+'-'+(surfaceType?v:v%4)});
         if(surfaceType==='sanctuary-water'&&fx){
          const edges=[[x-1,y],[x,y-1],[x+1,y],[x,y+1]].map(([col,row])=>Number(terrain[row]?.[col]!=='sanctuary-water'));
          g.drawImage(terrainTile('sanctuary-garden',v),px,py,tileSize,tileSize);
@@ -422,7 +448,7 @@ window.DungeonArt = (() => {
          g.drawImage(image,px,py,tileSize,tileSize);g.restore();
         }else if(fx?.isSewer(surfaceType)){
          g.drawImage(floor(zone,v),px,py,tileSize,tileSize);
-         g.save();fx.shorePath(g,px,py,tileSize,fx.shoreline(terrain,x,y));g.clip();
+         g.save();fx.sewerPath(g,px,py,tileSize,fx.shoreline(terrain,x,y));g.clip();
          g.drawImage(image,px,py,tileSize,tileSize);g.restore();
         }else g.drawImage(image,px,py,tileSize,tileSize);
       }
@@ -1288,17 +1314,23 @@ window.DungeonArt = (() => {
   function actor(type,options={}) {
     if(type==='foe')return enemyPose(options.zone||0,options.frame||0,options.fireSnake);
     const {frame=0,skin='#d4a785',hair='#392b4e',color='#755666',gender='male',armor={},back=false,groundShadow=true}=options;
-    const c=surface(),{r,poly}=brush(c);
+    const c=surface(),{g,r,poly}=brush(c);
     const shape=(p,col)=>poly(p,col);
+    const flask=(hx,hy,tilted)=>{
+      shape([[hx-5,hy-8+tilted],[hx+3,hy-8],[hx+2,hy],[hx-3,hy]],'#604353');
+      r(hx-4,hy-8+tilted,7,2,'#dbc9ad');r(hx-3,hy-5,5,3,'#9976b0');
+    };
     if(groundShadow)shape([[13,47],[49,47],[55,52],[51,56],[13,56],[8,53]],'#100d13a8');
     if(type==='hero'&&back){
-      const stride=[0,-3,-2,-1,3,2,1][frame],sway=[0,-2,-1,1,2,1,-1][frame];
+      const stride=options.stride??[0,-3,-2,-1,3,2,1][frame];
+      const sway=options.stride===undefined?[0,-2,-1,1,2,1,-1][frame]:Math.round(stride/2);
       const lift=0;
       for(const [x,y] of [[23,stride],[34,-stride]]){
         r(x,40,8,13+y,ink);r(x+1,41,6,10+y,armor.legs||skin);
         r(x-1,49+y,10,5,ink);r(x,49+y,8,3,armor.boots||skin);
         if(armor.boots)r(x+1,49+y,5,1,'#b6aa8a');
       }
+      g.translate(0,-(options.bob??0));
       shape([[20,27+lift],[43,27+lift],[48,39],[42,43],[21,43],[16,39]],ink);
       r(22,27+lift,20,15-lift,armor.chest||skin);
       if(!armor.legs){
@@ -1318,7 +1350,7 @@ window.DungeonArt = (() => {
         if(gender==='female'){r(22,31,20,5,'#694336');r(24,32,16,2,'#ab7856');}
         r(23,39,18,3,'#51362d');
       }
-      r(17,37,6,6,skin);r(42,37,6,6,skin);
+      r(17,37+sway,6,6,skin);if(options.potion===undefined)r(42,37,6,6,skin);
       r(28,23+lift,8,6,skin);
       shape([[22,11],[24,9],[40,9],[43,12],[43,24],[40,27],[24,27],[22,25]],ink);
       shape([[23,12],[25,10],[39,10],[42,13],[42,24],[39,26],[25,26],[23,24]],armor.helmet||hair);
@@ -1332,7 +1364,12 @@ window.DungeonArt = (() => {
           r(35+sway,34,3,2,'#b3916590');
         }
       }
-      armorDetails({r,poly},armor,true,stride,sway);
+      if(options.potion!==undefined){
+        const [hx,hy]=[[46,38],[48,29],[44,23],[47,31]][options.potion];
+        shape([[40,28],[46,29],[hx+4,hy+5],[hx-1,hy+6],[41,36]],armor.chest||skin);
+        r(hx-2,hy-1,6,5,skin);flask(hx,hy,options.potion===2?3:0);
+      }
+      g.resetTransform();armorDetails({r,poly},armor,true,stride,sway);
       return c;
     }
     if(type==='hero'){
@@ -1345,6 +1382,7 @@ window.DungeonArt = (() => {
         r(x,41,8,12+y,ink);r(x+1,42,6,10+y,armor.legs||skin);
         r(x-2,50+y,11,4,armor.boots||skin);
       }
+      g.translate(0,-(options.bob??0));
       r(20,29,24,12,ink);r(23,27,18,14,armor.chest||skin);
       if(armor.chest){
         r(24,29,15,2,'#d6c9a8');r(26,33,12,2,'#5f5d56');
@@ -1359,23 +1397,21 @@ window.DungeonArt = (() => {
         shape([[26,40],[39,40],[36,49],[29,50]],'#9b7452');r(29,42,2,6,'#c79b63');
       }
       r(23,38,18,3,'#51362d');r(31,38,4,4,gold);
-      r(17,38,6,6,skin);if(frame<3)r(42,37,6,6,skin);
+      r(17,38+Math.round(step/2),6,6,skin);if(frame<3)r(42,37,6,6,skin);
       r(22,11,20,16,ink);r(24,13,16,13,skin);r(23,10,18,6,hair);r(22,15,4,7,hair);r(39,15,4,6,hair);
       r(27,18,3,2,ink);r(35,18,3,2,ink);r(30,23,5,1,'#905d51');
       if(gender==='female'&&!armor.helmet){r(21,18,4,10,hair);r(39,18,5,9,hair);}
       if(armor.helmet){r(22,10,21,7,armor.helmet);r(24,9,16,2,'#ddd5b4');r(22,15,5,9,armor.helmet);r(39,15,4,9,armor.helmet);}
-      armorDetails({r,poly},armor,false,step,0);
+      g.resetTransform();armorDetails({r,poly},armor,false,step,0);
+      g.translate(0,-(options.bob??0));
       if(frame>=3){
        const drinking=frame>=7,stage=(frame-3)%4;
        const [hx,hy]=[[43,38],[39,29],[35,23],[41,31]][stage];
        shape([[43,30],[47,30],[48,hy+5],[hx+3,hy+5],[hx,hy],[42,hy]],'#34252a');
        shape([[44,32],[45,32],[46,hy+4],[hx+3,hy+4],[hx+1,hy]],armor.chest||skin);
        r(hx,hy-1,5,5,skin);
-       if(drinking){
-        const tilted=stage===2?3:0;
-        shape([[hx-5,hy-8+tilted],[hx+3,hy-8],[hx+2,hy],[hx-3,hy]],'#604353');
-        r(hx-4,hy-8+tilted,7,2,'#dbc9ad');r(hx-3,hy-5,5,3,'#9976b0');
-       }else{
+       if(drinking)flask(hx,hy,stage===2?3:0);
+       else{
         shape([[hx-6,hy-2],[hx-5,hy-7],[hx,hy-8],[hx+2,hy-5],[hx+1,hy]],'#9c6841');
         r(hx-4,hy-6,4,3,'#eac085');if(stage===2)r(hx-7,hy+1,2,2,'#e2ab62');
        }
@@ -1722,12 +1758,40 @@ window.DungeonArt = (() => {
         r(31,34+crouch,2+step%2,step%2+1,glow);
         if(stage===2){r(29,35+crouch,7,3,glow);r(31,36+crouch,3,2,'#fff1ba');}
       }
+    }else if(type==='jungle-trail'){
+      poly([[8,53],[8,24],[14,16],[24,8],[40,8],[50,16],[56,24],[56,53],[44,53],[44,27],[38,21],[26,21],[20,27],[20,53]],'#3f5746');
+      r(9,48,11,8,'#97ad75');r(44,48,11,8,'#97ad75');r(13,21,8,3,'#7b925f');r(43,21,8,3,'#7b925f');
+      poly([[23,14],[31,9],[39,13],[35,18],[30,19]],'#8b9d70');
+      for(const x of [14,19,47,51]){r(x,16,2,27,'#799957');r(x-2,24,5,2,'#a8bd79');r(x,35,5,2,'#a8bd79');}
+      r(25,48,14,3,'#8e9c73');r(28,53,8,2,'#b4c48d');
     }else if(type==='ring'){
-      poly([[19,21],[45,21],[52,30],[51,44],[41,53],[23,53],[13,44],[12,30]],ink);
-      poly([[20,23],[44,23],[49,31],[48,43],[40,50],[24,50],[16,42],[15,31]],gold);
-      poly([[22,29],[42,29],[44,34],[43,42],[38,45],[26,45],[21,42],[20,34]],ink);
-      poly([[32,9],[44,17],[42,26],[32,33],[22,26],[20,17]],'#42313a');
-      poly([[32,12],[41,18],[39,25],[32,30],[25,24],[23,18]],color||'#81acac');r(28,16,7,3,pale);
+      const setting={hunter:'#9d6c46',bulwark:'#899b9e',scholar:'#a191bf',faith:'#deaa55',luck:'#889979',
+       dodge:'#899fa4',precision:'#b98a55',brewer:'#90a46d',merchant:'#d4a65e',height:'#a9b4a9',madness:'#765267',avoidance:'#5d557b'}[id]??gold;
+      const jewel=color||'#81acac';
+      poly([[16,20],[47,20],[54,31],[52,46],[42,55],[22,55],[12,46],[10,31]],ink);
+      poly([[17,22],[46,22],[51,32],[50,44],[41,52],[23,52],[14,44],[13,32]],setting);
+      poly([[20,32],[24,28],[40,28],[45,34],[44,42],[38,47],[26,47],[20,42]],'#211c26');
+      r(23,50,17,1,'#fbecbc7a');
+      switch(id){
+       case 'hunter':poly([[20,10],[29,17],[32,30],[40,26],[49,8],[44,22],[37,34],[26,34]],'#e1c2a0');r(29,22,3,6,'#a46b51');break;
+       case 'bulwark':poly([[21,12],[43,12],[43,25],[32,35],[21,25]],'#b8c5bd');poly([[24,15],[40,15],[39,24],[32,31],[25,23]],'#60757c');r(30,17,4,11,pale);break;
+       case 'scholar':poly([[15,15],[27,12],[32,17],[38,12],[49,14],[49,28],[37,27],[32,32],[27,28],[15,28]],'#d7cab1');
+        r(31,18,2,11,'#756489');for(let i=0;i<3;i++){r(19,17+i*3,8,1,'#817087');r(37,17+i*3,8,1,'#817087');}break;
+       case 'faith':poly([[32,6],[36,15],[47,19],[37,23],[32,34],[27,23],[17,19],[27,15]],'#efc76e');r(30,16,4,7,'#fff2cf');break;
+       case 'luck':poly([[32,10],[42,9],[44,18],[39,22],[45,27],[42,32],[33,29],[31,35],[28,28],[20,29],[16,24],[22,20],[18,13],[24,9]],'#82bd83');r(30,15,4,11,'#bbd99a');break;
+       case 'dodge':poly([[47,9],[41,22],[32,28],[19,32],[24,25],[14,27],[24,17],[36,12]],'#b7ded6');r(22,27,12,2,'#5c8b8d');break;
+       case 'precision':poly([[31,6],[37,18],[46,22],[38,28],[32,35],[26,28],[18,22],[28,17]],'#e2a562');r(31,12,2,17,'#fff2c9');r(23,21,18,2,'#68475a');break;
+       case 'brewer':poly([[23,10],[40,10],[37,19],[43,26],[38,33],[25,33],[21,26],[27,18]],'#9fbd90');
+        poly([[22,24],[42,24],[37,31],[26,31]],'#547e72');r(24,11,15,3,'#e2d7ab');r(33,26,3,3,'#caf3b2');break;
+       case 'merchant':poly([[19,15],[24,8],[40,8],[46,15],[46,27],[39,32],[25,32],[19,27]],'#e5b767');
+        poly([[23,16],[29,12],[39,14],[42,24],[36,28],[26,26]],'#966b43');r(31,14,3,12,'#f4dc9e');break;
+       case 'height':poly([[17,29],[23,18],[28,20],[35,7],[47,29]],'#879ba6');
+        poly([[28,21],[35,7],[42,21],[37,18],[34,22],[32,17]],'#e9e4d0');r(20,28,25,3,'#aab3a3');break;
+       case 'madness':poly([[13,20],[23,12],[34,10],[44,14],[51,20],[43,29],[32,32],[21,28]],'#d87591');
+        poly([[18,20],[29,16],[41,16],[46,20],[39,25],[29,27]],'#f0acc0');r(29,14,7,14,'#6d384e');r(31,17,3,7,'#2f2033');break;
+       case 'avoidance':poly([[40,8],[29,9],[22,20],[26,27],[35,31],[43,26],[37,35],[25,34],[17,27],[17,17],[25,9]],'#bbaadb');r(45,11,3,7,'#e9d9ed');r(43,13,7,2,'#e9d9ed');break;
+       default:poly([[32,9],[44,18],[41,28],[32,33],[22,26],[20,17]],jewel);r(28,16,7,3,pale);
+      }
     }else if(type==='armor'){
       const parts=id.split('-'),style=parts.length>1?parts[0]:'',slot=parts.at(-1);
       if(slot==='helmet'){

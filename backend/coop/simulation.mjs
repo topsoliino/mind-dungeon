@@ -235,7 +235,8 @@ export class Simulation{
   if(!Number.isSafeInteger(input.seq)||input.seq<=p.input.seq||!Number.isFinite(input.aim))return false;
   const blocked=Boolean(this.state.bossBattle?.phase==='intro'||input.blocked||p.quiz||p.fall||p.deathRecap);
   p.input={seq:input.seq,x:blocked?0:clampInput(input.x),y:blocked?0:clampInput(input.y),aim:normalAngle(input.aim),
-   dash:Boolean(input.dash)&&!blocked,dodge:!blocked&&(input.dodge===true||p.input.dodge===true),blocked,at:this.clock};
+   dash:Boolean(input.dash)&&!blocked,dodge:!blocked&&(input.dodge===true||p.input.dodge===true),blocked,at:this.clock,
+   viewWidth:Number.isFinite(input.viewWidth)?clamp(input.viewWidth,240,16384):p.input.viewWidth};
   if(blocked)p.chargeStart=null;
   return true;
  }

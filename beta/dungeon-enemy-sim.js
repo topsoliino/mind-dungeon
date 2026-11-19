@@ -32,7 +32,7 @@ function create(api){
  function moveFrom(dt,actor,clock,width,height){
   player=actor;combatClock=clock;cw=width;ch=height;
   state.waterArcs=(state.waterArcs??[]).filter(arc=>(arc.life-=dt)>0);
-  updateWebs(dt);updatePlates(dt);updateStorm(dt);updateBolts(dt);updateEnemyHazards(dt);
+  updateWebs(dt);updateStorm(dt);updateBolts(dt);updatePlates(dt);updateEnemyHazards(dt);
  }
  function act(e,dt,actor,clock,width,height){
   player=actor;combatClock=clock;cw=width;ch=height;updateEnemy(e,dt);
@@ -376,11 +376,18 @@ function updatePlates(dt){
   if(p.timer<=0)continue;
   p.timer-=dt;
   if(p.timer>0)continue;
-  const left=p.angle===0;
-  const from=p.origin.x+(left?-260:260);
+  const left=p.angle===0,sign=left?-1:1;
+  const roomActors=coopActors().filter(hero=>regionAt(hero.x,hero.y)===p.region);
+  const limits=(roomActors.length?roomActors:[player]).map(hero=>{
+   const width=hero.input?.viewWidth??cw;
+   const scroll=Math.max(0,Math.min(W*TILE-width,hero.x-width/2));
+   return left?scroll:scroll+width;
+  });
+  const from=(left?Math.min(p.origin.x,...limits):Math.max(p.origin.x,...limits))+sign*72;
   soundWorld('temple_trap_release',p.origin,{priority:3,cooldown:.12});
   const speed=940;
-  state.bolts.push({x:from,y:p.y,angle:p.angle,speed,life:Math.abs(from-p.origin.x)/speed+1.15,type:'trap',entryX:p.origin.x,origin:{source:'Tempelfalle',action:'Giftpfeil'}});
+  state.bolts.push({x:from,y:p.y,angle:p.angle,speed,life:p.range/speed,type:'trap',entryX:p.origin.x,laneRegion:p.region,
+   approach:.34,origin:{source:'Tempelfalle',action:'Giftpfeil'}});
  }
 }
 function updateLion(e,dt){
@@ -547,8 +554,15 @@ function fireBolt(e,type){
 function updateBolts(dt){
  state.bolts=state.bolts.filter(p=>{
   if(p.life<=0)return false;
-  const travel=p.speed*Math.min(dt,p.life);
-  p.life-=dt;
+  let flightTime=dt;
+  if(p.approach>0){
+   const elapsed=Math.min(flightTime,p.approach);
+   p.x+=(p.entryX-p.x)*elapsed/p.approach;
+   p.approach-=elapsed;flightTime-=elapsed;
+   if(flightTime<=0)return true;
+  }
+  const travel=p.speed*Math.min(flightTime,p.life);
+  p.life-=flightTime;
   const dx=Math.cos(p.angle)*travel,dy=Math.sin(p.angle)*travel;
   const steps=Math.max(1,Math.ceil(travel/5));
   for(let i=0;i<steps;i++){
