@@ -2,6 +2,7 @@
 root.DungeonWorld=(()=>{
 'use strict';
 const TILE=48,HERO_RADIUS=14,fallSeconds=.85,wallRecoilSeconds=.32;
+const wallRecoilForce=charged=>charged?25:18;
 const legacyRooms=[[2,2,11,9],[14,2,12,9],[28,2,14,10],[14,17,12,11],[28,17,14,11]];
 function fallEnemy(actor,dt){
  if(!actor.fall)return false;
@@ -247,17 +248,18 @@ function weaponImpact(x,y,angle,reach){
  }
  return null;
 }
+function partitionBounds(tx,ty){
+ const row=terrain[ty],west=row[tx-1]==='partition',east=row[tx+1]==='partition';
+ const north=terrain[ty-1]?.[tx]==='partition',south=terrain[ty+1]?.[tx]==='partition';
+ const x=tx*TILE,y=ty*TILE,cx=x+TILE/2,cy=y+TILE/2,boxes=[];
+ if(west||east||!north&&!south)boxes.push([x+(west?0:2),cy-9,x+TILE-(east?0:2),cy+5]);
+ if(north||south)boxes.push([cx-9,north?y:cy-9,cx+9,south?y+TILE:cy+5]);
+ return boxes;
+}
 function footWall(x,y){
  const tx=Math.floor(x/TILE),ty=Math.floor(y/TILE);
  if(terrain[ty]?.[tx]!=='partition')return wall(x,y);
- const lineX=terrain[ty]?.[tx-1]==='partition'||terrain[ty]?.[tx+1]==='partition';
- const north=terrain[ty-1]?.[tx]==='partition',south=terrain[ty+1]?.[tx]==='partition';
- const ox=x-(tx+.5)*TILE,oy=y-(ty+.5)*TILE;
- if(lineX||!north&&!south){
-  const left=terrain[ty]?.[tx-1]==='partition'?-24:-22,right=terrain[ty]?.[tx+1]==='partition'?24:22;
-  if(ox>=left&&ox<=right&&oy>=-9&&oy<=5)return true;
- }
- return Math.abs(ox)<=9&&((north&&oy<=5)||(south&&oy>=-9));
+ return partitionBounds(tx,ty).some(([left,top,right,bottom])=>x>=left&&x<=right&&y>=top&&y<=bottom);
 }
 function stoneAt(x,y){return footWall(x,y)&&!abyssAt(x,y);}
 function weaponClearance(x,y,tx,ty){
@@ -268,24 +270,84 @@ function weaponClearance(x,y,tx,ty){
  }
  return 1;
 }
-function meleeWall(x,y,dir,weapon,reach){
- if(weapon.projectile?weapon.projectile!=='arcane':weapon.reach<100)return null;
- // The staff's physical head has a short swing. The spell uses its own range.
- const length=weapon.projectile?60:reach;
- const sweep=weapon.thrust?0:weapon.projectile?.6:Math.acos(weapon.sweep);
- const count=Math.ceil(sweep*48);
- for(let i=0;i<=count;i++){
-  const progress=count?i/count:.5,offset=(2*progress-1)*sweep,angle=dir+offset;
+function weaponCover(x,y,radius){
+ const faces=[];
+ const fullWall=(col,row)=>map[row]?.[col]===1&&terrain[row]?.[col]!=='partition'&&!dropTerrain.has(terrain[row]?.[col]);
+ const add=(vertical,at,from,to)=>{
+  const axis=vertical?x:y,side=vertical?y:x;
+  if(Math.abs(at-axis)<=radius&&from<=side+radius&&to>=side-radius)faces.push({vertical,at,from,to});
+ };
+ const box=(left,top,right,bottom,coverNorth=false)=>{
+  if(x<left)add(true,left,top,bottom);
+  if(x>right)add(true,right,top,bottom);
+  if(y<top)add(false,top,left,right);
+  if(coverNorth&&y>bottom)add(false,bottom,left,right);
+ };
+ for(let row=Math.floor((y-radius)/TILE);row<=Math.floor((y+radius)/TILE);row++){
+  for(let col=Math.floor((x-radius)/TILE);col<=Math.floor((x+radius)/TILE);col++){
+   if(terrain[row]?.[col]==='partition'){
+    for(const bounds of partitionBounds(col,row))box(...bounds);
+   }else if(fullWall(col,row)){
+    const left=col*TILE,top=row*TILE,right=left+TILE,bottom=top+TILE;
+    if(x<left&&!fullWall(col-1,row))add(true,left,top,bottom);
+    if(x>right&&!fullWall(col+1,row))add(true,right,top,bottom);
+    // See the weapon over the north wall when moving up.
+    if(y<top&&!fullWall(col,row-1))add(false,top,left,right);
+   }
+  }
+ }
+ const barrier=(cx,cy,vertical,face,span)=>{
+  const rx=vertical?face:span/2,ry=vertical?span/2:face;
+  box(cx-rx,cy-ry,cx+rx,cy+ry,true);
+ };
+ for(const door of doors)if(doorHP(door)>0)barrier(door.x,door.y,door.vertical,9,door.span);
+ for(const gate of gates)if(!save.gates[gate.id]){
+  barrier((gate.x+.5)*TILE,(gate.y+.5)*TILE,gate.vertical,.52*TILE,4.2*TILE);
+ }
+ if(bossArena&&root.DungeonBoss.gateClosed(save.bossBattle)){
+  const gate=bossArena.gate;
+  barrier(gate.x,gate.y,gate.vertical,gate.face,gate.span);
+ }
+ if(!faces.length)return null;
+ // Cast just to either side of every face endpoint to preserve the corners.
+ const angles=[-.75*Math.PI,-.25*Math.PI,.25*Math.PI,.75*Math.PI];
+ const wrap=angle=>Math.atan2(Math.sin(angle),Math.cos(angle));
+ for(const {vertical,at,from,to} of faces)for(const end of [from,to]){
+  const a=vertical?Math.atan2(end-y,at-x):Math.atan2(at-y,end-x);
+  angles.push(wrap(a-.0001),wrap(a+.0001));
+ }
+ return angles.sort((a,b)=>a-b).map(angle=>{
   const dx=Math.cos(angle),dy=Math.sin(angle);
-  const extent=length*(weapon.thrust?1:.67+.33*Math.sin(Math.PI*progress));
+  let distance=radius/Math.max(Math.abs(dx),Math.abs(dy));
+  for(const {vertical,at,from,to} of faces){
+   const travel=vertical?(at-x)/dx:(at-y)/dy;
+   if(travel<=0||travel>=distance)continue;
+   const side=vertical?y+travel*dy:x+travel*dx;
+   if(side>=from&&side<=to)distance=travel;
+  }
+  return {x:x+distance*dx,y:y+distance*dy};
+ });
+}
+function meleeWall(x,y,dir,weapon,reach){
+ if(weapon.projectile||weapon.reach<100)return null;
+ const sweep=weapon.thrust?0:Math.acos(weapon.sweep);
+ const activeArc=Math.min(.96,sweep*.76),count=Math.ceil(activeArc*48);
+ for(let i=0;i<=count;i++){
+  const offset=count?(2*i/count-1)*activeArc:0,angle=dir+offset;
+  const dx=Math.cos(angle),dy=Math.sin(angle);
+  const extent=reach*(weapon.thrust?1:.67+.33*Math.cos(offset/sweep*Math.PI/2));
   let first=0;
   for(let step=4;step<=extent;step+=3){
    const px=x+dx*step,py=y+dy*step;
    if(doorAt(px,py)||gateBlocked(px,py))break;
    if(!stoneAt(px,py)){first=0;continue;}
    if(!first)first=step;
-   // Let the tip graze edges without interrupting the swing.
-   if(step-first>=9&&extent-first>=15)return {x:x+dx*first,y:y+dy*first,angle,aim:dir,offset,distance:first};
+   if(step-first<9||extent-first<23)continue;
+   const hitX=x+dx*first,hitY=y+dy*first;
+   const crossedX=!stoneAt(hitX-3*dx,hitY),crossedY=!stoneAt(hitX,hitY-3*dy);
+   const horizontal=crossedX===crossedY?Math.abs(dx)>Math.abs(dy):crossedX;
+   return {x:hitX,y:hitY,angle,aim:dir,offset,distance:first,
+    normalX:horizontal?-Math.sign(dx):0,normalY:horizontal?0:-Math.sign(dy)};
   }
  }
  return null;
@@ -653,7 +715,7 @@ return {
  paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
  spawn,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,
- regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,weaponClearance,meleeWall,beforeMeleeWall,
+ regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,weaponClearance,weaponCover,meleeWall,beforeMeleeWall,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition,sightBarriers,lootPosition
 };
@@ -801,6 +863,6 @@ if(floor.crypt){
 }
 return enemies;
 }
-return {TILE,HERO_RADIUS,fallSeconds,wallRecoilSeconds,fallEnemy,build,spawnEnemies};
+return {TILE,HERO_RADIUS,fallSeconds,wallRecoilSeconds,wallRecoilForce,fallEnemy,build,spawnEnemies};
 })();
 })(typeof window==='undefined'?globalThis:window);
