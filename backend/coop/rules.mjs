@@ -36,15 +36,15 @@ export const pools={
 export const cup=source=>item('cup','cup','rare',source);
 export function makePlayer(seat,character,pack){
  const chosen=Object.hasOwn(classes,character?.classId)?character.classId:'guardian';
- const [className,weapon,ring,boosts]=classes[chosen];
- const attributes={...Object.fromEntries(stats.map(key=>[key,10])),...boosts};
+ const [className,classWeapon,classRing,boosts]=classes[chosen];
+ const attributes=items.startingAttributes(chosen,{...Object.fromEntries(stats.map(key=>[key,10])),...boosts});
  const color=(key,fallback)=>typeof character?.[key]==='string'&&/^#[a-f0-9]{6}$/i.test(character[key])?character[key]:fallback;
  const appearance={name:typeof character?.name==='string'?character.name.trim().slice(0,24)||'Wanderer':'Wanderer',
   classId:chosen,className,gender:character?.gender==='female'?'female':'male',
   color:color('color','#7652a9'),skin:color('skin','#d4a785'),hair:color('hair','#392b4e')};
- const armor=items.startingArmor(chosen);
+ const {weapon,ring,armor}=items.startingEquipment(chosen,classWeapon,classRing);
  const inventory=[item('weapon',weapon),item('ring',ring),...Object.values(armor).map(id=>item('armor',id))];
- const p={seat,appearance,pack,attributes,inventory,equipment:{weapon,weaponRarity:'common',armor,armorRarities:{},rings:[ring,null],ringRarities:{}},
+ const p={seat,appearance,pack,attributes,inventory,ingredients:[],equipment:{weapon,weaponRarity:'common',armor,armorRarities:{},rings:[ring,null],ringRarities:{}},
   xp:0,level:1,pendingLevels:0,gold:0,bones:0,rubies:0,kills:0,solved:{},questionCount:0,questionReview:{},activeBrew:null,
   combatRecord:{deaths:0,dealt:0,taken:0,crits:0,counters:0},playtime:0,revision:0,input:{seq:-1,x:0,y:0,aim:0},online:false};
  preparePlayer(p);

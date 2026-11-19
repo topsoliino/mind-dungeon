@@ -174,15 +174,24 @@ window.DungeonArt = (() => {
        const x=rng(64),y=rng(64);r(x,y,2+rng(7),2,'#768467');
        if(i%5===0){r(x+1,y-2,2,2,'#b3ad81');r(x,y+1,1,2,'#495b49');}
       }
+     }else if(kind==='spiral-wall'){
+      r(0,0,64,64,'#282e34');
+      for(let y=0;y<64;y+=16){
+       const seam=y%32===0?26:43;
+       r(2,y+1,seam-3,13,'#525b60');r(seam+1,y+1,62-seam,13,'#4c555c');
+       r(3,y+2,seam-5,2,'#79807c');r(seam+2,y+2,59-seam,2,'#727c78');
+      }
+      r(0,0,64,5,'#a19b81');r(0,5,64,4,'#606a68');r(0,59,64,5,'#24272d');
      }else if(kind.startsWith('stairs')){
       const facing=kind.at(-1);g.translate(32,32);g.rotate(({n:0,e:1,s:2,w:3})[facing]*Math.PI/2);g.translate(-32,-32);
       for(let y=0;y<64;y+=32){
-       r(0,y,64,32,'#686a60');r(0,y,64,3,'#a19b83');r(0,y+26,64,6,'#45483f');
-       r(19+rng(29),y+4,1,22,'#51564b');r(9,y+5,12+rng(14),1,'#96927b75');
+       r(0,y,64,32,'#62675d');r(0,y,64,5,'#aea588');r(0,y+5,64,3,'#868575');
+       r(0,y+22,64,10,'#434941');r(0,y+31,64,1,'#323831');
+       r(19+rng(29),y+8,1,13,'#51564b');r(9,y+10,12+rng(14),1,'#96927b75');
       }
      }else{
       const [grout,stone,shine]=kind==='garden'?['#465647','#59674e','#6b795b']:kind==='forge'?['#38343b','#4f4948','#666052']:
-       kind==='stone'?['#414442','#52564f','#676761']:['#555b4d','#6a7060','#828471'];
+       kind==='stone'?['#414442','#52564f','#676761']:kind==='apothecary'?['#323848','#45495b','#616479']:['#555b4d','#6a7060','#828471'];
       r(0,0,64,64,grout);
       for(let y=0;y<64;y+=16){
        const seam=18+rng(29);r(1,y+1,seam-2,14,stone);r(seam+1,y+1,62-seam,14,stone);
@@ -526,7 +535,22 @@ window.DungeonArt = (() => {
       for(let j=7;j<h-4;j+=6){r(x+3,y+j,w-6,1,wood);r(x+9+(j*5)%(w-15),y+j+2,9,1,edge);}
     };
     const cloth=['#55705c','#844b46','#694349','#75603b','#426e76'][variant%5];
-    if(type==='sanctuary-mosaic'){
+    if(type==='sanctuary-ban-table'){
+      const ellipse=(cy,w,h,col)=>poly(Array.from({length:24},(_,i)=>[
+       Math.round(64+Math.cos(i*Math.PI/12)*w),Math.round(cy+Math.sin(i*Math.PI/12)*h)
+      ]),col);
+      ellipse(76,60,26,'#1917219e');ellipse(63,61,27,'#332d3b');
+      r(34,63,9,19,'#3d3848');r(84,63,9,19,'#3d3848');
+      ellipse(51,62,30,'#6b6273');ellipse(49,57,26,'#a499a3');ellipse(49,53,23,'#5d566b');
+      const glow=['#8a83c8','#a199e1','#bdb5ff','#d4c6ff','#f0dbff','#d4c6ff','#bdb5ff','#a199e1'][pose%8];
+      ellipse(49,43,19,glow);ellipse(49,41,17,'#57536c');ellipse(49,29,12,glow);ellipse(49,26,10,'#655c76');
+      poly([[64,39],[77,49],[64,59],[51,49]],'#b9aad7');poly([[64,42],[73,49],[64,56],[55,49]],'#625873');
+      for(let i=0;i<8;i++){
+       const a=i*Math.PI/4,x=Math.round(64+Math.cos(a)*36),y=Math.round(49+Math.sin(a)*15);
+       r(x-1,y-1,3,3,glow);r(x-3,y,7,1,glow);
+      }
+      r(61,47,6,4,'#e8dcff');
+    }else if(type==='sanctuary-mosaic'){
       const ring=(w,h,col)=>poly(Array.from({length:20},(_,i)=>[
        Math.round(64+Math.cos(i*Math.PI/10)*w),Math.round(56+Math.sin(i*Math.PI/10)*h)
       ]),col);

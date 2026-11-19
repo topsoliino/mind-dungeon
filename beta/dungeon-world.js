@@ -301,6 +301,7 @@ const FURNITURE={
  'street-lantern':{w:20,h:14,light:106},'street-straw':{w:38,h:19},
  'sanctuary-mosaic':{w:49,h:41},'sanctuary-hearth':{w:63,h:47,solid:true,light:190},'sanctuary-smith':{w:65,h:36,solid:true},
  'sanctuary-archive':{w:48,h:29,solid:true,light:91},'sanctuary-tree':{w:28,h:24,solid:true},
+ 'sanctuary-ban-table':{w:152,h:84,solid:true,light:220,color:'#a495e8'},
  'sanctuary-pillar':{w:26,h:26,solid:true},'sanctuary-seat':{w:33,h:18,solid:true},
  'sanctuary-brazier':{w:24,h:21,solid:true,light:127},'sanctuary-arch':{w:64,h:42},
  'sanctuary-flowers':{w:27,h:23},'sanctuary-plaque':{w:27,h:22},'sanctuary-vault':{w:91,h:31},

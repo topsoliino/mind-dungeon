@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=29"><link rel="stylesheet" href="beta/dungeon-boss.css?v=6"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-controller.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=4"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=10"></script><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="controller-target" aria-hidden="true" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-boss.js?v=6"></script><script src="beta/dungeon-boss-art.js?v=5"></script><script src="beta/dungeon-strata.js?v=12"></script><script src="beta/dungeon-strata-fx.js?v=6"></script><script src="beta/dungeon-sanctuary.js?v=1"></script><script src="beta/dungeon-temple.js?v=1"></script><script src="beta/dungeon-run.js?v=32"></script><script src="beta/dungeon-world.js?v=26"></script><script src="beta/dungeon-vision.js?v=11"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=21"></script><script src="beta/dungeon-items.js?v=29"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=26"></script><script src="beta/dungeon-enemy-sim.js?v=18"></script><script src="beta/dungeon-effects-art.js?v=25"></script><script src="beta/dungeon-art.js?v=39"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-soundpack4-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=8"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=30"><link rel="stylesheet" href="beta/dungeon-boss.css?v=6"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-controller.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=4"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=10"></script><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="controller-target" aria-hidden="true" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-boss.js?v=6"></script><script src="beta/dungeon-boss-art.js?v=5"></script><script src="beta/dungeon-strata.js?v=12"></script><script src="beta/dungeon-strata-fx.js?v=6"></script><script src="beta/dungeon-sanctuary.js?v=2"></script><script src="beta/dungeon-temple.js?v=1"></script><script src="beta/dungeon-run.js?v=33"></script><script src="beta/dungeon-world.js?v=27"></script><script src="beta/dungeon-vision.js?v=11"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=21"></script><script src="beta/dungeon-items.js?v=30"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=26"></script><script src="beta/dungeon-enemy-sim.js?v=18"></script><script src="beta/dungeon-effects-art.js?v=25"></script><script src="beta/dungeon-art.js?v=40"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-soundpack4-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=8"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -565,7 +565,7 @@ function equipInventoryItem(it,targetSlot){
  }
  player.stamina=Math.min(player.stamina,maxStamina());soundUI('ui_confirm');persist();tell('Ausgerüstet · '+itemTitle(it));
 }
-const bagFilters={all:'Alle',...items.kinds,food:'Nahrung',potion:'Tränke',cup:'Becher'};
+const bagFilters={all:'Alle',...items.kinds,food:'Nahrung',potion:'Tränke',cup:'Becher',ingredient:'Zutaten'};
 function itemComparison(it,label='Ausgewählt'){
  if(!it||!['weapon','armor','ring'].includes(it.kind))return itemDetails(it,label==='Angebot');
  const equipped=it.kind==='weapon'?[equippedWeapon()]:it.kind==='armor'?[equippedArmor(armorById(it.id)?.slot)]:
@@ -577,6 +577,17 @@ function itemComparison(it,label='Ausgewählt'){
   (worn.length?worn.map(row=>itemDetails(row)).join(''):'<p class="muted">Dieser Platz ist frei.</p>')+'</section></div>';
 }
 function inventoryMenu(filter='all',page=0,selected,target=null){
+ const tabs='<div class="ledger-tabs">'+Object.entries(bagFilters).map(([id,label])=>
+  '<button data-filter="'+id+'" aria-pressed="'+(filter===id)+'">'+label+'</button>').join('')+'</div>';
+ if(filter==='ingredient'){
+  const ingredients=Array.isArray(save.ingredients)?save.ingredients:[];
+  show('<div class="rpg-shell ledger inventory-ledger ingredient-ledger"><section class="rpg-left"><div class="rpg-head"><h2>Inventar</h2></div>'+tabs+
+   '<p class="muted">Zutaten für Psychopharmaka aus der Apothekerkammer.</p>'+
+   (ingredients.length?'<ul class="ingredient-list">'+ingredients.map(it=>'<li><span>'+qEsc(it.name??it.id)+'</span><b>'+qEsc(it.quantity??1)+'</b></li>').join('')+'</ul>':
+    '<p class="muted">Noch keine Zutaten gesammelt.</p>')+'<div class="ledger-actions"><button id="closeInv">Schließen</button></div></section></div>','inventory');
+  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>inventoryMenu(b.dataset.filter,0,undefined,target));
+  mdButton('closeInv',close);return;
+ }
  const list=save.inventory.map((it,index)=>({it,index})).filter(({it})=>
   (filter==='all'||filter===it.kind)&&(!target||it.kind!=='armor'||armorById(it.id)?.slot===target.slot));
  const columns=innerWidth<480?5:innerWidth<850?7:innerWidth<1160?8:10;
@@ -588,7 +599,7 @@ function inventoryMenu(filter='all',page=0,selected,target=null){
  show('<div class="rpg-shell ledger inventory-ledger" style="--inventory-columns:'+columns+'"><section class="rpg-left"><div class="rpg-head"><h2>Inventar</h2><small>'+save.inventory.length+' Gegenstände</small></div>'+
   (Object.values(save.keyring).includes('held')?'<details class="keyring"><summary>Schlüsselbund</summary><ul>'+
    Object.keys(save.keyring).filter(id=>save.keyring[id]==='held').map(id=>'<li>'+qEsc(world.keyName(id))+'</li>').join('')+'</ul></details>':'')+
-  '<div class="ledger-tabs">'+Object.entries(bagFilters).map(([id,label])=>'<button data-filter="'+id+'" aria-pressed="'+(filter===id)+'">'+label+'</button>').join('')+'</div>'+
+  tabs+
   (target&&target.slot!=null?'<span class="equipment-filter">Platz · '+qEsc(target.label)+'</span>':'')+
   (entries.length?'':'<p class="muted">Keine passenden Gegenstände im Inventar.</p>')+
   '<div class="rpg-grid">'+entries.map(({it,index})=>'<button class="rpg-cell'+(isEquipped(it)?' equipped':'')+'" data-item="'+index+'" aria-pressed="'+(selection?.index===index)+'" title="'+qEsc(itemTitle(it))+'" aria-label="'+qEsc(itemTitle(it))+'">'+itemTile(it)+(isEquipped(it)?'<span class="count">E</span>':'')+'</button>').join('')+'</div>'+
@@ -1027,7 +1038,9 @@ let mdNavigatingToNewCharacter=false,deathPending=false;function persist(){if(md
 }setInterval(()=>{persist()},12000);
 function tell(t){$('#notice').textContent=t;$('#notice').style.opacity=1;noticeUntil=performance.now()+2100}
 let unmountTitleGlow=null;
+let conversation=null;
 function show(content,type='menu'){
+ if(type!=='dialogue')endConversation();
  unmountTitleGlow?.();unmountTitleGlow=null;
  if(!paused&&type!=='quiz'&&performance.now()-lastUiSound>48)soundUI('ui_open');
  const live=!atTitle&&type!=='death'&&type!=='game-error'&&(type==='quiz'||type==='coop-watch'||Boolean(coopRoom));
@@ -1059,6 +1072,7 @@ function show(content,type='menu'){
 }
 function resumeGame(){atTitle=false;close();}
 function close(){
+ endConversation();
  if(atTitle){mdTitle();return;}
  unmountTitleGlow?.();unmountTitleGlow=null;
  if(paused&&performance.now()-lastUiSound>48)soundUI('ui_close');
@@ -1199,6 +1213,9 @@ function pollController(now){
  if(released.has('rb'))releaseAttack('controller');
 }
 function navModal(e){
+ if(modalType==='dialogue'&&conversation?.timer&&['Enter','Space','KeyE'].includes(e.code)){
+  e.preventDefault();if(!e.repeat)advanceConversation();return;
+ }
  if(e.target?.matches?.('input,textarea,select,[contenteditable]')&&e.code!=='Escape')return;
  const gameMenus=['pause','navigation','status','inventory','equipment','quick','settings','journal','packs','trophies','saves','account','level','glossary'];
  if(e.code==='KeyP'&&!atTitle&&gameMenus.includes(modalType)){
@@ -2138,7 +2155,7 @@ if(near?.kind==='brewery'){breweryMenu();return;}
 if(near?.kind==='soul'){claimSoul(near.orb);return;}
 if(near?.kind==='cabinet'){searchCabinet(near.i);return;}
 if(near?.kind==='trial'){offerTrial(near.i);return;}
-if(near?.kind==='portal'){enterPortal();return;}if(near?.kind==='merchant'){merchantMenu();return}if(near?.kind==='map'){save.merchantMapFound=true;persist();dungeonMapMenu();return}if(near?.kind==='gate'){gateQuiz(gates[near.i]);return}if(near?.kind==='shrine')quiz(near.i,'shrine');else if(near?.kind==='chest'){const k=near.i;if(!save.opened.includes(k)){save.opened.push(k);const gold=22+Math.floor(run.random(save.dungeonSeed^(k*10631+31))()*15)+save.floor*4;
+if(near?.kind==='portal'){enterPortal();return;}if(near?.kind==='merchant'){merchantDialogue();return}if(near?.kind==='map'){save.merchantMapFound=true;persist();dungeonMapMenu();return}if(near?.kind==='gate'){gateQuiz(gates[near.i]);return}if(near?.kind==='shrine')quiz(near.i,'shrine');else if(near?.kind==='chest'){const k=near.i;if(!save.opened.includes(k)){save.opened.push(k);const gold=22+Math.floor(run.random(save.dungeonSeed^(k*10631+31))()*15)+save.floor*4;
 save.gold+=gold;player.hp=Math.min(maxHP(),player.hp+12);
 chestFoley(chests[k],true);burst(chests[k].x,chests[k].y,'#ffd27d',35);tell('Truhe geöffnet · +'+gold+' Gold');persist()}}else{tell('Hier gibt es nichts zu untersuchen')}}
 window.addEventListener('keydown',e=>{
@@ -2817,15 +2834,44 @@ function drawSouls(draw){
  }
 }
 let forgeBusy=false;
+const dialogueLines={
+ smith:[{text:'Setz dich kurz ans Feuer, wenn du müde bist.',duration:2800},
+  {text:'Wenn deine Klinge etwas braucht, leg sie hierhin.',duration:3000}],
+ merchant:[{text:'Willkommen, Wanderer. Schau dich um, was du brauchen kannst.',duration:3400}]
+};
+function beginConversation(speaker,focus,onEnd){
+ endConversation();
+ conversation={speaker,focus,onEnd,index:-1,timer:null};
+ document.body.classList.add('dialogue-open');
+ show('<div class="dialogue-copy"><p id="dialogue-text" aria-live="polite"></p>'+
+  '<button id="dialogue-advance" aria-label="Weiter">…</button></div>','dialogue');
+ mdButton('dialogue-advance',advanceConversation);
+ advanceConversation();
+}
+function advanceConversation(){
+ const current=conversation;
+ if(!current||modalType!=='dialogue')return;
+ clearTimeout(current.timer);current.timer=null;
+ const line=dialogueLines[current.speaker][++current.index];
+ if(!line){current.onEnd();return;}
+ $('#dialogue-text').textContent=line.text;
+ current.timer=setTimeout(()=>{if(conversation===current)advanceConversation();},line.duration);
+}
+function endConversation(){
+ if(!conversation)return;
+ clearTimeout(conversation.timer);conversation=null;
+ document.body.classList.remove('dialogue-open');
+}
+function merchantDialogue(){beginConversation('merchant',market,()=>merchantMenu());}
+function smithChoices(){
+ show('<div class="dialogue-choices"><button id="forge-improve">Waffe verbessern</button>'+
+  '<button id="forge-enchant">Waffe verzaubern</button><button id="forge-leave">Gespräch beenden</button></div>','dialogue');
+ mdButton('forge-improve',()=>smithMenu('improve'));mdButton('forge-enchant',()=>smithMenu('enchant'));mdButton('forge-leave',close);
+}
 function smithMenu(operation=null,element=items.forgeElements[0]){
- const header='<h2>Schmied am Leuchtfeuer</h2>';
  const leave='<button id="forge-leave">Gespräch beenden</button>';
  if(!operation){
-  show('<section class="sanctuary-book forge-book">'+header+'<div class="forge-conversation">'+
-   '<img class="forge-portrait" src="'+art.furniture('sanctuary-smith',3,8).toDataURL()+'" alt="">'+
-   '<p class="forge-voice">„Setz dich kurz ans Feuer, wenn du müde bist. Wenn deine Klinge etwas braucht, leg sie hierhin.“</p></div>'+
-   '<div class="archive-sections"><button id="forge-improve">Waffe verbessern</button><button id="forge-enchant">Waffe verzaubern</button></div>'+leave+'</section>','smith');
-  mdButton('forge-improve',()=>smithMenu('improve'));mdButton('forge-enchant',()=>smithMenu('enchant'));mdButton('forge-leave',close);return;
+  beginConversation('smith',{x:smith.x,y:smith.y-TILE},smithChoices);return;
  }
  const enchant=operation==='enchant';
  const materials=enchant?'<p>Wandle 25 % des physischen Schadens in das gewählte Element um.</p><div class="forge-elements">'+
@@ -2844,7 +2890,10 @@ function smithMenu(operation=null,element=items.forgeElements[0]){
   '<div class="actions"><button id="forge-back">Zurück zum Schmied</button>'+leave+'</div></section>','smith');
  document.querySelectorAll('[data-forge-element]').forEach(b=>b.onclick=()=>smithMenu(operation,b.dataset.forgeElement));
  document.querySelectorAll('[data-forge-weapon]').forEach(b=>b.onclick=()=>forgeAtSmith(Number(b.dataset.forgeWeapon),operation,element));
- mdButton('forge-back',()=>smithMenu());mdButton('forge-leave',close);
+ mdButton('forge-back',()=>{
+  conversation={speaker:'smith',focus:{x:smith.x,y:smith.y-TILE},timer:null};
+  document.body.classList.add('dialogue-open');smithChoices();
+ });mdButton('forge-leave',close);
 }
 async function forgeAtSmith(index,operation,element){
  const it=save.inventory[index];
@@ -3284,6 +3333,12 @@ function drawCanvasPeer(avatar){
  if(pose.depth<depth)hero();
 }
 function positionWorldHUD(scrollX,scrollY){
+ if(conversation){
+  const {x,y}=conversation.focus;
+  const offset=(center,position,scroll)=>Math.max(-center*.12,Math.min(center*.12,(center-position+scroll)*1.14));
+  document.body.style.setProperty('--dialogue-x',offset(cw/2,x,scrollX)+'px');
+  document.body.style.setProperty('--dialogue-y',offset(ch/2,y,scrollY)+'px');
+ }
  const marker=$('#controller-target');
  const target=controllerTarget===null?null:enemies.find(e=>e.id===controllerTarget);
  marker.hidden=!target||Boolean(modalType);
@@ -3487,13 +3542,16 @@ const animatedFire=new Map();
 function furnishingScenery(p){
  const version=p.variant??(p.type==='shelf'?Math.floor(p.x/TILE)%4:p.type==='street-lantern'?Number(dayStreet):0);
  const key=p.type+'-'+p.zone+'-'+version;
- const smithing=p.type==='sanctuary-smith',isFire=['torch','campfire','sanctuary-hearth','sanctuary-brazier'].includes(p.type);
+ const smithing=p.type==='sanctuary-smith',bannkreis=p.type==='sanctuary-ban-table';
+ const isFire=['torch','campfire','sanctuary-hearth','sanctuary-brazier'].includes(p.type);
  const bitmap=p.type==='lab-apparatus'?bossArt.props[version]:
-  art.furniture(p.type==='lab-bench'?'bench':p.type,p.zone,smithing||isFire?0:version);
+  art.furniture(p.type==='lab-bench'?'bench':p.type,p.zone,smithing||isFire||bannkreis?0:version);
  const entry={...p,key,bitmap,scale:({market:1.9,'banquet-long':1.45,statue:1.5,'weapon-rack':1.23,'armor-rack':1.20,
-  'sanctuary-hearth':1.37,'sanctuary-mosaic':3.16,'sanctuary-arch':1.15,'sanctuary-vault':2.6,'sanctuary-tree':1.19,'sanctuary-smith':1.35})[p.type],ox:64,
+  'sanctuary-hearth':1.37,'sanctuary-mosaic':3.16,'sanctuary-arch':1.15,'sanctuary-vault':2.6,'sanctuary-tree':2.38,
+  'sanctuary-smith':1.35,'sanctuary-ban-table':2.5})[p.type],ox:64,
   oy:({market:68,statue:83,shelf:68,'lab-apparatus':64,'roof-rubble':68,'street-drain':60,'sanctuary-vault':68,
-   'sanctuary-arch':70,'sanctuary-smith':77,'sanctuary-archive':67,'sanctuary-hearth':74,'sanctuary-tree':73,'sanctuary-seat':68})[p.type]??56,
+   'sanctuary-arch':70,'sanctuary-smith':77,'sanctuary-archive':67,'sanctuary-hearth':74,'sanctuary-tree':73,
+   'sanctuary-seat':68,'sanctuary-ban-table':65})[p.type]??56,
   ground:['carpet','web','street-drain','street-straw','sanctuary-mosaic'].includes(p.type),visible:always};
  if(p.type==='lab-apparatus')entry.ox=52;
  if(p.breakId){
@@ -3510,11 +3568,11 @@ function furnishingScenery(p){
  }
  if(smithing){
   entry.frames=Array.from({length:9},(_,pose)=>art.furniture(p.type,p.zone,pose));
-  entry.pose=()=>modalType==='smith'?8:Math.floor(frame*8)%8;
- }else if(isFire){
+  entry.pose=()=>modalType==='smith'||conversation?.speaker==='smith'?8:Math.floor(frame*8)%8;
+ }else if(isFire||bannkreis){
   if(!animatedFire.has(key))animatedFire.set(key,Array.from({length:8},(_,pose)=>art.furniture(p.type,p.zone,pose)));
   entry.frames=animatedFire.get(key);
-  entry.pose=()=>Math.floor(frame*(p.type==='campfire'?12:9)+p.x/17+p.y/31)%8;
+  entry.pose=()=>Math.floor(frame*(bannkreis?4:p.type==='campfire'?12:9)+p.x/17+p.y/31)%8;
  }
  return entry;
 }
@@ -4400,9 +4458,13 @@ function mdTitle(){
  mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-coop',enterAuthorityLobby);mdButton('md-packs',()=>packMenu());
  mdButton('md-trophies',()=>trophyMenu());mdButton('md-journal',journal);mdButton('md-saves',mdSaves);mdButton('md-login',mdAccount);
 }
-function classAttributes(c){return {...Object.fromEntries(Object.keys(ATTRS).map(key=>[key,10])),...c.attributes};}
+function classAttributes(c){return items.startingAttributes(c.id,{...Object.fromEntries(Object.keys(ATTRS).map(key=>[key,10])),...c.attributes});}
 function mdCreator(){
-const classes=[...new Map([...MD_FALLBACK_CLASSES,...mdClasses].map(c=>[c.id,c])).values()];
+const classes=[...new Map([...MD_FALLBACK_CLASSES,...mdClasses].map(c=>[c.id,c])).values()].map(c=>{
+ const {weapon,ring}=items.startingEquipment(c.id,c.weapon_id,c.starting_item_id);
+ const description={pilgrim:'Glaubensstark, mit Eibenbogen und leichter Pfadschützenrüstung.',archer:'Geschickt, mit Klinge und Jägerrüstung.'}[c.id]??c.description_de;
+ return {...c,weapon_id:weapon,starting_item_id:ring,description_de:description};
+});
 show('<section class="character-creator"><h2 class="md-title">Charakter erschaffen</h2>'+
  '<div class="creator-layout"><div class="creator-options">'+
  '<div class="creator-appearance"><div>'+
@@ -4441,7 +4503,7 @@ for(const id of ['md-color','md-skin','md-hair','md-gender'])document.getElement
 updatePreview();
 mdButton('md-back',mdTitle);mdButton('md-begin',()=>{const name=document.getElementById('md-name').value.trim();if(!name){alert('Bitte gib einen Namen ein.');return}if(!confirm('Neuen Charakter beginnen? Der aktuelle lokale Spielstand wird ersetzt.'))return;
 const c=classes[selected],attrs=classAttributes(c),armor=items.startingArmor(c.id);
-const newSave={hp:32+(attrs.vigor||10)*3,x:5.5*TILE,y:6.5*TILE,xp:0,gold:0,kills:0,solved:{},packs:save.packs||[],opened:[],floor:1,gates:{},gateProgress:{},gateQuestions:{},level:1,attributes:attrs,inventory:[{kind:'weapon',id:c.weapon_id},...(c.starting_item_id?[{kind:'ring',id:c.starting_item_id}]:[]),...Object.values(armor).map(id=>({kind:'armor',id}))],equipment:{weapon:c.weapon_id,rings:[c.starting_item_id||null,null],armor},pendingLevels:0,enemyTier:1,playtime:0,character:{name,classId:c.id,className:c.name_de,gender:$('#md-gender').value,color:document.getElementById('md-color').value,skin:document.getElementById('md-skin').value,hair:document.getElementById('md-hair').value}};
+const newSave={ingredients:[],hp:32+(attrs.vigor||10)*3,x:5.5*TILE,y:6.5*TILE,xp:0,gold:0,kills:0,solved:{},packs:save.packs||[],opened:[],floor:1,gates:{},gateProgress:{},gateQuestions:{},level:1,attributes:attrs,inventory:[{kind:'weapon',id:c.weapon_id},...(c.starting_item_id?[{kind:'ring',id:c.starting_item_id}]:[]),...Object.values(armor).map(id=>({kind:'armor',id}))],equipment:{weapon:c.weapon_id,rings:[c.starting_item_id||null,null],armor},pendingLevels:0,enemyTier:1,playtime:0,character:{name,classId:c.id,className:c.name_de,gender:$('#md-gender').value,color:document.getElementById('md-color').value,skin:document.getElementById('md-skin').value,hair:document.getElementById('md-hair').value}};
 writeAndReload({...newSave,...run.freshRun(run.freshSeed()),activePack:save.activePack,trophies:save.trophies},true)})}
 function mdSaves(){
 show('<div class="md-kicker">Chroniken der Wanderer</div><h2 class="md-title">Spielstände</h2><p class="md-status">Lokal wird immer der aktuelle Charakter gesichert. Cloud-Slots sind an dein Konto gebunden.</p><div class="md-slot"><div><b>Lokaler Spielstand</b><br><small>'+mdEscape(save.character?.name||'Wanderer')+' · '+mdDuration(save.playtime)+'</small></div><button id="md-local">Fortsetzen</button></div><div id="md-cloud-slots"><p>Cloud-Spielstände werden geladen …</p></div><div class="md-actions"><button id="md-account">Konto</button><button id="md-back">Zurück</button></div>','saves');
@@ -5267,7 +5329,7 @@ async function authorityInteract(selection){
  if(kind==='shrine'||kind==='temple'){await startAuthorityQuiz(kind,i);return;}
  const reply=await serverAction('interact',{kind,index:kind==='soul'?orb?.id:i});
  if(!reply)return;
- if(kind==='merchant')merchantMenu();
+ if(kind==='merchant')merchantDialogue();
  else if(kind==='brewery')breweryMenu();
  else if(kind==='smith')smithMenu();
  else if(kind==='well')wellMenu();
