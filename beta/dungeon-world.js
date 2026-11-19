@@ -16,7 +16,7 @@ function fallEnemy(actor,dt){
 }
 function build(run,save){
 const furnishingSeed=save.dungeonSeed;
-const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[],roof=null,sewerRelic=null,stairs=[],crypt=null,extraRooms=[],alleys=null,bossArena:arenaTiles}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth,save.templeRunSeed??save.dungeonSeed);
+const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[],roof=null,sewerRelic=null,stairs=[],crypt=null,extraRooms=[],alleys=null,sanctuary=null,bossArena:arenaTiles}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth,save.templeRunSeed??save.dungeonSeed);
 const H=map.length,W=map[0].length;
 const annexByRegion=new Map(annexes.map(a=>[a.id,a]));
 const annexPassages=new Map([...annexes.flatMap(a=>a.passage?[a.passage]:[]),...paths].map(path=>[path.id,path]));
@@ -49,17 +49,21 @@ const zones=rooms.map((room,i)=>{
  const [oldX,oldY]=legacyRooms[i],shrine=[[2,3],[1,3],[2,3],[1,6],[3,6]][i];
  return {x:room.x+shrine[0],y:room.y+shrine[1],offsetX:room.x-oldX,offsetY:room.y-oldY};
 });
-const spawn=rest?pointIn(rest,0,1.75):{x:(zones[0].x+1.5)*TILE,y:(zones[0].y+1.5)*TILE};
-const cupPoint=rest&&save.floor<5?pointIn(rest,-1.65,.2):null;
-const roomCat=(offset,mode)=>rest&&{...pointIn(rest,offset,.4),mode,age:0,duration:2,flip:false,target:null};
-const restCat=roomCat(2.65,'idle'),luckyCat=roomCat(-2.4,'sit');
-const well=rest&&pointIn(rest,3.4,-2.1);
-const wellUse=well&&{x:well.x,y:well.y+44};
-const glossaryStand=rest&&pointIn(rest,2.85,2.12);
-const wellArrival=rest&&pointIn(rest,-2.5,2.35);
-const inRest=(x,y)=>Boolean(rest&&regionAt(x,y)===rest.id);
+const sanctuaryPoint=key=>tileCenter(sanctuary[key]);
+const mercyWard=new Set(sanctuary?.safe??(rest?[rest.id]:[]));
+const spawn=sanctuary?sanctuaryPoint('spawn'):rest?pointIn(rest,0,1.75):{x:(zones[0].x+1.5)*TILE,y:(zones[0].y+1.5)*TILE};
+const cupPoint=rest&&save.floor<5?(sanctuary?sanctuaryPoint('cup'):pointIn(rest,-1.65,.2)):null;
+const roomCat=(name,offset,mode)=>rest&&{...(sanctuary?sanctuaryPoint(name):pointIn(rest,offset,.4)),mode,age:0,duration:2,flip:false,target:null};
+const restCat=roomCat('cat',2.65,'idle'),luckyCat=roomCat('luckyCat',-2.4,'sit');
+const well=rest&&(sanctuary?sanctuaryPoint('well'):pointIn(rest,3.4,-2.1));
+const wellUse=well&&(sanctuary?sanctuaryPoint('wellUse'):{x:well.x,y:well.y+44});
+const glossaryStand=rest&&(sanctuary?sanctuaryPoint('archiveUse'):pointIn(rest,2.85,2.12));
+const wellArrival=rest&&(sanctuary?sanctuaryPoint('wellArrival'):pointIn(rest,-2.5,2.35));
+const smith=sanctuary&&sanctuaryPoint('smithUse'),ward=sanctuary&&sanctuaryPoint('ward');
+const inRest=(x,y)=>mercyWard.has(regionAt(x,y));
+const inSanctuary=(x,y)=>Boolean(sanctuary&&inRest(x,y)&&regionAt(x,y)!==rest.id);
 function regionAt(x,y){return regions[Math.floor(y/TILE)]?.[Math.floor(x/TILE)]??-1;}
-const tileCenter=p=>({x:(p.x+.5)*TILE,y:(p.y+.5)*TILE});
+function tileCenter(p){return {x:(p.x+.5)*TILE,y:(p.y+.5)*TILE};}
 const bossArena=arenaTiles&&(()=>{
  const {cx,cy,radius,id,altars,gate}=arenaTiles;
  const origin=tileCenter({x:cx,y:cy});
@@ -116,8 +120,8 @@ function hiddenByStairCrest(observer,target,explored){
  return stairsNear(observer).some(stair=>stair.roomIds[1]===region&&stairCrestClosed(stair,observer,explored));
 }
 const cryptAltar=crypt&&pointIn(crypt,2,0);
-const links=linkTiles.flatMap(({id,kind,a,b,seal})=>[[a,b],[b,a]].map(([from,to],side)=>({
- ...tileCenter(from),id:id+'-'+side,kind,seal,layer:layerForRegion(regions[from.y][from.x]),exit:tileCenter(to)
+const links=linkTiles.flatMap(({id,kind,a,b,seal,labels})=>[[a,b],[b,a]].map(([from,to],side)=>({
+ ...tileCenter(from),id:id+'-'+side,kind,seal,label:labels?.[side],layer:layerForRegion(regions[from.y][from.x]),exit:tileCenter(to)
 })));
 function nearestLink(actor,id){
  return links.find(s=>(id===undefined||s.id===id)&&Math.hypot(actor.x-s.x,actor.y-s.y)<=57&&
@@ -135,7 +139,7 @@ const lockId=(depth,lock)=>depth+':'+lock;
 const doors=doorTiles.map(d=>({...d,keyId:d.streetHouse||d.lock?lockId(save.floor,d.lock??d.id):null,x:(d.x+(save.layoutRevision>=10?d.w/2:Math.floor(d.w/2)+.5))*TILE,
  y:(d.y+(save.layoutRevision>=10?d.h/2:Math.floor(d.h/2)+.5))*TILE,span:(d.vertical?d.h:d.w)*TILE}));
 const doorHP=d=>save.doors?.[d.id]??d.hp;
-const returnPortal=rest&&save.floor>1?pointIn(rest,-2,-1.8):null;
+const returnPortal=rest&&save.floor>1?(sanctuary?sanctuaryPoint('retreat'):pointIn(rest,-2,-1.8)):null;
 const keySources=[
  ...(save.floor<run.LAST_DEPTH?[{id:lockId(save.floor+1,'earlier'),type:save.floor%2?'merchant':'pantry'}]:[]),
  ...(save.floor>1?[{id:lockId(save.floor-1,'later'),type:'enemy'}]:[]),
@@ -290,6 +294,11 @@ const FURNITURE={
  grave:{w:45,h:29,solid:true},'jungle-shrine':{w:45,h:28,solid:true,light:92},rubble:{w:47,h:23,solid:true},basket:{w:32,h:20,solid:true},bush:{w:36,h:23},vines:{w:22,h:12},bench:{w:55,h:22,solid:true},campfire:{w:47,h:34,solid:true,light:210},well:{w:72,h:43,solid:true,light:156},
  'large-barrel':{w:39,h:31,solid:true},'street-drain':{w:32,h:24},'street-stalls':{w:45,h:25,solid:true},
  'street-lantern':{w:20,h:14,light:106},'street-straw':{w:38,h:19},
+ 'sanctuary-mosaic':{w:49,h:41},'sanctuary-hearth':{w:63,h:47,solid:true,light:190},'sanctuary-smith':{w:65,h:36,solid:true},
+ 'sanctuary-archive':{w:48,h:29,solid:true,light:91},'sanctuary-tree':{w:28,h:24,solid:true},
+ 'sanctuary-pillar':{w:26,h:26,solid:true},'sanctuary-seat':{w:33,h:18,solid:true},
+ 'sanctuary-brazier':{w:24,h:21,solid:true,light:127},'sanctuary-arch':{w:64,h:42},
+ 'sanctuary-flowers':{w:27,h:23},'sanctuary-plaque':{w:27,h:22},'sanctuary-vault':{w:91,h:31},
  'lab-bench':{w:59,h:23,solid:true},'lab-apparatus':{w:59,h:25,solid:true},'roof-rubble':{w:45,h:29,solid:true}
 };
 const furniture=[];
@@ -683,7 +692,10 @@ const annexDecor={
  court:[['tree',2.2,2.05],['tree',10.8,2.05],['tree',2.35,6.12],['tree',10.65,6.18],['grass',3.3,4.4],
   ['grass',1.7,3.35],['grass',9.3,3.5],['grass',11.25,4.65],['grass',5,6.8],['grass',8,6.8],['grass',5.2,1.7]]
 };
-if(rest){
+if(sanctuary){
+ for(const {type,x,y,variant} of sanctuary.decor)furniture.push({type,...tileCenter({x,y}),variant,zone:3,...FURNITURE[type]});
+ furniture.push({type:'sanctuary-arch',...sanctuaryPoint('lobby'),zone:3,...FURNITURE['sanctuary-arch']});
+}else if(rest){
  const bed=stairs.length?['straw-bed',3.5,2.85]:['straw-bed',0,-2.7];
  const decor=[['campfire',0,0],['bench',-1.65,.2],['bench',1.65,.2],bed,['torch',-3,-2.5],['torch',2.15,-2.7],
   ['round-table',-3.55,1.42],['dresser',4.72,1.6],['armor-rack',-4.88,-.65],['well',3.4,-2.1]];
@@ -886,7 +898,7 @@ const pressurePlates=templeRooms.flatMap(room=>{
 if(save.layoutRevision>=15){
  const random=run.random(furnishingSeed^0x25c3315d),count=3+Math.floor(random()*4);
  const reserved=[...landmarks,lab,...pressurePlates,cupPoint,glossaryStand].filter(Boolean);
- const areas=new Map([...rooms.map(room=>[room.i,room.i]),...annexes.filter(room=>room.id!==bossArena?.id).map(room=>[room.id,room.theme]),
+ const areas=new Map([...rooms.map(room=>[room.i,room.i]),...annexes.filter(room=>room.id!==bossArena?.id&&(!sanctuary||!mercyWard.has(room.id))).map(room=>[room.id,room.theme]),
   ...(alleys?[[alleys.id,5]]:[])]);
  const candidates=new Map([...areas.keys()].map(id=>[id,[]]));
  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
@@ -910,7 +922,7 @@ return {
  rooms,corridors,map,regions,gates,annexes,terrain,rest,
  paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
- spawn,returnPortal,keySources,keyName,keyItem,keyOffers,keyCaches,pantryKeySite,carrierFor,nearestKeyDoor,unlockDoor,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,
+ spawn,sanctuary,smith,ward,returnPortal,keySources,keyName,keyItem,keyOffers,keyCaches,pantryKeySite,carrierFor,nearestKeyDoor,unlockDoor,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,inSanctuary,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,
  regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,heroClearsDoor,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,furnitureAt,furnitureBetween,furnitureHP,furnitureIntact,furnitureCue,strikeFurniture,meleeFurniture,footWall,valid,weaponImpact,weaponClearance,weaponCover,meleeWall,beforeMeleeWall,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,towerAir,portalPosition,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition,sightBarriers,lootPosition

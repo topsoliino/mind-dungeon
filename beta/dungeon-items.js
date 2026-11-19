@@ -246,7 +246,45 @@ window.DungeonItems = (() => {
   return {kind:'weapon',id,rarity:id==='dark-scythe'&&rarity==='common'?'rare':rarity,source:'Krypta'};
  }
  function rank(item){return rarity[item?.rarity]?item.rarity:'common';}
- function key(item){return [item.kind,item.id,rank(item)].join('/');}
+ const forgeElements=['fire','frost','lightning'];
+ function enchantment(item){return item?.kind==='weapon'&&forgeElements.includes(item.enchantment)?item.enchantment:null;}
+ function key(item){
+  const element=enchantment(item);
+  return [item.kind,item.id,rank(item),...(element?[element]:[])].join('/');
+ }
+ function carriedWeapon(equipment){
+  return {kind:'weapon',id:equipment.weapon,rarity:equipment.weaponRarity||'common',enchantment:equipment.weaponEnchantment};
+ }
+ function setWeapon(equipment,item){
+  equipment.weapon=item?.id??null;equipment.weaponRarity=rank(item);equipment.weaponEnchantment=enchantment(item);
+ }
+ function attackSplit(split,enchant,infusion){
+  if(infusion)return {[infusion]:Object.values(split).reduce((n,share)=>n+share,0)};
+  if(!forgeElements.includes(enchant)||!split.physical)return split;
+  const share=split.physical*.25;
+  return {...split,physical:split.physical-share,[enchant]:(split[enchant]||0)+share};
+ }
+ function forgeOffer(item,operation,element){
+  if(item?.kind!=='weapon'||!Object.hasOwn(balance.weaponTable,item.id))return null;
+  if(operation==='improve'){
+   const rarity=upgradeRank(item),gold={common:50,rare:90,epic:145,legendary:225}[rank(item)];
+   return rarity?{item:{...item,rarity},gold,rubies:0}:null;
+  }
+  if(operation==='enchant'&&forgeElements.includes(element)&&enchantment(item)!==element&&weapon(item.id,rank(item)).split.physical>0){
+   return {item:{...item,enchantment:element},gold:80,rubies:1};
+  }
+  return null;
+ }
+ function forgeWeapon(player,index,expected,operation,element){
+  const old=player.inventory[index],offer=old&&key(old)===expected&&forgeOffer(old,operation,element);
+  if(!offer)return {error:'Diese Waffenarbeit ist nicht möglich.'};
+  if(!(player.gold>=offer.gold&&player.rubies>=offer.rubies))return {error:'Dir fehlen Gold oder Rubine.'};
+  const item={...offer.item,source:'Schmiede des Ruheschreins'};
+  const equipped=key(carriedWeapon(player.equipment))===expected;
+  player.inventory[index]=item;player.gold-=offer.gold;player.rubies-=offer.rubies;
+  if(equipped)setWeapon(player.equipment,item);
+  return {item};
+ }
  function enemyRarity(roll,depth,sewer=false){
   if(sewer){
    if(roll<.10)return 'common';
@@ -308,5 +346,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodMove,potionMove,potionWalkRate,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodMove,potionMove,potionWalkRate,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,forgeElements,enchantment,carriedWeapon,setWeapon,attackSplit,forgeOffer,forgeWeapon,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

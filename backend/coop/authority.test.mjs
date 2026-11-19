@@ -309,7 +309,7 @@ test('new starts give up to four exits and wide stairs connect floors by walking
  assert.equal([[rest.x-1,rest.cy],[rest.x+rest.w,rest.cy],[rest.cx,rest.y-1],[rest.cx,rest.y+rest.h]]
   .filter(([x,y])=>floor.map[y][x]===0).length,4);
  assert.equal(floor.stairs.length,3);
- assert.ok(floor.links.every(link=>link.kind==='ladder'));
+ assert.ok(floor.links.filter(link=>!link.label).every(link=>link.kind==='ladder'));
  sim.enemies=[];
  for(const stair of floor.stairs){
   const x=(stair.a.x+.5)*TILE,y=(stair.a.y+.5)*TILE,end=(stair.b.y+.5)*TILE;
@@ -334,6 +334,58 @@ test('new starts give up to four exits and wide stairs connect floors by walking
  assert.ok(floor.gateLineBlocked(pos.x,pos.y,interior.x+40,interior.y));
  floor.strikeDoor(interior.hp,interior);
  assert.equal(floor.gateLineBlocked(pos.x,pos.y,interior.x+40,interior.y),false);
+});
+
+test('the sanctuary has twelve accessible alcoves, four stairs and a protected way into the dungeon',()=>{
+ const {host,sim}=game(193,16,2),{floor}=sim,s=floor.sanctuary;
+ const world=({x,y})=>({x:(x+.5)*TILE,y:(y+.5)*TILE});
+ const stations=[floor.spawn,floor.smith,floor.wellUse,floor.wellArrival,floor.glossaryStand,floor.returnPortal,floor.ward,...s.seats.map(world)];
+ assert.equal(s.seats.length,12);
+ for(const p of stations){
+  assert.ok(floor.inSanctuary(p.x,p.y)&&floor.valid(p.x,p.y,14,false,true)&&floor.canReachSpawn(p.x,p.y));
+  assert.equal(sim.hurtPlayer({...host,x:p.x,y:p.y,inv:0},20),false);
+ }
+ for(const direction of ['n','e','s','w'])assert.ok(floor.terrain.flat().includes('sanctuary-stairs-'+direction));
+ assert.ok(floor.terrain.flat().includes('sanctuary-ward'));
+ assert.equal(floor.furniture.filter(p=>p.type==='sanctuary-smith').length,1);
+ assert.equal(floor.furniture.filter(p=>p.type==='sanctuary-hearth').length,1);
+ const exit=floor.links.find(p=>p.id==='sanctuary-passage-0');
+ Object.assign(host,exit);
+ assert.equal(sim.actions.dispatch(host,'interact',{kind:'strata',index:exit.id}).link,'stairs');
+ assert.equal(floor.regionAt(host.x,host.y),floor.rest.id);
+ assert.ok(floor.inRest(host.x,host.y)&&!floor.inSanctuary(host.x,host.y));
+ const x=(floor.rest.cx+.5)*TILE,boundary=(floor.rest.y+floor.rest.h)*TILE;
+ const enemy={type:foes.SKELETON,x,y:boundary+20,hp:100};
+ sim.move(enemy,0,-92);
+ assert.ok(enemy.y>=boundary&&!floor.inRest(enemy.x,enemy.y));
+ const state=run.floorState(193,2);state.layoutRevision=15;
+ assert.equal(geometry.build(run,state).sanctuary,null);
+});
+
+test('the smith checks location, materials and item identity and updates the equipped weapon in place',()=>{
+ const {host,sim}=game(193,16,2),smith=sim.floor.smith;
+ Object.assign(host,{gold:240,rubies:2});
+ const index=host.inventory.findIndex(it=>it.kind==='weapon'),old=host.inventory[index],key=items.key(old);
+ const forge=(operation,expected,element)=>sim.actions.dispatch(host,'forge',{index,key:expected,operation,element});
+ assert.throws(()=>forge('improve',key),/zu weit/);
+ Object.assign(host,smith);
+ assert.ok(sim.actions.dispatch(host,'interact',{kind:'smith'}));
+ const rare=forge('improve',key).item;
+ assert.equal(rare.rarity,'rare');assert.equal(host.equipment.weaponRarity,'rare');
+ assert.equal(host.gold,190);
+ assert.throws(()=>forge('improve',key),/nicht möglich/);
+ assert.throws(()=>forge('enchant',items.key(rare),'poison'),/nicht möglich/);
+ const frost=forge('enchant',items.key(rare),'frost').item;
+ assert.equal(frost.enchantment,'frost');assert.equal(host.equipment.weaponEnchantment,'frost');
+ assert.equal(host.gold,110);assert.equal(host.rubies,1);
+ assert.deepEqual({...items.attackSplit({physical:1},host.equipment.weaponEnchantment)},{physical:.75,frost:.25});
+ assert.throws(()=>forge('enchant',items.key(frost),'frost'),/nicht möglich/);
+ assert.equal(host.gold,110);
+ const restored=Simulation.loadPlayer(JSON.parse(JSON.stringify(Simulation.savePlayer(host))),defaultPack);
+ assert.equal(restored.equipment.weaponEnchantment,'frost');
+ const project=createProjection(),enemy={...sim.enemies[0],x:smith.x+30,y:smith.y+30};
+ sim.enemies=[enemy];
+ assert.equal(project(sim,host).enemies.length,0);
 });
 
 test('crypts are limited per run and their altar makes a six-ingredient golden brew',()=>{
@@ -1415,6 +1467,7 @@ test('a saved party resumes after server replacement and reunites without reroll
  advanceParty(party,hostMember);
  const secondFloor=getFloor(party,hostMember);
  secondFloor.state.gateProgress.test=1;
+ arena(secondFloor,hostMember.player);
  const enemy=secondFloor.enemies.find(e=>gap(e,hostMember.player)<900);
  assert.ok(enemy);
  enemy.hp=enemy.max*.5;
@@ -1483,7 +1536,9 @@ test('a saved party resumes after server replacement and reunites without reroll
  await wait(()=>guest.latest?.floor===2&&guest.latest.peer);
  assert.equal(guest.latest.seed,secondFloor.state.dungeonSeed);
  assert.equal(guest.latest.gateProgress.test,1);
- const scaled=guest.latest.enemies.find(row=>row[0]===enemy.id);
+ assert.deepEqual(guest.latest.enemies,[]);
+ await wait(()=>host.latest?.peer&&host.latest.enemies.some(row=>row[0]===enemy.id));
+ const scaled=host.latest.enemies.find(row=>row[0]===enemy.id);
  assert.equal(scaled[5],foes.health(enemy.type,enemy.boss,2));
  assert.equal(scaled[4]/scaled[5],.5);
  await host.call('leave');

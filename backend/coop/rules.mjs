@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const worldContext=vm.createContext({window:{},crypto:globalThis.crypto});
-for(const file of ['boss','strata','run','balance','items','enemies','brewing','expedition','world','vision','enemy-sim']){
+for(const file of ['boss','strata','sanctuary','run','balance','items','enemies','brewing','expedition','world','vision','enemy-sim']){
  const path=new URL('../../beta/dungeon-'+file+'.js',import.meta.url);
  vm.runInContext(readFileSync(path,'utf8'),worldContext,{filename:path.pathname});
 }
@@ -81,20 +81,20 @@ export function preparePlayer(p){
 }
 export function equipped(p,it){
  const eq=p.equipment,r=items.rank(it);
- if(it.kind==='weapon')return eq.weapon===it.id&&eq.weaponRarity===r;
+ if(it.kind==='weapon')return items.key(items.carriedWeapon(eq))===items.key(it);
  if(it.kind==='armor')return eq.armor[slotOf(it.id)]===it.id&&(eq.armorRarities[slotOf(it.id)]??'common')===r;
  return it.kind==='ring'&&eq.rings.some((id,i)=>id===it.id&&(eq.ringRarities[i]??'common')===r);
 }
 export function unequip(p,it){
  const eq=p.equipment;
- if(it.kind==='weapon'){eq.weapon=null;eq.weaponRarity='common';}
+ if(it.kind==='weapon')items.setWeapon(eq,null);
  if(it.kind==='armor'){const key=slotOf(it.id);delete eq.armor[key];delete eq.armorRarities[key];}
  if(it.kind==='ring'){const i=eq.rings.findIndex((id,index)=>id===it.id&&(eq.ringRarities[index]??'common')===items.rank(it));if(i>=0){eq.rings[i]=null;delete eq.ringRarities[i];}}
 }
 export function equip(p,it,slot){
  const eq=p.equipment,rank=items.rank(it);
  if(it.kind==='weapon'&&Object.entries(items.requirements[it.id]??{}).every(([key,n])=>p.attributes[key]>=n)){
-  eq.weapon=it.id;eq.weaponRarity=rank;return true;
+  items.setWeapon(eq,it);return true;
  }
  if(it.kind==='armor'&&items.armorProfile(it.id)){eq.armor[slotOf(it.id)]=it.id;eq.armorRarities[slotOf(it.id)]=rank;return true;}
  if(it.kind==='ring'&&!equipped(p,it)){
