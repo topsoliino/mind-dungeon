@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {run,balance,items,foes,geometry,enemySim,bossRules,TILE,HERO_RADIUS,fallSeconds,round,clamp,gap,remaining,normalAngle,maxHP,preparePlayer,selectLoot,cup,pools} from './rules.mjs';
+import {run,balance,items,foes,geometry,vision,enemySim,bossRules,TILE,HERO_RADIUS,fallSeconds,round,clamp,gap,remaining,normalAngle,maxHP,preparePlayer,selectLoot,cup,pools} from './rules.mjs';
 
 const vaultable=new Set(['barrel','table','round-table','banquet','banquet-long','bench','chair','basket','straw-bed']);
 const effectKinds=['bolts','enemyHazards','webShots','webPatches','stormStrikes','waterArcs'];
@@ -23,6 +23,7 @@ export class Simulation{
   this.enemies=geometry.spawnEnemies(run,foes,this.state,this.floor,this.difficulty===1);
   this.effects=Object.fromEntries(effectKinds.map(key=>[key,[]]));this.shots=[];this.orbs=new Map();this.portal=null;
   this.completed=false;this.explored=new Set([this.floor.rest?.id]);
+  this.sights=new Map();this.sightBarriers=this.floor.sightBarriers();
   this.resistances=items.foes.map(profile=>foes.resistances(profile,floor));
   this.boss=bossRules.create(this.floor.bossArena,this.state,{
    players:()=>this.activePlayers(),enemies:()=>this.enemies,types:foes,random:this.random,
@@ -35,7 +36,7 @@ export class Simulation{
    hit:(p,n,origin)=>this.hurtPlayer(p,n,{lightning:1},false,1,undefined,undefined,origin),
    spread:(p,n)=>this.bossWaterPulse(p,n),
    drop:(e,it,count)=>{
-    for(const p of this.activePlayers())for(let i=0;i<count;i++)this.drop({x:e.x+(i-1)*18,y:e.y+(p.seat===1?-12:12)},it,p.seat);
+    for(const p of this.activePlayers())for(let i=0;i<count;i++)this.drop({x:e.x+(i-1)*18,y:e.y+(p.seat===1?-12:12)},it,p.seat,e);
    },
    win:(arena,reward)=>{
     this.portal={x:arena.x+80,y:arena.y};this.emit('portal',this.portal);
@@ -96,7 +97,8 @@ export class Simulation{
   for(const p of players)p.poison=loadPoison(p.poison,members);
   this.enemies=saved.enemies.map(e=>({...e,poison:loadPoison(e.poison,members)}));
   this.shots=saved.shots.map(({hit,...shot})=>({...shot,hit:{...hit,p:members.get(hit.p).player}}));
-  this.orbs=new Map(saved.orbs.map(o=>[o.id,o]));
+  this.orbs=new Map(saved.orbs.map(o=>[o.id,{...o,...this.lootAt(o)}]));
+  this.sights.clear();
   this.floor.pressurePlates.forEach((plate,i)=>Object.assign(plate,saved.plates[i]));
   this.ai.stormTimer(saved.stormDelay);
  }
@@ -214,7 +216,16 @@ export class Simulation{
   return true;
  }
  canTarget(e,p){
-  return p.online&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&foes.encounterReady(e,p,this.floor,p.entryGrace??0);
+  return p.online&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&foes.encounterReady(e,p,this.floor,p.entryGrace??0,
+   !e.bossRole&&this.sights.get(p.seat)?.seesEnemy(e),this.clock);
+ }
+ updateSight(p){
+  if(!this.sights.has(p.seat))this.sights.set(p.seat,vision.create(this.floor,TILE,this.sightBarriers,[],this.explored));
+  const sight=this.sights.get(p.seat);
+  sight.update(p,1180,760);
+  for(const e of this.enemies){
+   if(!e.bossRole&&e.hp>0&&e.veilPhase!=='hidden'&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&sight.observeEnemy(e))foes.reveal(e,this.clock);
+  }
  }
  isWeb(p){
   return !this.floor.inRest(p.x,p.y)&&(this.floor.furniture.some(o=>o.type==='web'&&Math.abs(o.x-p.x)<o.w/2+9&&Math.abs(o.y-p.y)<o.h/2+9)||
@@ -230,6 +241,7 @@ export class Simulation{
   this.tickId++;this.clock+=dt;
   for(const p of this.activePlayers())this.stepPlayer(p,dt);
   const active=this.activePlayers();
+  for(const p of active)this.updateSight(p);
   const outdoor=active.find(p=>this.floor.outsideAt(p.x,p.y)?.storm)??active[0];
   if(outdoor)this.ai.moveFrom(dt,outdoor,this.clock,1180,760);
   this.updateShots(dt);
@@ -351,7 +363,7 @@ export class Simulation{
    p.region=region;p.entered=this.clock;
    p.entryGrace=region>=0&&!this.explored.has(region)&&!this.floor.isPassage(region)?foes.entryGrace:0;
   }
-  if(region>=0&&!this.floor.passageSealed(region)&&(this.floor.isPassage(region)||this.clock-p.entered>=.85)){
+  if(region>=0&&!this.floor.passageSealed(region)){
    this.explored.add(region);
   }
  }
@@ -518,9 +530,12 @@ export class Simulation{
   p.bleed=Math.min(100,p.bleed+amount);p.bleedGrace=2;
   if(p.bleed>=100){p.bleed=0;this.hurtPlayer(p,maxHP(p)*.16,{bleed:1},true,1,'element_bleed_hero',undefined,origin);}
  }
- drop(pos,item,owner=0){
+ lootAt(pos,anchor=pos){
+  return this.floor.lootPosition(pos,anchor)??this.floor.lootPosition(anchor)??this.floor.spawn;
+ }
+ drop(pos,item,owner=0,anchor=pos){
   if(this.orbs.size>=180)return false;
-  const id=this.id();this.orbs.set(id,{id,seat:owner,x:round(pos.x),y:round(pos.y),item});
+  const id=this.id();this.orbs.set(id,{id,seat:owner,...this.lootAt(pos,anchor),item});
   return true;
  }
  defeat(e){
@@ -539,8 +554,8 @@ export class Simulation{
   const spawnPair=(make,origin=e)=>{
    if(this.orbs.size+active.length>180)return;
    for(const p of active){
-    const x=origin.x+(p.seat===1?-13:13),pos=this.floor.valid(x,origin.y,4)?{x,y:origin.y}:origin;
-    this.drop(pos,make(),p.seat);
+    const x=origin.x+(p.seat===1?-13:13);
+    this.drop({x,y:origin.y},make(),p.seat,origin);
    }
   };
   const sewer=this.floor.layerAt(e.x,e.y)===-1;

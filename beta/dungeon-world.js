@@ -176,6 +176,13 @@ function barrierFloor(barrier){
  }
  return cells;
 }
+function sightBarriers(){
+ return [
+  ...doors.map(door=>({...door,key:door.id,face:12,visible:()=>doorHP(door)>0})),
+  ...gates.map((gate,i)=>({...tileCenter(gate),key:'gate-'+i,vertical:gate.vertical,span:4.2*TILE,face:.54*TILE,visible:()=>!save.gates[gate.id]})),
+  ...(bossArena?[{...bossArena.gate,key:'boss-portcullis',visible:()=>root.DungeonBoss.gateClosed(save.bossBattle)}]:[])
+ ].map(barrier=>({...barrier,floorCells:barrierFloor(barrier)}));
+}
 function gateBlocked(x,y){
  const gate=bossArena?.gate;
  if(gate&&root.DungeonBoss.gateClosed(save.bossBattle)&&Math.abs(x-gate.x)<gate.face&&Math.abs(y-gate.y)<gate.span/2)return true;
@@ -265,8 +272,19 @@ function boneDropPosition(origin){
  return origin;
 }
 const shrines=zones.map((z,i)=>({...accessiblePoint((z.x+.5)*TILE,(z.y+.5)*TILE),i}));
-const chests=[[10.5,7.5],[23.5,4.5],[38.5,9.5],[22.5,25.5],[37.5,25.5]].map(([x,y],i)=>
- accessiblePoint((x+zones[i].offsetX)*TILE,(y+zones[i].offsetY)*TILE));
+const chestReservations=[...links,...shrines,...stairs.flatMap(s=>[tileCenter(s.a),tileCenter(s.b)])];
+const chests=[[10.5,7.5],[23.5,4.5],[38.5,9.5],[22.5,25.5],[37.5,25.5]].map(([x,y],i)=>{
+ const room=rooms[i],preferred=accessiblePoint((x+zones[i].offsetX)*TILE,(y+zones[i].offsetY)*TILE);
+ const clear=p=>regionAt(p.x,p.y)===room.i&&valid(p.x,p.y,18,true)&&
+  chestReservations.every(o=>Math.hypot(o.x-p.x,o.y-p.y)>=62);
+ if(clear(preferred))return preferred;
+ const cells=[];
+ for(let y=room.y;y<room.y+room.h;y++)for(let x=room.x;x<room.x+room.w;x++){
+  const p=tileCenter({x,y});
+  if(clear(p))cells.push(p);
+ }
+ return cells.sort((a,b)=>Math.hypot(a.x-preferred.x,a.y-preferred.y)-Math.hypot(b.x-preferred.x,b.y-preferred.y))[0]??preferred;
+});
 const trialStart=1+Math.floor(run.random(save.dungeonSeed^0x71927a33)()*3);
 const trialIndex=save.trialIndex??=[trialStart,1+trialStart%3,1+(trialStart+1)%3].find(i=>!save.opened.includes(i))??trialStart;
 const roomRandom=run.random(furnishingSeed^0x7d3a912e);
@@ -537,6 +555,26 @@ for(const piece of furniture){
   }
 }
 const canReachSpawn=save.layoutRevision>=5?reachableSpawnTiles():()=>true;
+function lootPosition(origin,anchor=origin){
+ const pos={x:Math.round(origin.x),y:Math.round(origin.y)};
+ const clear=p=>valid(p.x,p.y,17)&&canReachSpawn(p.x,p.y)&&
+  links.every(link=>Math.hypot(p.x-link.x,p.y-link.y)>=23);
+ const originalRegion=regionAt(anchor.x,anchor.y),layer=layerForRegion(originalRegion);
+ const onFloor=valid(anchor.x,anchor.y,0),sameSide=p=>!onFloor||!gateLineBlocked(anchor.x,anchor.y,p.x,p.y);
+ if(clear(pos)&&sameSide(pos))return pos;
+ const candidates=[];
+ const tx=Math.floor(pos.x/TILE),ty=Math.floor(pos.y/TILE);
+ for(let y=Math.max(0,ty-3);y<=Math.min(H-1,ty+3);y++)for(let x=Math.max(0,tx-3);x<=Math.min(W-1,tx+3);x++){
+  if(map[y][x]!==0||layerForRegion(regions[y][x])!==layer)continue;
+  const p=tileCenter({x,y});
+  if(!clear(p)||!sameSide(p))continue;
+  const penalty=originalRegion>=0&&regions[y][x]!==originalRegion?96:0;
+  candidates.push({...p,score:Math.hypot(p.x-pos.x,p.y-pos.y)+penalty});
+ }
+ candidates.sort((a,b)=>a.score-b.score);
+ const safe=candidates[0];
+ return safe?{x:safe.x,y:safe.y}:null;
+}
 function inTempleLine(x1,y,x2){
  const n=Math.ceil(Math.abs(x2-x1)/12);
  for(let i=0;i<=n;i++)if(wall(x1+(x2-x1)*i/Math.max(1,n),y))return false;
@@ -565,7 +603,7 @@ return {
  spawn,cupPoint,restCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,
  regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,footWall,valid,weaponImpact,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
- cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition
+ cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition,sightBarriers,lootPosition
 };
 }
 function spawnEnemies(run,enemyRules,save,floor,coop){
