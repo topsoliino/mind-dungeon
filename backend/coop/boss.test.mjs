@@ -93,7 +93,7 @@ test('the coop boss gate needs two correct answers and a cleared floor, then the
  assert.equal(battle.phase,'fight');
  const scientists=sim.enemies.filter(e=>e.bossRole==='scientist');
  kill(sim,scientists[0]);sim.step(1/30);
- const tile=arena.poolTiles[0],wet={x:(tile.x+.5)*geometry.TILE,y:(tile.y+.5)*geometry.TILE};
+ const tile=arena.poolTiles[0],wet={x:(tile.x+.5)*arena.poolSize,y:(tile.y+.5)*arena.poolSize};
  assert.ok(!battle.rain);
  assert.equal(floor.waterAt(wet.x,wet.y),null);
  const rat=sim.enemies.find(e=>e.bossRole==='giant-rat');
