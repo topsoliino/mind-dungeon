@@ -82,10 +82,9 @@ test('entering a room reveals every floor and interior wall, and the view surviv
  const world={W,H,map,regions,stairs:[],rest:{id:1},rooms:[],isPassage:id=>id===3,abyssAt:()=>false,layerForRegion:()=>0};
  const visited=new Set([1]),view=vision.create(world,TILE,[],[],visited);
  const entrance=center(10,8);
- view.update(entrance,800,600);
+ view.update(center(9,8),800,600);
  assert.equal(looks(view,18,8),false);
  assert.equal(knows(view,32,13),false);
- visited.add(2);
  view.update(entrance,800,600);
  for(let y=3;y<=13;y++)for(let x=10;x<=32;x++){
   assert.ok(knows(view,x,y),`room tile ${x},${y} is covered`);
@@ -93,6 +92,7 @@ test('entering a room reveals every floor and interior wall, and the view surviv
  }
  assert.ok(knows(view,14,6));
  assert.ok(knows(view,32,14));
+ visited.add(2);
  view.update(center(3,8),800,600);
  assert.ok(looks(view,18,8));
  const reloaded=vision.create(world,TILE,[],[8*W+18],visited);
@@ -173,7 +173,7 @@ test('an encountered enemy stays visible around a bend while a closed door still
  assert.ok(world.isPassage(2));
 });
 
-test('an open view clears the last three dark tiles in a room without requiring entry',()=>{
+test('a nearly uncovered room keeps its hidden corners until the observer enters',()=>{
  const W=17,H=13,map=Array.from({length:H},()=>Array(W).fill(1)),regions=map.map(row=>row.map(()=>-1));
  const carve=(x,y,id)=>{map[y][x]=0;regions[y][x]=id;};
  for(let x=2;x<=6;x++)carve(x,5,x<4?1:3);
@@ -190,7 +190,23 @@ test('an open view clears the last three dark tiles in a room without requiring 
  assert.equal(knows(view,12,5),false);
  assert.equal(view.observeEnemy({id:'across',...center(12,5)}),false);
  door.closed=false;view.update(observer,1280,768);
+ assert.ok(looks(view,7,5));
+ assert.equal(knows(view,12,5),false);
+ assert.equal(explored.has(2),false);
+ view.update(center(7,5),1280,768);
  assert.ok(pockets.every(id=>view.known[id]));
  assert.ok(looks(view,12,5));
- assert.equal(explored.has(2),false);
+});
+
+test('room entry also reveals a same-level walkway that overlaps the room floor',()=>{
+ const floor=geometry.build(run,run.freshRun(103)),room=floor.rooms[0];
+ const view=vision.create(floor,TILE,floor.sightBarriers(),[],new Set([floor.rest.id]));
+ const floorTiles=[];
+ for(let y=room.y;y<room.y+room.h;y++)for(let x=room.x;x<room.x+room.w;x++){
+  if(floor.map[y][x]===0)floorTiles.push({x,y,region:floor.regions[y][x]});
+ }
+ assert.ok(floorTiles.some(p=>floor.isPassage(p.region)));
+ const entry=floorTiles.find(p=>p.region===room.i);
+ view.update(center(entry.x,entry.y),640,480);
+ assert.ok(floorTiles.every(p=>knows(view,p.x,p.y)&&looks(view,p.x,p.y)));
 });
