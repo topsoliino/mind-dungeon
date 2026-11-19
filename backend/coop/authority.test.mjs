@@ -308,10 +308,10 @@ test('new starts give up to four exits and wide stairs connect floors by walking
  const {floor}=sim,{rest}=floor;
  assert.equal([[rest.x-1,rest.cy],[rest.x+rest.w,rest.cy],[rest.cx,rest.y-1],[rest.cx,rest.y+rest.h]]
   .filter(([x,y])=>floor.map[y][x]===0).length,4);
- assert.equal(floor.stairs.filter(stair=>!stair.id.startsWith('jungle-stairs-')).length,3);
+ assert.equal(floor.stairs.filter(stair=>stair.id.startsWith('stairs-')).length,3);
  assert.ok(floor.links.filter(link=>!link.label).every(link=>link.kind==='ladder'));
  sim.enemies=[];
- for(const stair of floor.stairs){
+ for(const stair of floor.stairs.filter(s=>s.id!=='sanctuary-spiral')){
   const x=(stair.a.x+.5)*TILE,y=(stair.a.y+.5)*TILE,end=(stair.b.y+.5)*TILE;
   assert.equal(stair.w,4);
   assert.equal(floor.layerAt(x,y),stair.lower);
@@ -360,6 +360,25 @@ test('the sanctuary has twelve accessible alcoves, four stairs and a protected w
  assert.ok(enemy.y>=boundary&&!floor.inRest(enemy.x,enemy.y));
  const state=run.floorState(193,2);state.layoutRevision=15;
  assert.equal(geometry.build(run,state).sanctuary,null);
+});
+
+test('the garden staircase reaches a protected apothecary landing two storeys above the courtyard',()=>{
+ const {host,sim}=game(103),f=sim.floor,stair=f.stairs.find(s=>s.id==='sanctuary-spiral');
+ const table=f.furniture.find(p=>p.type==='sanctuary-ban-table');
+ assert.ok(table?.solid&&table.light);
+ const start={x:(stair.a.x+.5)*TILE,y:(stair.a.y+.5)*TILE};
+ const end={x:(stair.b.x+.5)*TILE,y:(stair.b.y+.5)*TILE};
+ const room={x:table.x,y:table.y+2*TILE};
+ assert.ok(f.inRest(room.x,room.y)&&f.canReachSpawn(room.x,room.y)&&f.valid(room.x,room.y));
+ assert.equal(f.layerAt(f.spawn.x,f.spawn.y),0);
+ assert.equal(f.layerAt(f.wellUse.x,f.wellUse.y),1);
+ assert.equal(f.layerAt(start.x,start.y),1);
+ assert.equal(f.layerAt(room.x,room.y),2);
+ Object.assign(host,start);
+ assert.ok(sim.move(host,0,end.y-start.y));
+ assert.ok(Math.abs(host.y-end.y)<1e-6);
+ assert.equal(f.layerAt(host.x,host.y),2);
+ assert.deepEqual(host.ingredients,[]);
 });
 
 test('the smith checks location, materials and item identity and updates the equipped weapon in place',()=>{
@@ -869,11 +888,16 @@ test('Emberheart restores 40 percent HP at the 20 percent threshold and respects
  assert.equal(guest.armorCooldowns.heal,540);
 });
 
-test('Pfadschütze starts in the new set and armor modifies bow range and dash cooldown',()=>{
- const {host,guest,sim}=game();
- for(const [slot,id] of Object.entries(guest.equipment.armor)){
+test('Pilger and Pfadschütze swap full starting kits and can use both weapons at creation',()=>{
+ const {host,guest,sim}=game(),pilgrim=makePlayer(3,{classId:'pilgrim'},defaultPack);
+ assert.equal(guest.equipment.weapon,'blade');assert.equal(guest.equipment.rings[0],'faith');
+ assert.equal(guest.attributes.faith,items.requirements.blade.faith);
+ assert.ok(Object.values(guest.equipment.armor).every(id=>id.startsWith('hunter-')));
+ assert.equal(pilgrim.equipment.weapon,'bow');assert.equal(pilgrim.equipment.rings[0],'dodge');
+ assert.equal(pilgrim.attributes.dexterity,items.requirements.bow.dexterity);
+ for(const [slot,id] of Object.entries(pilgrim.equipment.armor)){
   assert.equal(id,'pathfinder-'+slot);
-  assert.ok(guest.inventory.some(it=>it.kind==='armor'&&it.id===id));
+  assert.ok(pilgrim.inventory.some(it=>it.kind==='armor'&&it.id===id));
  }
  for(const set of ['pathfinder','bastion','emberheart','windstep']){
   for(const slot of ['helmet','chest','legs','boots']){
@@ -886,11 +910,11 @@ test('Pfadschütze starts in the new set and armor modifies bow range and dash c
    for(const [type,value] of Object.entries(common.stats))assert.ok(upgraded.stats[type]>=value);
   }
  }
- arena(sim,guest);
- assert.ok(sim.charge(guest,0));
- assert.ok(sim.attack(guest,0));
- assert.equal(sim.shots.at(-1).left,guest.weapon.reach*1.12);
- assert.equal(items.arrowRange(host.weapon,guest.equipment.armor),1);
+ sim.resetAtRest(pilgrim);arena(sim,pilgrim);
+ assert.ok(sim.charge(pilgrim,0));
+ assert.ok(sim.attack(pilgrim,0));
+ assert.equal(sim.shots.at(-1).left,pilgrim.weapon.reach*1.12);
+ assert.equal(items.arrowRange(host.weapon,pilgrim.equipment.armor),1);
 
  host.equipment.armor={legs:'windstep-legs',boots:'windstep-boots'};
  preparePlayer(host);
@@ -1301,6 +1325,7 @@ test('the sewer relic converts unopened chests and a completed challenge drops r
 
 test('nearby blood loss powers the Ring des Wahns for twenty seconds',()=>{
  const {guest,sim}=game(193,9);
+ guest.equipment.weapon='bow';preparePlayer(guest);
  const point=arena(sim,guest);
  guest.equipment.rings[1]='madness';
  guest.playtime=40;

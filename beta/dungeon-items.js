@@ -117,9 +117,18 @@ window.DungeonItems = (() => {
   const id=set+'-'+slot;
   return {id,kind:'armor',slot,set,kg:armorProfile(id).kg,name:name+'-'+label,color};
  }));
- const classArmorSets={guardian:'knight',duelist:'wanderer',scholar:'scholar',pilgrim:'hunter',archer:'pathfinder'};
+ const classArmorSets={guardian:'knight',duelist:'wanderer',scholar:'scholar',pilgrim:'pathfinder',archer:'hunter'};
  function startingArmor(classId){
   return Object.fromEntries(armorItems.filter(piece=>piece.set===classArmorSets[classId]).map(piece=>[piece.slot,piece.id]));
+ }
+ const classStarts={pilgrim:{weapon:'bow',ring:'dodge'},archer:{weapon:'blade',ring:'faith'}};
+ function startingEquipment(classId,weapon,ring){
+  return {...(classStarts[classId]??{weapon,ring}),armor:startingArmor(classId)};
+ }
+ function startingAttributes(classId,attributes){
+  const kit=classStarts[classId];
+  if(!kit)return attributes;
+  return Object.fromEntries(Object.entries(attributes).map(([name,value])=>[name,Math.max(value,requirements[kit.weapon]?.[name]??0)]));
  }
  function armorPerks(armor){
   const perks={};
@@ -346,5 +355,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodMove,potionMove,potionWalkRate,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,forgeElements,enchantment,carriedWeapon,setWeapon,attackSplit,forgeOffer,forgeWeapon,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodMove,potionMove,potionWalkRate,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,forgeElements,enchantment,carriedWeapon,setWeapon,attackSplit,forgeOffer,forgeWeapon,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,startingEquipment,startingAttributes,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

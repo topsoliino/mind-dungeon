@@ -85,7 +85,7 @@ export class Simulation{
    const legacyQuestion=stored.legacyQuestion??(!stored.order&&q?.type!==previous?.type?previous:undefined);
    quiz={...stored,legacyQuestion,q:legacyQuestion??run.presentQuestion(q,stored.order)};
   }
-  const p={...state,pack,quiz:quiz?.q?quiz:null,input:idleInput(),online:false,chargeStart:null};
+  const p={...state,ingredients:state.ingredients??[],pack,quiz:quiz?.q?quiz:null,input:idleInput(),online:false,chargeStart:null};
   preparePlayer(p);
   return p;
  }
