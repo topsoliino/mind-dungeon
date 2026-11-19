@@ -95,7 +95,15 @@ function create(arena,save,hooks){
   }
   const angle=Math.atan2(y,x);
   e.angle=angle;e.moving=d>2;
-  if(e.moving)hooks.move(e,Math.cos(angle)*Math.min(d,speed*dt),Math.sin(angle)*Math.min(d,speed*dt));
+  if(!e.moving)return;
+  const stride=Math.min(d,speed*dt),start={x:e.x,y:e.y};
+  hooks.move(e,Math.cos(angle)*stride,Math.sin(angle)*stride);
+  if(gap(e,start)>=stride*.45)return;
+  for(const turn of [1,-1,1.72,-1.72]){
+   const detour=angle+turn*(e.scientist%2?-1:1);
+   hooks.move(e,Math.cos(detour)*stride,Math.sin(detour)*stride);
+   if(gap(e,start)>=stride*.45){e.angle=detour;break;}
+  }
  }
  function experiment(dt){
   const s=battle();
@@ -135,13 +143,13 @@ function create(arena,save,hooks){
   return point(from,angle,Math.max(0,-along+Math.sqrt(Math.max(0,along*along+r*r-x*x-y*y))));
  }
  function startMove(e,target,kind){
-  const s=battle(),large=e.enlarged,wet=s.rain;
+  const s=battle(),large=e.enlarged,escalated=s.killed>0||s.rain;
   const start={x:e.x,y:e.y},angle=aim(e,target);
   e.angle=angle;e.moving=false;
   e.bossPose=kind==='storm'?'raise':kind==='spin'?null:'thrust';
   const origin={source:scientists[e.scientist],action:{spear:'Elektrodenstich',storm:'Dreifachblitz',spin:'Elektrodenkreisel',beam:'Blitzstrahl'}[kind]};
   if(kind==='storm'){
-   [0,.56,1.12].forEach((delay,i)=>cue('storm',{...start,r:wet?(large?165:146):104,damage:14,origin,bolt:i,
+   [0,.56,1.12].forEach((delay,i)=>cue('storm',{...start,r:escalated?(large?165:146):104,damage:14,origin,bolt:i,
     scientist:e.scientist},.82+delay,.46));
    e.nextAttack=s.time+2.64;return;
   }
@@ -151,18 +159,18 @@ function create(arena,save,hooks){
    e.nextAttack=s.time+3.68;return;
   }
   if(kind==='beam'){
-   const count=large?4:wet?3:2,interval=wet?.34:.5,lead=wet?.56:.73;
+   const count=large?4:escalated?3:2,interval=escalated?.34:.5,lead=escalated?.56:.73;
    for(let i=0;i<count;i++){
     const direction=angle+(i%2?1:-1)*(.08+i*.035);
-    cue('beam',{from:start,to:beamEnd(start,direction),angle:direction,width:wet?27:21,damage:wet?15:13,origin,
-     scientist:e.scientist,volley:i,startDelay:i*interval,tracking:wet?1.2:.34},lead+i*interval,.23);
+    cue('beam',{from:start,to:beamEnd(start,direction),angle:direction,width:escalated?27:21,damage:escalated?15:13,origin,
+     scientist:e.scientist,volley:i,startDelay:i*interval,tracking:escalated?1.2:.34},lead+i*interval,.23);
    }
    e.nextAttack=s.time+lead+(count-1)*interval+.53;
    return;
   }
   cue('spear',{from:start,to:distanceTo(arena,arena.radius-12,point(start,angle,large?116:96)),
    width:19,damage:13,origin,scientist:e.scientist},.44,.28);
-  e.nextAttack=s.time+(wet?.96:1.12);
+  e.nextAttack=s.time+(escalated?.96:1.12);
  }
  function frontLine(s,team){
   if(s.front?.size!==team.length||s.time>=s.front.until){
@@ -180,8 +188,9 @@ function create(arena,save,hooks){
   }));
   const priority=p=>Math.min(...targets.map(t=>gap(p,t)))-gap(e,p)*.15+
    Math.min(190,...team.filter(a=>a!==e).map(a=>Math.min(gap(p,a),a.station?gap(p,a.station)+10:Infinity)))*1.4;
-  const choices=stations.filter(p=>p.index!==e.lastStation).sort((a,b)=>priority(b)-priority(a));
-  return choices[Math.floor(hooks.random()*3)];
+  const clear=stations.filter(p=>p.index!==e.lastStation&&hooks.open?.(p)!==false);
+  const choices=(clear.length?clear:stations).sort((a,b)=>priority(b)-priority(a));
+  return choices[Math.floor(hooks.random()*Math.min(3,choices.length))];
  }
  function aimBeams(dt,s,targets){
   for(const c of s.cues){
@@ -216,6 +225,7 @@ function create(arena,save,hooks){
     spin.angle+=dt*.75;
     const next=point(e,spin.angle,dt*speed);
     if(gap(next,arena)>arena.radius-39)spin.angle=aim(e,arena)+(e.scientist-1)*.7;
+    else if(hooks.open?.(next)===false)spin.angle+=Math.PI*.57;
     hooks.move(e,Math.cos(spin.angle)*speed*dt,Math.sin(spin.angle)*speed*dt);
     e.angle+=dt*(9+progress*17);e.moving=true;
     if(s.time>=spin.next){spin.next=s.time+.32;shock(targets.filter(p=>gap(e,p)<=65),16,spin.origin,e);}
@@ -223,7 +233,7 @@ function create(arena,save,hooks){
    }
    if(spin&&s.time>=spin.end)e.spin=null;
    if(s.time<e.nextAttack-.38){e.moving=false;continue;}
-   const speed=s.rain?(e.enlarged?170:152):115;
+   const escalated=s.killed>0||s.rain,speed=escalated?(e.enlarged?170:152):115;
    if(!front.includes(e.id)){
     e.station??=firingPosition(e,team,targets);
     e.bossPose=null;
@@ -237,7 +247,7 @@ function create(arena,save,hooks){
    e.station=null;
    const moves=e.enlarged?['spear','spin','beam','storm']:['spear','storm','spear'];
    const turn=e.moveCount??e.scientist,kind=moves[turn%moves.length];
-   const reach=kind==='beam'?arena.radius*2:kind==='storm'?(s.rain?128:93):kind==='spear'?85:126;
+   const reach=kind==='beam'?arena.radius*2:kind==='storm'?(escalated?128:93):kind==='spear'?85:126;
    if(gap(e,target)>reach){
     e.bossPose=null;
     const ally=team.find(a=>a!==e&&front.includes(a.id));
@@ -265,7 +275,13 @@ function create(arena,save,hooks){
      if(c.hitPlayers.includes(playerId)||gap(c,p)>radius)return;
      c.hitPlayers.push(playerId);hooks.hit(p,c.damage,c.origin);
     });
-    if(!c.done){c.done=true;hooks.spread(c,c.damage);}
+    if(!c.done){
+     c.done=true;hooks.spread(c,c.damage);
+     if(!s.rain){
+      s.roofDust=(s.roofDust??[]).filter(p=>s.time-p.start<.85);
+      s.roofDust.push({x:c.x,y:c.y,start:c.hit,bolt:c.bolt});
+     }
+    }
     continue;
    }
    if(c.done)continue;
@@ -276,6 +292,7 @@ function create(arena,save,hooks){
    }else if(c.kind==='storm'){
     shock(targets.filter(p=>gap(c,p)<=c.r),c.damage,c.origin,c);
    }else{
+    if(c.kind==='beam')hooks.beam?.(c);
     shock(targets.filter(p=>inLine(p,c.from,c.to,c.width)),c.damage,c.origin,c.to);
    }
   }
@@ -294,20 +311,26 @@ function create(arena,save,hooks){
   s.killed=(s.killed??0)+1;
   s.cues=s.cues.filter(c=>c.done||c.scientist!==e.scientist);
   if(s.killed===1){
-   s.rain=true;
    const from=arena.gate.x+48,to=arena.gate.x-114,end=s.time+.82;
    s.ratGateUntil=end;
    hooks.spawn([makeActor('behaviorist-giant-rat','giant-rat',hooks.types.ELECTRO_RAT,
     {x:from,y:arena.gate.y},hooks.players().length>1?250:155,1.89,
     {warded:true,angle:Math.PI,bossEntrance:{start:s.time,end,from,to}})]);
-   hooks.changed('rain');
+   hooks.changed('rat');
   }else if(s.killed===2){
+   s.roofCollapseAt=s.time;s.roofDust=[];s.rain=true;
    const last=people()[0];
    if(last){last.enlarged=true;last.size=1.82;last.nextAttack=s.time+.7;last.moveCount=1;}
+   hooks.changed('roof');
   }
  }
  function step(dt){
   const s=battle();
+  if(s.roofCollapseAt===undefined&&s.killed>0){
+   s.roofCollapseAt=s.killed>=2?s.time-2:null;
+   s.rain=s.killed>=2;
+  }
+  if(s.phase==='won'&&s.roofCollapseAt!=null&&s.time<s.roofCollapseAt+2){advance(dt,s);return;}
   if(s.phase==='sealed'&&s.altars.every(Boolean)&&!hooks.enemies().some(e=>e.hp>0&&!e.bossRole)){
    s.phase='ready';hooks.changed('ready');
   }
@@ -316,12 +339,12 @@ function create(arena,save,hooks){
   const players=hooks.players();
   if(!players.some(inside)&&s.phase!=='intro'){
    for(const e of hooks.enemies())if(e.bossRole)e.bossDiscard=true;
-   Object.assign(s,{phase:'ready',rain:false,time:0,waves:0,killed:0,last:-1,lastOrder:0,deathOrder:0,cues:[],
+   Object.assign(s,{phase:'ready',rain:false,roofCollapseAt:null,roofDust:[],time:0,waves:0,killed:0,last:-1,lastOrder:0,deathOrder:0,cues:[],
     nextWave:null,pulseCycle:null,formation:null,front:null,firstAttacker:null,ratGateUntil:null});
    hooks.changed('retry');return;
   }
   players.forEach((p,i)=>{if(!inside(p)&&!p.deathRecap)teleport(p,i);});
-  s.time+=dt;
+  advance(dt,s);
   if(s.phase==='intro'){
    if(s.time>=introDuration){s.phase='waves';s.time=0;startWave();hooks.changed('waves');}
    return;
@@ -331,6 +354,14 @@ function create(arena,save,hooks){
   if(s.phase==='fight'&&!actors().length){
    s.phase='won';s.cues=[];
    hooks.win(arena,rewards[s.last]);hooks.changed('won');
+  }
+ }
+ function advance(dt,s){
+  s.time+=dt;
+  if(s.roofCollapseAt==null)return;
+  const age=s.time-s.roofCollapseAt;
+  for(const rock of arena.rubble??[]){
+   if(age>=rock.fallDelay&&age-dt<rock.fallDelay)hooks.roofLanding?.(rock);
   }
  }
  return {step,defeat,markDeath,setAltar,inCombat};

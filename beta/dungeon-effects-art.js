@@ -28,6 +28,22 @@ window.DungeonEffectsArt = (() => {
    shape([[20,42],[32,33],[49,33],[45,37],[33,38],[22,47]],palette[2]);
    return c;
   }
+  if(type==='stone-shard'){
+   const bevel=12+frame*3,lip=48+frame%3*4;
+   shape([[5,33],[bevel,7],[43,9],[lip,20],[59,43],[39,59],[16,52]],'#2b2834');
+   shape([[7,32],[bevel,10],[43,12],[lip,22],[53,37],[34,44],[15,41]],'#817583');
+   shape([[8,31],[bevel,10],[43,12],[lip,23],[31,19],[bevel+3,26]],'#b3a294');
+   shape([[15,42],[34,44],[54,37],[55,44],[39,55],[17,50]],'#544b5a');
+   return c;
+  }
+  if(type==='roof-dust'){
+   const colors=['#625664','#877581','#ae9f9b'];
+   for(let i=0;i<13;i++){
+    const x=7+(i*23+frame*7)%42,y=14+(i*11+frame*2)%32,w=8+(i*3)%12;
+    shape([[x,y+5],[x+3,y],[x+w-4,y],[x+w,y+5],[x+w-4,y+10],[x+3,y+10]],colors[i%3]+'88');
+   }
+   return c;
+  }
   if(type.startsWith('boss-triangle-')){
    const blue=type.endsWith('blue');
    const halo=blue?'#397edf':'#c03850',rim=blue?'#71cbff':'#ff8879',core=blue?'#ecfdff':'#fff2d5';
@@ -285,7 +301,7 @@ window.DungeonEffectsArt = (() => {
   }
   return c;
  }
- const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','frost-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark','boss-shockwave','boss-triangle-red','boss-triangle-blue','wood-shard'];
+ const types=['ice','ice-tell','shadow','burst','charge','rift','web','web-shot','reap','grab','bite','bow','crossbow','arrow','poison-arrow','frost-arrow','arcane-shot','waterfall-flow','lion-rake','lion-tell','blood-burst','meal-glow','potion-burst','potion-coat','altar','critical-hit','counter-hit','fatal-hit','level-rise','charge-aura','counter-mark','charged-swing','bat-warning','bat-flame','bat-beam','bat-lightning-warning','storm-bolt','storm-mark','boss-shockwave','boss-triangle-red','boss-triangle-blue','wood-shard','stone-shard','roof-dust'];
  const flameFrames=24;
  const spread=t=>4+t*52;
  const emberSeeds=Array.from({length:32},(_,i)=>({phase:(i*.61803399)%1,side:Math.sin(i*53.17),turn:i*2.9}));

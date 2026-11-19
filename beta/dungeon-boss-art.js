@@ -151,20 +151,6 @@ function ui(rules,damage,shakeEnabled){
   g.setTransform(dpr,0,0,dpr,-scrollX*dpr,-scrollY*dpr);
   const time=battle.time;
   g.save();g.beginPath();circle(arena.x,arena.y,arena.radius);g.clip();
-  if(battle.rain){
-   for(const p of arena.puddles){
-    const glow=g.createRadialGradient(p.x,p.y,5,p.x,p.y,p.rx);
-    glow.addColorStop(0,'#346c8877');glow.addColorStop(.72,'#33667878');glow.addColorStop(1,'#65bfd300');
-    g.save();g.translate(p.x,p.y);g.scale(1,p.ry/p.rx);g.translate(-p.x,-p.y);
-    g.fillStyle=glow;g.beginPath();circle(p.x,p.y,p.rx);g.fill();
-    for(let i=0;i<3;i++){
-     const phase=(time*1.5+i/3)%1;
-     g.strokeStyle='rgba(183,237,242,'+(.34*(1-phase))+')';g.lineWidth=1.2;
-     g.beginPath();circle(p.x+(i-1)*20,p.y+i*6,5+phase*25);g.stroke();
-    }
-    g.restore();
-   }
-  }
   for(const m of battle.cues){
    if(m.kind==='beam'||m.kind==='storm')continue;
    const hot=time>=m.hit;

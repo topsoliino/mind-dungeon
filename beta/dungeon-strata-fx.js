@@ -2,6 +2,7 @@ window.DungeonStrataFx=(()=>{
  'use strict';
  const bank=.075,corner=.2,noBanks=[0,0,0,0];
  const isSewer=type=>type?.startsWith('sewer-');
+ const isPool=type=>type==='sewer-pool'||type==='boss-water';
  function shoreline(terrain,x,y){
   return [[x-1,y],[x,y-1],[x+1,y],[x,y+1]].map(([col,row])=>Number(!isSewer(terrain[row]?.[col])));
  }
@@ -106,7 +107,7 @@ window.DungeonStrataFx=(()=>{
   }catch{gl=null;}
   const steps=[],last=new Map();
   function collect(actor,key,t,waterAt){
-   if(!actor||waterAt(actor.x,actor.y)!=='sewer-pool'){last.delete(key);return;}
+   if(!actor||!isPool(waterAt(actor.x,actor.y))){last.delete(key);return;}
    const before=last.get(key);
    if(!before||Math.hypot(actor.x-before.x,actor.y-before.y)>17){
     const step={x:actor.x,y:actor.y,t};
@@ -118,6 +119,13 @@ window.DungeonStrataFx=(()=>{
    const width=Math.max(1,Math.ceil(w/2)),height=Math.max(1,Math.ceil(h/2));
    if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,width,height);
+   // Arena water covers carpet only after the roof opens. Sewer water already
+   // has a painted base in the permanent world tiles.
+   ctx.setTransform(width/w,0,0,height/h,-x*width/w,-y*height/h);
+   ctx.fillStyle='#25424be6';
+   for(const tile of tiles)if(tile.type==='boss-water'){
+    shorePath(ctx,tile.x*tileSize,tile.y*tileSize,tileSize,tile.edges);ctx.fill();
+   }
    if(gl&&!gl.isContextLost()){
     if(gpu.width!==width||gpu.height!==height){gpu.width=width;gpu.height=height;}
     gl.viewport(0,0,width,height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
@@ -126,7 +134,7 @@ window.DungeonStrataFx=(()=>{
      for(const [u,v] of [[0,0],[1,0],[0,1],[0,1],[1,0],[1,1]])vertices.push(px+u*size,py+v*size,type,u,v,...banks);
     }
     for(const tile of tiles)quad(tile.x*tileSize,tile.y*tileSize,tileSize,
-     tile.type==='sewer-pool'?0:tile.edges?tile.vertical?2:1:tile.vertical?5:4,tile.edges);
+     isPool(tile.type)?0:tile.edges?tile.vertical?2:1:tile.vertical?5:4,tile.edges);
     for(const light of lights)quad(light.x-light.radius,light.y-light.radius,light.radius*2,3);
     gl.useProgram(program);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,3,gl.FLOAT,false,36,0);
@@ -137,14 +145,14 @@ window.DungeonStrataFx=(()=>{
     steps.forEach((p,i)=>data.set([p.x,p.y,t-p.t],i*3));
     gl.uniform3fv(ripples,data);gl.enable(gl.BLEND);gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
     gl.drawArrays(gl.TRIANGLES,0,vertices.length/9);
-    ctx.drawImage(gpu,0,0);
+    ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(gpu,0,0);
    }else{
     ctx.setTransform(width/w,0,0,height/h,-x*width/w,-y*height/h);
     for(const tile of tiles){
      const tx=tile.x*tileSize,ty=tile.y*tileSize;
      ctx.save();shorePath(ctx,tx,ty,tileSize,tile.edges??noBanks);ctx.clip();
      ctx.strokeStyle=tile.edges?'#90cfbd':'#73a5aa';ctx.lineWidth=2;
-     if(tile.type==='sewer-pool'){
+     if(isPool(tile.type)){
       for(const step of steps){
        const age=t-step.t;
        if(age>=.78)continue;
@@ -153,7 +161,7 @@ window.DungeonStrataFx=(()=>{
      }
      ctx.globalAlpha=tile.edges?.30:.22;ctx.beginPath();
      for(let i=0;i<4;i++){
-      const z=(t*(tile.type==='sewer-pool'?5:tile.edges?28:20)+i*15+tile.x*5+tile.y*13)%tileSize,o=6+i*11;
+      const z=(t*(isPool(tile.type)?5:tile.edges?28:20)+i*15+tile.x*5+tile.y*13)%tileSize,o=6+i*11;
       if(tile.vertical){ctx.moveTo(tx+o,ty+z);ctx.lineTo(tx+o,ty+z+16);}
       else{ctx.moveTo(tx+z,ty+o);ctx.lineTo(tx+z+16,ty+o);}
      }

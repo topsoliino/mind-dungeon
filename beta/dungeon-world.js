@@ -63,10 +63,20 @@ const bossArena=arenaTiles&&(()=>{
  const {cx,cy,radius,id,altars,gate}=arenaTiles;
  const origin=tileCenter({x:cx,y:cy});
  const offsets=(pairs)=>pairs.map(([x,y])=>tileCenter({x:cx+x,y:cy+y}));
+ const poolTiles=[
+  [-6,-2],[-5,-3],[-5,-2],[-4,-2],[-5,-1],
+  [2,-4],[3,-5],[3,-4],[3,-3],[4,-4],
+  [3,3],[4,2],[4,3],[4,4],[5,3],
+  [-3,4],[-2,3],[-2,4],[-1,4],[-2,5],
+  [-1,-1],[0,-2],[0,-1],[0,0],[1,0]
+ ].map(([x,y])=>({x:cx+x,y:cy+y}));
+ const poolCells=new Set(poolTiles.map(p=>p.y*W+p.x));
  return {...origin,id,radius:radius*TILE,gate:{...tileCenter(gate),vertical:true,span:3*TILE,face:16},
   altars:altars.map(tileCenter),vents:offsets([[-8,0],[-6,-6],[0,-8],[6,-6],[8,3],[6,6],[0,8],[-6,6]]),
-  puddles:offsets([[-5,-2],[3,-4],[4,3],[-2,4],[0,-1]]).map((p,i)=>({...p,rx:75+i%3*13,ry:45+i%2*14})),
-  labProps:offsets([[-4,-7],[-2,-8],[2,-8],[4,-7],[-7,-4],[-7,4],[6,5]])};
+  poolTiles,poolCells,
+  labProps:offsets([[-4,-7],[-2,-8],[2,-8],[4,-7],[-7,-4],[-7,4],[6,5]]),
+  benches:offsets([[0,-7],[-6,6],[2,7],[6,-5]]),
+  rubble:offsets([[-4,-4],[1,-6],[5,-1],[-5,3],[1,5],[-1,-2],[5,4]]).map((p,i)=>({...p,fallDelay:.46+i*.087}))};
 })();
 const layerForRegion=id=>layers[id]??0;
 const layerAt=(x,y)=>layerForRegion(regionAt(x,y));
@@ -151,8 +161,9 @@ function doorAhead(x,y,angle,reach){
  return null;
 }
 const waterAt=(x,y)=>{
- if(save.bossBattle?.rain&&regionAt(x,y)===bossArena?.id&&bossArena.puddles.some(p=>((x-p.x)/p.rx)**2+((y-p.y)/p.ry)**2<=1))return 'boss-water';
- const tile=terrain[Math.floor(y/TILE)]?.[Math.floor(x/TILE)];
+ const row=Math.floor(y/TILE),col=Math.floor(x/TILE);
+ if(bossArena&&save.bossBattle?.rain&&regions[row]?.[col]===bossArena.id&&bossArena.poolCells.has(row*W+col))return 'boss-water';
+ const tile=terrain[row]?.[col];
  return tile?.startsWith('sewer-')?tile:null;
 };
 function waterLightning(split,x,y){
@@ -218,22 +229,27 @@ const FURNITURE={
  'weapon-rack':{w:57,h:23,solid:true},'armor-rack':{w:41,h:26,solid:true},
  shelf:{w:51,h:24,solid:true},'straw-bed':{w:55,h:33,solid:true},
  display:{w:58,h:30,solid:true},dresser:{w:58,h:27,solid:true},statue:{w:45,h:27,solid:true},
- grave:{w:45,h:29,solid:true},'jungle-shrine':{w:45,h:28,solid:true,light:92},rubble:{w:47,h:23,solid:true},basket:{w:32,h:20,solid:true},bush:{w:36,h:23},vines:{w:22,h:12},bench:{w:55,h:22,solid:true},campfire:{w:47,h:34,solid:true,light:210},well:{w:72,h:43,solid:true,light:156}
+ grave:{w:45,h:29,solid:true},'jungle-shrine':{w:45,h:28,solid:true,light:92},rubble:{w:47,h:23,solid:true},basket:{w:32,h:20,solid:true},bush:{w:36,h:23},vines:{w:22,h:12},bench:{w:55,h:22,solid:true},campfire:{w:47,h:34,solid:true,light:210},well:{w:72,h:43,solid:true,light:156},
+ 'large-barrel':{w:39,h:31,solid:true},'street-drain':{w:32,h:24},'street-stalls':{w:45,h:25,solid:true},
+ 'street-lantern':{w:20,h:14,light:106},'street-straw':{w:38,h:19},
+ 'lab-bench':{w:59,h:23,solid:true},'lab-apparatus':{w:59,h:25,solid:true},'roof-rubble':{w:45,h:29,solid:true}
 };
 const furniture=[];
-const breakableHP={chair:14,barrel:24,bench:26,table:42,'round-table':38,banquet:56,'banquet-long':68,
- 'straw-bed':34,fence:30,'fence-end':30,dresser:46,'weapon-rack':36,'armor-rack':42};
+const breakableHP={chair:14,barrel:24,'large-barrel':36,basket:12,bench:26,dresser:46,shelf:40,
+ 'straw-bed':34,fence:30,'fence-end':30,'weapon-rack':36,'armor-rack':42,
+ 'lab-bench':28,'lab-apparatus':32,'roof-rubble':44};
 let solidTiles=null;
-const stoneProps=new Set(['sarcophagus','crystal','statue','grave','jungle-shrine','rubble','well']);
+const stoneProps=new Set(['sarcophagus','crystal','statue','grave','jungle-shrine','rubble','well','roof-rubble']);
 const woodProps=new Set(['table','chair','bookcase','cabinet','barrel','lectern','tree','pine','birch','roots',
  'provisions','alchemy','banquet','market','round-table','banquet-long','fence','fence-end','weapon-rack',
- 'armor-rack','shelf','display','dresser','bench','basket','straw-bed']);
+ 'armor-rack','shelf','display','dresser','bench','basket','straw-bed','large-barrel','lab-bench','lab-apparatus']);
 const reducedDepth=new Set(['cabinet','bookcase','shelf','dresser','display','weapon-rack','armor-rack','statue']);
 const furnitureHP=p=>p.breakId?(save.furnitureDamage?.[p.breakId]??breakableHP[p.type]):null;
-const furnitureIntact=p=>furnitureHP(p)!==0;
+const furnitureIntact=p=>furnitureHP(p)!==0&&(p.fallDelay===undefined||
+ (save.bossBattle?.roofCollapseAt!=null&&save.bossBattle.time-save.bossBattle.roofCollapseAt>=p.fallDelay));
 function strikeFurniture(p,damage){
  const before=furnitureHP(p);
- if(!before||!Number.isFinite(damage)||damage<=0)return null;
+ if(!before||!furnitureIntact(p)||!Number.isFinite(damage)||damage<=0)return null;
  const hp=Math.max(0,before-Math.max(1,Math.round(damage)));
  (save.furnitureDamage??={})[p.breakId]=hp;
  return hp;
@@ -241,7 +257,7 @@ function strikeFurniture(p,damage){
 function furnitureAt(x,y,rx=12,ry=rx,original=false){
  const candidates=solidTiles&&rx<=40&&ry<=40?solidTiles.get(Math.floor(y/TILE)*W+Math.floor(x/TILE))??[]:furniture;
  return candidates.find(p=>{
-  if(!p.solid||!original&&!furnitureIntact(p))return false;
+  if(!p.solid||(original?p.fallDelay!==undefined:!furnitureIntact(p)))return false;
   const inset=reducedDepth.has(p.type)?Math.min(7,p.h*.24):0;
   return Math.abs(x-p.x)<p.w/2+rx&&Math.abs(y-p.y-inset)<p.h/2-inset+ry;
  });
@@ -658,6 +674,29 @@ for(const room of [...lofts,...extraRooms,...(alleys?.houses??[])]){
  furnishPurpose(room,room.theme,room.group);
  placeRoomSet([['torch',0,0]],room.x+room.w-1.4,room.y+2.6,room.theme);
 }
+if(alleys){
+ const stages=[
+  [['large-barrel',0,0],['basket',.99,0]],
+  [['street-stalls',0,0],['street-lantern',0,0],['street-straw',.96,.18]],
+  [['large-barrel',0,0],['large-barrel',.98,.10]],
+  [['basket',0,0],['basket',.91,.21],['street-straw',1.6,.19]]
+ ];
+ const streetRandom=run.random(furnishingSeed^0x6b386d),sideSites=alleys.paved.filter(({x,y})=>
+  terrain[y-1]?.[x]?.startsWith('street-facade-')||terrain[y+1]?.[x]?.startsWith('street-facade-'));
+ const left=Math.min(...sideSites.map(p=>p.x)),right=Math.max(...sideSites.map(p=>p.x));
+ for(const [i,group] of stages.entries()){
+  const goal=left+(right-left)*(i+.5)/stages.length;
+  const sites=sideSites.map(p=>({...p,score:Math.abs(p.x-goal)+streetRandom()*2})).sort((a,b)=>a.score-b.score);
+  sites.some(p=>placeRoomSet(group,p.x+.5,p.y+.5,5));
+ }
+ const lane=alleys.paved.filter(({x,y})=>[-1,1].every(dy=>regions[y+dy]?.[x]===alleys.id&&!map[y+dy][x]));
+ const drains=[];
+ for(const {x,y} of run.shuffle(lane,streetRandom)){
+  if(drains.some(d=>Math.abs(d-x)<8)||furnitureBlocked((x+.5)*TILE,(y+.5)*TILE,10))continue;
+  if(placeRoomSet([['street-drain',0,0]],x+.5,y+.5,5))drains.push(x);
+  if(drains.length===3)break;
+ }
+}
 for(const room of sewerRooms){
  for(let y=room.y;y<room.y+room.h;y+=4){
   const x=room.x+(y%3)*4+1,wx=(x+.5)*TILE,wy=(y+.5)*TILE;
@@ -686,6 +725,38 @@ function reachableSpawnTiles(){
   enqueue(x-1,y);enqueue(x+1,y);enqueue(x,y-1);enqueue(x,y+1);
  }
  return (x,y)=>seen[Math.round(y/step)*cols+Math.round(x/step)]===2;
+}
+const bossFurniture=bossArena?[
+ ...bossArena.labProps.map((p,variant)=>({...p,variant,type:'lab-apparatus'})),
+ ...bossArena.benches.map(p=>({...p,type:'lab-bench'})),
+ ...bossArena.rubble.map((p,variant)=>({...p,variant,type:'roof-rubble'}))
+].map(p=>({...p,zone:5,...FURNITURE[p.type]})):[];
+furniture.push(...bossFurniture);
+function bossBeamFurniture({from,to,width}){
+ return bossFurniture.filter(p=>{
+  if(!furnitureIntact(p))return false;
+  let enter=0,exit=1;
+  for(const [axis,half] of [['x',p.w/2+width],['y',p.h/2+width]]){
+   const start=from[axis]-p[axis],delta=to[axis]-from[axis];
+   if(!delta){if(Math.abs(start)>half)return false;continue;}
+   const a=(-half-start)/delta,b=(half-start)/delta;
+   enter=Math.max(enter,Math.min(a,b));exit=Math.min(exit,Math.max(a,b));
+  }
+  return enter<=exit;
+ });
+}
+function resetBossFurniture(){
+ for(const p of bossFurniture)delete save.furnitureDamage?.[p.breakId];
+}
+function clearRoofLanding(actor,rock,radius){
+ const dx=actor.x-rock.x,dy=actor.y-rock.y,start=Math.atan2(dy,dx);
+ const {w,h}=FURNITURE['roof-rubble'];
+ if(Math.abs(dx)>=w/2+radius||Math.abs(dy)>=h/2+radius)return;
+ for(let i=0;i<8;i++){
+  const angle=start+(i%2?1:-1)*Math.ceil(i/2)*Math.PI/4,distance=32+radius;
+  const x=rock.x+Math.cos(angle)*distance,y=rock.y+Math.sin(angle)*distance;
+  if(regionAt(x,y)===bossArena.id&&valid(x,y,radius)){actor.x=x;actor.y=y;return;}
+ }
 }
 solidTiles=new Map();
 for(const piece of furniture){
@@ -745,7 +816,7 @@ return {
  rooms,corridors,map,regions,gates,annexes,terrain,rest,
  paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
- spawn,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,
+ spawn,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,
  regionAt,layerAt,layerForRegion,links,stairs,stairsNear,stairConnected,stairCrestClosed,hiddenByStairCrest,nearestLink,stairsFor,doors,doorHP,doorAt,doorAhead,strikeDoor,accessState,accessSite,resolveAccess,lofts,sewerRooms,roof,crypt,cryptAltar,sewerRelic:sewerRelic&&tileCenter(sewerRelic),abyssAt,pastLedge,hailAt,waterAt,waterLightning,waterPulse,pulseReaches,gateLineBlocked,barrierVisible,barrierFloor,gateBlocked,wall,furniture,furnitureBlocked,furnitureAt,furnitureBetween,furnitureHP,furnitureIntact,furnitureCue,strikeFurniture,meleeFurniture,footWall,valid,weaponImpact,weaponClearance,weaponCover,meleeWall,beforeMeleeWall,
  merchantRoomId,merchant,mapPickup,market,landmarks,shrines,chests,trialIndex,
  cabinets,pressurePlates,canReachSpawn,accessiblePoint,boneDropPosition,sightBarriers,lootPosition

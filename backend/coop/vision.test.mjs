@@ -210,3 +210,29 @@ test('room entry also reveals a same-level walkway that overlaps the room floor'
  view.update(center(entry.x,entry.y),640,480);
  assert.ok(floorTiles.every(p=>knows(view,p.x,p.y)&&looks(view,p.x,p.y)));
 });
+
+test('entering the street reveals the pavement and building fronts without seeing into closed houses',()=>{
+ const floor=geometry.build(run,run.freshRun(4));
+ const {alleys,terrain,map,regions,furniture}=floor;
+ const view=vision.create(floor,TILE,floor.sightBarriers(),[],new Set([floor.rest.id]));
+ const entry=alleys.paved.find(p=>p.x===Math.min(...alleys.paved.map(p=>p.x)));
+ view.update(center(entry.x,entry.y),640,480);
+ assert.ok(alleys.paved.every(p=>knows(view,p.x,p.y)&&looks(view,p.x,p.y)));
+ const fronts=terrain.flatMap((row,y)=>row.flatMap((type,x)=>
+  map[y][x]===1&&regions[y][x]===alleys.id&&type?.startsWith('street-')?[{x,y}]:[]));
+ assert.ok(fronts.length>20&&fronts.every(p=>knows(view,p.x,p.y)));
+ assert.ok(alleys.houses.every(house=>!knows(view,house.cx,house.cy)));
+ const street=furniture.filter(p=>floor.regionAt(p.x,p.y)===alleys.id);
+ for(const type of ['basket','large-barrel','street-drain','street-stalls','street-lantern']){
+  assert.ok(street.some(p=>p.type===type),type);
+ }
+ for(const type of ['table','round-table','banquet','banquet-long']){
+  const table=furniture.find(p=>p.type===type);
+  if(table)assert.equal(floor.strikeFurniture(table,999),null);
+ }
+ for(const type of ['dresser','shelf']){
+  const piece=furniture.find(p=>p.type===type);
+  assert.ok(floor.strikeFurniture(piece,10)>0,type);
+  assert.equal(floor.strikeFurniture(piece,999),0);
+ }
+});
