@@ -125,7 +125,7 @@ export class Simulation{
  resetAtRest(p,newFloor=false){
   const spawn=this.floor.spawn,offset=p.seat===2?37:0;
   const x=this.floor.valid(spawn.x+offset,spawn.y,HERO_RADIUS,false,true)?spawn.x+offset:spawn.x;
-  Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,attackDuration:.4,walk:0,
+  Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,wallRecoil:0,recoilAngle:0,attackDuration:.4,walk:0,
    moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,
    combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null,
    consumeQueue:newFloor?p.consumeQueue??[]:[],damageQueue:newFloor?p.damageQueue??[]:[],damageHistory:newFloor?p.damageHistory??[]:[],fall:null});
@@ -299,7 +299,7 @@ export class Simulation{
    if(p.fall.remaining<=1e-7)this.die(p,'fall',p.fall.origin);
    return;
   }
-  for(const key of ['inv','attack','dash','dashCooldown','webSlow','grabSlow','bleedGrace','entryGrace','travelLock'])p[key]=remaining(p[key],dt);
+  for(const key of ['inv','attack','wallRecoil','dash','dashCooldown','webSlow','grabSlow','bleedGrace','entryGrace','travelLock'])p[key]=remaining(p[key],dt);
   if(!p.bleedGrace)p.bleed=remaining(p.bleed,dt*14);
   if(p.activeBrew){
    p.activeBrew.remaining=remaining(p.activeBrew.remaining,dt);
@@ -330,14 +330,15 @@ export class Simulation{
   }
   const threat=this.enemies.some(e=>e.hp>0&&gap(e,p)<420&&this.canTarget(e,p)&&!this.floor.gateLineBlocked(p.x,p.y,e.x,e.y));
   p.combat=threat?1.35:remaining(p.combat,dt);
-  if(p.attack||p.dash||p.chargeStart!==null)p.staminaRest=0;
+  if(p.attack||p.dash||p.wallRecoil||p.chargeStart!==null)p.staminaRest=0;
   else if((p.staminaRest+=dt)>.45)p.stamina=Math.min(p.staminaMax,p.stamina+dt*(10+p.attributes.endurance*.6)*Math.min(2.8,1+(p.staminaRest-.45)*2.2)*p.mods.regen);
   let {x,y,aim,dash,at,blocked}=p.input;
   if(p.quiz||p.consume||blocked||this.clock-at>.35){x=0;y=0;dash=false;}
   else p.dir=aim;
   if(p.chargeStart!==null&&this.clock-at>.5)p.chargeStart=null;
+  if(p.wallRecoil>geometry.wallRecoilSeconds-.13){x=0;y=0;}
   const length=Math.hypot(x,y)||1;x/=length;y/=length;
-  if(!p.vault&&!p.dashCooldown&&dash&&(x||y)&&this.cost(p,Math.round((p.equipment.rings.includes('dodge')?17:25)*p.mods.cost))){
+  if(!p.vault&&!p.wallRecoil&&!p.dashCooldown&&dash&&(x||y)&&this.cost(p,Math.round((p.equipment.rings.includes('dodge')?17:25)*p.mods.cost))){
    p.chargeStart=null;p.dash=p.load.dashTime;p.dashCooldown=.85*p.mods.dashCooldown*items.dashCooldown(p.equipment.armor)*(p.weapon?.malus?balance.weaponMythicDash:1);p.dashX=x;p.dashY=y;
    this.emit('dash',{seat:p.seat,x:p.x,y:p.y});
   }
@@ -355,7 +356,7 @@ export class Simulation{
    const speed=p.speed*(p.dash?p.load.dashSpeed*p.mods.dashDistance:1)*(slow?.53:1)*(p.chargeStart!==null?.64:1);
    if(!this.move(p,x*speed*dt,y*speed*dt))return;
   }
-  const face=Math.cos(p.dir);if(Math.abs(face)>.23)p.weaponSide=Math.sign(face);
+  const face=Math.cos(p.dir);if(Math.abs(face)>.23&&!p.wallRecoil)p.weaponSide=Math.sign(face);
   p.moving=gap(p,before)>.08;
   if(p.moving)p.walk+=dt*(p.dash?23:12);
   const region=this.floor.regionAt(p.x,p.y);
@@ -386,7 +387,7 @@ export class Simulation{
   return null;
  }
  charge(p,aim,vaultFirst=false){
-  if(this.state.bossBattle?.phase==='intro'||p.fall||p.deathRecap||p.quiz||p.consume||p.attack||p.dash||p.vault||p.chargeStart!==null)return false;
+  if(this.state.bossBattle?.phase==='intro'||p.fall||p.deathRecap||p.quiz||p.consume||p.attack||p.wallRecoil||p.dash||p.vault||p.chargeStart!==null)return false;
   p.dir=Number.isFinite(aim)?normalAngle(aim):p.dir;
   if(vaultFirst){
    const heading=p.input.x||p.input.y?Math.atan2(p.input.y,p.input.x):p.dir,to=this.vaultPath(p,heading);
@@ -399,15 +400,20 @@ export class Simulation{
   if(this.state.bossBattle?.phase==='intro'||p.chargeStart===null)return false;
   const charged=this.clock-p.chargeStart>=balance.chargeSeconds;
   p.chargeStart=null;
-  if(p.fall||p.deathRecap||p.quiz||p.consume||p.dash||p.attack||p.vault||!p.weapon)return false;
+  if(p.fall||p.deathRecap||p.quiz||p.consume||p.dash||p.attack||p.wallRecoil||p.vault||!p.weapon)return false;
   p.dir=Number.isFinite(aim)?normalAngle(aim):p.dir;
   const w=p.weapon;
   if(!this.cost(p,Math.round(w.stamina*(charged?1.28:1)*p.mods.cost)))return false;
   p.attack=p.attackDuration=w.speed*(charged?1.25:1);
   const scale=p.mods.reach*items.arrowRange(w,p.equipment.armor),reach=w.reach*scale,type=p.mods.element??Object.keys(w.split)[0];
   const swing={seat:p.seat,id:this.id(),x:round(p.x),y:round(p.y),dir:p.dir,weapon:w.id,type,reach,scale,duration:p.attack,charged};
+  const contact=this.floor.meleeWall(p.x,p.y,p.dir,w,reach);
+  if(contact){swing.wallAngle=contact.offset;swing.duration=geometry.wallRecoilSeconds;}
   this.emit('swing',swing);
-  if(this.floor.inRest(p.x,p.y))return true;
+  if(this.floor.inRest(p.x,p.y)||w.projectile&&contact){
+   if(contact)this.reboundFromWall(p,contact,charged);
+   return true;
+  }
   const hit={p,w,charged,amount:p.damage*items.madnessBonus(p,p.equipment.rings),crit:p.crit,impact:p.impact,split:p.mods.element?{[p.mods.element]:Object.values(w.split).reduce((a,b)=>a+b,0)}:w.split};
   if(w.projectile){
    this.shots.push({x:p.x,y:p.y,origin:{x:p.x,y:p.y},angle:p.dir,left:reach,speed:(w.projectile==='arrow'?490:345)*(charged?1.23:1),hit});
@@ -415,19 +421,29 @@ export class Simulation{
   }
   let targetHit=false,impact=null;
   const door=this.floor.doorAhead(p.x,p.y,p.dir,reach);
-  if(door)impact=door;
+  const beforeWall=target=>this.floor.beforeMeleeWall(p.x,p.y,target.x,target.y,w,contact);
+  const doorHit=door&&beforeWall(door);
   for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
-   if(e.hp>0&&items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)&&
+   if(e.hp>0&&items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)&&beforeWall(e)&&
      !this.floor.gateLineBlocked(p.x,p.y,e.x,e.y)){targetHit=true;impact??={x:e.x,y:e.y};this.weaponHit(e,hit,angle);}
   }
-  if(door)this.hitDoor(door,hit);
-  this.shockWater(p,impact,hit.split,hit.amount,p);
-  if(!targetHit&&!door){
-   const contact=this.floor.weaponImpact(p.x,p.y,p.dir,reach);
-   if(contact)this.sound(contact.cue,contact,{gain:.67,priority:2});
+  if(doorHit)this.hitDoor(door,hit);
+  this.shockWater(p,impact??(doorHit?door:null),hit.split,hit.amount,p);
+  if(contact)this.reboundFromWall(p,contact,charged);
+  else if(!targetHit&&!doorHit){
+   const prop=this.floor.weaponImpact(p.x,p.y,p.dir,reach);
+   if(prop)this.sound(prop.cue,prop,{gain:.67,priority:2});
   }
   return true;
+ }
+ reboundFromWall(p,contact,charged){
+  p.attack=0;p.wallRecoil=geometry.wallRecoilSeconds;p.recoilAngle=contact.angle;
+  p.stamina=Math.max(0,p.stamina-(charged?14:9));p.staminaRest=0;
+  const force=charged?17:11;
+  this.move(p,-Math.cos(contact.angle)*force,-Math.sin(contact.angle)*force,true,
+   {source:'Wand',action:'Waffenabpraller'});
+  this.emit('wall-recoil',{seat:p.seat,x:round(contact.x),y:round(contact.y),angle:contact.angle});
  }
  updateShots(dt){
   this.shots=this.shots.filter(shot=>{

@@ -72,6 +72,7 @@ test('the coop boss gate needs two correct answers and a cleared floor, then the
  Object.assign(host,{x:arena.gate.x-105,y:arena.gate.y});
  sim.step(1/30);
  assert.equal(battle.phase,'intro');
+ assert.equal(battle.scientistMax,3*410);
  assert.equal(floor.regionAt(guest.x,guest.y),arena.id);
  assert.ok(floor.gateBlocked(arena.gate.x,arena.gate.y));
  assert.equal(sim.charge(host,0),false);
@@ -83,6 +84,7 @@ test('the coop boss gate needs two correct answers and a cleared floor, then the
  assert.equal(early.hp,early.max);
  for(let wave=1;wave<=3;wave++){
   assert.equal(rats.length,5+wave);
+  assert.equal(battle.waveMax,(5+wave)*32);
   rats.forEach(e=>kill(sim,e));
   stepUntil(sim,()=>battle.waves> wave||battle.phase==='fight');
   rats=sim.enemies.filter(e=>e.bossRole==='rat');

@@ -1,22 +1,18 @@
 #boss-effects{position:fixed;inset:0;width:100vw;height:100vh;z-index:2;pointer-events:none}
-#boss-hud{position:fixed;left:50%;bottom:max(84px,10vh);width:min(550px,86vw);transform:translateX(-50%);z-index:15;pointer-events:none;padding:8px 13px 11px;background:#17111de9;border:1px solid #69546c;color:#f9e9d9;font:600 13px Georgia,serif;text-shadow:1px 2px #1a1021}
-#boss-hud h2{margin:0 0 3px;text-align:center;color:#f0d499;font-size:17px;letter-spacing:.13em}
-#boss-hud p{margin:0 0 5px;text-align:center;color:#cfc0db;font:11px system-ui,sans-serif}
-.boss-health{display:grid;grid-template-columns:minmax(100px,150px) 1fr;gap:10px;align-items:center;margin:5px 0 0}
-.boss-health span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.boss-health meter{appearance:none;width:100%;height:12px;border:1px solid #67515e;background:#291d2a}
-.boss-health meter::-webkit-meter-bar{background:#291d2a;border:0;border-radius:0}
-.boss-health meter::-webkit-meter-optimum-value{background:linear-gradient(0deg,#803953,#d17b80)}
-.boss-health meter::-moz-meter-bar{background:#c3657d}
-.boss-health.warded meter::-webkit-meter-optimum-value{background:linear-gradient(0deg,#58637f,#9caeba)}
+#boss-hud{position:fixed;left:50%;bottom:max(80px,10vh);width:min(480px,75vw);transform:translateX(-50%);z-index:15;pointer-events:none;color:#fff2e0;text-shadow:0 1px 3px #130a16,0 0 7px #130a16}
+#boss-hud h2{margin:0 0 4px;text-align:center;font:600 16px Georgia,serif;letter-spacing:.1em}
+#boss-hud meter{display:block;appearance:none;width:100%;height:7px;border:0;border-radius:0;background:#1b1320df}
+#boss-hud meter::-webkit-meter-bar{background:#1b1320df;border:0;border-radius:0}
+#boss-hud meter::-webkit-meter-optimum-value{background:var(--hit-color,#df8c96);border-radius:0}
+#boss-hud meter::-moz-meter-bar{background:var(--hit-color,#df8c96)}
 #boss-intro{position:fixed;inset:0;z-index:1900;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,#4f50686b 2%,#211528ef 58%,#0a0713);display:grid;align-content:center;justify-items:center;overflow:hidden;color:#faedda}
 #boss-intro[hidden],#boss-hud[hidden],#boss-effects[hidden]{display:none}
 .boss-title{position:fixed;inset:8vh 0 auto;text-align:center;color:#ffe7ae;font:700 clamp(19px,4vw,45px) Georgia,serif;letter-spacing:.23em;text-transform:uppercase;text-shadow:0 0 35px #d389c4;margin:0}
-.boss-lineup{display:flex;align-items:end;justify-content:center;gap:0;width:min(94vw,740px);height:min(51vh,410px);animation:boss-arrival .55s ease-out;transform-origin:50% calc(100% - min(23vw,185px));transform:translateX(var(--pan,0%)) scale(var(--zoom,1));transition:transform .88s cubic-bezier(.32,.01,.24,1)}
+.boss-lineup{display:flex;align-items:end;justify-content:center;gap:0;width:min(94vw,740px,105vh);height:min(51vh,410px);animation:boss-arrival .55s ease-out;transform-origin:50% calc(100% - min(23vw,185px,26vh));transform:translate(var(--pan,0%),var(--rise,0px)) scale(var(--zoom,1));transition:transform .88s cubic-bezier(.32,.01,.24,1)}
 .boss-lineup img{width:33.3%;height:auto;image-rendering:pixelated;transition:filter .45s,opacity .55s;filter:drop-shadow(0 0 9px #709ba7) brightness(.72)}
-#boss-intro[data-speaker="0"] .boss-lineup{--zoom:2.2}
-#boss-intro[data-speaker="1"] .boss-lineup{--zoom:2.35;--pan:-78%}
-#boss-intro[data-speaker="2"] .boss-lineup{--zoom:2.65;--pan:88%}
+#boss-intro[data-speaker="0"] .boss-lineup{--zoom:2.2;--rise:min(5vh,38px)}
+#boss-intro[data-speaker="1"] .boss-lineup{--zoom:2.35;--pan:-78%;--rise:min(5vh,38px)}
+#boss-intro[data-speaker="2"] .boss-lineup{--zoom:2.65;--pan:88%;--rise:min(5vh,38px)}
 #boss-intro[data-speaker="0"] img:nth-child(2),#boss-intro[data-speaker="1"] img:nth-child(3),#boss-intro[data-speaker="2"] img:nth-child(1){filter:drop-shadow(0 0 11px #a0ccda) brightness(1.13)}
 .boss-subtitle{position:fixed;inset:auto 5vw max(9vh,38px);text-align:center;padding:14px 16px;background:linear-gradient(90deg,transparent,#0e0b18ed 15%,#0e0b18ed 85%,transparent);font:500 clamp(16px,2.4vw,24px) system-ui,sans-serif;text-shadow:1px 2px #09080d;z-index:3}
 .boss-subtitle[hidden]{display:none}

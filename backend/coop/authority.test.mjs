@@ -99,6 +99,44 @@ test('spears appear in some merchant samples and hit along a thrust rather than 
  assert.equal(flank.hp,80);
 });
 
+test('a spear grazes a wall at full extension and rebounds only after a solid hit',()=>{
+ const {host,sim}=game(193);
+ const {map,terrain,rooms}=sim.floor,room=rooms[0],aim=Math.PI/2;
+ host.equipment.weapon='spear';preparePlayer(host);
+ const spear=host.weapon;
+ // Set up a straight, unobstructed strike at the south wall of the room.
+ const wallY=(room.y+room.h)*TILE;
+ const x=Array.from({length:room.w-2},(_,i)=>(room.x+i+1.5)*TILE).find(x=>{
+  const tx=Math.floor(x/TILE),ty=wallY/TILE;
+  return map[ty]?.[tx]===1&&!terrain[ty]?.[tx]&&
+   sim.floor.valid(x,wallY-90,14,false,true)&&sim.floor.valid(x,wallY-105,14,false,true)&&
+   !sim.floor.gateLineBlocked(x,wallY-130,x,wallY-20);
+ });
+ assert.ok(x);
+ assert.equal(sim.floor.meleeWall(x,wallY-spear.reach+5,aim,spear,spear.reach),null);
+ const y=wallY-90,contact=sim.floor.meleeWall(x,y,aim,spear,spear.reach);
+ assert.ok(contact&&contact.y>=wallY&&contact.y<wallY+4);
+ const enemy={x,y:y+48,id:'before-wall',type:foes.SKELETON,hp:80,max:80,size:1};
+ const blocked={...enemy,y:wallY+16,id:'past-wall'};
+ Object.assign(host,{x,y,combat:1,stamina:100});
+ sim.enemies=[enemy,blocked];
+ assert.ok(sim.charge(host,aim)&&sim.attack(host,aim));
+ assert.ok(enemy.hp<80);
+ assert.equal(blocked.hp,80);
+ assert.equal(host.stamina,100-spear.stamina-9);
+ assert.equal(host.attack,0);
+ assert.ok(host.wallRecoil>0&&host.y<y);
+ assert.equal(sim.charge(host,aim),false);
+ assert.ok(sim.events.some(event=>event.kind==='wall-recoil'));
+ const staff=items.weapon('staff');
+ assert.equal(sim.floor.meleeWall(x,y,aim,staff,staff.reach),null);
+ const tx=Math.floor(x/TILE),ty=wallY/TILE;
+ terrain[ty][tx]='partition';
+ terrain[ty][tx+1]='partition';
+ const inside=sim.floor.meleeWall(x,wallY-60,aim,spear,spear.reach);
+ assert.ok(inside&&inside.y>=wallY+15&&inside.y<wallY+19);
+});
+
 test('quick food absorbs pending damage, chooses the smallest sufficient portion, and queues while stationary',()=>{
  const {host,sim}=game();
  arena(sim,host);sim.enemies=[];
