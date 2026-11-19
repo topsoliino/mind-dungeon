@@ -1128,7 +1128,7 @@ window.DungeonArt = (() => {
       return c;
     }
     if(type==='hero'){
-      const step=frame===1?2:frame===2?-2:0;
+      const step=options.stride??(frame===1?2:frame===2?-2:0);
       if(armor.chest){
         shape([[21,25],[43,25],[51,50],[44,54],[19,54],[12,49]],ink);
         shape([[22,27],[42,27],[47,49],[36,52],[17,48]],color);

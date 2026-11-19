@@ -141,6 +141,7 @@ test('a spear grazes a wall at full extension and rebounds only after a solid hi
  });
  assert.ok(x);
  assert.equal(sim.floor.meleeWall(x,wallY-spear.reach+19,aim,spear,spear.reach),null);
+ assert.equal(sim.floor.meleeWall(x,wallY-spear.reach+29,aim,spear,spear.reach),null);
  const y=wallY-90,contact=sim.floor.meleeWall(x,y,aim,spear,spear.reach);
  assert.ok(contact&&contact.y>=wallY&&contact.y<wallY+4);
  assert.equal(contact.normalX,0);
@@ -177,6 +178,44 @@ test('a spear grazes a wall at full extension and rebounds only after a solid hi
  terrain[ty][tx+1]='partition';
  const inside=sim.floor.meleeWall(x,wallY-60,aim,spear,spear.reach);
  assert.ok(inside&&inside.y>=wallY+15&&inside.y<wallY+19);
+});
+
+test('physical arrows land once at the end of their range, and collisions retain their normal outcome',()=>{
+ const {host,guest,sim}=game();
+ arena(sim,host);sim.enemies=[];
+ const {x,y}=host,project=createProjection(),projectGuest=createProjection();
+ Object.assign(guest,{x:x-100,y});
+ project(sim,host);
+ projectGuest(sim,guest);
+ host.equipment.weapon='bow';preparePlayer(host);
+ assert.ok(sim.charge(host,0)&&sim.attack(host,0));
+ sim.shots[0].left=46;
+ sim.updateShots(.2);
+ assert.equal(sim.shots.length,0);
+ const lands=()=>sim.events.filter(event=>event.kind==='arrow-land');
+ assert.equal(lands().length,1);
+ assert.ok(Math.abs(lands()[0].x-x-46)<1e-6);
+ assert.ok(project(sim,host).events.some(event=>event.kind==='arrow-land'));
+ assert.ok(projectGuest(sim,guest).events.some(event=>event.kind==='arrow-land'));
+ assert.equal(project(sim,host).events,undefined);
+ sim.effects.bolts.push({x:x+22,y,angle:0,type:'frost-crossbow',life:.1,speed:300});
+ sim.ai.moveFrom(.2,host,sim.clock,1280,720);
+ assert.equal(sim.effects.bolts.length,0);
+ assert.equal(lands().length,2);
+ assert.equal(lands()[1].type,'frost-crossbow');
+ assert.ok(Math.abs(lands()[1].x-x-52)<1e-6);
+ const target={x:x+61,y,id:'arrow-target',type:foes.SKELETON,hp:80,max:80,size:1};
+ sim.enemies=[target];host.attack=0;
+ assert.ok(sim.charge(host,0)&&sim.attack(host,0));
+ sim.updateShots(.2);
+ assert.ok(target.hp<80);
+ assert.equal(lands().length,2);
+ sim.enemies=[];host.attack=0;host.stamina=100;
+ host.equipment.weapon='staff';preparePlayer(host);
+ assert.ok(sim.charge(host,0)&&sim.attack(host,0));sim.shots[0].left=46;
+ sim.updateShots(.2);
+ assert.equal(sim.shots.length,0);
+ assert.equal(lands().length,2);
 });
 
 test('held weapons are covered by side and south walls and closed doors',()=>{
@@ -238,6 +277,30 @@ test('quick food absorbs pending damage, chooses the smallest sufficient portion
  sim.step(.01);
  assert.equal(host.hp,hp-12);
  assert.equal(sim.actions.dispatch(host,'quick-food',{}).item.id,'banana');
+});
+
+test('drinking keeps movement responsive at a slower pace without allowing a dash or attack',()=>{
+ const {host,sim}=game();
+ arena(sim,host);sim.enemies=[];
+ const item={kind:'potion',brew:[],duration:10};
+ host.inventory.push(item);
+ const {x,walk,speed}=host,project=createProjection();
+ sim.queueConsumable(host,item);
+ assert.equal(host.consume.item,item);
+ sim.control(host,{seq:1,x:1,y:0,aim:0,dash:true,dodge:true});
+ sim.step(.08);
+ assert.ok(Math.abs(host.x-x-speed*.08*items.potionMove)<.001);
+ assert.ok(Math.abs(host.walk-walk-.08*items.potionWalkRate)<.001);
+ assert.equal(host.moving,true);
+ assert.equal(host.dash,0);
+ assert.equal(sim.attack(host,0),false);
+ const {you}=project(sim,host);
+ assert.equal(you[5],1);
+ assert.equal(you[12],7);
+ const stopped=host.x;
+ sim.control(host,{seq:2,x:0,y:0,aim:0});sim.step(.08);
+ assert.equal(host.x,stopped);
+ assert.equal(host.moving,false);
 });
 
 test('new starts give up to four exits and wide stairs connect floors by walking',()=>{

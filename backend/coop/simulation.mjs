@@ -66,6 +66,7 @@ export class Simulation{
    applyPoison:(p,opts)=>this.poison(p,opts),addBleed:(p,n,origin)=>this.bleed(p,n,origin),
    soundWorld:(cue,pos,mix)=>this.sound(cue,pos,mix),
    hitFurniture:(p,damage,angle)=>this.hitFurniture(p,damage,angle),
+   landArrow:shot=>this.landArrow(shot),
    burst:()=>{},hurtEnemy:(e,hit)=>this.hurtEnemy(e,hit),shockWater:(...args)=>this.shockWater(...args),knockHero:(p,x,y,origin)=>this.move(p,x,y,true,origin),coopActors:()=>this.activePlayers(),
    enemyEncounterReady:()=>this.currentTarget!==null,
    rand:(a,b)=>a+this.random()*(b-a)
@@ -229,7 +230,7 @@ export class Simulation{
  resistanceFor(e){return bossRules.resistance(e,this.resistances[e.type]);}
  control(p,input){
   if(!Number.isSafeInteger(input.seq)||input.seq<=p.input.seq||!Number.isFinite(input.aim))return false;
-  const blocked=Boolean(this.state.bossBattle?.phase==='intro'||input.blocked||p.quiz||p.consume?.item.kind==='potion'||p.fall||p.deathRecap);
+  const blocked=Boolean(this.state.bossBattle?.phase==='intro'||input.blocked||p.quiz||p.fall||p.deathRecap);
   p.input={seq:input.seq,x:blocked?0:clampInput(input.x),y:blocked?0:clampInput(input.y),aim:normalAngle(input.aim),
    dash:Boolean(input.dash)&&!blocked,dodge:!blocked&&(input.dodge===true||p.input.dodge===true),blocked,at:this.clock};
   if(blocked)p.chargeStart=null;
@@ -297,6 +298,7 @@ export class Simulation{
  }
  startConsumption(p){
   if(p.consume||p.vault||p.quiz||!p.consumeQueue?.length)return;
+  if(p.consumeQueue[0].kind==='potion'&&(p.attack||p.dash))return;
   const it=p.consumeQueue.shift(),food=it.kind==='food';
   p.consume={item:it,start:this.clock,end:this.clock+(food?items.foodSeconds:.82),applied:food};
   p.chargeStart=null;
@@ -355,7 +357,7 @@ export class Simulation{
   else if((p.staminaRest+=dt)>.45)p.stamina=Math.min(p.staminaMax,p.stamina+dt*(10+p.attributes.endurance*.6)*Math.min(2.8,1+(p.staminaRest-.45)*2.2)*p.mods.regen);
   let {x,y,aim,dash,dodge,at,blocked}=p.input;
   p.input.dodge=false;
-  if(p.quiz||p.consume?.item.kind==='potion'||blocked||this.clock-at>.35){x=0;y=0;dash=false;dodge=false;}
+  if(p.quiz||blocked||this.clock-at>.35){x=0;y=0;dash=false;dodge=false;}
   else p.dir=aim;
   if(p.chargeStart!==null&&this.clock-at>.5)p.chargeStart=null;
   if(p.wallRecoil>geometry.wallRecoilSeconds-.13){x=0;y=0;}
@@ -366,6 +368,7 @@ export class Simulation{
    this.emit('dash',{seat:p.seat,x:p.x,y:p.y});
   }
   if(p.dash&&!p.quiz){x=p.dashX;y=p.dashY;}
+  const drinking=p.consume?.item.kind==='potion';
   const before={x:p.x,y:p.y};
   if(p.vault){
    const v=p.vault,t=Math.min(1,(this.clock-v.start)/.46),ease=t*t*(3-2*t);
@@ -376,12 +379,12 @@ export class Simulation{
   }else if(x||y){
    p.back=y<0;
    const slow=p.webSlow||p.grabSlow||this.isWeb(p);
-   const speed=p.speed*(p.consume?.item.kind==='food'?items.foodMove:1)*(p.dash?p.load.dashSpeed*p.mods.dashDistance:1)*(slow?.53:1)*(p.chargeStart!==null?.64:1);
+   const speed=p.speed*(p.consume?.item.kind==='food'?items.foodMove:drinking?items.potionMove:1)*(p.dash?p.load.dashSpeed*p.mods.dashDistance:1)*(slow?.53:1)*(p.chargeStart!==null?.64:1);
    if(!this.move(p,x*speed*dt,y*speed*dt))return;
   }
   const face=Math.cos(p.dir);if(Math.abs(face)>.23&&!p.wallRecoil)p.weaponSide=Math.sign(face);
   p.moving=gap(p,before)>.08;
-  if(p.moving)p.walk+=dt*(p.dash?23:12*Math.min(1,length));
+  if(p.moving)p.walk+=dt*(p.dash?23:(drinking?items.potionWalkRate:12)*Math.min(1,length));
   const region=this.floor.regionAt(p.x,p.y);
   if(p.region!==region){
    p.region=region;p.entered=this.clock;
@@ -473,6 +476,9 @@ export class Simulation{
    {source:'Wand',action:'Waffenabpraller'});
   this.emit('wall-recoil',{seat:p.seat,x:round(contact.x),y:round(contact.y),angle:contact.angle});
  }
+ landArrow({x,y,angle,type,charged}){
+  if(this.floor.valid(x,y,0))this.emit('arrow-land',{x,y,angle,type,charged});
+ }
  updateShots(dt){
   this.shots=this.shots.filter(shot=>{
    const distance=Math.min(shot.left,shot.speed*dt),steps=Math.max(1,Math.ceil(distance/6)),stride=distance/steps;
@@ -491,6 +497,7 @@ export class Simulation{
     if(enemy){const impact={x:enemy.x,y:enemy.y};this.weaponHit(enemy,shot.hit,shot.angle);shock(impact);return false;}
    }
    if((shot.left-=distance)>0)return true;
+   if(shot.hit?.w?.projectile==='arrow')this.landArrow({...shot,charged:shot.hit.charged});
    shock();return false;
   });
  }
