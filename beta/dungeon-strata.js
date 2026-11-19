@@ -238,12 +238,12 @@ window.DungeonStrata=(()=>{
    }
    const cx=11,cy=rest.cy,radius=9,id=65,gateX=cx+radius+1;
    for(let y=cy-radius;y<=cy+radius;y++)for(let x=cx-radius;x<=cx+radius;x++){
-    if((x-cx)**2+(y-cy)**2<=radius**2)carve(x,y,1,1,id,'boss-planks');
+    if((x-cx)**2+(y-cy)**2<=radius**2)carve(x,y,1,1,id,'boss-carpet');
    }
-   carve(gateX-1,cy-1,1,3,id,'boss-planks');
+   carve(gateX-1,cy-1,1,3,id,'boss-carpet');
    const hall={id:66,x:gateX,y:cy-1,w:rest.x-gateX,h:3,theme:3,vertical:true};
    for(let y=cy-1;y<=cy+1;y++)for(let x=gateX;x<rest.x;x++){
-    if(map[y][x]===1)carve(x,y,1,1,hall.id,'boss-planks');
+    if(map[y][x]===1)carve(x,y,1,1,hall.id,'boss-carpet');
    }
    paths.push(hall);
    bossArena={id,cx,cy,radius,gate:{x:gateX,y:cy},altars:[{x:gateX+2,y:cy-1},{x:gateX+2,y:cy+1}]};

@@ -132,6 +132,7 @@ function ui(rules){
    }
   }
   for(const m of battle.cues){
+   if(m.kind==='beam'||m.kind==='storm')continue;
    const hot=time>=m.hit;
    const alpha=hot?Math.max(.15,1-(time-m.hit)/.46):.38+.23*Math.sin(time*16);
    g.globalAlpha=alpha;
@@ -155,7 +156,6 @@ function ui(rules){
     if(hot)lightning(m.from,m.to,time*55);
    }else{
     g.beginPath();circle(m.x,m.y,m.r);g.stroke();
-    if(hot&&m.kind==='storm'){g.fill();g.lineWidth=5;lightning({x:m.x-26,y:m.y-210},{x:m.x,y:m.y},m.bolt+time*37);}
    }
   }
   g.restore();g.globalAlpha=1;
@@ -165,10 +165,12 @@ function ui(rules){
   const introOn=inArena&&battle.phase==='intro';
   intro.hidden=!introOn;
   if(introOn){
-   const i=battle.time>=rules.lines[2].at?2:battle.time>=rules.lines[1].at?1:0;
+   const i=rules.lines.findLastIndex(line=>battle.time>=line.at);
+   subtitle.hidden=i<0;
    if(intro.dataset.speaker!==String(i)){
-    intro.dataset.speaker=i;subtitle.querySelector('strong').textContent=rules.lines[i].name;
-    subtitle.querySelector('span').textContent=rules.lines[i].text;
+    intro.dataset.speaker=i;
+    if(i>=0){subtitle.querySelector('strong').textContent=rules.lines[i].name;
+     subtitle.querySelector('span').textContent=rules.lines[i].text;}
    }
   }else delete intro.dataset.speaker;
   hud.hidden=!(inArena&&['waves','fight'].includes(battle.phase));
