@@ -1719,10 +1719,11 @@ window.DungeonArt = (() => {
   function icon(type,id='',color='') {
     const key=[type,id,color].join('/');
     if(iconCache.has(key))return iconCache.get(key);
-    if(type==='ring'||type==='food-item'){
+    if(type==='ring'||type==='food-item'||type==='armor-item'||type==='weapon-item'){
       const c=surface(32,32),draw=brush(c);
       if(type==='ring')ringSprite(draw,id,color);
-      else foodSprite(draw,id);
+      else if(type==='food-item')foodSprite(draw,id);
+      else window.DungeonEquipmentArt[type==='armor-item'?'armor':'weapon'](draw,id);
       iconCache.set(key,c);return c;
     }
     const c=surface(),{g,r,poly}=brush(c);
