@@ -8,7 +8,7 @@ window.DungeonStrata=(()=>{
  const edges=[[1,0],[-1,0],[0,1],[0,-1]];
  function extend(base,seed,depth,random,shuffle,revision,sewerAt,hasCrypt,lastDepth){
   const {rooms,corridors,map,regions,gates,terrain,annexes,paths,rest}=base;
-  const continuous=revision>=10,varied=revision>=12,variedAlleys=revision>=13;
+  const continuous=revision>=10,varied=revision>=12,variedAlleys=revision>=13,shaped=revision>=20;
   const rng=random(Math.imul(seed^0x2bb5c943,1597334677));
   const minX=map[0].length+6,cols=8+Math.floor(rng()*3),rows=3+Math.floor(rng()*2);
   const roll=random(Math.imul(seed^0x2d3c461b,0x45d9f3b))();
@@ -158,7 +158,37 @@ window.DungeonStrata=(()=>{
     })):[];
    const otherEntry=stairRandom()<.72?shuffle(stairEntries,stairRandom)[0]:null;
    const cx=otherEntry?.x??rest.cx;
+   function shapedStairs(id,position,top,bottom,upper,lower,roomIds){
+    const geometry=window.DungeonStairs,span=bottom+1-top;
+    const lateral=Math.min(2,Math.floor((span-1)*.53));
+    const offsets=lateral>0&&stairRandom()<.78?shuffle([-lateral,lateral],stairRandom).concat(0):[0];
+    const width=[3.15,3.65,4.1][Math.floor(stairRandom()*3)];
+    const lowerX=position-.5;
+    for(const shift of offsets){
+     const upperX=lowerX+shift;
+     const flight=geometry.connecting(lowerX,bottom+1,upperX,top,width,'stone',span>=8||width>=3.65);
+     const cells=geometry.footprint(flight).filter(p=>p.y>=top&&p.y<=bottom);
+     if(cells.some(({x,y})=>map[y]?.[x]!==1||terrain[y][x]))continue;
+     const steps=geometry.sections(flight);
+     layers[id]=upper;layers[id+1]=lower;
+     for(const {x,y} of cells){
+      const part=geometry.sample(steps,x+.5,y+.5);
+      carve(x,y,1,1,part.index+part.t<steps.length/2?id+1:id,'stairs-ribbon');
+     }
+     for(const {x,y} of cells)for(const [dx,dy] of edges){
+      const col=x+dx,row=y+dy;
+      if(row<top||row>bottom||map[row]?.[col]!==1||terrain[row][col])continue;
+      terrain[row][col]='stair-recess';
+     }
+     for(const region of [id,id+1])paths.push({id:region,x:flight.x,y:flight.y,w:flight.w,h:flight.h,theme:3,name:'Treppenaufgang'});
+     stairs.push({...flight,id:'stairs-'+id,upper,lower,roomIds,stepIds:[id,id+1],
+      a:{x:Math.floor(lowerX),y:bottom+1},b:{x:Math.floor(upperX),y:top-1},gateways:true});
+     return true;
+    }
+    return false;
+   }
    function addStairs(id,position,top,bottom,upper,lower,roomIds){
+    if(shaped&&shapedStairs(id,position,top,bottom,upper,lower,roomIds))return;
     const w=4,x=position-2,split=Math.floor((top+bottom)/2);
     for(let y=top;y<=bottom;y++){
      const high=y<split,region=high?id:id+1;
@@ -188,7 +218,8 @@ window.DungeonStrata=(()=>{
     const gap=varied?rollInt(1,4):1, endY=varied?rollInt(28,31):29;
     const end=addRoom(31,start.x+start.w+gap,endY,varied?rollInt(11,15):12,varied?rollInt(7,9):9,nameplates[1],'upper-1',1);
     lofts.push(start,end);
-    addStairs(50,cx,36,otherEntry?otherEntry.room.y-1:43,1,0,[otherEntry?.room.i??rest.id,start.id]);
+    const lowerMouth=otherEntry?.room.y??(shaped?rest.y:44);
+    addStairs(50,cx,shaped?start.y+start.h:36,lowerMouth-1,1,0,[otherEntry?.room.i??rest.id,start.id]);
     if(!otherEntry){
      const walkX=rest.x-2,landing=44,approachY=rooms[0].y+2;
      carve(walkX,landing,cx-walkX+2,2,60);
@@ -225,18 +256,19 @@ window.DungeonStrata=(()=>{
     }
     if(stories>=3){
      const towerW=varied?rollInt(10,14):11,towerY=varied?rollInt(15,17):17;
-     const extra=addRoom(33,cx-Math.floor(towerW/2),towerY,towerW,25-towerY,nameplates[2],'upper-tower',2);
-     lofts.push(extra);addStairs(52,cx,23,30,2,1,[start.id,extra.id]);
+     const extra=addRoom(33,cx-Math.floor(towerW/2),towerY,towerW,(shaped?23:25)-towerY,nameplates[2],'upper-tower',2);
+     lofts.push(extra);
+     addStairs(52,cx,shaped?extra.y+extra.h:23,shaped?start.y-1:30,2,1,[start.id,extra.id]);
      if(varied)branchingRooms(extra,2,74,rollInt(0,2));
      if(stories===4){
       const weather=rng();
-      roof=addRoom(35,cx-5,5,varied?rollInt(10,14):11,varied?rollInt(8,9):8,{name:'Turmspitze',theme:4,currentOutdoor:true,
+      roof=addRoom(35,cx-5,shaped?3:5,varied?rollInt(10,14):11,varied?rollInt(8,9):8,{name:'Turmspitze',theme:4,currentOutdoor:true,
        rain:weather<.33,hail:weather>=.33&&weather<.77},'tower-roof',3);
       carve(roof.x,roof.y,roof.w,roof.h,35,'roof-stone');
       if(revision<15)for(let y=roof.y-1;y<=roof.y+roof.h;y++)for(let x=roof.x-1;x<=roof.x+roof.w;x++){
        if(map[y][x]===1){regions[y][x]=35;terrain[y][x]='abyss';}
       }
-      addStairs(54,cx,11,18,3,2,[extra.id,roof.id]);
+      addStairs(54,cx,shaped?roof.y+roof.h:11,shaped?extra.y-1:18,3,2,[extra.id,roof.id]);
      }
     }
    }
@@ -277,6 +309,7 @@ window.DungeonStrata=(()=>{
     site.x+=extraWidth;
     if(Number.isFinite(site.cx))site.cx+=extraWidth;
    }
+   for(const stair of stairs)if(stair.edges)for(const edge of stair.edges)for(const point of edge)point[0]+=extraWidth;
    const cx=11,cy=rest.cy,radius=9,id=65,gateX=cx+radius+1;
    for(let y=cy-radius;y<=cy+radius;y++)for(let x=cx-radius;x<=cx+radius;x++){
     if((x-cx)**2+(y-cy)**2<=radius**2)carve(x,y,1,1,id,'boss-carpet');

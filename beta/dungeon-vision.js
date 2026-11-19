@@ -70,7 +70,8 @@ window.DungeonVision=(()=>{
    const point={x:observer.x*tileSize,y:observer.y*tileSize};
    for(const s of stairs){
     if(!world.stairCrestClosed(s,point,explored))continue;
-    for(let x=s.x;x<s.x+s.w;x++)obstacles[s.y*W+x]=1;
+    if(s.crest)for(const cell of s.crest)obstacles[cell]=1;
+    else for(let x=s.x;x<s.x+s.w;x++)obstacles[s.y*W+x]=1;
    }
   }
   function sightOrigin(x,y,closed){

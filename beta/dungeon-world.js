@@ -21,23 +21,27 @@ const H=map.length,W=map[0].length;
 const stairGeometry=window.DungeonStairs;
 const stairFlights=[...(sanctuary?.flights??[]).map(stairGeometry.straight),...stairs.map(stair=>
  stair.curve?stair:stairGeometry.straight({...stair,style:stair.id.startsWith('jungle-')?'jungle':
-  stair.id==='sanctuary-spiral'?'sanctuary':'stone'}))];
-const spiral=stairs.find(stair=>stair.curve),spiralSteps=spiral?stairGeometry.sections(spiral):[];
-const spiralTiles=new Map();
-for(const section of spiralSteps){
- const xs=section.polygon.map(p=>p[0]),ys=section.polygon.map(p=>p[1]);
- for(let y=Math.floor(Math.min(...ys));y<=Math.floor(Math.max(...ys));y++)
-  for(let x=Math.floor(Math.min(...xs));x<=Math.floor(Math.max(...xs));x++){
-   const index=y*W+x;
-   if(!spiralTiles.has(index))spiralTiles.set(index,[]);
-   spiralTiles.get(index).push(section);
-  }
+  stair.id.startsWith('sanctuary-')?'sanctuary':'stone'}))];
+const ribbonTiles=new Map(),flightSteps=new Map();
+const ribbonTerrain=type=>type==='sanctuary-spiral'||type==='stairs-ribbon'||type==='jungle-stair-ribbon';
+for(const flight of stairFlights){
+ if(!flight.curve)continue;
+ const steps=stairGeometry.sections(flight);
+ flightSteps.set(flight,steps);
+ flight.crest=[];
+ for(const cell of stairGeometry.footprint(flight)){
+  const {x,y}=cell;
+  if(y<0||x<0||x>=W||y>=H)continue;
+  if(cell.steps.some(step=>step.index===steps.length-1))flight.crest.push(y*W+x);
+  if(ribbonTerrain(terrain[y][x]))ribbonTiles.set(y*W+x,{flight,steps:cell.steps});
+ }
 }
 function stairMotion(actor,dx,dy){
  const x=actor.x/TILE,y=actor.y/TILE;
- const winding=terrain[Math.floor(y)]?.[Math.floor(x)]==='sanctuary-spiral';
- const flight=stairFlights.find(f=>Boolean(f.curve)===winding&&x>=f.x&&y>=f.y&&x<f.x+f.w&&y<f.y+f.h);
- return flight?stairGeometry.motion(flight,flight.curve?stairGeometry.sample(spiralSteps,x,y):null,dx,dy):{x:dx,y:dy};
+ const ribbon=ribbonTiles.get(Math.floor(y)*W+Math.floor(x));
+ if(ribbon)return stairGeometry.motion(ribbon.flight,stairGeometry.sample(ribbon.steps,x,y),dx,dy);
+ const flight=stairFlights.find(f=>!f.curve&&x>=f.x&&y>=f.y&&x<f.x+f.w&&y<f.y+f.h);
+ return flight?stairGeometry.motion(flight,null,dx,dy):{x:dx,y:dy};
 }
 const annexByRegion=new Map(annexes.map(a=>[a.id,a]));
 const annexPassages=new Map([...annexes.flatMap(a=>a.passage?[a.passage]:[]),...paths].map(path=>[path.id,path]));
@@ -140,8 +144,9 @@ function stairCrestClosed(stair,observer,explored){
  if(stair.curve){
   const landing=stair.roomIds[1];
   if(explored.has(landing)||regionAt(observer.x,observer.y)===landing)return false;
-  if(terrain[Math.floor(observer.y/TILE)]?.[Math.floor(observer.x/TILE)]!=='sanctuary-spiral')return true;
-  return stairGeometry.sample(spiralSteps,observer.x/TILE,observer.y/TILE).index<spiralSteps.length-3;
+  const x=observer.x/TILE,y=observer.y/TILE,ribbon=ribbonTiles.get(Math.floor(y)*W+Math.floor(x));
+  if(ribbon?.flight!==stair)return true;
+  return stairGeometry.sample(ribbon.steps,x,y).index<flightSteps.get(stair).length-3;
  }
  const row=observer.y/TILE;
  if(explored.has(stair.roomIds[1])||row<=stair.y+1.25)return false;
@@ -161,7 +166,23 @@ function nearestLink(actor,id){
 }
 function stairsFor(actor,target){
  const layer=layerAt(actor.x,actor.y),goal=layerAt(target.x,target.y);
- const route=stairs.find(s=>s.lower===layer&&s.upper<=goal||s.upper===layer&&s.lower>=goal);
+ const current=ribbonTiles.get(Math.floor(actor.y/TILE)*W+Math.floor(actor.x/TILE))?.flight;
+ const routes=stairs.filter(s=>s.id.startsWith('sanctuary-')===inSanctuary(actor.x,actor.y)&&
+  (s.lower===layer&&s.upper<=goal||s.upper===layer&&s.lower>=goal));
+ const lowerSite=s=>tileCenter(s.lower===layer?s.a:s.b);
+ const distance=s=>{const p=lowerSite(s);return Math.hypot(actor.x-p.x,actor.y-p.y);};
+ const route=routes.includes(current)?current:routes.sort((a,b)=>{
+  const relation=s=>s.roomIds.includes(regionAt(target.x,target.y))?0:TILE*8;
+  return distance(a)+relation(a)-distance(b)-relation(b);
+ })[0];
+ if(route?.gateways){
+  const ascending=route.lower===layer,entry=lowerSite(route);
+  if(current!==route&&distance(route)>TILE*.45)return {...entry,continuous:true};
+  const part=stairGeometry.sample(flightSteps.get(route),actor.x/TILE,actor.y/TILE);
+  const index=Math.max(0,Math.min(route.edges.length-1,part.index+(ascending?2:-1)));
+  const [x,y]=stairGeometry.middle(route.edges[index]);
+  return {x:x*TILE,y:y*TILE,continuous:true};
+ }
  if(route)return {...tileCenter(route.lower===layer?route.b:route.a),continuous:true};
  return links.find(s=>s.kind==='stairs'&&s.layer===layer&&
   Math.abs(layerAt(s.exit.x,s.exit.y)-goal)<Math.abs(layer-goal));
@@ -310,8 +331,8 @@ function gateBlocked(x,y){
 function wall(x,y){
  const col=Math.floor(x/TILE),row=Math.floor(y/TILE);
  if(map[row]?.[col]!==0)return true;
- if(terrain[row]?.[col]!=='sanctuary-spiral')return false;
- return !(spiralTiles.get(row*W+col)?.some(section=>stairGeometry.touches(section,x/TILE,y/TILE)));
+ if(!ribbonTerrain(terrain[row]?.[col]))return false;
+ return !(ribbonTiles.get(row*W+col)?.steps.some(section=>stairGeometry.touches(section,x/TILE,y/TILE)));
 }
 
 // Dimensions measure the footprint at the base rather than the full sprite.

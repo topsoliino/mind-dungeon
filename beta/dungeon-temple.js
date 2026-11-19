@@ -2,7 +2,7 @@ window.DungeonTemple=(()=>{
  'use strict';
  const directions=[[0,-1],[1,0],[0,1],[-1,0]];
  const names=['Mooshof','Affengang','Terrasse der Wurzeln','Regenhalle','Galerie der Masken','Hof der Lianen','Quellkammer'];
- function extend(layout,seed,random,shuffle){
+ function extend(layout,seed,random,shuffle,revision){
   const {map,regions,terrain,rooms,annexes,paths,links,layers,stairs}=layout;
   const rng=random(seed^0x6f42a83d),roll=(n)=>Math.floor(rng()*n);
   const south=rng()<.45;
@@ -54,6 +54,24 @@ window.DungeonTemple=(()=>{
    }else{
     const [north,south]=a.cy<b.cy?[a,b]:[b,a],x=north.cx-2,y=north.y+north.h,end=south.y;
     if(node===upper){
+     if(revision>=20){
+      const geometry=window.DungeonStairs,low=x+1.5,high=low+(i%2===0?-1.25:1.25);
+      const flight=geometry.connecting(low,end,high,y,3.35,'jungle',end-y>=8);
+      const sections=geometry.sections(flight),cells=geometry.footprint(flight).filter(p=>p.y>=y&&p.y<end);
+      layers[id]=1;layers[id+1]=0;
+      for(const {x,y} of cells){
+       const part=geometry.sample(sections,x+.5,y+.5);
+       carve(part.index+part.t<sections.length/2?id+1:id,x,y,1,1,'jungle-stair-ribbon');
+      }
+      for(const p of cells)for(const [dx,dy] of directions){
+       const col=p.x+dx,row=p.y+dy;
+       if(map[row]?.[col]===1&&!terrain[row][col])carve(id,col,row,1,1,'jungle-wall',false);
+      }
+      for(const region of [id,id+1])paths.push({id:region,x:flight.x,y:flight.y,w:flight.w,h:flight.h,theme:6,name:'Tempel · Terrassentreppe'});
+      stairs.push({...flight,id:'jungle-stairs-'+i,upper:1,lower:0,roomIds:[south.id,north.id],stepIds:[id,id+1],
+       a:{x:Math.floor(low),y:end},b:{x:Math.floor(high),y:y-1},gateways:true});
+      continue;
+     }
      const split=Math.floor((y+end)/2);
      for(let row=y;row<end;row++)carve(row<split?id:id+1,x,row,4,1,'jungle-stairs');
      for(const col of [x-1,x+4])carve(id,col,y,1,end-y,'jungle-wall',false);

@@ -1,7 +1,7 @@
 window.DungeonSanctuary=(()=>{
  'use strict';
  function extend(layout,revision){
-  const raised=revision>=18,winding=revision>=19;
+  const raised=revision>=18,winding=revision>=19,terraced=revision>=20;
   const {map,regions,terrain,rest,annexes,links,layers,paths,stairs}=layout;
   const left=map[0].length+4,width=left+(raised?56:42),height=34;
   for(const [grid,fill] of [[map,1],[regions,-1],[terrain,null]]){
@@ -28,6 +28,20 @@ window.DungeonSanctuary=(()=>{
    strip(id,'stairs-'+direction,x,y,w,h);
    flights.push({x:left+x,y,w,h,direction,style:'sanctuary'});
   }
+  const geometry=window.DungeonStairs;
+  function curvedStair(id,flight,low,high,roomIds,stepIds,a,b){
+   const steps=geometry.sections(flight);
+   for(const {x,y} of geometry.footprint(flight)){
+    if(map[y][x]===0)continue;
+    const near=geometry.sample(steps,x+.5,y+.5);
+    fill(x-left,y,near.index+near.t<steps.length/2?stepIds[1]:stepIds[0],'spiral');
+   }
+   for(let y=flight.y-1;y<=flight.y+flight.h;y++)for(let x=flight.x-1;x<Math.min(width,flight.x+flight.w+1);x++){
+    if(map[y][x]===1&&!terrain[y][x])terrain[y][x]='sanctuary-spiral-void';
+   }
+   for(const part of stepIds)paths.push({id:part,x:flight.x,y:flight.y,w:flight.w,h:flight.h,theme:3,name:id==='sanctuary-spiral'?'Wendeltreppe':'Gartentreppe'});
+   stairs.push({...flight,id,upper:high,lower:low,roomIds,stepIds,a,b});
+  }
   hall(120,'Ruheschrein',20,16,10,9,'court');
   hall(121,'Archiv der Reisenden',20,4,6,4,'stone');
   hall(122,'Schmiede',6,16,5,6,'forge');
@@ -36,26 +50,63 @@ window.DungeonSanctuary=(()=>{
   hall(125,'Rundgang',8,6,5,5,'stone');
   hall(126,'Torgarten',32,27,6,5,'garden');
   hall(127,'Halle der stillen Sitze',7,26,5,5,'stone');
-  strip(120,'stone',18,7,5,4);steps(120,18,raised?7:8,5,raised?4:2,'n');
-  strip(120,'stone',18,22,5,4);steps(120,18,raised?22:23,5,raised?4:2,'s');
-  strip(120,'stone',9,14,5,5);steps(120,raised?9:10,14,raised?5:3,5,'w');
-  strip(120,'stone',27,14,5,5);steps(120,raised?27:28,14,raised?5:3,5,'e');
-  steps(125,11,4,5,3,'e');
-  strip(125,'stone',9,7,3,6);
-  steps(125,9,11,2,3,'s');
-  strip(125,'stone',11,11,4,3);
-  steps(126,30,19,4,5,'s');
-  strip(126,'stone',26,24,5,3);
-  steps(126,24,24,3,3,'w');
-  strip(127,'stone',7,19,3,5);
-  steps(127,10,25,4,3,'e');
+  if(terraced){
+   for(let y=0;y<height;y++)for(let x=left;x<left+41;x++){
+    const id=regions[y][x],col=x-left;
+    if(id===120&&(y<12||col>27)||id===121&&y>7||id===125&&y>10||
+     id===123&&(col<32||y>21)||id===122&&y===11||id===126&&y===22){
+     map[y][x]=1;regions[y][x]=-1;terrain[y][x]=null;
+    }
+   }
+   // The forge and the south cloister stay at courtyard grade.
+   strip(120,'stone',9,14,6,5);
+   strip(120,'stone',18,22,5,5);
+   strip(127,'stone',7,19,3,5);
+   strip(127,'stone',10,25,5,3);
+   strip(126,'garden',24,25,7,3);
+   // The archive, western arcade and garden share one continuous terrace.
+   strip(125,'stone',11,4,5,3);
+   strip(121,'stone',23,4,12,3);
+   strip(123,'garden',32,6,4,7);
+   strip(121,'stone',18,7,5,1);
+   strip(120,'stone',18,12,5,1);
+   strip(131,'stairs-n',18,8,5,2);
+   strip(132,'stairs-n',18,10,5,2);
+   paths.push({id:131,...at(18,8),w:5,h:2,theme:3,name:'Archivtreppe'},
+    {id:132,...at(18,10),w:5,h:2,theme:3,name:'Archivtreppe'});
+   stairs.push({id:'sanctuary-archive-stair',...at(18,8),w:5,h:4,upper:1,lower:0,roomIds:[120,121],
+    stepIds:[131,132],a:at(20,12),b:at(20,7)});
+   strip(123,'garden',32,14,3,3);
+   const garden=geometry.bend([left+26.2,20.5],[left+29.4,20.5],[left+29.2,15.5],[left+32.7,15.5],2.85,'sanctuary');
+   curvedStair('sanctuary-garden-stair',garden,0,1,[120,123],[133,134],at(25,20),at(33,15));
+   for(const id of [131,132,133,134])safe.push(id);
+   layers[131]=layers[133]=1;
+  }else{
+   strip(120,'stone',18,7,5,4);steps(120,18,raised?7:8,5,raised?4:2,'n');
+   strip(120,'stone',18,22,5,4);steps(120,18,raised?22:23,5,raised?4:2,'s');
+   strip(120,'stone',9,14,5,5);steps(120,raised?9:10,14,raised?5:3,5,'w');
+   strip(120,'stone',27,14,5,5);steps(120,raised?27:28,14,raised?5:3,5,'e');
+   steps(125,11,4,5,3,'e');
+   strip(125,'stone',9,7,3,6);
+   steps(125,9,11,2,3,'s');
+   strip(125,'stone',11,11,4,3);
+   steps(126,30,19,4,5,'s');
+   strip(126,'stone',26,24,5,3);
+   steps(126,24,24,3,3,'w');
+   strip(127,'stone',7,19,3,5);
+   steps(127,10,25,4,3,'e');
+  }
   if(raised){
-   for(const id of [121,122,123,124,125,126,127,129])layers[id]=1;
+   for(const id of terraced?[121,123,125,129]:[121,122,123,124,125,126,127,129])layers[id]=1;
    layers[128]=layers[130]=2;
    hall(128,'Apothekerkammer',44,4,7,4,'apothecary');
    safe.push(129,130);
   }
-  if(winding){
+  if(terraced){
+   strip(129,'stone',38,14,2,4);
+   const flight=geometry.wideSpiral(left+46.7,12.7);
+   curvedStair('sanctuary-spiral',flight,1,2,[123,128],[130,129],at(39,15),at(48,5));
+  }else if(winding){
    const geometry=window.DungeonStairs,flight=geometry.spiral(left+46.7,12.7);
    const sections=geometry.sections(flight);
    strip(129,'stone',38,14,2,4);
@@ -90,8 +141,10 @@ window.DungeonSanctuary=(()=>{
     roomIds:[129,128],stepIds:[130,129],a:at(51,18),b:at(51,8)});
   }
   const water=[];
-  for(const [x,y] of [[28,9],[29,9],[29,10],[30,10],[30,11],[31,11],[32,11],[32,12],[33,12],
-   [33,13],[34,13],[35,13],[34,14],[35,14],[36,14],[35,15],[36,15]]){
+  const waterCourse=terraced?[[34,7],[34,8],[34,9],[35,9],[35,10],[35,11],[36,11],[36,12],[37,12],[37,13],[38,13]]:
+   [[28,9],[29,9],[29,10],[30,10],[30,11],[31,11],[32,11],[32,12],[33,12],
+    [33,13],[34,13],[35,13],[34,14],[35,14],[36,14],[35,15],[36,15]];
+  for(const [x,y] of waterCourse){
    fill(x,y,123,'water',false);water.push(at(x,y));
   }
   for(const [x,y] of [[15,11],[16,11],[15,12],[16,12],[24,11],[25,11],[24,12],[25,12],
@@ -99,6 +152,17 @@ window.DungeonSanctuary=(()=>{
    if(map[y][left+x]===0)fill(x,y,regions[y][left+x],'meadow');
   }
   const owns=new Set(safe);
+  const terraces=[];
+  if(terraced)for(let y=0;y<height;y++)for(let x=left;x<width;x++){
+   const region=regions[y][x],level=layers[region]??0;
+   if(map[y][x]!==0||![121,123,125,128].includes(region))continue;
+   for(const [dx,dy,face] of [[0,1,'s'],[-1,0,'w'],[1,0,'e'],[0,-1,'n']]){
+    const adjacent=regions[y+dy]?.[x+dx];
+    if(map[y+dy]?.[x+dx]===0||adjacent===region||((layers[adjacent]??0)>0&&adjacent!==-1))continue;
+    terraces.push({x,y,face,level,garden:region===123});
+    if(!terrain[y+dy]?.[x+dx]&&terrain[y+dy])terrain[y+dy][x+dx]='sanctuary-terrace-void';
+   }
+  }
   for(let y=0;y<height;y++)for(let x=left;x<width;x++){
    const tile=terrain[y][x];
    if(!tile||map[y][x]!==0||tile.includes('stairs')||tile==='sanctuary-spiral')continue;
@@ -116,12 +180,13 @@ window.DungeonSanctuary=(()=>{
    ['sanctuary-mosaic',20,15],['sanctuary-hearth',20,15],['bench',17,17],['bench',23,17],
    ['sanctuary-smith',5,15],['sanctuary-brazier',3,15],['weapon-rack',6,12],['large-barrel',4,18],
    ['sanctuary-archive',20,3],['bookcase',16,4],['bookcase',24,3],['candle',18,3],['candle',22,3],
-   ['sanctuary-vault',20,1],['sanctuary-vault',6,11],['sanctuary-vault',8,3],['sanctuary-vault',7,23],
+   ['sanctuary-vault',20,1],['sanctuary-vault',6,terraced?12:11],['sanctuary-vault',8,3],['sanctuary-vault',7,23],
    ['well',35,17],['bench',35,19],['sanctuary-brazier',32,20],
    ['sanctuary-arch',20,30],['sanctuary-arch',32,26],['sanctuary-plaque',23,29],
    ['sanctuary-brazier',17,29],['sanctuary-brazier',23,27],['sanctuary-brazier',32,25],
    ['sanctuary-pillar',8,6],['sanctuary-pillar',28,26],['sanctuary-pillar',7,24],
-   ['sanctuary-tree',16,11],['sanctuary-tree',24,11],['sanctuary-tree',14,20],['sanctuary-tree',26,20],
+   ['sanctuary-tree',16,terraced?13:11],['sanctuary-tree',24,terraced?13:11],['sanctuary-tree',14,20],
+   ['sanctuary-tree',terraced?25:26,terraced?22:20],
    ['sanctuary-tree',33,10],['sanctuary-tree',36,13],
    ...(raised?[['sanctuary-ban-table',44,4],['sanctuary-vault',44,1],['sanctuary-pillar',41,3],['sanctuary-pillar',48,3],
     ['bookcase',39,4],['bookcase',49,4],['sanctuary-brazier',41,6],['sanctuary-brazier',47,6]]:[]),
@@ -136,7 +201,7 @@ window.DungeonSanctuary=(()=>{
    wellArrival:[33,19],archive:[20,3],archiveUse:[20,4],smith:[5,15],smithUse:[5,16],
    retreat:[32,26],ward:[23,29],lobby:[rest.cx-left,rest.cy]
   }).map(([key,[x,y]])=>[key,at(x,y)]));
-  return {...layout,sanctuary:{safe,rooms,water,flights,seats:seats.map(([x,y])=>at(x,y)),decor,...points}};
+  return {...layout,sanctuary:{safe,rooms,water,flights,terraces,seats:seats.map(([x,y])=>at(x,y)),decor,...points}};
  }
  return {extend};
 })();
