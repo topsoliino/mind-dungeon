@@ -375,10 +375,32 @@ test('the garden staircase reaches a protected apothecary landing two storeys ab
  assert.equal(f.layerAt(start.x,start.y),1);
  assert.equal(f.layerAt(room.x,room.y),2);
  Object.assign(host,start);
- assert.ok(sim.move(host,0,end.y-start.y));
- assert.ok(Math.abs(host.y-end.y)<1e-6);
+ const curve=stair.edges.map(([a,b])=>({x:(a[0]+b[0])*TILE/2,y:(a[1]+b[1])*TILE/2}));
+ for(const point of [...curve,end]){
+  assert.ok(sim.move(host,point.x-host.x,point.y-host.y));
+  assert.ok(Math.hypot(host.x-point.x,host.y-point.y)<.01);
+ }
  assert.equal(f.layerAt(host.x,host.y),2);
+ for(const point of [...curve].reverse().concat(start)){
+  assert.ok(sim.move(host,point.x-host.x,point.y-host.y));
+  assert.ok(Math.hypot(host.x-point.x,host.y-point.y)<.01);
+ }
+ assert.equal(f.layerAt(host.x,host.y),1);
+ assert.ok(f.wall(stair.core.x*TILE,stair.core.y*TILE));
  assert.deepEqual(host.ingredients,[]);
+});
+
+test('stair movement follows the drawn grade while preserving lateral clearance',()=>{
+ const {sim}=game(103),f=sim.floor;
+ const center=flight=>({x:(flight.x+flight.w/2)*TILE,y:(flight.y+flight.h/2)*TILE});
+ const north=f.stairFlights.find(flight=>flight.direction==='n');
+ assert.deepEqual({...f.stairMotion(center(north),10,0)},{x:10,y:0});
+ assert.ok(Math.abs(f.stairMotion(center(north),0,-10).y+6.8)<.001);
+ assert.ok(Math.abs(f.stairMotion(center(north),0,10).y-8.3)<.001);
+ const east=f.stairFlights.find(flight=>flight.direction==='e');
+ const climbing=f.stairMotion(center(east),10,0),descending=f.stairMotion(center(east),-10,0);
+ assert.ok(climbing.x>0&&climbing.y<0&&descending.x<0&&descending.y>0);
+ assert.deepEqual({...f.stairMotion(f.spawn,4,8)},{x:4,y:8});
 });
 
 test('the smith checks location, materials and item identity and updates the equipped weapon in place',()=>{

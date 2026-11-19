@@ -381,7 +381,8 @@ export class Simulation{
    p.back=y<0;
    const slow=p.webSlow||p.grabSlow||this.isWeb(p);
    const speed=p.speed*(p.consume?.item.kind==='food'?items.foodMove:drinking?items.potionMove:1)*(p.dash?p.load.dashSpeed*p.mods.dashDistance:1)*(slow?.53:1)*(p.chargeStart!==null?.64:1);
-   if(!this.move(p,x*speed*dt,y*speed*dt))return;
+   const stride=this.floor.stairMotion(p,x*speed*dt,y*speed*dt);
+   if(!this.move(p,stride.x,stride.y))return;
   }
   const face=Math.cos(p.dir);if(Math.abs(face)>.23&&!p.wallRecoil)p.weaponSide=Math.sign(face);
   p.moving=gap(p,before)>.08;

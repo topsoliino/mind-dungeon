@@ -419,7 +419,102 @@ window.DungeonArt = (() => {
     }
     return {bitmap,x:roof.x*size-padX,y:roof.y*size-top};
   }
-  function world(map,zoneAt,lights,seed,terrain,frontWalls,tileSize=SIZE,roof=null) {
+  const stairPalettes={
+    stone:{treads:['#918371','#87796c','#9b8c76'],riser:'#554b48',edge:'#c3ac8a',side:'#37343a',cap:'#695e57'},
+    sanctuary:{treads:['#939181','#83877a','#a19b84'],riser:'#50534c',edge:'#c6bda0',side:'#383939',cap:'#62675d'},
+    jungle:{treads:['#808d69','#727d5c','#8b9570'],riser:'#495840',edge:'#a5ac80',side:'#333b36',cap:'#53624f'}
+  };
+  function stairBitmap(flight,tile){
+    const pad=tile*.5,x=Math.floor(flight.x*tile-pad),y=Math.floor(flight.y*tile-pad);
+    const bitmap=surface(Math.ceil(flight.w*tile+pad*2),Math.ceil(flight.h*tile+pad+(flight.curve?tile*1.7:pad)));
+    const {g,poly,r}=brush(bitmap);
+    const {treads,riser,edge,side,cap}=stairPalettes[flight.style];
+    const px=([a,b])=>[Math.round(a*tile-x),Math.round(b*tile-y)];
+    const steps=window.DungeonStairs.sections(flight).map(({front,back,dy},i)=>({
+      a:front.map(px),b:back.map(px),dy,i
+    }));
+    const mix=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+    const down=(p,n)=>[p[0],p[1]+n];
+    const band=(a,b,from,to,color)=>poly([mix(a[0],b[0],from),mix(a[1],b[1],from),
+      mix(a[1],b[1],to),mix(a[0],b[0],to)],color);
+    const thickness=t=>Math.round(tile*(flight.curve?.18+t*1.21:.13+t*.26));
+    if(flight.core){
+      const [cx,cy]=px([flight.core.x,flight.core.y]);
+      const ellipse=(dx,dy,rx,ry,color)=>poly(Array.from({length:32},(_,i)=>[
+        Math.round(cx+dx+Math.cos(i*Math.PI/16)*rx),Math.round(cy+dy+Math.sin(i*Math.PI/16)*ry)
+      ]),color);
+      ellipse(7,62,146,49,'#161b1c');
+      ellipse(0,50,124,43,'#34383b');
+      ellipse(0,42,118,39,'#5c6057');
+      ellipse(0,38,107,35,'#373d3d');
+      for(const [i,side] of [[5,-1],[12,1],[19,1]]){
+        const rim=down(steps[i].a[1],Math.round(thickness(i/steps.length)*.63));
+        const pier=[cx+side*82,cy+27];
+        const curve=Array.from({length:12},(_,part)=>{
+          const t=part/11,p=mix(pier,rim,t);
+          return down(p,-Math.round(Math.sin(t*Math.PI)*23));
+        });
+        poly([...curve,...curve.slice().reverse().map(p=>down(p,17))],'#3b4341');
+        poly([...curve,...curve.slice().reverse().map(p=>down(p,4))],'#676b61');
+        for(const p of curve.filter((_,j)=>j%2===1))r(p[0],p[1]+4,2,12,'#2b3536');
+      }
+      for(let row=0;row<8;row++){
+        const sy=cy-112+row*18;
+        for(let col=0;col<9;col++){
+          const width=24,shift=row%2?8:0,bx=cx-108+col*width+shift;
+          const distance=Math.abs(bx+width/2-cx)/106;
+          if(distance>.95)continue;
+          const curve=Math.round((1-distance**2)*22);
+          r(bx,sy+curve,width-1,16,['#73776c','#636960','#515854','#494e50'][Math.min(3,Math.floor(distance*4))]);
+          r(bx+2,sy+curve+1,width-5,1,'#92948988');
+        }
+      }
+      ellipse(0,-103,103,34,'#515651');
+      ellipse(0,-108,104,33,'#858476');
+      ellipse(0,-111,96,28,'#5b635d');
+      ellipse(0,-111,66,19,'#4b5451');
+      ellipse(0,-111,38,10,'#60665c');
+      r(cx-22,cy-111,45,2,'#b1a188');r(cx-1,cy-120,2,20,'#a99b81');
+    }
+    for(const {a,b,i} of steps){
+      const t=i/steps.length,at=thickness(t),bt=thickness((i+1)/steps.length);
+      for(const bank of [0,1]){
+        const front=a[bank],back=b[bank],near=front[1]+back[1]>a[1-bank][1]+b[1-bank][1];
+        const base=[down(front,at),down(back,bt)];
+        poly([front,back,base[1],base[0]],near?riser:side);
+        if(near)poly([front,back,mix(back,base[1],.32),mix(front,base[0],.32)],cap);
+        if(flight.curve&&near){
+          for(let j=12;j<Math.min(at,bt);j+=12)poly([down(front,j),down(back,j),down(back,j+1),down(front,j+1)],side);
+        }
+      }
+    }
+    for(const {a,b,dy,i} of steps){
+      band(a,b,0,1,treads[i%treads.length]);
+      // A dark riser, a pale nosing and the broader tread are visible as separate faces.
+      const near=dy>0?b:a,far=dy>0?a:b;
+      band(near,far,0,.30,riser);
+      band(near,far,.29,.42,edge);
+      const seam=.27+(i%4)*.16;
+      const p=mix(near[0],near[1],seam),q=mix(far[0],far[1],seam);
+      g.strokeStyle=cap;g.lineWidth=1;g.beginPath();g.moveTo(...mix(p,q,.48));g.lineTo(...q);g.stroke();
+      const chip=mix(p,q,.67);
+      r(chip[0]+4,chip[1],4+(i%3)*2,1,'#d9c6a156');
+      for(const bank of [0,1]){
+        const u=a[bank],v=b[bank],other=1-bank,width=flight.curve?.095:.067;
+        const rail=flight.curve?9:7,inside=mix(u,a[other],width),farInside=mix(v,b[other],width);
+        poly([u,v,down(v,-rail),down(u,-rail)],side);
+        poly([down(u,-rail),down(v,-rail),down(farInside,-rail),down(inside,-rail)],cap);
+        if(i%3===0||i===steps.length-1){
+          poly([down(u,-rail-2),down(v,-rail-2),down(farInside,-rail-2),down(inside,-rail-2)],edge);
+        }
+      }
+    }
+    const [low,high]=[steps[0].a,steps.at(-1).b];
+    for(const [a,b] of [low,high])poly([a,b,down(b,3),down(a,3)],edge);
+    return {x,y,bitmap};
+  }
+  function world(map,zoneAt,lights,seed,terrain,frontWalls,tileSize=SIZE,roof=null,flights=[]) {
+    const stairImages=flights.map(flight=>stairBitmap(flight,tileSize));
     const rnd=random(seed),chunkSize=16,chunks=[],fx=window.DungeonStrataFx;
     const tower=roof&&towerBackdrop(roof,tileSize,seed);
     const towerTile=({x,y,surfaceType})=>tower&&(surfaceType==='roof-stone'||surfaceType==='tower-sky'||surfaceType==='tower-horizon'||
@@ -443,7 +538,10 @@ window.DungeonArt = (() => {
       g.translate(-x0,-y0);
       for(const {x,y,v,mask,open,surfaceType} of cells){
         const zone=zoneAt(x,y);
-        const image=surfaceType&&surfaceType!=='partition'?terrainTile(surfaceType,v):
+        if(surfaceType==='sanctuary-spiral'||surfaceType==='sanctuary-spiral-void')continue;
+        const isFlight=surfaceType?.startsWith('stairs-')||surfaceType?.startsWith('sanctuary-stairs-')||surfaceType==='jungle-stairs';
+        const base=isFlight&&(surfaceType.startsWith('sanctuary-')?'sanctuary-stone':surfaceType==='jungle-stairs'?'jungle-floor':'stair-wall');
+        const image=surfaceType&&surfaceType!=='partition'?terrainTile(base||surfaceType,v):
          open||surfaceType==='partition'?floor(zone,v):wall(zone,mask,v%4);
         const px=x*tileSize,py=y*tileSize;
         // Filter dense patterns once at their final world resolution.
@@ -467,6 +565,8 @@ window.DungeonArt = (() => {
         for(const p of towerCells)g.rect(p.x*tileSize,p.y*tileSize,tileSize,tileSize);
         g.clip();g.drawImage(tower.bitmap,tower.x,tower.y);g.restore();
       }
+      for(const stair of stairImages)if(stair.x<x0+c.width&&stair.y<y0+c.height&&
+       stair.x+stair.bitmap.width>x0&&stair.y+stair.bitmap.height>y0)g.drawImage(stair.bitmap,stair.x,stair.y);
       g.beginPath();
       for(const p of cells)if(p.open)g.rect(p.x*tileSize,p.y*tileSize,tileSize,tileSize);
       g.clip();g.globalCompositeOperation='screen';
