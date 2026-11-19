@@ -16,7 +16,7 @@ window.DungeonVision=(()=>{
    const cell=y*W+x,region=regions[y][x];
    if(map[y][x]===1&&!world.abyssAt((x+.5)*tileSize,(y+.5)*tileSize))opaque[cell]=1;
    if(alleys&&region===alleys.id){
-    if(opaque[cell]&&terrain[y][x]?.startsWith('street-'))streetFacades.push(cell);
+    if(opaque[cell]&&terrain[y][x]?.startsWith('street-')&&!terrain[y][x].startsWith('street-backroof'))streetFacades.push(cell);
     if(opaque[cell])continue;
    }else if(region<0||world.isPassage(region)||sewerSections.has(region))continue;
    if(!roomTiles.has(region))roomTiles.set(region,[]);
@@ -45,7 +45,8 @@ window.DungeonVision=(()=>{
    const y=Math.floor(id/W),x=id%W;
    for(const [dx,dy] of nearWalls){
     const col=x+dx,row=y+dy,neighbor=row*W+col;
-    if(inside(col,row)&&opaque[neighbor])remember(neighbor);
+    if(inside(col,row)&&opaque[neighbor]&&
+     !(regions[y][x]===alleys?.id&&terrain[row][col]?.startsWith('street-backroof')))remember(neighbor);
    }
   }
   function revealRoom(region){

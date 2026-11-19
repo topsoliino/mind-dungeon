@@ -53,7 +53,7 @@ export function createProjection(){
   for(const id of enemies.keys())if(!next.has(id)){enemies.delete(id);removed.push(id);}
   if(force||changed.length)base.enemies=changed;
   if(removed.length)base.removed=removed;
-  const scene={explored:[...sim.explored],gates:sim.state.gates,doors:sim.state.doors??{},furnitureDamage:sim.state.furnitureDamage??{},access:sim.state.access??{},portal:sim.portal,completed:sim.completed,gateProgress:sim.state.gateProgress,bossBattle:sim.state.bossBattle??null};
+  const scene={explored:[...sim.explored],gates:sim.state.gates,doors:sim.state.doors??{},furnitureDamage:sim.state.furnitureDamage??{},access:sim.state.access??{},portal:sim.portal,completed:sim.completed,keyring:sim.keyring,openedCaches:sim.state.openedCaches,gateProgress:sim.state.gateProgress,bossBattle:sim.state.bossBattle??null};
   const sceneKey=JSON.stringify(scene);
   if(force||sceneKey!==staticState){staticState=sceneKey;Object.assign(base,scene);}
   const loot=[...sim.orbs.values()].filter(o=>(!o.seat||o.seat===p.seat)&&currentRegion(p,o));

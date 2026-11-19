@@ -11,9 +11,9 @@ const savePoison=poison=>poison?{...poison,owner:poison.owner?.seat??null}:null;
 const loadPoison=(poison,members)=>poison?{...poison,owner:members.get(poison.owner)?.player}:null;
 
 export class Simulation{
- constructor(seed,players,{random=Math.random,id=randomUUID,layoutRevision}={},depth=1,layoutSeed=seed){
+ constructor(seed,players,{random=Math.random,id=randomUUID,layoutRevision,keyring={}}={},depth=1,layoutSeed=seed){
   this.random=random;this.id=id;this.players=players;this.clock=0;this.tickId=0;this.events=[];this.currentTarget=null;this.eventId=0;
-  this.seed=seed;this.startFloor(layoutSeed,depth,layoutRevision);
+  this.seed=seed;this.keyring=keyring;this.startFloor(layoutSeed,depth,layoutRevision);
  }
  startFloor(seed,floor,layoutRevision){
   this.state={...run.floorState(seed,floor),templeDepth:run.templeDepth(this.seed),templeRunSeed:this.seed};
@@ -21,7 +21,7 @@ export class Simulation{
   this.floor=geometry.build(run,this.state);
   this.difficulty=this.activePlayers().length===2?1:.5;
   this.enemies=geometry.spawnEnemies(run,foes,this.state,this.floor,this.difficulty===1);
-  this.effects=Object.fromEntries(effectKinds.map(key=>[key,[]]));this.shots=[];this.orbs=new Map();this.portal=null;
+  this.effects=Object.fromEntries(effectKinds.map(key=>[key,[]]));this.shots=[];this.orbs=new Map();this.visits={};this.portal=null;
   this.completed=false;this.explored=new Set([this.floor.rest?.id]);
   this.sights=new Map();this.sightBarriers=this.floor.sightBarriers();
   this.resistances=items.foes.map(profile=>foes.resistances(profile,floor));
@@ -57,6 +57,7 @@ export class Simulation{
     if(phase==='won')this.sound('boss_defeat',this.floor.bossArena,{priority:3});
    }
   });
+  this.stockKeys();
   for(const p of this.players)this.resetAtRest(p,true);
   this.ai=enemySim.create({
    enemyRules:foes,items,balance,save:this.state,state:this.effects,floor:this.floor,getEnemies:()=>this.enemies,
@@ -92,7 +93,7 @@ export class Simulation{
    state:this.state,clock:this.clock,tickId:this.tickId,difficulty:this.difficulty,
    enemies:this.enemies.map(e=>({...e,poison:savePoison(e.poison)})),effects:this.effects,
    shots:this.shots.map(({hit,...shot})=>({...shot,hit:{...hit,p:hit.p.seat}})),
-   orbs:[...this.orbs.values()],portal:this.portal,completed:this.completed,explored:[...this.explored],
+   orbs:[...this.orbs.values()],visits:this.visits,portal:this.portal,completed:this.completed,explored:[...this.explored],
    plates:this.floor.pressurePlates.map(({pressed,timer,cooldown})=>({pressed,timer,cooldown})),
    stormDelay:this.ai.stormTimer()
   };
@@ -106,6 +107,8 @@ export class Simulation{
   this.enemies=saved.enemies.map(e=>({...e,poison:loadPoison(e.poison,members)}));
   this.shots=saved.shots.map(({hit,...shot})=>({...shot,hit:{...hit,p:members.get(hit.p).player}}));
   this.orbs=new Map(saved.orbs.map(o=>[o.id,{...o,...this.lootAt(o)}]));
+  this.visits=saved.visits??{};
+  this.stockKeys();
   this.sights.clear();
   this.floor.pressurePlates.forEach((plate,i)=>Object.assign(plate,saved.plates[i]));
   this.ai.stormTimer(saved.stormDelay);
@@ -130,13 +133,13 @@ export class Simulation{
   if(p.trial)p.trial.deadline+=elapsed;
   if(p.consume){p.consume.start+=elapsed;p.consume.end+=elapsed;}
  }
- resetAtRest(p,newFloor=false){
+ resetAtRest(p,newFloor=false,transition=newFloor){
   const spawn=this.floor.spawn,offset=p.seat===2?37:0;
   const x=this.floor.valid(spawn.x+offset,spawn.y,HERO_RADIUS,false,true)?spawn.x+offset:spawn.x;
   Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,wallRecoil:0,recoilAngle:0,attackDuration:.4,walk:0,
    moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,
    combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.rest?.id,entered:this.clock,quiz:null,trial:null,consume:null,
-   consumeQueue:newFloor?p.consumeQueue??[]:[],damageQueue:newFloor?p.damageQueue??[]:[],damageHistory:newFloor?p.damageHistory??[]:[],fall:null});
+   consumeQueue:transition?p.consumeQueue??[]:[],damageQueue:transition?p.damageQueue??[]:[],damageHistory:transition?p.damageHistory??[]:[],fall:null});
   p.input={seq:p.input.seq,x:0,y:0,aim:0,blocked:false,at:-Infinity};
   if(newFloor){
    Object.assign(p,{opened:[],searched:[],altarUses:{},altarQuestions:{},gateQuestions:{},boneClaims:{},rubyClaims:{},templeAttempts:{},trials:{},
@@ -189,7 +192,7 @@ export class Simulation{
   this.emit('travel',{seat:p.seat,x:p.x,y:p.y,link:link.kind});
  }
  hitDoor(door,attack,angle){
-  if(door.streetHouse||this.floor.doorHP(door)<=0||this.floor.accessState(door)!=='open')return;
+  if(door.keyId||this.floor.doorHP(door)<=0||this.floor.accessState(door)!=='open')return;
   const hp=this.floor.strikeDoor(attack.amount*(attack.charged?1.5:1),door);
   if(hp===0&&door.reward)this.drop({x:(door.reward.x+.5)*TILE,y:(door.reward.y+.5)*TILE},selectLoot('epic',this.state.floor,this.random));
   this.emit('door',{x:door.x,y:door.y,id:door.id,hp,angle});
@@ -577,11 +580,25 @@ export class Simulation{
   return this.floor.lootPosition(pos,anchor)??this.floor.lootPosition(anchor)??this.floor.spawn;
  }
  drop(pos,item,owner=0,anchor=pos){
-  if(this.orbs.size>=180&&item!==items.alleyRing)return false;
+  if(this.orbs.size>=180&&item!==items.alleyRing&&item.kind!=='key')return false;
   const id=this.id();this.orbs.set(id,{id,seat:owner,...this.lootAt(pos,anchor),item});
   return true;
  }
+ stockKeys(){
+  for(const key of this.floor.keySources){
+   if(key.type==='merchant'||this.keyring[key.id]||[...this.orbs.values()].some(o=>o.item.kind==='key'&&o.item.id===key.id))continue;
+   if(key.type==='enemy'){
+    this.state.keyCarrier??=this.floor.carrierFor(this.enemies);
+    if(this.enemies.some(e=>e.id===this.state.keyCarrier))continue;
+   }
+   this.drop(this.floor.pantryKeySite(key.id),this.floor.keyItem(key.id,'Vorratskammer'));
+  }
+ }
  defeat(e){
+  if(e.id===this.state.keyCarrier){
+   const key=this.floor.keySources.find(row=>row.type==='enemy');
+   if(key&&!this.keyring[key.id])this.drop(this.floor.lootPosition(e)??this.floor.pantryKeySite(key.id),this.floor.keyItem(key.id,'Gegnerbeute'));
+  }
   const active=this.activePlayers();
   for(const p of active){p.kills++;p.revision++;}
   if(e.bossRole){this.boss?.defeat(e);this.emit('defeated',{x:e.x,y:e.y,type:e.type});return;}

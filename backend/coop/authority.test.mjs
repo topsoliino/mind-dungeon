@@ -379,7 +379,7 @@ test('enemy knockback can cause a lethal fall and leaves the loot on reachable g
  assert.ok(loot.every(o=>sim.floor.valid(o.x,o.y)&&sim.floor.canReachSpawn(o.x,o.y)));
 });
 
-test('the alleys have two time-locked houses, night-only bats and one shared epic ring',()=>{
+test('the alleys have two keyed houses, night-only bats and one shared epic ring',()=>{
  for(const [seed,phase,scale] of [[0,'evening',1],[2,'night',.59],[4,'day',1.25]]){
   const {host,sim}=game(seed);
   const {floor}=sim,street=floor.alleys;
@@ -401,11 +401,17 @@ test('the alleys have two time-locked houses, night-only bats and one shared epi
    assert.equal(floor.terrain[Math.floor(door.y/TILE)-sign][Math.floor(door.x/TILE)],'street-step-'+(door.north?'north':'south')+'-'+phase);
    Object.assign(host,{x:door.x,y:door.y-sign*TILE*1.8});
    sim.move(host,0,sign*TILE*3.5);
-   assert.equal(floor.regionAt(host.x,host.y)===house.id,phase!=='day');
-   if(phase==='day'){
-    assert.equal(floor.strikeDoor(999,door),door.hp);
-    assert.ok(floor.doorAt(door.x,door.y));
-   }
+   assert.notEqual(floor.regionAt(host.x,host.y),house.id);
+   assert.equal(floor.strikeDoor(999,door),door.hp);
+   assert.ok(floor.doorAt(door.x,door.y));
+   Object.assign(host,{x:door.x,y:door.y-sign*TILE});
+   assert.throws(()=>sim.actions.dispatch(host,'interact',{kind:'key-door',index:door.id}),/Verschlossen/);
+   sim.keyring[door.keyId]='held';
+   sim.actions.dispatch(host,'interact',{kind:'key-door',index:door.id});
+   assert.equal(sim.keyring[door.keyId],'used');
+   assert.equal(floor.doorAt(door.x,door.y),undefined);
+   sim.move(host,0,sign*TILE*4);
+   assert.equal(floor.regionAt(host.x,host.y),house.id);
   }
   sim.defeat(carrier);
   sim.defeat(carrier);
@@ -416,6 +422,89 @@ test('the alleys have two time-locked houses, night-only bats and one shared epi
  }
  assert.equal(items.retreatDepth(4,['avoidance',null]),4);
  assert.equal(items.retreatDepth(4,['height',null]),3);
+});
+
+test('keys stay available through cross-floor travel, merchant stock and a restored checkpoint',()=>{
+ const host={seat:1,id:'host',pack:defaultPack,ws:{}},guest={seat:2,id:'guest',pack:defaultPack,ws:{}};
+ const party={code:'KEYS0123',seed:193,mode:'same',members:new Map([['host',host],['guest',guest]])};
+ startParty(party);
+ const first=getFloor(party,host),buy=first.floor.keySources.find(site=>site.id==='2:earlier');
+ const act=(floor,member,kind,index)=>floor.actions.dispatch(member.player,'interact',{kind,index});
+ const pantry=[...first.orbs.values()].find(o=>o.item.id==='1:street-house-0');
+ assert.equal(pantry.item.source,'Vorratskammer');
+ assert.ok(first.floor.canReachSpawn(pantry.x,pantry.y));
+ Object.assign(guest.player,{x:pantry.x,y:pantry.y});
+ act(first,guest,'soul',pantry.id);
+ assert.equal(party.keyring[pantry.item.id],'held');
+ Object.assign(host.player,first.floor.merchant,{gold:4});
+ const offer=act(first,host,'merchant').stock.gold.find(o=>o.id===buy.id);
+ assert.equal(offer.price,4);
+ first.actions.dispatch(host.player,'buy',{stock:offer.stock});
+ assert.equal(host.player.gold,0);
+ assert.equal(party.keyring[buy.id],'held');
+ assert.throws(()=>first.actions.dispatch(host.player,'buy',{stock:offer.stock}),/nicht verfügbar/);
+ host.player.searched=[2];
+ first.state.gates[first.floor.gates[0].id]=true;
+ first.enemies=[];first.portal={...first.floor.spawn};
+ advanceParty(party,host);
+ const second=getFloor(party,host),earlier=second.floor.doors.find(d=>d.keyId===buy.id);
+ assert.ok(earlier);
+ Object.assign(guest.player,{x:earlier.x,y:earlier.y+(earlier.north?1:-1)*TILE});
+ act(second,guest,'key-door',earlier.id);
+ assert.equal(second.floor.doorHP(earlier),0);
+ const carrier=second.enemies.find(e=>e.id===second.state.keyCarrier);
+ assert.ok(carrier&&second.floor.canReachSpawn(carrier.x,carrier.y));
+ second.enemies=second.enemies.filter(e=>e!==carrier);
+ second.defeat(carrier);
+ const key=[...second.orbs.values()].find(o=>o.item.id==='1:later');
+ assert.equal(key.item.source,'Gegnerbeute');
+ assert.ok(second.floor.canReachSpawn(key.x,key.y));
+ Object.assign(host.player,{x:key.x,y:key.y});
+ act(second,host,'soul',key.id);
+ const previousEnemy=second.enemies[0];
+ previousEnemy.hp=7;
+ Object.assign(host.player,second.floor.returnPortal);
+ assert.equal(act(second,host,'return-portal').retreat,true);
+ advanceParty(party,host,-1);
+ assert.equal(getFloor(party,host),first);
+ assert.deepEqual(host.player.searched,[2]);
+ assert.equal(first.state.gates[first.floor.gates[0].id],true);
+ const later=first.floor.doors.find(d=>d.keyId===key.item.id);
+ Object.assign(host.player,{x:later.x,y:later.y+(later.north?1:-1)*TILE});
+ act(first,host,'key-door',later.id);
+ const stored=JSON.parse(JSON.stringify({meta:partyMetadata(party),state:partyState(party),revision:1}));
+ const resumed=restoreParty(party.code,stored),restoredHost=resumed.members.get('host');
+ assert.equal(resumed.keyring[key.item.id],'used');
+ assert.equal(getFloor(resumed,restoredHost).state.doors[later.id],0);
+ restoredHost.player.online=true;
+ resumed.members.get('guest').player.online=true;
+ advanceParty(resumed,restoredHost);
+ const restoredSecond=getFloor(resumed,restoredHost);
+ assert.equal(restoredSecond.state.doors[earlier.id],0);
+ assert.equal(restoredSecond.enemies.find(e=>e.id===previousEnemy.id).hp,7);
+});
+
+test('solo transitions restore the floor snapshot and keep the run-wide keyring',()=>{
+ const first=run.freshRun(193);
+ first.doors['key-room-later']=0;
+ first.searched=[2];
+ first.souls=[{x:300,y:400,item:{kind:'food',id:'bread'}}];
+ first.floorEnemies=[{id:'survivor',hp:8}];
+ first.portal={x:100,y:80};
+ const second=run.floorTransition(first,2,100);
+ second.keyring['1:later']='held';
+ second.boneClaims.bone=true;
+ const returned=run.floorTransition(second,1,193);
+ assert.equal(returned.doors['key-room-later'],0);
+ assert.equal(returned.searched[0],2);
+ assert.equal(returned.floorEnemies[0].hp,8);
+ assert.equal(returned.souls[0].item.id,'bread');
+ assert.equal(returned.keyring['1:later'],'held');
+ assert.equal(returned.portal.x,100);
+ assert.equal(returned.x,null);
+ const deeper=run.floorTransition(returned,2,101);
+ assert.equal(deeper.boneClaims.bone,true);
+ assert.equal(deeper.dungeonSeed,100);
 });
 
 test('new streets mix narrow lanes and wider areas without changing legacy street widths',()=>{

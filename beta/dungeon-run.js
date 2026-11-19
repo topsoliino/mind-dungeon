@@ -230,7 +230,7 @@ window.DungeonRun = (() => {
   }
   const base={rooms,corridors,map,regions,gates,annexes,terrain,rest,paths};
   return revision>=8?window.DungeonStrata.extend(base,seed,depth,random,shuffle,revision,sewerDepth(runSeed),
-   revision>=10&&cryptDepths(runSeed).includes(depth)):base;
+   revision>=10&&cryptDepths(runSeed).includes(depth),LAST_DEPTH):base;
 
  }
  function differentLayoutSeed(seed,rooms,gates){
@@ -396,14 +396,27 @@ window.DungeonRun = (() => {
  }
  function floorState(seed,depth){
   return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},doors:{},furnitureDamage:{},access:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],seenTiles:[],seenTilesVersion:null,portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:13,bossBattle:null,bossActors:[],cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[]};
+   defeated:[],explored:[REST_ID],seenTiles:[],seenTilesVersion:null,portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:14,bossBattle:null,bossActors:[],cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[],keyCarrier:null,openedCaches:{},floorEnemies:null};
  }
  function freshRun(seed){
-  return {...floorState(seed,1),trialCharmActive:false,alleyRingAwarded:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionSeen:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{},bossOrdinal:null,selectedBoss:null,damageHistory:[],damageQueue:[],fall:null,deathRecap:null};
+  return {...floorState(seed,1),trialCharmActive:false,alleyRingAwarded:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionSeen:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{},floorArchives:{},keyring:{},bossOrdinal:null,selectedBoss:null,damageHistory:[],damageQueue:[],fall:null,deathRecap:null};
+ }
+ const floorFields=[...Object.keys(floorState(0,1)).filter(key=>!['wellOffer','activeBrew','brewEffects'].includes(key)),
+  'boneClaims','rubyClaims','completed'];
+ function floorSnapshot(save){
+  return Object.fromEntries(floorFields.map(key=>[key,save[key]]));
+ }
+ function floorTransition(save,depth,seed){
+  const floorArchives={...save.floorArchives},previous=floorArchives[depth];
+  delete floorArchives[depth];
+  return {...save,...floorState(seed,depth),boneClaims:{},rubyClaims:{},completed:false,...previous,
+   x:null,y:null,wellOffer:save.wellOffer,activeBrew:save.activeBrew,brewEffects:save.brewEffects,
+   depthSeeds:{...save.depthSeeds,[depth]:previous?.dungeonSeed??seed},
+   floorArchives:{...floorArchives,[save.floor]:floorSnapshot(save)}};
  }
  const runFields=[...Object.keys(freshRun(0))];
  function snapshot(save){
   return Object.fromEntries(runFields.map(key=>[key,save[key]]));
  }
- return {LAST_DEPTH,DEFAULT_PACK,templeDepth,sewerDepth,cryptDepths,cemeteryRoll,W,H,generate,random,shuffle,freshSeed,nextSeed,differentLayoutSeed,validatePack,roomTopics,orderQuestions,nextQuestion,shuffleOptions,presentQuestion,floorState,freshRun,snapshot};
+ return {LAST_DEPTH,DEFAULT_PACK,templeDepth,sewerDepth,cryptDepths,cemeteryRoll,W,H,generate,random,shuffle,freshSeed,nextSeed,differentLayoutSeed,validatePack,roomTopics,orderQuestions,nextQuestion,shuffleOptions,presentQuestion,floorState,freshRun,floorTransition,snapshot};
 })();

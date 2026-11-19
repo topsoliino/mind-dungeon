@@ -214,9 +214,10 @@ export function createCoopServer({auth=supabaseAuth(),origins=[allowedDefault],m
   if(type==='attack'){sim.attack(p,message.aim);return {};}
   if(type==='action'){
    const result=sim.actions.dispatch(p,message.action,message.data??{});
-   if(result.advance)advanceParty(room,member);
+   const travel=result.advance||result.retreat;
+   if(travel)advanceParty(room,member,result.retreat?-1:1);
    mark(room);
-   if(result.advance){broadcastLobby(room);await persist(room);}
+   if(travel){broadcastLobby(room);await persist(room);}
    else if(message.action!=='interact'||result.item||result.notice||result.victory)persistSoon(room);
    return {...result,personal:personal(p)};
   }
