@@ -4,9 +4,9 @@ window.DungeonVision=(()=>{
  const nearWalls=[...adjacent,[1,1],[1,-1],[-1,1],[-1,-1]];
  const memoryVersion=1;
  function create(world,tileSize,barriers,prior,explored){
-  const {map,regions,W,H,stairs,rest,rooms,sewerRooms=[]}=world;
+  const {map,regions,W,H,stairs,rest,rooms,annexes=[],sewerRooms=[]}=world;
   const size=W*H,opaque=new Uint8Array(size),obstacles=new Uint8Array(size),live=new Uint8Array(size),known=new Uint8Array(size);
-  const seenTiles=[],roomTiles=new Map(),revealedRooms=new Set();
+  const seenTiles=[],roomTiles=new Map(),revealedRooms=new Set(),litRoomCells=new Uint8Array(size);
   const witnessed=new Set(),reachable=new Int16Array(size),frontier=new Int32Array(size);
   const sewerSections=new Set(sewerRooms.map(room=>room.id));
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
@@ -15,6 +15,17 @@ window.DungeonVision=(()=>{
    if(region<0||world.isPassage(region)||sewerSections.has(region))continue;
    if(!roomTiles.has(region))roomTiles.set(region,[]);
    roomTiles.get(region).push(cell);
+  }
+  // A landing or passage can replace a room's floor label during generation.
+  const doorwayCells=new Set(barriers.flatMap(barrier=>barrier.floorCells));
+  for(const room of [...rooms,...annexes]){
+   const id=room.i??room.id,cells=roomTiles.get(id);
+   if(!cells)continue;
+   const layer=world.layerForRegion(id);
+   for(let y=room.y;y<room.y+room.h;y++)for(let x=room.x;x<room.x+room.w;x++){
+    const region=regions[y]?.[x],cell=y*W+x;
+    if(map[y]?.[x]===0&&world.isPassage(region)&&world.layerForRegion(region)===layer&&!doorwayCells.has(cell))cells.push(cell);
+   }
   }
   let revision=0,signature='',visibleBarriers=new Set(),viewOrigin,reached=false;
   const inside=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
@@ -35,7 +46,7 @@ window.DungeonVision=(()=>{
    const cells=roomTiles.get(region);
    if(!cells||revealedRooms.has(region))return;
    revealedRooms.add(region);
-   for(const cell of cells)rememberFloor(cell);
+   for(const cell of cells){litRoomCells[cell]=1;rememberFloor(cell);}
   }
   function updateObstacles(observer,closed){
    obstacles.set(opaque);
@@ -121,8 +132,10 @@ window.DungeonVision=(()=>{
   rememberStart();
   function update(observer,width,height){
    const x=observer.x/tileSize,y=observer.y/tileSize;
-   if(!inside(Math.floor(x),Math.floor(y)))return;
+   const col=Math.floor(x),row=Math.floor(y);
+   if(!inside(col,row))return;
    for(const region of explored)revealRoom(region);
+   if(map[row][col]===0)revealRoom(regions[row][col]);
    const closed=barriers.map(b=>b.visible()),upper=stairs.map(s=>explored.has(s.roomIds[1]));
    const origin=sightOrigin(x,y,closed);
    if(!origin.blockers.length){
@@ -135,19 +148,12 @@ window.DungeonVision=(()=>{
    if(key===signature)return;
    signature=key;viewOrigin=origin;live.fill(0);reached=false;
    updateObstacles(origin,closed);
-   const viewedRooms=new Set();
    for(let y=Math.max(0,Math.floor(sy-ry));y<=Math.min(H-1,Math.ceil(sy+ry));y++){
     for(let x=Math.max(0,Math.floor(sx-rx));x<=Math.min(W-1,Math.ceil(sx+rx));x++){
      if(!trace(origin,x,y))continue;
      const id=y*W+x;live[id]=1;
      if(!known[id])rememberFloor(id);
-     const region=regions[y][x];
-     if(!obstacles[id]&&roomTiles.has(region)&&!revealedRooms.has(region))viewedRooms.add(region);
     }
-   }
-   for(const region of viewedRooms){
-    const unseen=roomTiles.get(region).filter(id=>!opaque[id]&&!known[id]);
-    if(unseen.length<=3)revealRoom(region);
    }
    visibleBarriers=new Set();
    for(const [i,barrier] of barriers.entries()){
@@ -163,8 +169,8 @@ window.DungeonVision=(()=>{
    }
   }
   function sees(x,y){
-   const col=Math.floor(x/tileSize),row=Math.floor(y/tileSize);
-   return inside(col,row)&&(revealedRooms.has(regions[row][col])||Boolean(live[row*W+col]))&&
+   const col=Math.floor(x/tileSize),row=Math.floor(y/tileSize),cell=row*W+col;
+   return inside(col,row)&&Boolean(litRoomCells[cell]||live[cell])&&
     (!viewOrigin||!crossesOriginBarrier(viewOrigin,x/tileSize,y/tileSize));
   }
   function remembers(x,y){
@@ -197,7 +203,7 @@ window.DungeonVision=(()=>{
    if(!viewOrigin)return false;
    const x=e.x/tileSize,y=e.y/tileSize,col=Math.floor(x),row=Math.floor(y),cell=row*W+col;
    if(!inside(col,row)||crossesOriginBarrier(viewOrigin,x,y))return false;
-   if(live[cell]||revealedRooms.has(regions[row][col]))return true;
+   if(live[cell]||litRoomCells[cell])return true;
    return (known[cell]||witnessed.has(e.id))&&connectsAroundCorner(cell);
   }
   function observeEnemy(e){
