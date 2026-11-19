@@ -304,11 +304,14 @@ export function actions(sim){
  }
  function dispatch(p,kind,data){
   if(p.fall)fail('Du stürzt gerade.');
-  if(sim.state.bossBattle?.phase==='intro'&&kind!=='dismiss-death')fail('Der Boss tritt auf.');
+  if(sim.state.bossBattle?.phase==='intro'&&!['dismiss-death','skip-intro'].includes(kind))fail('Der Boss tritt auf.');
   if(p.deathRecap&&kind!=='dismiss-death')fail('Schließe zuerst den Todesrückblick.');
   if(p.quiz&&!['answer','review'].includes(kind))fail('Beende zuerst das Quiz.');
   let result;
   switch(kind){
+   case 'skip-intro':
+    if(!sim.boss?.skipIntro(p))fail('Die Sequenz kann gerade nicht übersprungen werden.');
+    result={};break;
    case 'dismiss-death':p.deathRecap=null;result={};break;
    case 'interact':result=interact(p,data.kind,data.index);break;
    case 'quiz':result=quiz(p,data.reason,data.index,data.vessel);break;

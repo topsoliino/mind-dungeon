@@ -1,6 +1,6 @@
 (root=>{
 'use strict';
-const name='Verhaltene Leute',introDuration=12;
+const name='Verhaltene Leute',introDuration=12,introSkipAfter=1;
 const lines=[
  {at:.8,name:'John B. Watson',text:'Euch hat wohl noch keiner die Angstkonditionierung beigebracht.'},
  {at:5.2,name:'Edward Lee Thorndike',text:'law of GET REKT'},
@@ -73,13 +73,33 @@ function create(arena,save,hooks){
    {scientist:i,warded:true,nextAttack:1+i*.8,boss:true})));
   hooks.changed('intro');
  }
+ function openRatSite(pointInArena){
+  if(hooks.open?.(pointInArena,8)!==false)return pointInArena;
+  for(const radius of [16,32,48,64,92,128]){
+   const toward=aim(pointInArena,arena);
+   for(const turn of [0,.55,-.55,1.1,-1.1,1.7,-1.7,Math.PI]){
+    const site=point(pointInArena,toward+turn,radius);
+    if(inside(site)&&hooks.open(site,8))return site;
+   }
+  }
+  return {x:arena.x,y:arena.y};
+ }
+ function beginWaves(){
+  const s=battle();
+  s.phase='waves';s.time=0;startWave();hooks.changed('waves');
+ }
+ function skipIntro(actor){
+  const s=battle();
+  if(s.phase!=='intro'||s.time<introSkipAfter||!inside(actor))return false;
+  beginWaves();return true;
+ }
  function startWave(){
   const s=battle(),wave=++s.waves,coop=hooks.players().length>1;
   const count=(coop?5:3)+wave,health=coop?32:21;
   s.waveMax=count*health;
   hooks.spawn(Array.from({length:count},(_,i)=>{
    const vent=(Math.floor(i*arena.vents.length/count)+wave-1)%arena.vents.length;
-   const p=arena.vents[vent],spawn=point(p,aim(p,arena),23+Math.floor(i/arena.vents.length)*25);
+   const p=arena.vents[vent],spawn=openRatSite(point(p,aim(p,arena),23+Math.floor(i/arena.vents.length)*25));
    return makeActor('behaviorist-wave-'+wave+'-'+i,'rat',hooks.types.RAT,spawn,health,.62,{emerge:.42});
   }));
   s.nextWave=null;
@@ -107,6 +127,7 @@ function create(arena,save,hooks){
  }
  function experiment(dt){
   const s=battle();
+  for(const rat of actors().filter(e=>e.bossRole==='rat'))if(hooks.open?.(rat,8)===false)Object.assign(rat,openRatSite(rat),{route:null,routeDelay:0});
   if(!actors().some(e=>e.bossRole==='rat')){
    if(s.waves===3){
     s.phase='fight';s.cues=[];s.time=0;
@@ -346,7 +367,7 @@ function create(arena,save,hooks){
   players.forEach((p,i)=>{if(!inside(p)&&!p.deathRecap)teleport(p,i);});
   advance(dt,s);
   if(s.phase==='intro'){
-   if(s.time>=introDuration){s.phase='waves';s.time=0;startWave();hooks.changed('waves');}
+   if(s.time>=introDuration)beginWaves();
    return;
   }
   if(s.phase==='waves')experiment(dt);else fight(dt);
@@ -364,8 +385,8 @@ function create(arena,save,hooks){
    if(age>=rock.fallDelay&&age-dt<rock.fallDelay)hooks.roofLanding?.(rock);
   }
  }
- return {step,defeat,markDeath,setAltar,inCombat};
+ return {step,defeat,markDeath,setAltar,inCombat,skipIntro};
 }
-root.DungeonBoss={name,scientists,lines,introDuration,pools,candidates,choose,assign,pellet,note,rewardNames,
+root.DungeonBoss={name,scientists,lines,introDuration,introSkipAfter,pools,candidates,choose,assign,pellet,note,rewardNames,
  create,gateClosed,resistance,triangleContains};
 })(typeof window==='undefined'?globalThis:window);

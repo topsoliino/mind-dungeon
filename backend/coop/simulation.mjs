@@ -28,7 +28,7 @@ export class Simulation{
   this.boss=bossRules.create(this.floor.bossArena,this.state,{
    players:()=>this.activePlayers(),enemies:()=>this.enemies,types:foes,random:this.random,
    region:p=>this.floor.regionAt(p.x,p.y),move:(e,dx,dy)=>this.move(e,dx,dy),
-   open:p=>this.floor.valid(p.x,p.y,18),
+   open:(p,r=18)=>this.floor.valid(p.x,p.y,r),
    teleport:(p,pos)=>{
     Object.assign(p,pos,{input:idleInput(),dash:0,vault:null,quiz:null,chargeStart:null,moving:false});
     p.revision++;
@@ -171,7 +171,7 @@ export class Simulation{
   };
   const canFall=knockback||hero&&!actor.equipment.rings.includes('height');
   const safe={x:actor.x,y:actor.y},bodyRadius=radius(actor);
-  const pass=(x,y)=>this.floor.valid(x,y,bodyRadius,false,hero,canFall)&&(hero||!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
+  const pass=(x,y)=>this.floor.valid(x,y,bodyRadius,false,hero,canFall)&&(hero?this.floor.heroClearsDoor(actor,x,y):!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
   const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
   for(let i=0;i<steps;i++){
    const x=actor.x+dx/steps,y=actor.y+dy/steps;
@@ -229,7 +229,7 @@ export class Simulation{
  resistanceFor(e){return bossRules.resistance(e,this.resistances[e.type]);}
  control(p,input){
   if(!Number.isSafeInteger(input.seq)||input.seq<=p.input.seq||!Number.isFinite(input.aim))return false;
-  const blocked=Boolean(this.state.bossBattle?.phase==='intro'||input.blocked||p.quiz||p.consume||p.fall||p.deathRecap);
+  const blocked=Boolean(this.state.bossBattle?.phase==='intro'||input.blocked||p.quiz||p.consume?.item.kind==='potion'||p.fall||p.deathRecap);
   p.input={seq:input.seq,x:blocked?0:clampInput(input.x),y:blocked?0:clampInput(input.y),aim:normalAngle(input.aim),
    dash:Boolean(input.dash)&&!blocked,dodge:!blocked&&(input.dodge===true||p.input.dodge===true),blocked,at:this.clock};
   if(blocked)p.chargeStart=null;
@@ -355,13 +355,13 @@ export class Simulation{
   else if((p.staminaRest+=dt)>.45)p.stamina=Math.min(p.staminaMax,p.stamina+dt*(10+p.attributes.endurance*.6)*Math.min(2.8,1+(p.staminaRest-.45)*2.2)*p.mods.regen);
   let {x,y,aim,dash,dodge,at,blocked}=p.input;
   p.input.dodge=false;
-  if(p.quiz||p.consume||blocked||this.clock-at>.35){x=0;y=0;dash=false;dodge=false;}
+  if(p.quiz||p.consume?.item.kind==='potion'||blocked||this.clock-at>.35){x=0;y=0;dash=false;dodge=false;}
   else p.dir=aim;
   if(p.chargeStart!==null&&this.clock-at>.5)p.chargeStart=null;
   if(p.wallRecoil>geometry.wallRecoilSeconds-.13){x=0;y=0;}
   const length=Math.hypot(x,y),scale=Math.max(1,length);
   x/=scale;y/=scale;
-  if(!p.vault&&!p.wallRecoil&&!p.dashCooldown&&(dodge||dash&&length)&&this.cost(p,Math.round((p.equipment.rings.includes('dodge')?17:25)*p.mods.cost))){
+  if(!p.vault&&!p.wallRecoil&&!p.dashCooldown&&!p.consume&&(dodge||dash&&length)&&this.cost(p,Math.round((p.equipment.rings.includes('dodge')?17:25)*p.mods.cost))){
    p.chargeStart=null;p.dash=p.load.dashTime;p.dashCooldown=.85*p.mods.dashCooldown*items.dashCooldown(p.equipment.armor)*(p.weapon?.malus?balance.weaponMythicDash:1);p.dashX=length?x*scale/length:-Math.cos(p.dir);p.dashY=length?y*scale/length:-Math.sin(p.dir);
    this.emit('dash',{seat:p.seat,x:p.x,y:p.y});
   }
@@ -376,7 +376,7 @@ export class Simulation{
   }else if(x||y){
    p.back=y<0;
    const slow=p.webSlow||p.grabSlow||this.isWeb(p);
-   const speed=p.speed*(p.dash?p.load.dashSpeed*p.mods.dashDistance:1)*(slow?.53:1)*(p.chargeStart!==null?.64:1);
+   const speed=p.speed*(p.consume?.item.kind==='food'?items.foodMove:1)*(p.dash?p.load.dashSpeed*p.mods.dashDistance:1)*(slow?.53:1)*(p.chargeStart!==null?.64:1);
    if(!this.move(p,x*speed*dt,y*speed*dt))return;
   }
   const face=Math.cos(p.dir);if(Math.abs(face)>.23&&!p.wallRecoil)p.weaponSide=Math.sign(face);
@@ -501,6 +501,7 @@ export class Simulation{
   const wet=this.floor.inRain(p.x,p.y)||this.floor.inRain(e.x,e.y);
   const resist=this.resistanceFor(e);
   const hit=items.hit(amount*balance.hitMultiplier(charged,counter,rolled,w.critFactor),wet&&split.fire?{...split,fire:split.fire*.55}:split,resist);
+  if(hit.total>0&&this.ai.dodgeDog(e,angle))return;
   this.hurtEnemy(e,hit,p,crit,w.id);
   if(!hit.total)return;
   if(counter)e.counterUntil=0;

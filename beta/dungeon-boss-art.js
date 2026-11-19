@@ -124,12 +124,12 @@ const rabbit=make(64,64,(_,r)=>{
  r(26,23,5,13,'#f7e8dc');r(34,20,5,15,'#f2e8de');r(24,34,17,13,'#fff3e0');
  r(36,39,2,2,'#624650');r(39,42,3,2,'#d99499');
 });
-function ui(rules,damage,shakeEnabled){
+function ui(rules,damage,shakeEnabled,skipIntro){
  const effects=document.createElement('canvas'),hud=document.createElement('section'),intro=document.createElement('section');
  effects.id='boss-effects';effects.hidden=true;effects.setAttribute('aria-hidden','true');
  hud.id='boss-hud';hud.hidden=true;hud.setAttribute('aria-label',rules.name);
  intro.id='boss-intro';intro.hidden=true;
- intro.innerHTML='<h2 class="boss-title"></h2><div class="boss-lineup"></div><div class="boss-subtitle" aria-live="polite"><strong></strong><span></span></div>';
+ intro.innerHTML='<h2 class="boss-title"></h2><div class="boss-lineup"></div><div class="boss-subtitle" aria-live="polite"><strong></strong><span></span></div><button id="boss-skip" type="button" hidden>Sequenz überspringen</button>';
  intro.querySelector('h2').textContent=rules.name;
  const lineup=intro.querySelector('.boss-lineup');
  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -138,6 +138,8 @@ function ui(rules,damage,shakeEnabled){
   const img=document.createElement('img');img.src=frames[0];img.alt='';lineup.append(img);return img;
  });
  const subtitle=intro.querySelector('.boss-subtitle');
+ const skip=intro.querySelector('#boss-skip');
+ skip.onclick=skipIntro;
  const label=document.createElement('h2');
  const meter=document.createElement('meter');
  meter.min=0;meter.max=1;
@@ -177,6 +179,7 @@ function ui(rules,damage,shakeEnabled){
   const inArena=arena&&local&&battle;
   const introOn=inArena&&battle.phase==='intro';
   intro.hidden=!introOn;
+  skip.hidden=!introOn||battle.time<rules.introSkipAfter;
   if(introOn){
    const i=rules.lines.findLastIndex(line=>battle.time>=line.at);
    subtitle.hidden=i<0;

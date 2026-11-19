@@ -164,6 +164,9 @@ test('an encountered enemy stays visible around a bend while a closed door still
  view.update(center(8,5),1280,768);
  assert.equal(looks(view,11,9),false);
  assert.ok(view.seesEnemy(enemy));
+ assert.ok(view.seesLoot(enemy.x,enemy.y));
+ const hidden=center(15,5);
+ assert.equal(view.seesLoot(hidden.x,hidden.y),false);
  Object.assign(enemy,center(11,10));
  assert.ok(view.observeEnemy(enemy));
  assert.equal(view.observeEnemy({id:'beyond-door',...center(15,5)}),false);

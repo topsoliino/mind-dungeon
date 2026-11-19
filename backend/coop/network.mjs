@@ -9,7 +9,8 @@ const enemyNumbers=e=>[e.id,e.type,round(e.x),round(e.y),e.hp,e.max,q(e.size),e.
   e.lionMove.last?[q(e.lionMove.last.time),q(e.lionMove.last.angle)]:null]:null,
  e.target?[round(e.target.x),round(e.target.y)]:null,e.dominant??null,e.veilPhase?[e.veilPhase,q(e.veilTime)]:null,
  e.bossRole?[e.bossRole,e.scientist??null,Boolean(e.warded),Boolean(e.enlarged),Boolean(e.spin),e.bossPose??null]:null,
- ...(e.fall?[[q(1-e.fall.remaining/fallSeconds),q(e.fall.heading)]]:[])];
+ ...(e.fall?[[q(1-e.fall.remaining/fallSeconds),q(e.fall.heading)]]:e.dogMove?[null]:[]),
+ ...(e.dogMove?[[q(e.dogMove.lift)]]:[])];
 const currentRegion=(p,e)=>gap(p,e)<900;
 function motion(p,clock){
  const t=p.vault?Math.min(1,(clock-p.vault.start)/.46):null;

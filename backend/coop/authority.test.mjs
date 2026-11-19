@@ -207,7 +207,7 @@ test('held weapons are covered by side and south walls and closed doors',()=>{
  assert.ok(includes(floor.weaponCover(anchor,door.y,66),door.x+27,door.y));
 });
 
-test('quick food absorbs pending damage, chooses the smallest sufficient portion, and queues while stationary',()=>{
+test('quick food absorbs pending damage, chooses the smallest sufficient portion, and queues while moving at 30 percent speed',()=>{
  const {host,sim}=game();
  arena(sim,host);sim.enemies=[];
  host.inventory.push(...['glucose','banana','bread','chicken','banana'].map(id=>({kind:'food',id,rarity:'common'})));
@@ -227,7 +227,7 @@ test('quick food absorbs pending damage, chooses the smallest sufficient portion
  sim.control(host,{seq:1,x:1,y:0,aim:0,dash:true});
  sim.step(.08);
  assert.equal(host.hp,hp);
- assert.equal(host.x,start);
+ assert.ok(Math.abs(host.x-start-host.speed*.08*items.foodMove)<.001);
  assert.equal(host.dash,0);
  sim.step(1.45);
  assert.equal(host.consume.item.id,'glucose');
@@ -532,6 +532,60 @@ test('solo transitions restore the floor snapshot and keep the run-wide keyring'
  const deeper=run.floorTransition(returned,2,101);
  assert.equal(deeper.boneClaims.bone,true);
  assert.equal(deeper.dungeonSeed,100);
+});
+
+test('the hero stops clear of closed doors and can retreat out of the new collision margin',()=>{
+ const {host,sim}=game(4);
+ const {floor}=sim;sim.enemies=[];
+ for(const door of floor.doors.filter(d=>d.streetHouse)){
+  const side=door.north?1:-1;
+  Object.assign(host,{x:door.x,y:door.y+side*TILE});
+  sim.move(host,0,-side*34);
+  assert.ok(Math.abs(host.y-door.y)>=29);
+  Object.assign(host,{x:door.x,y:door.y+side*20});
+  sim.move(host,0,side*18);
+  assert.ok(Math.abs(host.y-door.y)>35);
+  sim.keyring[door.keyId]='held';
+  sim.actions.dispatch(host,'interact',{kind:'key-door',index:door.id});
+  assert.ok(floor.heroClearsDoor(host,door.x,door.y));
+ }
+});
+
+test('street dogs pounce twice, can double-bite, and hop sideways or away from a hit',()=>{
+ const {host,sim}=game();
+ const target=arena(sim,host);
+ const createDog=()=>({id:'test-dog',...target,roomId:0,type:foes.STREET_DOG,hp:100,max:100,phase:0,attack:0,windup:0,aggro:7});
+ const checkCombo=(roll,kind,jumps)=>{
+  sim.random=()=>roll;
+  const dog=createDog();sim.enemies=[dog];sim.events.length=0;
+  let launches=0,phase;
+  for(let i=0;i<75;i++){
+   sim.step(1/30);
+   const next=dog.dogMove?.stage;
+   if(i===0)assert.equal(dog.dogMove?.kind,kind);
+   if(next==='jump'&&phase!==next)launches++;
+   phase=next;
+   if(i>0&&!dog.dogMove)break;
+  }
+  assert.equal(launches,jumps);
+  assert.equal(sim.events.filter(e=>e.kind==='sound'&&e.cue==='hit_body').length,2);
+ };
+ checkCombo(.5,'combo',2);
+ checkCombo(.9,'double',1);
+ sim.random=()=>.04;
+ const {floor}=sim,room=floor.rooms[0],sites=[];
+ for(let y=room.y+1;y<room.y+room.h-1;y++)for(let x=room.x+1;x<room.x+room.w-1;x++)sites.push({x:(x+.5)*TILE,y:(y+.5)*TILE});
+ const clear=sites.find(({x,y})=>[[0,0],[-66,0],[16,0],[31,0],[39,0],[0,24],[0,42],[0,54]]
+  .every(([dx,dy])=>floor.valid(x+dx,y+dy,19))&&!floor.gateLineBlocked(x,y,x-66,y));
+ assert.ok(clear);
+ Object.assign(host,{x:clear.x-66,y:clear.y});
+ const dodger={...createDog(),...clear};sim.enemies=[dodger];
+ sim.step(1/30);
+ assert.equal(dodger.dogMove?.kind,'side');
+ assert.ok(sim.ai.dodgeDog(dodger,0));
+ assert.equal(dodger.dogMove.kind,'retreat');
+ assert.ok(dodger.x>clear.x);
+ assert.equal(sim.ai.dodgeDog(dodger,0),false);
 });
 
 test('new streets mix narrow lanes and wider areas without changing legacy street widths',()=>{

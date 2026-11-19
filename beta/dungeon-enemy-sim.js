@@ -54,10 +54,11 @@ function moveEnemy(e,dx,dy){
 }
 function aimEnemy(e,angle){e.angle=angle;e.facing=angle;}
 function updateEnemy(e,dt){
- if(!e.veilPhase&&!enemyEncounterReady(e)){
+ const labRat=e.bossRole==='rat'&&regionAt(player.x,player.y)===floor.bossArena?.id;
+ if(!e.veilPhase&&!labRat&&!enemyEncounterReady(e)){
   e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.emerge=Math.max(0,(e.emerge||0)-dt);
   e.windup=0;e.runAttack=0;e.track=0;e.aggro=Math.max(0,(e.aggro||0)-dt);e.moving=false;
-  e.batMove=null;e.lionMove=null;e.called=0;
+  e.batMove=null;e.lionMove=null;e.dogMove=null;e.called=0;
   return;
  }
  if(floor.layerAt(e.x,e.y)!==floor.layerAt(player.x,player.y)&&
@@ -75,6 +76,7 @@ function updateEnemy(e,dt){
  if(isBat(e)){updateBat(e,dt);return;}
  if(isLion(e)){updateLion(e,dt);return;}
  if(enemyRules.isOrc(e)){updateOrc(e,dt);return;}
+ if(e.type===STREET_DOG){updateDog(e,dt);return;}
  const spec=enemyRules.attacks[e.type];
  if(e.emerge>0){e.emerge=Math.max(0,e.emerge-dt);return;}
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
@@ -82,16 +84,16 @@ function updateEnemy(e,dt){
  const range=eyeRange(e,angle);
  const line=d<range*1.22&&!gateLineBlocked(e.x,e.y,player.x,player.y);
  const spotted=line&&d<=range;
- if(spotted)enemyRules.alert(e);
+ if(spotted||labRat)enemyRules.alert(e);
  else e.aggro=Math.max(0,(e.aggro||0)-dt);
  if(spotted&&e.boss&&!e.audioEntered&&d<330){
   e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
  }
  const clear=line&&e.aggro>0;
- if(e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&e.type!==EAGLE&&e.type!==STREET_DOG&&clear&&nearActor(e,player,5)&&!(e.runAttack>0)&&!furnitureBetween(e.x,e.y,player.x,player.y))damageActive(origin(e,'Nahkampftreffer'),9+(e.boss?5:0),items.foeAttack[e.type]);
+ if(e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&e.type!==EAGLE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0)&&!furnitureBetween(e.x,e.y,player.x,player.y))damageActive(origin(e,'Nahkampftreffer'),9+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.runAttack>0){
   if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'||spec.id==='eagle'){advanceRush(e,spec,dt,angle);return;}
-  if(['web','frost','bow','crossbow','electrode','rat-bite','dog-bite'].includes(spec.id)){
+  if(['web','frost','bow','crossbow','electrode','rat-bite'].includes(spec.id)){
    e.runAttack=Math.max(0,e.runAttack-dt);
    if(!e.runAttack)recover(e,spec.recovery);
    return;
@@ -154,17 +156,95 @@ function updateOrc(e,dt,sameLayer=true){
  if(clear&&e.attack<=0){aimEnemy(e,angle);e.veilPhase='turn';e.veilTime=spec.windup;return;}
  if(e.aggro>0&&!nearActor(e,player,3))pursue(e,dt,spec.speed*.76,clear);
 }
+function dogStep(e,angle,distance){
+ const clearance=actorRadius(e);
+ return [.4,.75,1].every(t=>valid(e.x+Math.cos(angle)*distance*t,e.y+Math.sin(angle)*distance*t,clearance));
+}
+function dodgeDog(e,angle){
+ if(e.type!==STREET_DOG||e.hp<=0||e.fall||e.dodgeCooldown>0||rand(0,1)>=.22||!dogStep(e,angle,39))return false;
+ const from={x:e.x,y:e.y};
+ moveActor(e,Math.cos(angle)*23,Math.sin(angle)*23);
+ if(Math.hypot(e.x-from.x,e.y-from.y)<12)return false;
+ enemyRules.alert(e);
+ e.dodgeCooldown=2.4;e.windup=0;e.runAttack=0;
+ e.dogMove={kind:'retreat',stage:'jump',age:0,angle,lift:0};
+ return true;
+}
+function dogBite(e,second){
+ const spec=enemyRules.attacks[e.type];
+ e.runAttack=e.runDuration=.17;
+ soundWorld('hit_body',e,{gain:.48,priority:2,cooldown:.1});
+ const angle=Math.atan2(player.y-e.y,player.x-e.x),d=Math.hypot(player.x-e.x,player.y-e.y);
+ if(d>spec.range||Math.cos(angle-e.angle)<.48||gateLineBlocked(e.x,e.y,player.x,player.y)||strikeCover(e,11))return;
+ if(damageActive(origin(e,second?'Zweiter Biss':'Sprungbiss'),e.dogMove.kind==='double'?8:11,{physical:1}))bleedActive(e,12);
+}
+function updateDog(e,dt){
+ const spec=enemyRules.attacks[e.type];
+ e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
+ e.dodgeCooldown=Math.max(0,(e.dodgeCooldown??0)-dt);
+ e.runAttack=Math.max(0,(e.runAttack??0)-dt);
+ const distance=Math.hypot(player.x-e.x,player.y-e.y),angle=Math.atan2(player.y-e.y,player.x-e.x);
+ const clear=distance<=eyeRange(e,angle)&&!gateLineBlocked(e.x,e.y,player.x,player.y);
+ if(clear)enemyRules.alert(e);
+ else e.aggro=Math.max(0,(e.aggro||0)-dt);
+ const move=e.dogMove;
+ if(move){
+  move.age+=dt;
+  if(move.stage==='windup'){
+   e.windup=Math.max(0,.21-move.age);
+   aimEnemy(e,angle);
+   if(e.windup)return;
+   Object.assign(move,{stage:'jump',age:0,angle});
+   return;
+  }
+  if(move.stage==='jump'){
+   const attack=move.kind==='combo'||move.kind==='double',duration=attack?.22:.24;
+   const progress=Math.min(1,move.age/duration),speed=attack?330:move.kind==='side'?247:112;
+   move.lift=Math.sin(Math.PI*progress)*(attack?22:14);
+   moveEnemy(e,Math.cos(move.angle)*speed*dt,Math.sin(move.angle)*speed*dt);
+   aimEnemy(e,attack?move.angle:angle);
+   if(progress<1)return;
+   if(!attack){e.dogMove=null;e.attack=move.kind==='side'?.16:.34;return;}
+   dogBite(e,move.hits>0);
+   move.hits++;move.stage='bite';move.age=0;
+   return;
+  }
+  if(move.age<.23)return;
+  if(move.hits===1&&move.kind==='combo'){
+   Object.assign(move,{stage:'windup',age:.07});return;
+  }
+  if(move.hits===1&&move.kind==='double'){
+   moveEnemy(e,Math.cos(angle)*12,Math.sin(angle)*12);
+   aimEnemy(e,angle);dogBite(e,true);move.hits++;move.age=0;return;
+  }
+  e.dogMove=null;e.attack=.82;recover(e,spec.recovery);return;
+ }
+ if(e.recover>0){e.recover=Math.max(0,e.recover-dt);return;}
+ if(clear&&e.attack<=0&&distance<=126){
+  const roll=rand(0,1);
+  if(distance>65&&roll<.23){
+   const side=rand(0,1)<.5?1:-1;
+   for(const sign of [side,-side]){
+    const flank=angle+sign*Math.PI*.47;
+    if(!dogStep(e,flank,54))continue;
+    e.dogMove={kind:'side',stage:'jump',age:0,angle:flank,lift:0};return;
+   }
+  }
+  e.dogMove={kind:roll>.68?'double':'combo',stage:'windup',age:0,angle,hits:0,lift:0};
+  aimEnemy(e,angle);return;
+ }
+ if(e.aggro>0&&!nearActor(e,player,2))pursue(e,dt,spec.speed,clear);
+}
 function executeEnemyAttack(e,spec){
  e.attack=(e.boss?2.25:2.85)-(save.floor-1)*.12;
- if(e.type===RAT||e.type===ELECTRO_RAT||e.type===STREET_DOG){
-  const electric=e.type===ELECTRO_RAT,dog=e.type===STREET_DOG,amount=electric?16:dog?13:7;
+ if(e.type===RAT||e.type===ELECTRO_RAT){
+  const electric=e.type===ELECTRO_RAT,amount=electric?16:7;
   const split=electric?{physical:.3,lightning:.7}:{physical:1};
   const dx=player.x-e.x,dy=player.y-e.y;
   const hit=Math.hypot(dx,dy)<spec.range+11&&Math.cos(Math.atan2(dy,dx)-e.angle)>.5&&
    !gateLineBlocked(e.x,e.y,player.x,player.y);
   const hitHero=hit&&!strikeCover(e,amount);
-  if(hitHero&&damageActive(origin(e,electric?'Elektrodenstoß':'Biss'),amount,split)&&!electric)bleedActive(e,dog?16:31);
-  if(dog)soundWorld('hit_body',e,{gain:.42,priority:1,cooldown:.24});
+  if(hitHero&&damageActive(origin(e,electric?'Elektrodenstoß':'Biss'),amount,split)&&!electric)bleedActive(e,31);
   if(electric){
    soundWorld('element_lightning_charge',e,{gain:.66,priority:2,cooldown:.17});
    shockWater(e,hitHero?player:null,split,amount,e);
@@ -525,7 +605,7 @@ function updateWebs(dt){
   p.x=x;p.y=y;return true;
  });
 }
-return {act,moveFrom,stormTimer(value){if(Number.isFinite(value))stormDelay=value;return stormDelay;}};
+return {act,moveFrom,dodgeDog,stormTimer(value){if(Number.isFinite(value))stormDelay=value;return stormDelay;}};
 }
 root.DungeonEnemySim={create,lionRake};
 })(typeof window==='undefined'?globalThis:window);
