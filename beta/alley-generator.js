@@ -66,7 +66,8 @@ function generate(n){
    const parent=pick(rnd,parents),anchor=pick(rnd,parent.cells),d=pick(rnd,dirs);
    const [dx,dy,side]=d,neighbor=[anchor[0]+dx,anchor[1]+dy];
    if(occ.has(key(...neighbor)))continue;
-   const kind=[3,7].includes(id)||rnd()<.17?'gang':'raum';
+   const kind=rooms.filter(p=>p.kind==='gang').length>=5?'raum':
+    ([3,7].includes(id)||rnd()<.17?'gang':'raum');
    const shape=makeShape(rnd,kind,dx);if(!shape)continue;
    const border=shape.mask.filter(([x,y])=>!has(shape.mask,x-dx,y-dy));
    const touching=pick(rnd,border),ox=neighbor[0]-touching[0],oy=neighbor[1]-touching[1];
