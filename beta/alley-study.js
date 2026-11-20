@@ -1,7 +1,8 @@
 (() => {
  'use strict';
 
- const width=1900,height=1050;
+ const generatorMode=Boolean(window.AlleyGenerator?.enabled);
+ const width=generatorMode?2850:1900,height=generatorMode?1650:1050;
  const originX=491,originY=73,stepX=42,stepY=stepX/Math.sqrt(3);
  const footOffset=16;
  const project=(u,v,z=0)=>[originX+(u-v)*stepX,originY+(u+v)*stepY-z];
@@ -233,7 +234,7 @@
   const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>facadeArt.building(ctx,home))}));
   const gateway=cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
   const roomWalls=route?.walls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>route.renderWall(ctx,wall,routePainter))}))??[];
-  const labSeal=route?cacheObject(route.seal,88,ctx=>route.renderSeal(ctx,routePainter)):null;
+  const labSeal=route?.seal?cacheObject(route.seal,88,ctx=>route.renderSeal(ctx,routePainter)):null;
   const artListeners=[];
   const redrawImage=(image,draw)=>{
    const ctx=image.canvas.getContext('2d');
@@ -299,8 +300,11 @@
      const [u,v,r,b]=area;
      const alpha=heroV<v&&v-heroV<1.4&&heroU>u-.55&&heroU<r+.55?.54:1;
      const depth=depthAt(area,x,y);
-     // Where the rear house meets the arch, their paint order is fixed.
-     result.push({image,depth:behindArch&&enabled('foreground')?Math.min(depth,archDepth-.25):depth,alpha});
+     // Rear facades must stay below the arch for *every* hero position.
+     // Depth sorting alone caused the arch/house overlap to flip on approach.
+     const touchesRearOfArch=area[2]>=gate.area[0]-.18&&area[1]<gate.area[1]&&area[3]<=gate.area[1]+.23;
+     const lockedBehind=behindArch||touchesRearOfArch;
+     result.push({image,depth:lockedBehind&&enabled('foreground')?Math.min(depth,archDepth-2):depth,alpha});
     }
    }
    if(enabled('standing')){

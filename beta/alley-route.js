@@ -1,5 +1,7 @@
 (() => {
  'use strict';
+ // Keep the handcrafted 4a route separate; generator mode owns its geometry instead.
+ if(window.AlleyGenerator?.enabled){window.AlleyRoute=window.AlleyGenerator;return;}
  // Etappe 4a: layout anchors only. Etappe 4b will fill these rooms with set dressing.
  const entry=[11.76,1.06,14.50,2.57],archive=[14.12,-.52,19.62,6.48];
  const passage=[19.32,2.03,21.43,3.77],laboratory=[21.12,-.52,28.12,7.40];

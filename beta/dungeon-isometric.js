@@ -31,9 +31,10 @@
  }
  function create(){
   const scene=window.AlleyStudyMap,art=createArt(),map=scene.logic,route=window.AlleyRoute;
+  const procedural=Boolean(window.AlleyGenerator?.enabled);
   const spawn=unit(map.spawn),chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
   // These are the same ground footprints as the neutral props in the art pass.
-  const props=[
+  const props=procedural?[]:[
    {kind:'chest',point:chest,half:[.26,.36]},
    {kind:'pickup-high',point:unit(map.stations['pickup-high'].at),half:[.43,.64]},
    {kind:'barrel',point:unit(map.barrel),half:[.23,.23]},
@@ -75,10 +76,12 @@
   function routeTo(start,target){
    const goal=nearestWalkable(target);
    if(!goal)return null;
+   if(procedural)return route.path(start,goal,walkable);
    const steps=shortestRoute(start,goal,waypoints,clearSegment);
    return steps?{goal,steps}:null;
   }
   function canInteract(actor){
+   if(procedural)return false;
    return Math.hypot(actor.x-chest.x,actor.y-chest.y)<=88&&
     pointBetween(actor,chest,(x,y)=>walkable(x,y,0,false));
   }
@@ -134,18 +137,19 @@
     ctx.globalAlpha=1;
    }
   }
-  const knowledge=unit(map.stations.knowledge.at),lab=unit(map.stations.lab.at);
+  const knowledge=map.stations.knowledge?unit(map.stations.knowledge.at):spawn;
+  const lab=map.stations.lab?unit(map.stations.lab.at):spawn;
   const nearStation=(actor,target)=>Math.hypot(actor.x-target.x,actor.y-target.y)<82&&
    pointBetween(actor,target,(x,y)=>walkable(x,y,0,false));
   return {spawn,chest,archer,knowledge,lab,walkable,clearLine,canInteract,routeTo,cameraOrigin,addLayers,refreshLayers,drawLayers,
-   enemies:{archive:map.encounter.archive.map(unit),lab:map.encounter.lab.map(unit)},
+   enemies:{archive:(map.encounter.archive??[]).map(unit),lab:(map.encounter.lab??[]).map(unit)},
    archiveUnlocked:()=>route.isUnlocked(),unlockArchive:()=>route.unlock(),
    zoneAt:actor=>route.areaAt(actor.x/tile,actor.y/tile),
-   nearKnowledge:actor=>nearStation(actor,knowledge),
-   nearLab:actor=>nearStation(actor,lab),
+   nearKnowledge:actor=>!procedural&&nearStation(actor,knowledge),
+   nearLab:actor=>!procedural&&nearStation(actor,lab),
    inEncounter:actor=>actor.x>=9.5*tile&&(actor.y<map.encounter.entryV*tile||actor.x>=14*tile),
    lootPosition:actor=>walkable(actor.x,actor.y,4,false)?{x:actor.x,y:actor.y}:archer,
-   chestRoute:player=>shortestRoute(player,goal,waypoints,clearSegment),
+   chestRoute:player=>procedural?null:shortestRoute(player,goal,waypoints,clearSegment),
    chestFacing:Math.atan2(chest.y-goal.y,chest.x-goal.x),
    clearStrike:(...points)=>Number(clearLine(...points))};
  }

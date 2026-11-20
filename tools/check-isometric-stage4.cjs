@@ -45,7 +45,7 @@ assert.equal(route.walls.length,7);
 assert(logic.encounter.lab.length>=2);
 assert(logic.stations.knowledge&&logic.stations.lab);
 const html=source('beta/index.html');
-for(const file of ['beta/alley-route.js?v=1','beta/alley-study.js?v=6','beta/dungeon-isometric.js?v=5'])
+for(const file of ['beta/alley-route.js?v=1','beta/alley-study.js?v=7','beta/dungeon-isometric.js?v=6'])
  assert(html.includes('src="'+file+'"'),file+' must be loaded in the test build');
 assert(html.includes("reason==='iso-archive'"),'Knowledge question must be wired into answers');
 assert(html.includes("const questionsReady=loadQuestions();"),'The real question pack must be loaded');
