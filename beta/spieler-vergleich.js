@@ -34,21 +34,22 @@
  const hitKeys={Digit1:'hit-light',Digit2:'hit-strong',Digit3:'hit-down'};
  const hitLabels={'hit-light':'Leichter Treffer','hit-strong':'Starker Treffer','hit-down':'Niederschlag'};
  const art=window.DungeonArt;
+ const alley=new URLSearchParams(location.search).get('szene')==='gasse'?window.AlleyStudy.create():null;
  const map=Array.from({length:rows},(_,y)=>Array.from({length:columns},(_,x)=>
   Number(y===0||y===rows-1||x===0||x===columns-1)));
  const terrain=map.map(row=>row.map(()=>null));
  const lights=[{x:5.4*tile,y:3.2*tile,radius:155,color:'#dbc193',power:'52'},
   {x:17.4*tile,y:3.2*tile,radius:142,color:'#cba58d',power:'46'}];
- const ground=art.world(map,()=>3,lights,193,terrain,[],tile);
+ const ground=alley?[]:art.world(map,()=>3,lights,193,terrain,[],tile);
  const decor=lights.map(p=>({...p,sprite:art.furniture('sanctuary-brazier',3,0)}));
- const barrel={x:(columns/2+2)*tile,y:(rows/2+2)*tile,sprite:art.furniture('barrel',3,0)};
+ const barrel={...(alley?.barrel??{x:(columns/2+2)*tile,y:(rows/2+2)*tile}),sprite:art.furniture('barrel',3,0)};
  const ruby=document.createElement('canvas');
  ruby.width=ruby.height=64;
  const {poly}=art.brush(ruby);
  poly([[23,34],[28,29],[36,29],[41,34],[32,44]],'#592536');
  poly([[25,34],[29,31],[35,31],[39,34],[32,41]],'#c63f59');
  poly([[25,34],[29,31],[35,31],[32,35]],'#ec8491');
- const stations=[
+ const practiceStations=[
   {kind:'chest',x:9.4*tile,y:5.05*tile,radius:.49,scale:.70,base:48,front:2,
    sprite:art.icon('chest'),used:art.icon('chest','open'),prompt:'Truhe öffnen',approaching:'Zur Truhe …',done:'Truhe geöffnet'},
   {kind:'pickup',x:13.8*tile,y:5.05*tile,radius:0,scale:.48,base:42,
@@ -59,6 +60,8 @@
    sprite:art.icon('shrine','','#91e6d2'),used:art.icon('shrine','','#576b6a'),
    prompt:'Wissen erlangen',done:'Wissen erlangt'},
  ];
+ const stations=alley?practiceStations.filter(station=>Object.hasOwn(alley.stations,station.kind))
+  .map(station=>({...station,...alley.stations[station.kind]})):practiceStations;
  const presses=new Set();
  const props=[...stations,barrel].sort((a,b)=>a.y-b.y);
  const direction=document.querySelector('#direction'),zoomButton=document.querySelector('#zoom');
@@ -68,10 +71,23 @@
  const resetStations=document.querySelector('#reset-stations');
  const status=document.querySelector('#status'),buttons=Array.from(document.querySelectorAll('[data-clip]'));
  const canvas=document.querySelector('#blender'),ctx=canvas.getContext('2d',{alpha:false});
+ if(alley){
+  document.title='Isometrische Gasse · Mind Dungeon';
+  document.querySelector('h1').textContent='Isometrische Gasse';
+  document.querySelector('#practice-subtitle').textContent='Mind Dungeon · Test-Build';
+  document.querySelector('#switch-scene').href='spieler-vergleich.html';
+  document.querySelector('#switch-scene').textContent='Zum Übungsraum';
+  document.querySelector('.control-panel').before(canvas,document.querySelector('.practice-status'),document.querySelector('#alley-layers'));
+  document.querySelector('#station-help').textContent='Truhe und Rubin auf dem Tisch';
+  document.querySelector('#barrel-help').textContent='zum Fass am Rand des kleinen Platzes laufen.';
+  canvas.classList.add('alley-canvas');
+  canvas.setAttribute('aria-label','Begehbare isometrische Gasse mit dem Blender-Wächter');
+ }
  let width=0,height=0,dpr=1;
  const weaponSheets=new Map();
  let atlas,spriteFiles,bodyLayers,colliders;
- let x=columns*tile/2,y=rows*tile/2,scale=1,facing=1,mode='idle',elapsed=0,last=0,repeat=true;
+ let {x,y}=alley?.spawn??{x:columns*tile/2,y:rows*tile/2};
+ let scale=1,facing=1,mode='idle',elapsed=0,last=0,repeat=true;
  let showWeapon=true,gaitPhase=0,gaitBlend=0,movementStyle='walk',crouched=false,stanceChange=null;
  let rollEntry=null,rollExit=null,rollStartSpeed=0;
  let rollStartedWalking=false;
@@ -333,7 +349,7 @@
  }
  const minX=tile+19,maxX=(columns-1)*tile-19,minY=tile+19,maxY=(rows-1)*tile-19;
  function hitsScenery(nx,ny){
-  return colliders.some(({x,y,rx,ry})=>((nx-x)/rx)**2+((ny-y)/ry)**2<1);
+  return alley?.blocked(nx,ny)||colliders.some(({x,y,rx,ry})=>((nx-x)/rx)**2+((ny-y)/ry)**2<1);
  }
  function moveBy(dx,dy){
   const nx=bound(x+dx,minX,maxX),ny=bound(y+dy,minY,maxY);
@@ -355,7 +371,7 @@
  }
  function clearApproachSegment(from,to){
   // The nearest point on a segment in ellipse space gives a swept footprint test.
-  return colliders.every(({x,y,rx,ry})=>{
+  return (!alley||alley.clearSegment(from,to))&&colliders.every(({x,y,rx,ry})=>{
    const sx=(from.x-x)/rx,sy=(from.y-y)/ry;
    const dx=(to.x-from.x)/rx,dy=(to.y-from.y)/ry;
    const t=bound(-(sx*dx+sy*dy)/(dx*dx+dy*dy||1),0,1);
@@ -372,7 +388,7 @@
    const angle=i*Math.PI/6;
    return {x:obstacle.x+1.16*obstacle.rx*Math.cos(angle),y:obstacle.y+1.16*obstacle.ry*Math.sin(angle)};
   })).filter(valid);
-  const nodes=[start,goal,...around],cost=nodes.map(()=>Infinity),parent=nodes.map(()=>-1),closed=new Set();
+  const nodes=[start,goal,...around,...(alley?.waypoints.filter(valid)??[])],cost=nodes.map(()=>Infinity),parent=nodes.map(()=>-1),closed=new Set();
   cost[0]=0;
   while(true){
    let current=-1,best=Infinity;
@@ -539,7 +555,7 @@
  }
  function tryVault(input){
   if(input.gait!=='sprint'||gaitBlend<.85)return false;
-  const {start,radius}=atlas.vault;
+  const {start,end,radius}=atlas.vault;
   // Use the rig camera's ground projection for trajectory and palm placement.
   const ox=(barrel.x-x)/unitsToPixels,oy=(barrel.y-y)/(unitsToPixels*projectionY);
   const stepY=input.dy/projectionY,step=Math.hypot(input.dx,stepY);
@@ -548,6 +564,7 @@
   // Keep the approach facing as the trajectory eases onto the barrel center.
   const angle=facing*Math.PI/4;
   const dx=Math.cos(angle)*unitsToPixels,dy=Math.sin(angle)*unitsToPixels*projectionY;
+  if(alley&&!alley.clearSegment({x,y},{x:barrel.x+dx*end,y:barrel.y+dy*end}))return false;
   const phase=Math.round(gaitPhase*4)%4;
   vault={dx,dy,offsetX:x-barrel.x-dx*start,offsetY:y-barrel.y-dy*start,
    entry:'vault-in-'+phase,frame:frameAt('sprint',gaitPhase)};
@@ -832,14 +849,17 @@
  function camera(pos,visible,extent){
   return visible>=extent?(extent-visible)/2:bound(pos-visible/2,0,extent-visible);
  }
- function draw(frame){
+ function draw(frame,time){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle='#101212';ctx.fillRect(0,0,width,height);
   const left=camera(x,width/scale,columns*tile),top=camera(y,height/scale,rows*tile);
   ctx.setTransform(dpr*scale,0,0,dpr*scale,Math.round(-left*dpr*scale),Math.round(-top*dpr*scale));
   ctx.imageSmoothingEnabled=false;
-  for(const part of ground)ctx.drawImage(part.bitmap,part.x,part.y);
-  for(const prop of decor)ctx.drawImage(prop.sprite,prop.x-44,prop.y-53,88,77);
+  if(alley)alley.drawGround(ctx,time);
+  else{
+   for(const part of ground)ctx.drawImage(part.bitmap,part.x,part.y);
+   for(const prop of decor)ctx.drawImage(prop.sprite,prop.x-44,prop.y-53,88,77);
+  }
   ctx.fillStyle='#110d1780';
   const fall=mode==='hit-down'?elapsed/clips[mode].duration:0;
   const down=ease((fall-.28)/.15)*ease((.81-fall)/.16);
@@ -850,18 +870,31 @@
   ctx.fill();
   const aboveBarrel=vault&&elapsed/clips.vault.duration>=.28&&elapsed/clips.vault.duration<.95;
   const inFront=prop=>prop!==interaction?.target&&(prop!==barrel||!aboveBarrel)&&prop.y>y;
-  const drawProp=prop=>prop===barrel?drawBarrel():drawStation(prop);
-  for(const prop of props)if(!inFront(prop))drawProp(prop);
-  ctx.imageSmoothingEnabled=scale===1;
-  drawBlender(ctx,frame);
-  ctx.imageSmoothingEnabled=false;
-  for(const prop of props)if(inFront(prop))drawProp(prop);
+  const drawProp=prop=>{
+   if(alley)alley.drawProp(ctx,prop,atlas.vault,unitsToPixels);
+   else if(prop===barrel)drawBarrel();
+   else drawStation(prop);
+  };
+  const items=props.map(prop=>({
+   depth:inFront(prop)?prop.y:Math.min(prop.y,y-.01),draw:()=>drawProp(prop)
+  }));
+  if(alley)items.push(...alley.architecture(ctx,x,y));
+  items.push({depth:y,draw:()=>{
+   ctx.imageSmoothingEnabled=scale===1;
+   drawBlender(ctx,frame);
+   ctx.imageSmoothingEnabled=false;
+  }});
+  for(const item of items.sort((a,b)=>a.depth-b.depth))item.draw();
   drawInteractionEffect();
+  if(alley){
+   alley.drawOverlays(ctx,time);
+   alley.drawLogic(ctx);
+  }
  }
  function loop(now){
   const dt=bound((now-last)/1000,0,.05);
   last=now;update(dt);
-  draw(animationFrame());
+  draw(animationFrame(),now/1000);
   const target=nearestStation();
   const prompt=!interaction&&!approach&&!knockback&&target&&now>=blockedApproachUntil
    ?'E · '+target.prompt:interactionNotice;

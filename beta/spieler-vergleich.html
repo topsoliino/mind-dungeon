@@ -11,6 +11,7 @@ body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 54% 
 main { max-width: 1160px; margin: auto; padding: clamp(20px, 4vw, 48px); }
 header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin-bottom: 25px; }
 h1 { margin: 0; font: 500 clamp(29px, 4vw, 48px) Georgia, serif; color: #f1dbb0; }
+header nav { display: flex; gap: 8px 20px; flex-wrap: wrap; }
 header p { margin: 7px 0 0; color: #c1b3c4; }
 a { color: #e3cfaa; text-underline-offset: 4px; }
 .control-panel { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 13px; padding: 14px; margin: 0 0 16px; border: 1px solid #595064; border-radius: 9px; background: #211c2a; }
@@ -22,11 +23,17 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid
 label { color: #d6cad8; }
 .settings label { padding-left: 7px; }
 canvas { display: block; width: 100%; height: clamp(320px, 53vh, 490px); background: #15151b; border: 1px solid #605364; border-radius: 9px; }
+.alley-canvas { height: clamp(340px, 62vh, 540px); }
 .hint { margin: 16px 0 0; color: #c1b3c4; line-height: 1.55; }
 kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px solid #5b5265; border-radius: 4px; padding: 1px 5px; }
 #status { color: #f4d7a2; }
 .practice-status { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; }
 #interaction-prompt { color: #f4d7a2; }
+#alley-layers { margin: 12px 0 16px; padding: 10px 12px; border: 1px solid #595064; border-radius: 6px; }
+#alley-layers summary { cursor: pointer; color: #e3cfaa; }
+.layer-options { display: flex; flex-wrap: wrap; gap: 7px 19px; margin-top: 9px; }
+.layer-options label { display: inline-flex; gap: 5px; align-items: center; }
+.layer-options input { accent-color: #cba977; }
 @media (max-width: 580px) {
  main { padding: 17px; }
  header { margin-bottom: 18px; }
@@ -37,8 +44,11 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
 <body>
 <main>
 <header>
- <div><h1>Blender-Wächter</h1><p>Übungsraum · Ritterset</p></div>
- <a href="./">Zurück zur Beta</a>
+ <div><h1>Blender-Wächter</h1><p id="practice-subtitle">Übungsraum · Ritterset</p></div>
+ <nav aria-label="Test-Szenen">
+  <a id="switch-scene" href="?szene=gasse">Isometrische Gasse</a>
+  <a href="./">Zurück zur Beta</a>
+ </nav>
 </header>
 <div class="control-panel">
  <div class="controls" role="group" aria-label="Animation abspielen">
@@ -75,14 +85,29 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
 </div>
 <canvas id="blender" tabindex="0" aria-label="Begehbarer Übungsraum mit dem Blender-Wächter"></canvas>
 <div class="practice-status"><output id="interaction-prompt" aria-live="polite"></output><button id="reset-stations" type="button">Stationen zurücksetzen</button></div>
-<p class="hint">Bewegen mit <kbd>WASD</kbd> oder den <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> schaltet Rennen um, <kbd>Strg</kbd> schaltet Schleichen um (<output id="movement-mode">Gehmodus</output>). Mit <kbd>E</kbd> interagierst du mit Truhe, Bodenfund, Tisch oder Wissensaltar. <kbd>Esc</kbd> bricht das automatische Annähern ab.</p>
+<details id="alley-layers" hidden>
+ <summary>Zeichenebenen</summary>
+ <div class="layer-options">
+  <label><input type="checkbox" value="background" checked>Hintergrund</label>
+  <label><input type="checkbox" value="ground" checked>Boden</label>
+  <label><input type="checkbox" value="details" checked>Bodendetails</label>
+  <label><input type="checkbox" value="standing" checked>Fassaden</label>
+  <label><input type="checkbox" value="foreground" checked>Torbogen</label>
+  <label><input type="checkbox" value="light" checked>Licht</label>
+  <label><input type="checkbox" value="atmosphere" checked>Nebel</label>
+  <label><input type="checkbox" value="logic">Laufwege und Kollision</label>
+ </div>
+</details>
+<p class="hint">Bewegen mit <kbd>WASD</kbd> oder den <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> schaltet Rennen um, <kbd>Strg</kbd> schaltet Schleichen um (<output id="movement-mode">Gehmodus</output>). Mit <kbd>E</kbd> interagierst du mit <span id="station-help">Truhe, Bodenfund, Tisch oder Wissensaltar</span>. <kbd>Esc</kbd> bricht das automatische Annähern ab.</p>
 <p class="hint"><kbd>Leertaste</kbd> rollt vorwärts und schaltet danach auf Rennen. <kbd>K</kbd> antippen für einen leichten Hieb oder halten und loslassen für einen schweren Hieb. Während oder kurz nach der Rolle löst <kbd>K</kbd> den Rollangriff aus. Drück <kbd>K</kbd> erneut, um den nächsten Hieb anzuhängen. <kbd>F</kbd> isst Brot, <kbd>T</kbd> trinkt aus dem Becher. Mit einer Richtungstaste gehst du dabei weiter.</p>
-<p class="hint">Für den Parcours mit <kbd>Umschalt</kbd> auf Rennen schalten und auf das Holzfass rechts unterhalb der Startposition zulaufen.</p>
+<p class="hint">Für den Parcours mit <kbd>Umschalt</kbd> auf Rennen schalten und <span id="barrel-help">auf das Holzfass rechts unterhalb der Startposition zulaufen.</span></p>
 <p class="hint">Mit <kbd>1</kbd>, <kbd>2</kbd> und <kbd>3</kbd> löst du die drei Trefferreaktionen aus.</p>
 <p class="hint"><a href="art/player-study/guardian.blend?v=17" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
 <p id="status" role="status">Der Übungsraum lädt …</p>
 </main>
 <script src="dungeon-art.js?v=47"></script>
-<script src="spieler-vergleich.js?v=17"></script>
+<script src="alley-study-map.js?v=1"></script>
+<script src="alley-study.js?v=1"></script>
+<script src="spieler-vergleich.js?v=18"></script>
 </body>
 </html>
