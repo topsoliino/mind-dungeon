@@ -2680,7 +2680,7 @@ function update(dt){
    save.kills++;
    if(alley){
     const source=e.alleyStage==='lab'?'Behavioristen-Labor':e.alleyStage==='archive'?'Archiv der Verstärkung':'Gassenbegegnung';
-    dropSoul(e,e.alleyStage==='lab'?lootChoice('uncommon',source):foodLoot(source,()=>0));
+    dropSoul(e,e.alleyStage==='lab'?lootChoice('common',source):foodLoot(source,()=>0));
     tell(source+' · Gegner besiegt · Beute mit E aufnehmen');
     continue;
    }
