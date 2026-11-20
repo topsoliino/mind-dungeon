@@ -25,6 +25,8 @@ GAITS = {
     'sprint': (.92, .34, .300, .505),
 }
 GAIT_BLENDS = {'gait-one': 1/3, 'gait-two': 2/3}
+WALK_FOOT_CENTER = .105
+CONSUMPTION = {'eat': 24, 'drink': 25}
 ROLL_FRAMES = 28
 ROLL_RECOVERY = 22
 ROLL_ENTRIES = {f'roll-in-{stride}-{phase}': (stride, phase/4)
@@ -55,7 +57,7 @@ CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, HEAVY_FRAMES) for name in HEAVY_CLIPS),
          *((name, ROLL_ATTACK_FRAMES) for name in ROLL_ATTACKS),
          *((name, 4) for name in ROLL_ATTACK_LANDINGS),
-         *((name, 2) for name in ROLL_ATTACK_GAITS)]
+         *((name, 2) for name in ROLL_ATTACK_GAITS), *CONSUMPTION.items()]
 SIDES = [('L', -1), ('R', 1)]
 
 
@@ -65,7 +67,10 @@ def fitted(vertex, bone):
     if bone in ('Grip.R', 'Hammer.R'):
         grip = design['Grip.R'][0]
         return fitted(grip, 'Glove.R') + Vector(vertex) - Vector(grip)
-    if bone == 'Head':
+    if bone == 'Prop.L':
+        wrist = design['Glove.L'][0]
+        return fitted(wrist, 'Glove.L') + Vector(vertex) - Vector(wrist)
+    if bone in ('Head', 'Visor'):
         return Vector((x * .97, y, 1.427 + (z - 1.49) * .96))
     if bone in ('Chest', 'Mantle'):
         return Vector((x * 1.13, y * 1.045, z - .062))
@@ -188,6 +193,9 @@ def model_joints():
     wrist = joints['Glove.R'][0]
     joints['Grip.R'] = (wrist, (wrist[0] + .20, wrist[1] - .53, wrist[2] + .19), 'Glove.R')
     joints['Hammer.R'] = (*joints['Grip.R'][:2], 'Grip.R')
+    joints['Visor'] = ((0, -.03, 1.763), (.105, -.03, 1.763), 'Head')
+    wrist = joints['Glove.L'][0]
+    joints['Prop.L'] = (wrist, (wrist[0], wrist[1], wrist[2]+.18), 'Glove.L')
     return joints
 
 
@@ -256,16 +264,16 @@ def model():
             (1.887, 0, .021, .103, .091), (1.924, 0, .024, .042, .052)], [shadow, steel, steel, edge], 'Head', 12)
     plate('Visor and cheek plates', [(-.124, -.115, 1.78), (-.065, -.144, 1.798), (.062, -.144, 1.798),
           (.127, -.112, 1.78), (.115, -.133, 1.616), (.051, -.156, 1.55),
-          (-.051, -.156, 1.55), (-.115, -.133, 1.617)], .04, steel, 'Head', .01)
+          (-.051, -.156, 1.55), (-.115, -.133, 1.617)], .04, steel, 'Visor', .01)
     plate('Visor slit', [(-.105, -.145, 1.736), (0, -.170, 1.739), (.105, -.145, 1.736),
-          (.091, -.153, 1.705), (0, -.175, 1.71), (-.091, -.153, 1.705)], .012, black, 'Head')
+          (.091, -.153, 1.705), (0, -.175, 1.71), (-.091, -.153, 1.705)], .012, black, 'Visor')
     plate('Raised brow', [(-.12, -.141, 1.759), (0, -.176, 1.765), (.12, -.141, 1.759),
-          (.10, -.154, 1.74), (0, -.178, 1.745), (-.10, -.154, 1.74)], .02, edge, 'Head')
+          (.10, -.154, 1.74), (0, -.178, 1.745), (-.10, -.154, 1.74)], .02, edge, 'Visor')
     plate('Visor center ridge', [(-.012, -.179, 1.743), (.011, -.179, 1.743), (.021, -.181, 1.595),
-          (0, -.184, 1.572), (-.021, -.181, 1.595)], .02, edge, 'Head')
+          (0, -.184, 1.572), (-.021, -.181, 1.595)], .02, edge, 'Visor')
     for x in (-.071, -.038, .038, .071):
         plate('Visor vent', [(x - .006, -.161, 1.665), (x + .006, -.161, 1.667),
-              (x + .007, -.163, 1.625), (x - .007, -.163, 1.623)], .007, black, 'Head')
+              (x + .007, -.163, 1.625), (x - .007, -.163, 1.623)], .007, black, 'Visor')
     # A low plume follows the shell, with segmented edges visible from the side.
     profile('Crimson crest', [(1.86, 0, .024, .025, .106), (1.922, 0, .048, .034, .107),
             (1.987, 0, .083, .026, .095), (1.956, 0, .162, .021, .071)],
@@ -363,6 +371,49 @@ def model():
                      for i in range(4))
     mesh('War hammer · forged head', vertices, faces, [shadow, steel, edge, brass],
          'Hammer.R', .012, [0,2, 0,1,0,1, 1,0,1,0, 0,1,0,1], collection=hammer)
+    return consumption_props(black, brass)
+
+
+def consumption_props(black, brass):
+    flesh = material('Face in the lifted helm', 'bd8063')
+    face = plate('Face under the visor', [(-.094,-.148,1.725), (0,-.173,1.746), (.092,-.148,1.725),
+                 (.072,-.159,1.576), (0,-.168,1.544), (-.074,-.157,1.578)], .015, flesh, 'Head', .01)
+    mouth = plate('Mouth under the visor', [(-.037,-.174,1.604), (.033,-.175,1.605),
+                  (.029,-.175,1.584), (-.029,-.175,1.582)], .008, black, 'Head', .004)
+    crust = material('Bread crust', 'b96b2d')
+    crumb = material('Bread crumb', 'edc483')
+    toast = material('Baked bread ridges', 'd58b3f')
+    enamel = material('Enamel tankard', '69a8a2', .46, .22)
+    inside = material('Inside the tankard', '203f48')
+    wrist = Vector(design['Prop.L'][0])
+    def rings(levels):
+        return [(wrist.z+z, wrist.x+x, wrist.y+y, rx, ry) for z,x,y,rx,ry in levels]
+
+    loaf = profile('Bread roll', rings([(.017,0,-.058,.077,.068), (.051,0,-.060,.123,.091),
+                   (.120,0,-.053,.115,.077), (.167,.012,-.042,.065,.047)]),
+                   [crust, toast, crumb], 'Prop.L', 10)
+    bite = profile('Bitten bread roll', rings([(.020,0,-.060,.075,.064), (.053,0,-.068,.111,.083),
+                   (.093,-.010,-.083,.093,.059), (.112,-.021,-.088,.053,.038)]),
+                   [crust, toast, crumb], 'Prop.L', 10)
+    center_x, center_y = -.022, -.075
+    # Double wall and a dark interior make the rim readable when the tankard tilts.
+    cup = profile('Enamel tankard · open bowl', rings([
+        (.018,center_x,center_y,.077,.073), (.041,center_x,center_y,.093,.088),
+        (.184,center_x,center_y,.106,.099), (.218,center_x,center_y,.112,.104),
+        (.222,center_x,center_y,.090,.082), (.192,center_x,center_y,.083,.077),
+        (.049,center_x,center_y,.067,.064)]), [enamel, enamel, brass, brass, inside, inside], 'Prop.L', 12)
+    handle_points = []
+    for index in range(10):
+        t = index*math.tau/10
+        for a in range(6):
+            angle = a*math.tau/6
+            r = .026*math.cos(angle)
+            handle_points.append(tuple(wrist+Vector((-.095+(.060+r)*math.cos(t),
+                                 center_y+.026*math.sin(angle), .123+(.076+r)*math.sin(t)))))
+    handle_faces = [(i*6+j, ((i+1)%10)*6+j, ((i+1)%10)*6+(j+1)%6, i*6+(j+1)%6)
+                    for i in range(10) for j in range(6)]
+    handle = mesh('Tankard handle', handle_points, handle_faces, [brass], 'Prop.L', .004)
+    return {'face': (face,mouth), 'bread': (loaf,), 'bite': (bite,), 'cup': (cup,handle)}
 
 
 def orient(bone, position, rotation):
@@ -566,6 +617,8 @@ def gait_foot(phase, stride, stance, clearance, running):
         lift = clearance * height
     if running:
         travel += .046
+    else:
+        travel += WALK_FOOT_CENTER
     return travel, lift, math.radians(pitch)
 
 
@@ -696,7 +749,7 @@ def pose(kind, t):
         else:
             bob, nod = sample([(0, -.010, .005), (.22, -.016, .007), (.53, .022, -.004),
                                (.70, .027, -.008), (1, -.010, .005)], half_step)
-            shift, fore, drop = .040, .027, .061
+            shift, fore, drop = .040, .048, .073
             pelvic_yaw = .112*math.cos(phase-.13)
             chest_yaw = -.049*math.cos(phase-.32)
             yaw, elev = 21, 13
@@ -799,6 +852,89 @@ def pose(kind, t):
 
 def pose_snapshot():
     return [bone.matrix_basis.copy() for bone in rig.pose.bones]
+
+
+# Torso pitch, head pitch, shoulder turn, left wrist target, prop tilt, mouth contact.
+CONSUMPTION_POSES = {
+    'eat': [
+        (0, .04,.013,0, -.402,-.085,.898,0,0),
+        (.14, .14,.29,-.12, -.417,.048,.833,9,0),
+        (.26, .11,.21,-.13, -.396,-.146,1.019,-12,0),
+        (.39, .075,.13,-.08, -.306,-.343,1.235,-20,.20),
+        (.49, .137,.33,.015, -.139,-.260,1.381,12,1),
+        (.53, .148,.37,.022, -.122,-.270,1.371,9,1),
+        (.60, .074,.16,-.043, -.246,-.267,1.285,-11,.39),
+        (.66, .032,.02,-.05, -.32,-.229,1.137,-6,0),
+        (.71, .083,.18,-.055, -.341,-.218,1.087,7,0),
+        (.75, .031,-.035,-.04, -.354,-.216,1.036,-9,0),
+        (.81, .072,.144,-.025, -.373,-.174,.970,10,0),
+        (.88, .031,-.025,-.02, -.397,-.104,.903,4,0),
+        (1, .04,.013,0, -.402,-.085,.898,0,0)
+    ],
+    'drink': [
+        (0, .04,.013,0, -.402,-.085,.898,0,0),
+        (.13, .121,.276,-.12, -.428,.044,.836,6,0),
+        (.25, .085,.185,-.13, -.399,-.159,1.047,-7,0),
+        (.39, -.019,-.11,-.072, -.281,-.324,1.310,-24,.49),
+        (.48, -.136,-.343,-.020, -.175,-.312,1.470,-56,1),
+        (.56, -.197,-.49,-.008, -.132,-.346,1.517,-78,1),
+        (.625, -.150,-.40,-.008, -.132,-.346,1.491,-69,1),
+        (.695, -.221,-.58,.014, -.132,-.346,1.526,-88,1),
+        (.75, -.126,-.31,-.011, -.190,-.371,1.432,-67,.79),
+        (.835, .037,.14,-.106, -.327,-.257,1.164,-22,0),
+        (.928, .118,.21,-.096, -.406,-.111,.900,-6,0),
+        (1, .04,.013,0, -.402,-.085,.898,0,0)
+    ],
+}
+
+
+def visor_open(t):
+    return smooth((t-.127)/.20)*smooth((.974-t)/.14)
+
+
+def consumption_pose(kind, t):
+    pose('idle', 0)
+    if t in (0, 1):
+        return
+    lean, nod, twist, x, y, z, tilt, touch = sample_attack(CONSUMPTION_POSES[kind],t)
+    chest_rotation = Euler((lean, .022*math.sin(t*math.tau), twist)).to_matrix()
+    orient('Chest', attached('Hips', rest['Chest'][0]), chest_rotation)
+    head_rotation = Euler((nod, -.047*math.sin(t*math.pi), twist*.68)).to_matrix()
+    orient('Head', attached('Chest', rest['Head'][0]), head_rotation)
+    visor = Matrix.Rotation(math.radians(-92)*visor_open(t), 3, 'X')
+    orient('Visor', attached('Head', rest['Visor'][0]), head_rotation @ visor)
+
+    prop_rotation = Euler((math.radians(tilt), -.05, twist*.50)).to_matrix()
+    lip = Vector((-.022,.019,.222)) if kind == 'drink' else Vector((.004,.016,.138))
+    mouth = attached('Head', fitted((-.012,-.177,1.596),'Head'))
+    wrist = Vector((x,y,z)).lerp(mouth-prop_rotation@lip, touch)
+    shoulder = attached('Chest', rest['Arm.L'][0])
+    wrist = bend_joint('Arm.L', 'Forearm.L', shoulder, wrist, (-.71,.41,-.29), 1.13)
+    point('Glove.L', wrist, wrist+prop_rotation@Vector((.020,-.075,-.018)))
+    orient('Prop.L', wrist, prop_rotation)
+    arm_delta = rig.pose.bones['Arm.L'].matrix @ rig.data.bones['Arm.L'].matrix_local.inverted()
+    orient('Pauldron.L', shoulder, chest_rotation.to_quaternion().slerp(arm_delta.to_quaternion(), .25).to_matrix())
+
+    relax = smooth(t/.27)*smooth((1-t)/.20)
+    shoulder = attached('Chest', rest['Arm.R'][0])
+    wrist = Vector((.414,-.168,.924)).lerp(Vector((.449,-.051,.816)),relax)
+    wrist = bend_joint('Arm.R', 'Forearm.R', shoulder, wrist, (.5,.78,-.09))
+    blade = blade_vector(24+24*relax, 16-45*relax)
+    point('Glove.R', wrist, wrist+Vector((-.16*blade.y,-.53,-.68))+blade*.28)
+    point('Grip.R', wrist, wrist+blade)
+    orient_hammer(wrist,blade)
+
+
+def prop_visibility(kind, t):
+    visible = set()
+    if kind in CONSUMPTION:
+        if visor_open(t) > .32:
+            visible.add('face')
+        if kind == 'eat' and .24 <= t < .80:
+            visible.add('bread' if t < .53 else 'bite')
+        if kind == 'drink' and .24 <= t < .91:
+            visible.add('cup')
+    return visible
 
 
 def blend_pose(source, target, weight):
@@ -959,6 +1095,11 @@ def ground_roll_edge():
 
 
 def animation_pose(kind, frame, count):
+    rig.pose.bones['Visor'].matrix_basis = Matrix.Identity(4)
+    rig.pose.bones['Prop.L'].matrix_basis = Matrix.Identity(4)
+    if kind in CONSUMPTION:
+        consumption_pose(kind, frame/(count-1))
+        return
     if kind in ROLL_ENTRIES:
         stride, phase = ROLL_ENTRIES[kind]
         step = frame + 1
@@ -1057,6 +1198,12 @@ def key_animations(scene, clips):
             index = start+frame
             scene.frame_set(index)
             animation_pose(kind, frame, count)
+            visible = prop_visibility(kind, frame/(count-1))
+            for group, objects in props.items():
+                for obj in objects:
+                    obj.hide_render = obj.hide_viewport = group not in visible
+                    for flag in ('hide_render','hide_viewport'):
+                        obj.keyframe_insert(data_path=flag,frame=index)
             for bone in rig.pose.bones:
                 rotation = bone.rotation_quaternion
                 if bone.name in rotations:
@@ -1086,7 +1233,7 @@ def export(scene, frames, directory, preview):
             rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
             for row, (kind, frame) in enumerate(frames):
                 if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll',
-                                           *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS):
+                                           *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION):
                     continue
                 if weapon and kind in CHARGE_CLIPS and CHARGE_CLIPS[kind][0] != weapon:
                     continue
@@ -1116,10 +1263,13 @@ if __name__ == '__main__':
         bpy.context.scene.collection.children.link(collection)
     design, soles = model_joints(), {}
     rig, rest = create_rig(design)
-    model()
+    props = model()
+    temporary = {obj for objects in props.values() for obj in objects}
     contact_mesh = {}
     for obj in body.objects:
-        bone = obj.parent_bone
+        if obj in temporary:
+            continue
+        bone = 'Head' if obj.parent_bone == 'Visor' else obj.parent_bone
         contact_mesh.setdefault(bone, []).extend(v.co.copy() for v in obj.data.vertices)
     scene = setup(opts.engine)
     frames, layout = key_animations(scene, CLIPS)
