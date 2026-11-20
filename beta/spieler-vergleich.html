@@ -46,6 +46,7 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
   <button type="button" data-clip="roll" aria-pressed="false">Rolle</button>
   <button type="button" data-clip="down" aria-pressed="false">Abwärtshieb</button>
   <button type="button" data-clip="up" aria-pressed="false">Aufwärtshieb</button>
+  <button type="button" data-clip="heavy" aria-pressed="false">Schwerer Hieb</button>
  </div>
  <div class="settings">
   <label for="direction">Blickrichtung</label>
@@ -56,15 +57,20 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
    <option value="6">Norden</option><option value="7">Nordosten</option>
   </select>
   <button id="zoom" type="button" aria-pressed="false">2× Zoom</button>
-  <button id="weapon" type="button" aria-pressed="true">Schwert</button>
+  <label for="weapon-type">Waffentyp</label>
+  <select id="weapon-type" disabled>
+   <option value="sword">Langschwert</option>
+   <option value="hammer">Kriegshammer</option>
+  </select>
+  <button id="weapon" type="button" aria-pressed="true">Waffe anzeigen</button>
  </div>
 </div>
 <canvas id="blender" tabindex="0" aria-label="Begehbarer Übungsraum mit dem Blender-Wächter"></canvas>
-<p class="hint">Gehen mit <kbd>WASD</kbd> oder den <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> halten zum Rennen. <kbd>Leertaste</kbd> für die Ausweichrolle, <kbd>K</kbd> zum Schlagen. Drück <kbd>K</kbd> während eines Hiebs erneut, um den nächsten anzuhängen.</p>
-<p class="hint"><a href="art/player-study/guardian.blend?v=7" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
+<p class="hint">Gehen mit <kbd>WASD</kbd> oder den <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> halten zum Rennen. <kbd>Leertaste</kbd> für die Ausweichrolle. <kbd>K</kbd> antippen für einen leichten Hieb oder halten und loslassen für einen schweren Hieb. Drück <kbd>K</kbd> während eines Hiebs erneut, um den nächsten vorzumerken.</p>
+<p class="hint"><a href="art/player-study/guardian.blend?v=8" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
 <p id="status" role="status">Der Übungsraum lädt …</p>
 </main>
 <script src="dungeon-art.js?v=47"></script>
-<script src="spieler-vergleich.js?v=7"></script>
+<script src="spieler-vergleich.js?v=8"></script>
 </body>
 </html>
