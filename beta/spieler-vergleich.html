@@ -49,6 +49,7 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
  <div class="controls" role="group" aria-label="Animation">
   <button type="button" data-clip="idle" aria-pressed="false">Stand</button>
   <button type="button" data-clip="walk" aria-pressed="true">Lauf</button>
+  <button type="button" data-clip="sprint" aria-pressed="false">Sprint</button>
   <button type="button" data-clip="dash" aria-pressed="false">Dash</button>
   <button type="button" data-clip="attack" aria-pressed="false">Schwerthieb</button>
   <button type="button" data-clip="backhand" aria-pressed="false">Rückhieb</button>
@@ -62,14 +63,15 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
    <option value="6">Norden</option><option value="7">Nordosten</option>
   </select>
   <button id="zoom" type="button" aria-pressed="false">2× Zoom</button>
+  <button id="weapon" type="button" aria-pressed="true">Schwert</button>
  </div>
 </div>
 <div class="views">
  <article><h2>Pixelart · 64×64</h2><canvas id="pixel" aria-label="Wächter als Pixelart im Dungeon"></canvas></article>
  <article><h2>Blender · 128×128</h2><canvas id="blender" aria-label="Wächter als vorgerenderte Blender-Sprites im Dungeon"></canvas></article>
 </div>
-<p class="hint">Laufen mit <kbd>WASD</kbd> oder <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> weicht aus, <kbd>Leertaste</kbd> schlägt zu und <kbd>F</kbd> löst den Rückhieb aus.</p>
-<p class="hint"><a href="art/player-study/guardian.blend?v=2" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
+<p class="hint">Laufen mit <kbd>WASD</kbd> oder <kbd>Pfeiltasten</kbd>. <kbd>Q</kbd> halten zum Sprinten, <kbd>Umschalt</kbd> zum Ausweichen, <kbd>Leertaste</kbd> für den Hieb und <kbd>F</kbd> für den Rückhieb.</p>
+<p class="hint"><a href="art/player-study/guardian.blend?v=3" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
 <p id="status" role="status">Die Vergleichsszene lädt …</p>
 </main>
 <script src="dungeon-balance.js?v=21"></script>
@@ -77,6 +79,6 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
 <script src="dungeon-equipment-art.js?v=3"></script>
 <script src="dungeon-art.js?v=47"></script>
 <script src="dungeon-hero-art.js?v=1"></script>
-<script src="spieler-vergleich.js?v=2"></script>
+<script src="spieler-vergleich.js?v=3"></script>
 </body>
 </html>
