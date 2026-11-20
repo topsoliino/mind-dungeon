@@ -218,7 +218,29 @@
   ctx.fillStyle=gradient;ctx.fillRect(-radius,-radius,radius*2,radius*2);
   ctx.restore();
  }
- function create() {
+ function shortestRoute(start,goal,waypoints,clearSegment){
+  if(clearSegment(start,goal))return [goal];
+  const nodes=[start,goal,...waypoints],cost=nodes.map(()=>Infinity),parent=nodes.map(()=>-1),closed=new Set();
+  cost[0]=0;
+  while(true){
+   let current=-1,best=Infinity;
+   for(let i=0;i<nodes.length;i++)if(!closed.has(i)&&cost[i]<best){current=i;best=cost[i];}
+   if(current===-1)return null;
+   if(current===1){
+    const route=[];
+    for(let i=1;i!==0;i=parent[i])route.push(nodes[i]);
+    return route.reverse();
+   }
+   closed.add(current);
+   const from=nodes[current];
+   for(let i=1;i<nodes.length;i++){
+    if(closed.has(i))continue;
+    const to=nodes[i],candidate=best+Math.hypot(to.x-from.x,to.y-from.y);
+    if(candidate<cost[i]&&clearSegment(from,to)){cost[i]=candidate;parent[i]=current;}
+   }
+  }
+ }
+ function create(sceneControls=null) {
   const map=window.AlleyStudyMap;
   const {backdrop,ground,groundDetails,lighting,standing,atmosphere,foreground}=map.art;
   const {walkable,stations,barrel,spawn,waypoints}=map.logic;
@@ -244,17 +266,16 @@
   const detail=bitmap(ctx=>drawDetails(ctx,groundDetails));
   const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>building(ctx,home))}));
   const gateway=cacheObject(gate.area,gate.height,ctx=>arch(ctx,gate));
-  const sceneControls=document.querySelector('#alley-layers');
-  const toggles=Object.fromEntries([...sceneControls.querySelectorAll('input')].map(input=>[input.value,input]));
-  sceneControls.hidden=false;
+  const toggles=Object.fromEntries([...(sceneControls?.querySelectorAll('input')??[])].map(input=>[input.value,input]));
+  const enabled=layer=>toggles[layer]?.checked??layer!=='logic';
+  if(sceneControls)sceneControls.hidden=false;
 
-  function blocked(x,y){
-   const [u,v]=unproject(x,y);
-   const radius=.23;
+  function blockedGround(u,v,radius){
    return [[u-radius,v],[u+radius,v],[u,v-radius],[u,v+radius]].some(([a,b])=>
     !walkable.some(area=>contains(area,a,b)))||
     solids.some(([a,b,c,d])=>contains([a-radius,b-radius,c+radius,d+radius],u,v));
   }
+  function blocked(x,y){return blockedGround(...unproject(x,y),.23);}
   function clearSegment(from,to){
    const dx=to.x-from.x,dy=to.y-from.y;
    const steps=Math.ceil(Math.hypot(dx,dy)/3);
@@ -270,10 +291,13 @@
    return position(limit(heroU,u,r),limit(heroV,v,b)).y;
   };
   function drawGround(ctx,time){
-   if(toggles.background.checked)ctx.drawImage(underlay,0,0);
-   if(toggles.ground.checked)ctx.drawImage(floor,0,0);
-   if(toggles.details.checked)ctx.drawImage(detail,0,0);
-   if(toggles.light.checked&&toggles.ground.checked){
+   if(enabled('background'))ctx.drawImage(underlay,0,0);
+   if(enabled('ground'))ctx.drawImage(floor,0,0);
+   if(enabled('details'))ctx.drawImage(detail,0,0);
+   if(enabled('ground'))drawGroundLight(ctx,time);
+  }
+  function drawGroundLight(ctx,time){
+   if(enabled('light')){
     ctx.save();ctx.globalCompositeOperation='screen';
     for(const {at,radius,phase} of lighting){
      ctx.globalAlpha=.87+.13*Math.sin(time*3.2+phase);
@@ -282,32 +306,37 @@
     ctx.restore();
    }
   }
-  function architecture(ctx,x,y){
+  function structures(x,y){
    const result=[];
    const [heroU,heroV]=unproject(x,y);
-   if(toggles.standing.checked){
+   if(enabled('standing')){
     for(const {area,image} of homes){
      const [u,v,r,b]=area;
-     result.push({depth:depthAt(area,x,y),draw:()=>{
-      ctx.save();
-      if(heroV<v&&v-heroV<1.4&&heroU>u-.55&&heroU<r+.55)ctx.globalAlpha=.54;
-      ctx.drawImage(image.canvas,image.x,image.y);ctx.restore();
-     }});
+     const alpha=heroV<v&&v-heroV<1.4&&heroU>u-.55&&heroU<r+.55?.54:1;
+     result.push({image,depth:depthAt(area,x,y),alpha});
     }
    }
-   if(toggles.foreground.checked){
-    result.push({depth:position(r,Math.max(v,Math.min(heroV,b))).y,draw:()=>ctx.drawImage(gateway.canvas,gateway.x,gateway.y)});
+   if(enabled('foreground')){
+    result.push({image:gateway,depth:position(r,Math.max(v,Math.min(heroV,b))).y,alpha:1});
    }
    return result;
   }
+  function architecture(ctx,x,y){
+   return structures(x,y).map(({image,depth,alpha})=>({depth,draw:()=>{
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.drawImage(image.canvas,image.x,image.y);
+    ctx.restore();
+   }}));
+  }
   function drawOverlays(ctx,time){
-   if(toggles.atmosphere.checked){
+   if(enabled('atmosphere')){
     for(const {at,radius,phase} of atmosphere){
      const [x,y]=project(...at,8);
      glow(ctx,x+7*Math.sin(time*.6+phase),y,radius,.62,'#9999c02f','#9999c000');
     }
    }
-   if(!toggles.light.checked)return;
+   if(!enabled('light'))return;
    for(const {at,height,radius,phase} of lighting){
     const [x,y]=project(...at,height);
     ctx.save();
@@ -320,7 +349,7 @@
    }
   }
   function drawLogic(ctx){
-   if(!toggles.logic.checked)return;
+   if(!enabled('logic'))return;
    for(const area of walkable)polygon(ctx,corners(area),'#48d4bd25','#69dec9');
    for(const area of solids)polygon(ctx,corners(area),'#fb78676b','#f5a28d');
    const marker=(at,color)=>{
@@ -339,7 +368,9 @@
   }
   return {spawn:position(...spawn),stations:Object.fromEntries(Object.entries(stations).map(([key,{at,front}])=>[key,{...position(...at),front}])),
    barrel:position(...barrel),waypoints:waypoints.map(point=>position(...point)),
-   blocked,clearSegment,drawGround,drawProp,architecture,drawOverlays,drawLogic};
+   blocked,blockedGround,clearSegment,drawGround,drawProp,architecture,drawOverlays,drawLogic,structures,
+   groundLayers:()=>[underlay,floor,detail,bitmap(ctx=>drawGroundLight(ctx,0))],
+   overlayLayer:()=>bitmap(ctx=>drawOverlays(ctx,0))};
  }
- window.AlleyStudy={create};
+ window.AlleyStudy={create,shortestRoute,project,unproject,width,height,footOffset};
 })();

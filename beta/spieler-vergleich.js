@@ -34,7 +34,7 @@
  const hitKeys={Digit1:'hit-light',Digit2:'hit-strong',Digit3:'hit-down'};
  const hitLabels={'hit-light':'Leichter Treffer','hit-strong':'Starker Treffer','hit-down':'Niederschlag'};
  const art=window.DungeonArt;
- const alley=new URLSearchParams(location.search).get('szene')==='gasse'?window.AlleyStudy.create():null;
+ const alley=new URLSearchParams(location.search).get('szene')==='gasse'?window.AlleyStudy.create(document.querySelector('#alley-layers')):null;
  const map=Array.from({length:rows},(_,y)=>Array.from({length:columns},(_,x)=>
   Number(y===0||y===rows-1||x===0||x===columns-1)));
  const terrain=map.map(row=>row.map(()=>null));
@@ -382,31 +382,13 @@
   const valid=p=>p.x>=minX&&p.x<=maxX&&p.y>=minY&&p.y<=maxY&&!hitsScenery(p.x,p.y);
   if(!valid(goal))return null;
   const start={x,y};
-  if(clearApproachSegment(start,goal))return [goal];
   // Detour through the shortest chain of clear segments around the scenery.
   const around=colliders.flatMap(obstacle=>Array.from({length:12},(_,i)=>{
    const angle=i*Math.PI/6;
    return {x:obstacle.x+1.16*obstacle.rx*Math.cos(angle),y:obstacle.y+1.16*obstacle.ry*Math.sin(angle)};
   })).filter(valid);
-  const nodes=[start,goal,...around,...(alley?.waypoints.filter(valid)??[])],cost=nodes.map(()=>Infinity),parent=nodes.map(()=>-1),closed=new Set();
-  cost[0]=0;
-  while(true){
-   let current=-1,best=Infinity;
-   for(let i=0;i<nodes.length;i++)if(!closed.has(i)&&cost[i]<best){current=i;best=cost[i];}
-   if(current===-1)return null;
-   if(current===1){
-    const route=[];
-    for(let i=1;i!==0;i=parent[i])route.push(nodes[i]);
-    return route.reverse();
-   }
-   closed.add(current);
-   const from=nodes[current];
-   for(let i=1;i<nodes.length;i++){
-    if(closed.has(i))continue;
-    const to=nodes[i],candidate=best+Math.hypot(to.x-from.x,to.y-from.y);
-    if(candidate<cost[i]&&clearApproachSegment(from,to)){cost[i]=candidate;parent[i]=current;}
-   }
-  }
+  const waypoints=[...around,...(alley?.waypoints.filter(valid)??[])];
+  return window.AlleyStudy.shortestRoute(start,goal,waypoints,clearApproachSegment);
  }
  function startInteraction(target=nearestStation()){
   if(vault||interaction||approach||knockback||stanceChange||standingAction||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
