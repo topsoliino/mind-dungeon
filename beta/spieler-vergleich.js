@@ -1,14 +1,17 @@
 (()=>{
  'use strict';
 
- const tile=48,columns=13,rows=10,cell=128;
- const modelSize=92,modelGround=.81059;
+ const tile=48,columns=13,rows=10,cell=128,atlasColumns=24;
+ const modelSize=110,modelGround=.77597;
  const clips={
   idle:{start:0,frames:4,duration:1.3},
-  walk:{start:4,frames:8,duration:.68},
-  dash:{start:12,frames:6,duration:.34},
-  attack:{start:18,frames:9,duration:.68}
+  walk:{start:4,frames:16,duration:.68},
+  dash:{start:20,frames:8,duration:.34},
+  attack:{start:28,frames:20,duration:.84},
+  backhand:{start:48,frames:20,duration:.84}
  };
+ // Keep the room speed in step with the planted phase of the Blender run cycle.
+ const strideSpeed=(.68/.48)*(modelSize/3.23)/clips.walk.duration,groundY=.882;
  const directions={
   ArrowRight:[1,0],KeyD:[1,0],ArrowLeft:[-1,0],KeyA:[-1,0],
   ArrowDown:[0,1],KeyS:[0,1],ArrowUp:[0,-1],KeyW:[0,-1]
@@ -34,6 +37,7 @@
  let x=columns*tile/2,y=rows*tile/2,scale=1,facing=1,mode='walk',elapsed=0,last=0,repeat=true;
  let dashX=0,dashY=0;
  const bound=(n,a,b)=>Math.max(a,Math.min(b,n));
+ const isAttack=clip=>clip==='attack'||clip==='backhand';
  function resize(){
   for(const p of panes){
    p.width=p.element.clientWidth;p.height=p.element.clientHeight;
@@ -60,9 +64,9 @@
    if(event.target.closest?.('select'))return;
    event.preventDefault();presses.add(event.code);return;
   }
-  if(event.code==='Space'){
+  if(event.code==='Space'||event.code==='KeyF'){
    event.preventDefault();
-   if(!event.repeat)select('attack',false);
+   if(!event.repeat)select(event.code==='Space'?'attack':'backhand',false);
   }
   if(event.code==='ShiftLeft'||event.code==='ShiftRight'){
    if(event.repeat)return;
@@ -79,25 +83,26 @@
   let dx=0,dy=0;
   for(const key of presses){dx+=directions[key][0];dy+=directions[key][1];}
   const length=Math.hypot(dx,dy);
-  if(length&&mode!=='dash'){
-   facing=(Math.round(Math.atan2(dy,dx)/(Math.PI/4))+8)%8;
-   direction.value=String(facing);
-  }
-  const active=mode==='dash'||mode==='attack';
+  const active=mode==='dash'||isAttack(mode);
   if(active&&!repeat&&elapsed>=clips[mode].duration)select(length?'walk':'idle',false);
-  if(length&&!(active&&!repeat)&&(mode!=='walk'||repeat))select('walk',false);
+  const locked=!repeat&&(mode==='dash'||isAttack(mode));
+  if(length&&!locked){
+   facing=(Math.round(Math.atan2(dy/groundY,dx)/(Math.PI/4))+8)%8;
+   direction.value=String(facing);
+   if(mode!=='walk'||repeat)select('walk',false);
+  }
   if(!length&&!repeat&&mode==='walk')select('idle',false);
   const movingDash=mode==='dash'&&!repeat;
-  const speed=mode==='attack'?80:140;
+  const speed=length&&!locked?strideSpeed*Math.hypot(dx,dy*groundY)/length:0;
   x=bound(x+dt*(movingDash?dashX*290:length?dx/length*speed:0),tile+19,(columns-1)*tile-19);
   y=bound(y+dt*(movingDash?dashY*290:length?dy/length*speed:0),tile+19,(rows-1)*tile-19);
  }
  function drawPixel(ctx,angle,progress){
   const time=mode==='walk'?progress*8:mode==='idle'?progress*2:progress;
-  const sprite=bank.get(look,armor,angle,mode,time);
+  const sprite=bank.get(look,armor,angle,isAttack(mode)?'attack':mode,time);
   const body=()=>heroArt.draw(ctx,sprite,Math.round(x-37),Math.round(y-48),74,74);
   const side=Math.cos(angle)<-.23?-1:1,behind=Math.sin(angle)<-.38;
-  const attack=mode==='attack'?(progress*2-1)*1.14:0;
+  const attack=isAttack(mode)?(progress*2-1)*(mode==='backhand'?-1.14:1.14):0;
   if(!behind)body();
   ctx.save();
   ctx.translate(x+side*14,y-2);ctx.rotate(angle+attack+Math.PI/2);
@@ -106,9 +111,10 @@
  }
  function drawBlender(ctx,clip,progress){
   const frame=clip.start+Math.min(clip.frames-1,Math.floor(progress*clip.frames));
+  const index=frame*8+facing;
   ctx.fillStyle='#110d1780';
   ctx.beginPath();ctx.ellipse(x,y+13,21,5,0,0,Math.PI*2);ctx.fill();
-  ctx.drawImage(sheet,facing*cell,frame*cell,cell,cell,
+  ctx.drawImage(sheet,index%atlasColumns*cell,Math.floor(index/atlasColumns)*cell,cell,cell,
    Math.round(x-modelSize/2),Math.round(y+16-modelSize*modelGround),modelSize,modelSize);
  }
  function draw(pane,clip,progress){
@@ -140,5 +146,5 @@
   last=performance.now();requestAnimationFrame(loop);
  });
  sheet.addEventListener('error',()=>{status.textContent='Das Blender-Sprite-Sheet konnte nicht geladen werden.';});
- sheet.src='art/player-study/guardian-atlas.webp?v=1';
+ sheet.src='art/player-study/guardian-atlas.webp?v=2';
 })();

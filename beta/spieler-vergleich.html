@@ -51,6 +51,7 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
   <button type="button" data-clip="walk" aria-pressed="true">Lauf</button>
   <button type="button" data-clip="dash" aria-pressed="false">Dash</button>
   <button type="button" data-clip="attack" aria-pressed="false">Schwerthieb</button>
+  <button type="button" data-clip="backhand" aria-pressed="false">Rückhieb</button>
  </div>
  <div class="settings">
   <label for="direction">Blickrichtung</label>
@@ -67,8 +68,8 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
  <article><h2>Pixelart · 64×64</h2><canvas id="pixel" aria-label="Wächter als Pixelart im Dungeon"></canvas></article>
  <article><h2>Blender · 128×128</h2><canvas id="blender" aria-label="Wächter als vorgerenderte Blender-Sprites im Dungeon"></canvas></article>
 </div>
-<p class="hint">Mit <kbd>WASD</kbd> oder den <kbd>Pfeiltasten</kbd> läufst du in beiden Ansichten. <kbd>Umschalt</kbd> weicht aus, <kbd>Leertaste</kbd> schlägt zu.</p>
-<p class="hint"><a href="art/player-study/guardian.blend" download>Blender-Modell mit Animationen herunterladen</a></p>
+<p class="hint">Laufen mit <kbd>WASD</kbd> oder <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> weicht aus, <kbd>Leertaste</kbd> schlägt zu und <kbd>F</kbd> löst den Rückhieb aus.</p>
+<p class="hint"><a href="art/player-study/guardian.blend?v=2" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
 <p id="status" role="status">Die Vergleichsszene lädt …</p>
 </main>
 <script src="dungeon-balance.js?v=21"></script>
@@ -76,6 +77,6 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
 <script src="dungeon-equipment-art.js?v=3"></script>
 <script src="dungeon-art.js?v=47"></script>
 <script src="dungeon-hero-art.js?v=1"></script>
-<script src="spieler-vergleich.js?v=1"></script>
+<script src="spieler-vergleich.js?v=2"></script>
 </body>
 </html>
