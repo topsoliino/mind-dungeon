@@ -7,6 +7,7 @@
  const rollAttackWindowMs=175;
  const clips={
   idle:{duration:1.3},walk:{duration:.56},sprint:{duration:.49},roll:{duration:.76},
+  eat:{duration:1.43,consumption:true},drink:{duration:1.57,consumption:true},
   down:{duration:.74,guard:6,chain:13,next:'up'},
   up:{duration:.74,guard:4,chain:13,next:'down'}
  };
@@ -26,6 +27,7 @@
   ArrowRight:[1,0],KeyD:[1,0],ArrowLeft:[-1,0],KeyA:[-1,0],
   ArrowDown:[0,1],KeyS:[0,1],ArrowUp:[0,-1],KeyW:[0,-1]
  };
+ const consumptionKeys={KeyE:'eat',KeyT:'drink'};
  const art=window.DungeonArt;
  const map=Array.from({length:rows},(_,y)=>Array.from({length:columns},(_,x)=>
   Number(y===0||y===rows-1||x===0||x===columns-1)));
@@ -104,6 +106,12 @@
   if(facing===value)return;
   facing=value;direction.value=String(facing);
  }
+ function startConsumption(clip){
+  if(!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
+  const input=movement();
+  if(input.length)face(input.facing);
+  clearAttacks();select(clip,false);
+ }
  function startRoll(){
   if(mode==='roll'&&!repeat)return;
   if(!repeat&&atlas.attackMotion[mode]&&elapsed<frameTime(mode,clips[mode].chain))return;
@@ -133,8 +141,14 @@
  }
  for(const button of buttons)button.addEventListener('click',()=>{
   if(!atlas)return;
+  const clip=previewClip(button.dataset.clip);
+  if(clips[clip].consumption){
+   canvas.focus({preventScroll:true});
+   startConsumption(clip);
+   return;
+  }
   clearAttacks();
-  select(previewClip(button.dataset.clip),true);
+  select(clip,true);
  });
  canvas.addEventListener('pointerdown',()=>canvas.focus());
  direction.addEventListener('change',()=>{
@@ -179,9 +193,17 @@
    presses.add(event.code);
    return;
   }
+  if(Object.hasOwn(consumptionKeys,event.code)){
+   event.preventDefault();
+   if(!event.repeat){
+    if(event.target!==canvas)canvas.focus({preventScroll:true});
+    startConsumption(consumptionKeys[event.code]);
+   }
+   return;
+  }
   if(event.code==='KeyK'){
    event.preventDefault();
-   if(event.repeat)return;
+   if(event.repeat||clips[mode].consumption)return;
    if(event.target!==canvas)canvas.focus({preventScroll:true});
    if(!repeat&&mode==='roll'){
     rollAttackQueued=true;
@@ -215,7 +237,7 @@
  });
  addEventListener('blur',()=>{
   presses.clear();
-  if(!repeat&&isAttack(mode))select('idle',false);
+  if(!repeat&&(isAttack(mode)||clips[mode].consumption))select('idle',false);
   clearAttacks();
  });
 
@@ -321,6 +343,12 @@
   if(!repeat&&isAttack(mode)){
    dt=advanceAttack(dt);
    if(dt===0)return;
+  }
+  if(clips[mode].consumption){
+   const remaining=clips[mode].duration-elapsed;
+   if(dt<remaining){elapsed+=dt;return;}
+   dt-=remaining;
+   select('idle',false);
   }
   elapsed+=dt;
   if(input.length){
@@ -428,16 +456,16 @@
  function loadWeapon(type){
   if(!weaponSheets.has(type)){
    const image=new Image();
-   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=12')
+   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=13')
     .then(()=>image).catch(error=>{weaponSheets.delete(type);throw error;});
    weaponSheets.set(type,loaded);
   }
   return weaponSheets.get(type);
  }
  Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=12'),
+  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=13'),
   loadWeapon(weaponType),
-  fetch('art/player-study/guardian-frames.json?v=12').then(response=>{
+  fetch('art/player-study/guardian-frames.json?v=13').then(response=>{
    if(!response.ok)throw new Error('Animationsdaten fehlen.');
    return response.json();
   })
