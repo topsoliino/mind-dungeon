@@ -66,7 +66,7 @@ function generate(n){
    const parent=pick(rnd,parents),anchor=pick(rnd,parent.cells),d=pick(rnd,dirs);
    const [dx,dy,side]=d,neighbor=[anchor[0]+dx,anchor[1]+dy];
    if(occ.has(key(...neighbor)))continue;
-   const kind=[3,6,8].includes(id)||rnd()<.33?'gang':'raum';
+   const kind=[3,7].includes(id)||rnd()<.17?'gang':'raum';
    const shape=makeShape(rnd,kind,dx);if(!shape)continue;
    const border=shape.mask.filter(([x,y])=>!has(shape.mask,x-dx,y-dy));
    const touching=pick(rnd,border),ox=neighbor[0]-touching[0],oy=neighbor[1]-touching[1];
@@ -112,7 +112,7 @@ for(const room of rooms.slice(1))for(const [x,y] of room.cells)for(const [dx,dy,
  segments.push({axis,p,start,end:start+1,room:room.id,side,
   height:tall?92+room.id%3*11:13,tone:['grey-a','grey-b','grey-c'][room.id%3]});
 }
-segments.sort((a,b)=>[a.room,a.axis,a.p,a.side,a.start].join('|').localeCompare([b.room,b.axis,b.p,b.side,b.start].join('|')));
+segments.sort((a,b)=>a.room-b.room||a.axis.localeCompare(b.axis)||a.p-b.p||a.side.localeCompare(b.side)||a.start-b.start);
 const groups=[];
 for(const segment of segments){
  const last=groups[groups.length-1];
@@ -141,8 +141,36 @@ for(const room of rooms.slice(2).reverse()){
  }
  if(stairs)break;
 }
+// Fallback: a landing is mandatory. Pick the best 2x3 footprint even when an
+// entrance is nearby; it remains reserved for a later vertical traversal system.
+if(!stairs){
+ for(const room of rooms.slice(2).sort((a,b)=>b.cells.length-a.cells.length)){
+  for(const [x,y] of room.cells){
+   if(!Array.from({length:6},(_,i)=>[x+i%2,y+Math.floor(i/2)])
+    .every(p=>has(room.cells,...p)))continue;
+   stairs={roomId:room.id,area:[x,y,x+2,y+3],levelFrom:0,levelTo:1,reserved:true};
+   break;
+  }
+  if(stairs)break;
+ }
+}
+const depth=Math.max(1,Math.min(12,Number(query.get('tiefe'))||1));
+const programRng=rgen(actualSeed^(depth*2654435761));
+const uses=['Studierzimmer','Waffenkammer','Werkstatt','Versuchszimmer','Wachraum','Ruhekammer','Lagerraum'];
+const useCounts=new Map();
+for(const room of rooms){
+ if(room.id===0){room.plannedUse='Startgasse';continue;}
+ if(room.kind==='gang'){room.plannedUse='Verbindungsgang';continue;}
+ const choices=uses.filter(type=>(useCounts.get(type)||0)<2);
+ const roll=programRng();
+ const weighted=choices.filter(type=>depth>=3||!['Wachraum','Versuchszimmer'].includes(type));
+ const pool=weighted.length?weighted:choices;
+ room.plannedUse=pool[Math.floor(roll*pool.length)]||'Studierzimmer';
+ useCounts.set(room.plannedUse,(useCounts.get(room.plannedUse)||0)+1);
+}
+if(stairs)rooms[stairs.roomId].plannedUse='Treppenraum';
 const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.length,
- corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,stairs:stairs?[stairs]:[]};
+ corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,stairs:stairs?[stairs]:[],depth};
 function extend(map){
  const strips=new Map();
  for(const room of rooms.slice(1))for(const [x,y] of room.cells){
