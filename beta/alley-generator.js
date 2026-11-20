@@ -154,6 +154,31 @@ if(!stairs){
   if(stairs)break;
  }
 }
+// Interior partitions are real structural walls, not randomly placed obstacles.
+// Each spans between two external boundaries; a one-cell doorway is cut into it.
+const innerWalls=[];
+for(const room of rooms.filter(p=>p.kind==='raum').sort((a,b)=>b.cells.length-a.cells.length)){
+ if(innerWalls.length>=4)break; // Two split chambers, two wall wings each.
+ const xs=room.cells.map(p=>p[0]),ys=room.cells.map(p=>p[1]);
+ const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+ if(maxX-minX<3||maxY-minY<3)continue;
+ let chosen=null;
+ for(let seam=minX+2;seam<=maxX-1;seam++){
+  const full=Array.from({length:maxY-minY+1},(_,i)=>minY+i).every(y=>
+   has(room.cells,seam-1,y)&&has(room.cells,seam,y));
+  if(!full)continue;
+  if(stairs?.roomId===room.id&&seam>stairs.area[0]&&seam<stairs.area[2])continue;
+  chosen=seam;break;
+ }
+ if(chosen===null)continue;
+ const opening=minY+Math.floor((maxY-minY)/2);
+ for(const [a,b] of [[minY,opening],[opening+1,maxY+1]]){
+  if(b<=a)continue;
+  const wall={axis:'u',p:chosen,start:a,end:b,room:room.id,side:'west',
+   height:78,tone:['grey-a','grey-b','grey-c'][room.id%3],interior:true};
+  wall.area=rect(wall);walls.push(wall);wallBlocks.push(wall.area);innerWalls.push(wall);
+ }
+}
 const depth=Math.max(1,Math.min(12,Number(query.get('tiefe'))||1));
 const programRng=rgen(actualSeed^(depth*2654435761));
 const uses=['Studierzimmer','Waffenkammer','Werkstatt','Versuchszimmer','Wachraum','Ruhekammer','Lagerraum'];
@@ -170,7 +195,7 @@ for(const room of rooms){
 }
 if(stairs)rooms[stairs.roomId].plannedUse='Treppenraum';
 const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.length,
- corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,stairs:stairs?[stairs]:[],depth};
+ corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,interiorWalls:innerWalls.length,stairs:stairs?[stairs]:[],depth};
 function extend(map){
  const strips=new Map();
  for(const room of rooms.slice(1))for(const [x,y] of room.cells){
