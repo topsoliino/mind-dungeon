@@ -99,6 +99,7 @@ window.DungeonItems = (() => {
   return true;
  }
  const isTrial=(actor,index,fixed)=>index===fixed||actor.trialCharmActive===true&&!actor.opened.includes(index);
+ const trialSeconds=50;
  const challengeRarity=(depth,roll)=>roll<(depth>=3?.12:.04)?'legendary':roll<.34?'epic':'rare';
  const madnessBonus=(actor,rings)=>rings.includes('madness')&&(actor.madnessUntil??0)>actor.playtime?1.20:1;
  const precisionRing={id:'precision',name:'Ring der Präzision',desc:'+8 Prozentpunkte Würfel-Crit-Chance.',bonus:'critical'};
@@ -346,5 +347,5 @@ window.DungeonItems = (() => {
   }
   return offers;
  }
- return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodMove,potionMove,potionWalkRate,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,forgeElements,enchantment,carriedWeapon,setWeapon,attackSplit,forgeOffer,forgeWeapon,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
+ return {damage,rarity,cryptScythes,cryptDrop,weaponScaling,knockbackPower,food,foodSeconds,foodMove,potionMove,potionWalkRate,foodNeeded,chooseFood,eatMeal,queueDamage,rememberHit,deathReport,takeDueDamage,requirements,kinds,merchantRing,heightRing,madnessRing,avoidanceRing,alleyRing,retreatDepth,trialCharm,markTrials,isTrial,trialSeconds,challengeRarity,madnessBonus,precisionRing,breweryRing,weaponCrit,critChance,weapon,armorProfile,foes,foeAttack,rank,key,upgradeRank,forgeElements,enchantment,carriedWeapon,setWeapon,attackSplit,forgeOffer,forgeWeapon,weaponWeight,armorSets,armorParts,armorItems,classArmorSets,startingArmor,armorPerks,arrowRange,meleeHit,dashCooldown,armorCooldown,recoverWithArmor,blockArmorHit,resolveArmorDamage,armorEffectText,loadout,defenseBonus,enemyRarity,affinity,hit,rememberDamage,price,shop};
 })();

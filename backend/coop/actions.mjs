@@ -94,7 +94,7 @@ export function actions(sim){
   if(!source&&reason==='boss-altar')source=run.shuffle([...options],sim.random)[0];
   if(!source)fail('Es sind gerade keine weiteren Fragen verfügbar.');
   if(reason==='trial'&&!p.trial){
-   p.trial={index:i,deadline:sim.clock+40,correct:0,target:Math.min(3,trialDeck.length),used:[],passed:false};
+   p.trial={index:i,deadline:sim.clock+items.trialSeconds,correct:0,target:Math.min(3,trialDeck.length),used:[],passed:false};
    p.trials[i]='started';
   }
   const order=run.shuffleOptions(source),q=run.presentQuestion(source,order);

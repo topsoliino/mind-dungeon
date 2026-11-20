@@ -9,7 +9,7 @@
  if (!bank || !AudioContext) return;
 
  const scriptUrl = document.currentScript.src;
- const audioAsset = name => ({url: new URL('assets/audio/' + name + '.mp3?v=1', scriptUrl)});
+ const audioAsset = (name, format='mp3') => ({url: new URL('assets/audio/' + name + '.' + format + '?v=1', scriptUrl)});
  const effects = audioAsset('shadowbound-sfx');
  const stone = foley && audioAsset('stone-steps');
  const packSfx = packages && audioAsset('pack-sfx');
@@ -25,9 +25,11 @@
   ambient[name] = {...audioAsset(name), start: 0, end: 30, overlap: .8};
  }
  ambient.amb_well = {...audioAsset('amb_well'), start: 0, end: Infinity, overlap: .11};
+ const shrineFormat=document.createElement('audio').canPlayType('audio/ogg; codecs="vorbis"')?'ogg':'mp3';
  const musicTracks = {
   title: {...audioAsset('01_main_theme'), start: .54, end: 232, overlap: 5.5},
-  creator: {...audioAsset('02_character_creation'), start: .18, end: 196.6, overlap: 5.2}
+  creator: {...audioAsset('02_character_creation'), start: .18, end: 196.6, overlap: 5.2},
+  shrine: {...audioAsset('03_mindfulness',shrineFormat), start: 1.44, end: 281.25, overlap: 6.2, gain:.84}
  };
  const maxVoices = 14;
  const heldRequests = [];
@@ -222,7 +224,7 @@
   };
   musicVoice = {asset,source,fader};
   source.start(0, asset.offset);
-  ramp(fader.gain, 1, .16);
+  ramp(fader.gain, asset.gain ?? 1, .16);
  }
 
  function play(id, options = {}) {

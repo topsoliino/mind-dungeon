@@ -1407,7 +1407,12 @@ test('the sewer relic converts unopened chests and a completed challenge drops r
  assert.equal(items.isTrial(host,target,sim.floor.trialIndex),true);
  Object.assign(host,sim.floor.chests[target]);
  let q=sim.actions.dispatch(host,'quiz',{reason:'trial',index:target});
+ assert.equal(q.trial.seconds,50);
+ const asked=new Set();
  for(let i=0;i<3;i++){
+  assert.equal(q.trial.correct,i);
+  assert.ok(!asked.has(q.question.id));
+  asked.add(q.question.id);
   sim.actions.dispatch(host,'answer',{quiz:q.quiz,choice:choice(host.quiz.q)});
   q=sim.actions.dispatch(host,'review',{quiz:q.quiz,color:'green'});
  }
