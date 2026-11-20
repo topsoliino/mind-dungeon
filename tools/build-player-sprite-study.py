@@ -32,8 +32,17 @@ INTERACTIONS = {
     'chest': {'frames': 26, 'duration': 1.55, 'distance': .91, 'event': .59},
     'pickup': {'frames': 18, 'duration': .92, 'distance': .63, 'side': -.12, 'event': .46},
     'knowledge': {'frames': 44, 'duration': 3.32, 'event': .85},
+    'pickup-high': {'frames': 19, 'duration': 1.06, 'distance': .93, 'event': .45},
 }
 CROUCHED_INTERACTIONS = ('chest', 'pickup')
+KNOCKBACK = {
+    'hit-light': {'frames': 12, 'duration': .42,
+                  'path': [(0,0),(.16,.073),(.41,.186),(.67,.27),(1,.27)]},
+    'hit-strong': {'frames': 22, 'duration': .88,
+                   'path': [(0,0),(.16,.18),(.41,.50),(.66,.84),(.83,.94),(1,.94)]},
+    'hit-down': {'frames': 42, 'duration': 2.02,
+                 'path': [(0,0),(.13,.24),(.26,.81),(.40,1.56),(.50,1.74),(1,1.74)]},
+}
 CROUCH_ENTRIES = {f'crouch-from-sprint-{phase}': phase/4 for phase in range(4)}
 CROUCH_EXITS = {f'crouch-up-{phase}': phase/4 for phase in range(4)}
 CHEST_HINGE = Vector((0, -1.15, .51))
@@ -79,7 +88,8 @@ CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, 9) for name in CROUCH_ENTRIES), *((name, 9) for name in CROUCH_EXITS),
          *((name, interaction['frames']) for name, interaction in INTERACTIONS.items()),
          *((name+'-crouched', INTERACTIONS[name]['frames']) for name in CROUCHED_INTERACTIONS),
-         *((name+'-walk', frames) for name, (frames, _) in CONSUMPTION.items())]
+         *((name+'-walk', frames) for name, (frames, _) in CONSUMPTION.items()),
+         *((name, data['frames']) for name, data in KNOCKBACK.items())]
 SIDES = [('L', -1), ('R', 1)]
 
 
@@ -766,14 +776,14 @@ def gait_foot(phase, stride, stance, clearance, running):
     return travel, lift, math.radians(pitch)
 
 
-def place_foot(side, sign, travel, lift, pitch, width=0, splay=1, sidestep=0):
+def place_foot(side, sign, travel, lift, pitch, width=0, splay=1, sidestep=0, knee_up=.03):
     boot = 'Boot.' + side
     ankle = rest[boot][0]
     rotation = Euler((pitch, 0, sign * .10 * splay)).to_matrix()
     lowest = min((rotation @ (p - ankle)).z for p in soles[side])
     target = Vector((ankle.x + sign * width + sidestep, travel, .012 + lift - lowest))
     hip = attached('Hips', rest['Thigh.' + side][0])
-    end = bend_joint('Thigh.' + side, 'Shin.' + side, hip, target, (sign * .12 * splay, -1, .03))
+    end = bend_joint('Thigh.' + side, 'Shin.' + side, hip, target, (sign * .12 * splay, -1, knee_up))
     orient(boot, end, rotation)
 
 
@@ -1082,6 +1092,8 @@ def consumption_pose(kind, t, phase=None):
 def prop_visibility(kind, t):
     visible = set()
     if kind in ('pickup', 'pickup-crouched') and INTERACTIONS['pickup']['event'] <= t < .84:
+        visible.add('ruby')
+    if kind == 'pickup-high' and INTERACTIONS[kind]['event'] <= t < .83:
         visible.add('ruby')
     if kind == 'knowledge' and .14 <= t < .95:
         visible.add('book')
@@ -1505,12 +1517,157 @@ def interaction_pose(kind, t, crouched):
     ground_roll_edge()
 
 
+def standing_pickup(t):
+    pose('idle', 0)
+    if t in (0, 1):
+        return
+    base = pose_snapshot()
+    reach = smooth((t-.10)/.34)*smooth((.76-t)/.31)
+    torso = Euler((.05+.16*reach, -.036*reach, -.16*reach)).to_matrix()
+    orient('Chest', attached('Hips', rest['Chest'][0]), torso)
+    orient('Head', attached('Chest', rest['Head'][0]), Euler((.11+.19*reach, -.04, -.17*reach)).to_matrix())
+    trail_mantle(torso, .035, 0, .02)
+    palm = sample([(0,-.402,-.085,.90),(.23,-.34,-.32,1.04),(.45,-.16,-.592,.953),
+                   (.52,-.162,-.557,.985),(.66,-.21,-.329,1.12),(.77,-.33,-.13,1.073),
+                   (.86,-.407,.016,.91),(1,-.402,-.085,.90)],t)
+    wrist = reach_arm('L',-1,palm,(.13,-.91,-.14-.38*reach),torso)
+    orient('Prop.L',wrist,Euler((.30*reach,-.28*reach,-.07)).to_matrix())
+    wrist = reach_arm('R',1,(.415,-.106,.911),(0,-.59,-.74),torso)
+    grip_weapon(wrist,29,9)
+    blend_pose(base,pose_snapshot(),smooth(t/.18)*smooth((1-t)/.15))
+
+
+def stagger_pose(kind, t):
+    strong = kind == 'hit-strong'
+    motion, = sample(KNOCKBACK[kind]['path'],t)
+    strength = 1 if strong else .46
+    recoil, recover = sample([(0,0,0),(.15,1,0),(.33,.72,.18),(.55,.48,.26),
+                              (.72,.19,.58),(.86,.02,.36),(1,0,0)],t)
+    pitch = -.56*strength*recoil+.15*strength*recover
+    bank = .28*strength*recoil-.13*strength*recover
+    torso = lower_body(.035+strength*(.095*recoil+.108*recover), .092*strength*recoil,
+                       pitch, bank, -.20*strength*recoil)
+    head = Euler((pitch*.76-.09*strength*recoil, bank*.50, -.11*strength*recoil))
+    orient('Head',attached('Chest',rest['Head'][0]),head.to_matrix())
+    for side, sign in SIDES:
+        first = sign > 0
+        start,end = ((.11,.49) if first else (.43,.83)) if strong else ((.16,.51) if first else (.49,.84))
+        step = max(0,min(1,(t-start)/(end-start)))
+        lead = .17 if strong and first else 0
+        stride = KNOCKBACK[kind]['path'][-1][1]
+        planted = (stride+lead)*smooth(step)-lead*smooth((t-.76)/.18)
+        lift = strength*(.205 if first else .123)*math.sin(math.pi*step)**2
+        ankle_pitch = strength*(-.37 if first else -.23)*math.sin(math.pi*step)
+        place_foot(side,sign,sign*.08+planted-motion,lift,ankle_pitch,.065*strength*recoil)
+        shoulder = attached('Chest',rest['Arm.'+side][0])
+        ready = Vector((sign*.11,-.12,-.42))
+        swung = Vector((sign*.37,-.29 if first else -.34,-.12))
+        wrist = reach_arm(side,sign,shoulder+ready.lerp(swung,strength*recoil),
+                          (sign*.36,-.63,-.52+.55*recoil),torso)
+        if first:
+            grip_weapon(wrist,22+59*strength*recoil,10+40*strength*recoil)
+
+
+def align_fall_to_floor(weight):
+    lowest = math.inf
+    for bone, vertices in contact_mesh.items():
+        if bone == 'Mantle':
+            continue
+        delta = rig.pose.bones[bone].matrix @ rig.data.bones[bone].matrix_local.inverted()
+        lowest = min(lowest,min((delta@v).z for v in vertices))
+    correction = .016-lowest
+    if correction<0:
+        correction *= weight
+    root = rig.pose.bones['Hips']
+    root.matrix = Matrix.Translation((0,0,correction)) @ root.matrix
+    bpy.context.view_layer.update()
+    fold_mantle_at_floor()
+    mantle = rig.pose.bones['Mantle']
+    delta = mantle.matrix @ rig.data.bones['Mantle'].matrix_local.inverted()
+    hem = min((delta@v).z for v in contact_mesh['Mantle'])
+    if hem<.008:
+        mantle.matrix = Matrix.Translation((0,0,.008-hem)) @ mantle.matrix
+        bpy.context.view_layer.update()
+
+
+def thrown_pose(t):
+    # Throw the shoulders ahead of the hips, land on the back, then brace on
+    # the free hand to bring one boot under the body before standing.
+    height, offset, pitch, bank = sample([
+        (0,.891,0,.035,0),(.08,.915,.052,-.26,.11),(.18,.886,.035,-.64,.28),
+        (.26,.672,.012,-1.02,.30),(.34,.378,-.042,-1.43,.28),(.407,.187,-.055,-1.61,.13),
+        (.46,.232,-.07,-1.49,.075),(.54,.179,-.048,-1.58,.055),(.61,.176,-.043,-1.56,.067),
+        (.69,.183,-.033,-1.14,.68),(.76,.274,.007,-.55,.94),(.83,.393,.07,.47,.39),
+        (.90,.512,.043,.63,.13),(.96,.767,.014,.24,.039),(1,.891,0,.035,0),
+    ],t)
+    grounded = smooth((t-.27)/.11)*smooth((.73-t)/.095)
+    hips = Vector((-.035*math.sin(math.tau*t),offset,height-.025*grounded))
+    hip_pitch = pitch*(.93 if pitch<0 else .56)
+    orient('Hips',hips,Euler((hip_pitch, .62*bank, .10*bank)).to_matrix())
+    chest = attached('Hips',rest['Chest'][0])
+    torso = Euler((pitch,bank,-.19*bank)).to_matrix()
+    orient('Chest',chest,torso)
+    chin = .25*smooth((t-.18)/.14)*smooth((.82-t)/.20)
+    orient('Head',attached('Chest',rest['Head'][0]),Euler((pitch+chin,.70*bank,-.12*bank)).to_matrix())
+    trail_mantle(torso,.15+.14*math.sin(math.pi*t),-.25*bank,0)
+    left_leg = [(0,-.08,0,0,0),(.12,-.23,0,-.14,.03),(.23,-.40,.23,-.48,.067),
+                (.36,-.62,.18,-.52,.078),(.42,-.74,.035,-.44,.077),(.53,-.73,.027,-.31,.08),
+                (.62,-.71,.025,-.30,.08),(.73,-.46,.15,-.56,.10),
+                (.83,-.21,.07,.18,.097),(.92,-.055,0,.07,.035),(1,-.08,0,0,0)]
+    right_leg = [(0,.08,0,0,0),(.14,.25,.16,.36,.036),(.26,-.06,.38,-.25,.103),
+                 (.39,-.42,.34,-.48,.114),(.46,-.51,.12,-.21,.11),(.55,-.59,.02,-.19,.08),
+                 (.65,-.53,.06,-.34,.09),(.75,-.27,.11,.15,.109),
+                 (.84,-.30,0,.13,.046),(.94,.06,0,.07,.018),(1,.08,0,0,0)]
+    for side,sign in SIDES:
+        travel,lift,foot_pitch,width = sample(left_leg if sign<0 else right_leg,t)
+        place_foot(side,sign,travel,lift,foot_pitch,width,knee_up=.03+.85*grounded)
+        x,y,z = sample([
+            (0,.12,-.16,-.45),(.12,.24,-.33,-.04),(.24,.40,-.11,.13),
+            (.38,.39,-.07,-.21),(.46,.29,-.18,-.18),(.58,.29,-.16,-.16),
+            (.70,.22,.11,-.28),(.79,.24,.18,-.33),(.88,.16,-.22,-.31),(1,.12,-.14,-.43),
+        ],t)
+        shoulder = attached('Chest',rest['Arm.'+side][0])
+        goal = shoulder+Vector((sign*x,y,z))
+        # Keep the hands above the back during impact so the armor takes the load.
+        goal.z += (.135 if sign<0 else .205)*grounded
+        if sign<0:
+            brace = smooth((t-.60)/.12)*smooth((.91-t)/.11)
+            goal = goal.lerp(Vector((-.43,.18,.080)),brace)
+        else:
+            goal.x -= .08*math.sin(math.pi*t)
+        wrist = reach_arm(side,sign,goal,(sign*.48,-.43,-.59),torso)
+        if sign>0:
+            yaw,elev = sample([(0,24,12),(.16,73,27),(.30,110,26),(.45,112,4),(.62,106,6),
+                               (.79,83,18),(1,24,12)],t)
+            grip_weapon(wrist,yaw,elev)
+    align_fall_to_floor(smooth((t-.31)/.075)*smooth((.75-t)/.105))
+
+
+def knockback_pose(kind,t):
+    pose('idle',0)
+    if t in (0, 1):
+        return
+    base = pose_snapshot()
+    if kind == 'hit-down':
+        thrown_pose(t)
+    else:
+        stagger_pose(kind,t)
+    blend_pose(base,pose_snapshot(),smooth(t/.08)*smooth((1-t)/.09))
+    ground_roll_edge()
+
+
 def animation_pose(kind, frame, count):
     rig.pose.bones['Visor'].matrix_basis = Matrix.Identity(4)
     rig.pose.bones['Prop.L'].matrix_basis = Matrix.Identity(4)
     interaction = kind.removesuffix('-crouched')
     if kind == 'knowledge':
         read_book(frame/(count-1))
+        return
+    if kind == 'pickup-high':
+        standing_pickup(frame/(count-1))
+        return
+    if kind in KNOCKBACK:
+        knockback_pose(kind,frame/(count-1))
         return
     if interaction in CROUCHED_INTERACTIONS:
         interaction_pose(interaction, frame/(count-1), interaction != kind)
@@ -1687,7 +1844,7 @@ def export(scene, frames, directory, preview):
             for row, (kind, frame) in enumerate(frames):
                 if preview and kind.removesuffix('-walk') not in (
                         'walk', 'sprint', 'gait-one', 'gait-two', 'roll', 'sneak',
-                        *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION, *INTERACTIONS, 'vault'):
+                        *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION, *INTERACTIONS, *KNOCKBACK, 'vault'):
                     continue
                 if weapon and kind in CHARGE_CLIPS and CHARGE_CLIPS[kind][0] != weapon:
                     continue
@@ -1742,6 +1899,7 @@ if __name__ == '__main__':
     (directory/'attack-motion.json').write_text(json.dumps(ATTACK_MOTION) + '\n')
     (directory/'vault.json').write_text(json.dumps(VAULT) + '\n')
     (directory/'interactions.json').write_text(json.dumps(INTERACTIONS) + '\n')
+    (directory/'knockback.json').write_text(json.dumps(KNOCKBACK) + '\n')
     durations = {name: duration for name, (_, duration) in CONSUMPTION.items()}
     (directory/'consumption.json').write_text(json.dumps({'walkCycle': WALK_CYCLE, 'durations': durations}) + '\n')
     bpy.context.view_layer.layer_collection.children[weapon_collections['hammer'].name].exclude = True

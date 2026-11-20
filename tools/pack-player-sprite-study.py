@@ -8,6 +8,7 @@ from PIL import Image
 
 FACINGS = 8
 PADDING = 2
+MAX_HEIGHT = 4096
 
 
 def pack_layer(directory, layer, count, width, indices):
@@ -29,21 +30,30 @@ def pack_layer(directory, layer, count, width, indices):
     x = y = PADDING
     shelf_height = 0
     cropped = []
+    sheets = []
+
+    def make_sheet():
+        atlas = Image.new('RGBA', (width, y+shelf_height+PADDING))
+        for tile, offset in cropped:
+            atlas.paste(tile, offset)
+        return atlas
+
     for index, tile, left, top in sorted(tiles, key=lambda item: -item[1].height):
         if x + tile.width + PADDING > width:
-            x, y = PADDING, y + shelf_height + PADDING
+            next_y = y+shelf_height+PADDING
+            if next_y+tile.height+PADDING > MAX_HEIGHT:
+                sheets.append(make_sheet())
+                cropped = []
+                next_y = PADDING
+            x, y = PADDING, next_y
             shelf_height = 0
-        frames[index] = [x, y, tile.width, tile.height, left, top]
+        frames[index] = [x, y, tile.width, tile.height, left, top, len(sheets)]
         cropped.append((tile, (x, y)))
         x += tile.width + PADDING
         shelf_height = max(shelf_height, tile.height)
 
-    atlas = Image.new('RGBA', (width, y + shelf_height + PADDING))
-    if atlas.height > 4096:
-        raise ValueError(f'{layer} atlas exceeds 4096px in height')
-    for tile, offset in cropped:
-        atlas.paste(tile, offset)
-    return atlas, frames
+    sheets.append(make_sheet())
+    return sheets, frames
 
 
 def main():
@@ -58,15 +68,23 @@ def main():
     vault = json.loads((args.renders / 'vault.json').read_text())
     interactions = json.loads((args.renders / 'interactions.json').read_text())
     consumption = json.loads((args.renders / 'consumption.json').read_text())
+    knockback = json.loads((args.renders / 'knockback.json').read_text())
     manifest = {'clips': clips, 'attackMotion': motion, 'vault': vault,
-                'interactions': interactions, 'consumption': consumption}
+                'interactions': interactions, 'consumption': consumption, 'knockback': knockback,
+                'sheets': {}}
     for layer, width, other in [('body', 4096, None), ('weapon', 1024, 'hammer'),
                                 ('hammer', 1024, 'sword')]:
         indices = (index for clip, (start, length) in clips.items()
                    if not other or not clip.startswith((f'charge-{other}-', f'heavy-{other}', f'roll-attack-{other}'))
                    for index in range(start*FACINGS, (start+length)*FACINGS))
-        atlas, manifest[layer] = pack_layer(args.renders, layer, count, width, indices)
-        atlas.save(args.output / f'guardian-{layer}.webp', quality=89, method=4)
+        atlases, manifest[layer] = pack_layer(args.renders, layer, count, width, indices)
+        files = []
+        for number, atlas in enumerate(atlases, 1):
+            suffix = '' if number==1 else f'-{number}'
+            file = f'guardian-{layer}{suffix}.webp'
+            atlas.save(args.output / file, quality=89, method=4)
+            files.append(file)
+        manifest['sheets'][layer] = files
     (args.output / 'guardian-frames.json').write_text(json.dumps(manifest, separators=(',', ':')) + '\n')
     copyfile(args.renders / 'guardian.blend', args.output / 'guardian.blend')
 
