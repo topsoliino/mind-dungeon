@@ -38,7 +38,7 @@
  }
  function create(){
   const art=createArt(),map=window.AlleyStudyMap.logic;
-  const spawn=unit(map.spawn),chest=unit(map.stations.chest.at);
+  const spawn=unit(map.spawn),chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
   // These are the same ground footprints as the neutral props in the art pass.
   const props=[
    {kind:'chest',point:chest,half:[.26,.36]},
@@ -54,6 +54,7 @@
     return Math.hypot(dx,dy)>r;
    });
   }
+  const clearLine=(x,y,endX,endY)=>pointBetween({x,y},{x:endX,y:endY},(px,py)=>walkable(px,py,0));
   const clearSegment=(from,to)=>pointBetween(from,to,walkable);
   const pad=radius+4;
   const waypoints=[...map.waypoints.map(unit),...props.flatMap(({point,half:[a,b]})=>
@@ -113,10 +114,12 @@
     ctx.globalAlpha=1;
    }
   }
-  return {spawn,chest,walkable,canInteract,cameraOrigin,addLayers,refreshLayers,drawLayers,
+  return {spawn,chest,archer,walkable,clearLine,canInteract,cameraOrigin,addLayers,refreshLayers,drawLayers,
+   inEncounter:actor=>actor.x>=9.5*tile&&actor.y<map.encounter.entryV*tile,
+   lootPosition:actor=>walkable(actor.x,actor.y,4)?{x:actor.x,y:actor.y}:archer,
    chestRoute:player=>shortestRoute(player,goal,waypoints,clearSegment),
    chestFacing:Math.atan2(chest.y-goal.y,chest.x-goal.x),
-   clearStrike:(x,y,endX,endY)=>Number(pointBetween({x,y},{x:endX,y:endY},(px,py)=>walkable(px,py,0,false)))};
+   clearStrike:(...points)=>Number(clearLine(...points))};
  }
  window.DungeonIsometric={create,toView,toWorld,screenDirection,viewAngle,width,height};
 })();

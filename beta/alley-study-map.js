@@ -33,7 +33,7 @@
     {area:[.9,1.25,3.32,3],height:99,roof:19,door:[2.6,3]},
     {area:[3.42,1.35,6.32,3],height:82,roof:24,door:[4,3]},
     {area:[6.42,1.05,8.42,3],height:110,roof:14,door:[7.45,3]},
-    {area:[8.52,.95,9.5,3],height:88,roof:19},
+    {area:[8.52,.95,9.5,3],height:88,roof:19,behindArch:true},
     {area:[1.4,6.5,3.9,8.1],height:57,roof:18},
     {area:[10.15,6.5,12.1,7.6],height:51,roof:15}
    ],
@@ -47,6 +47,7 @@
    spawn:[6.6,5.15],
    stations:{chest:{at:[10.58,4.95],front:1},'pickup-high':{at:[5.8,7.8],front:2}},
    barrel:[7,6.08],
+   encounter:{archer:[10.9,1.65],entryV:3.55},
    waypoints:[[8.23,4.75],[9.48,4.75],[9.85,3.4],[7.45,6.27],[7.35,6.77]]
   }
  };
