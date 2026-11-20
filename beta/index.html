@@ -37,6 +37,7 @@ const testRun=bossTest||isometricTest;
 const iso=window.DungeonIsometric,alley=isometricTest?iso.create():null;
 let alleyRoute=null,alleyMove=null,alleyMarker=null,alleyRoll=null,alleyZoom=1,guardian=null;
 let alleySwing=null,alleyQueuedLight=null,alleyHit=null,alleyChest=null,alleyNextLight='down',alleyGait=0,alleyGaitBlend=0;
+let alleySneaking=false,alleyGaitMode='run',alleyItemWalkUntil=0;
 const guardianArt=window.DungeonGuardian;
 const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>{guardian=data;}).catch(error=>{
  console.warn('Mind Dungeon · Isometrische Gasse',error);
@@ -422,6 +423,11 @@ if(unmetRequirements(save.equipment.weapon).length){
 player.stamina=maxStamina();
 save.quickSlots=Array.from({length:4},(_,i)=>typeof save.quickSlots?.[i]==='string'?save.quickSlots[i]:null);
 save.quickActive=Number.isInteger(save.quickActive)&&save.quickActive>=0&&save.quickActive<4?save.quickActive:0;
+if(alley){
+ const potion={kind:'potion',id:'alley-breath',brew:[10],duration:18,rarity:'common',source:'Testgasse'};
+ save.inventory.push({kind:'food',id:'bread',source:'Testgasse'},potion);
+ save.quickSlots[0]=items.key(potion);
+}
 function iconImage(type,id,color){return '<img src="'+art.url(type,id,color)+'" width="64" height="64" alt="">';}
 function itemIcon(item){
  if(item.kind==='key')return iconImage('dungeon-key-item');
@@ -925,6 +931,7 @@ function useTrialCharm(item){
  const index=save.inventory.indexOf(item);
  if(index<0)return;
  if(!items.markTrials(save,chests.length,save.floor<LAST_DEPTH)){tell('Das Prüfsiegel kann gerade nicht eingesetzt werden.');return;}
+ if(alley)alleyItemWalkUntil=combatClock+.45;
  save.inventory.splice(index,1);persist();tell('Alle übrigen Truhen im Lauf sind jetzt Prüftruhen.');
 }
 const isTrialChest=index=>items.isTrial(save,index,trialIndex);
@@ -1426,6 +1433,7 @@ function usePotion(it){
 function startConsumption(){
  const it=save.consumeQueue[0];
  if(paused||modalType||vault||consumeMove||!it||it.kind!=='food'&&(player.attack>0||player.dash>0))return;
+ if(alley&&(alleySwing||alleyHit||alleyChest||player.dash>0))return;
  clearHeldAttack();
  consumeMove={it,age:0,length:it.kind==='food'?items.foodSeconds:.82};
  if(it.kind!=='food')return;
@@ -1832,8 +1840,12 @@ function updateCombat(dt){
  combatTime=visible?1.35:Math.max(0,combatTime-dt);
 }
 function spendStamina(cost){
- if(combatTime<=0)return true;
- if(player.stamina<cost){soundWorld('hero_exhausted',player,{cooldown:.55,priority:2});return false;}
+ if(!alley&&combatTime<=0)return true;
+ if(player.stamina<cost){
+  soundWorld('hero_exhausted',player,{cooldown:.55,priority:2});
+  if(alley)tell('Zu wenig Ausdauer');
+  return false;
+ }
  player.stamina-=cost;staminaRest=0;
  return true;
 }
@@ -1924,25 +1936,24 @@ function canStrike(){
  return !modalType&&Boolean(save.equipment.weapon)&&!paused&&!mdNavigatingToNewCharacter&&
   !vault&&!alleyHit&&!alleyChest&&!player.wallRecoil&&player.dash<=0&&!consumeMove&&!save.consumeQueue.length;
 }
-function startAlleyLight(target){
- alleyMove=alleyMarker=alleyRoute=null;
- if(target)facePoint(target);
- strike();
-}
 function requestAlleyLight(target=null){
  if(!canStrike()||heldAttack)return;
  if(alleySwing){
   alleyMove=alleyMarker=null;
   alleyQueuedLight={target};
- }else if(player.attack<=0)startAlleyLight(target);
+ }else if(player.attack<=0)strike(false,target);
 }
-function strike(charged=false){
+function strike(charged=false,target=null){
  if(!canStrike()||player.attack>0)return;
  updateCombat(0);
  const w=usableWeapon(),rank=pickedRarity(w),profile=items.weapon(w.id,rank);
  const cost=Math.round(profile.stamina*(charged?1.28:1)*brewBonus.cost);
  const impact=items.knockbackPower(w,save.attributes)+brewBonus.impact,rollChance=critChance(w,rank);
- if(!spendStamina(cost)){tell('Zu wenig Ausdauer');return;}
+ if(!spendStamina(cost)){if(!alley)tell('Zu wenig Ausdauer');return;}
+ if(alley){
+  if(target)facePoint(target);
+  alleyMove=alleyMarker=alleyRoute=null;
+ }
  const clip=charged?'heavy-sword':alleyNextLight;
  const weaponDuration=profile.speed*(charged?1.25:1);
  const light=alley&&!charged&&!profile.projectile;
@@ -2302,6 +2313,10 @@ window.addEventListener('keydown',e=>{
  if(e.code==='KeyM'&&(save.merchantMapFound||world.links.length))dungeonMapMenu();
  if(e.code==='KeyL')levelMenu();
  if(e.code==='KeyF'&&!alley)aimMode='keyboard';
+ if(alley&&(e.code==='ControlLeft'||e.code==='ControlRight')){
+  e.preventDefault();
+  alleySneaking=!alleySneaking;
+ }
  if(alley&&(e.code==='ShiftLeft'||e.code==='ShiftRight')){
   const point=mouseWorld();
   const dx=point.x-player.x,dy=point.y-player.y;
@@ -2399,14 +2414,15 @@ function playFootstep(oldX,oldY) {
  const rubble=!bridge&&rubbleProps.some(p=>world.furnitureIntact(p)&&Math.hypot(p.x-player.x,p.y-player.y)<31);
  const step=bridge?'step_wood':rubble?'step_rubble':outsideAt(player.x,player.y)?'step_earth':'step_stone';
  if(furniture.some(p=>p.type==='carpet'&&Math.abs(p.x-player.x)<p.w/2&&Math.abs(p.y-player.y)<p.h/2))return;
- soundWorld(step,player,{gain:.38,variation:.021,cooldown:.14});
+ const quiet=alley&&alleyGaitMode==='sneak'?.45:1;
+ soundWorld(step,player,{gain:.38*quiet,variation:.021,cooldown:.14});
  if(++stepCount%3===0&&bridge)soundWorld('step_bridge_creak',player,{gain:.14,cooldown:.5});
  const coat=save.equipment.armor?.chest??'';
  if(/^(knight|bastion)-/.test(coat)){
-  if(stepCount%4===0)soundWorld('gear_mail',player,{gain:.12,rate:.8,lowpass:1250,cooldown:.5,group:'gear-motion'});
+  if(stepCount%4===0)soundWorld('gear_mail',player,{gain:.12*quiet,rate:.8,lowpass:1250,cooldown:.5,group:'gear-motion'});
  }else if(stepCount%2===0){
   const gear=/^(hunter|wanderer|pathfinder|windstep)-/.test(coat)?'gear_leather':'gear_cloth';
-  soundWorld(gear,player,{gain:.13,variation:.065,cooldown:.24,group:'gear-motion'});
+  soundWorld(gear,player,{gain:.13*quiet,variation:.065,cooldown:.24,group:'gear-motion'});
  }
 }
 function startAlleyHit(damage,impactAngle){
@@ -2447,7 +2463,7 @@ function updateAlleyActions(dt){
    const queued=alleyQueuedLight;
    alleySwing=alleyQueuedLight=null;
    player.attack=0;
-   if(queued&&canStrike())startAlleyLight(queued.target);
+   if(queued)strike(false,queued.target);
   }
  }
 }
@@ -2516,6 +2532,11 @@ function update(dt){
  if(player.dash>0){dx=player.dashX;dy=player.dashY;}
  const pose=authorityOwn?.pose??-1,food=consumeMove?.it.kind==='food'||authorityMode&&pose>=3&&pose<=6;
  const drinking=consumeMove?.it.kind==='potion'||authorityMode&&potionPose(pose);
+ const slow=player.webSlow>0||player.grabSlow>0||onWeb();
+ if(alley){
+  const walking=alleyRoute||consumeMove||slow||combatClock<alleyItemWalkUntil;
+  alleyGaitMode=walking?'walk':alleySneaking?'sneak':'run';
+ }
  if(player.wallRecoil>wallRecoilSeconds-.13||authorityMode&&!authorityConnected){dx=0;dy=0;}
  player.moving=false;
  if(vault)advanceVault(dt);
@@ -2524,19 +2545,20 @@ function update(dt){
   moveClock+=dt;
   if(moveClock>.09){moveClock=0;dust.push({x:player.x+rand(-7,7),y:player.y+14,life:.5});}
   if((aimMode==='keyboard'||next)&&!alleySwing)player.dir=Math.atan2(dy,dx);
-  const slow=player.webSlow>0||player.grabSlow>0||onWeb();
-  const speed=player.speed*brewBonus.speed*load.move*mythicArmorMove()*(food?items.foodMove:drinking?items.potionMove:heldAttack?.64:1)*(slow?.53:1)*(player.dash>0?(player.dashSpeed??load.dashSpeed):1);
+  const localGait=alleyGaitMode==='run'?1.42:alleyGaitMode==='sneak'?.48:1;
+  const movementFactor=alley?(player.dash>0?1:localGait)*(slow?.75:1):
+   (food?items.foodMove:drinking?items.potionMove:heldAttack?.64:1)*(slow?.53:1);
+  const strideSpeed=player.speed*brewBonus.speed*load.move*mythicArmorMove()*movementFactor*(player.dash>0?(player.dashSpeed??load.dashSpeed):1);
   const oldX=player.x,oldY=player.y;
-  const sprint=alley&&keys.KeyV&&!alleyRoute&&!food&&!drinking&&!heldAttack&&!alleySwing&&player.dash<=0;
-  const strideSpeed=speed*(sprint?1.42:1);
   const distance=next&&player.dash<=0?Math.min(routeDistance,strideSpeed*dt):strideSpeed*dt;
   const stride=world.stairMotion(player,dx*distance,dy*distance);
   if(!moveActor(player,stride.x,stride.y))return;
   player.moving=Math.hypot(player.x-oldX,player.y-oldY)>.1;
   if(player.moving)player.walk+=dt*(player.dash>0?23:(drinking?items.potionWalkRate:12)*Math.min(1,next?1:length));
   if(alley&&player.moving&&player.dash<=0){
-   alleyGaitBlend+=(Number(Boolean(sprint))-alleyGaitBlend)*Math.min(1,dt*8);
-   alleyGait+=(Math.hypot(player.x-oldX,player.y-oldY)/player.speed)/(.56-.07*alleyGaitBlend);
+   alleyGaitBlend+=(Number(alleyGaitMode==='run')-alleyGaitBlend)*Math.min(1,dt*8);
+   const cycleDistance=alleyGaitMode==='sneak'?.37:.56-.07*alleyGaitBlend;
+   alleyGait+=Math.hypot(player.x-oldX,player.y-oldY)/(player.speed*cycleDistance);
   }
   playFootstep(oldX,oldY);
   if(next&&!player.moving&&Math.hypot(next.x-player.x,next.y-player.y)>.05){
@@ -2726,18 +2748,21 @@ function updateTransientEffects(dt){
 }
 function updateGameHud(region){
  updateHealthHud();$('#staminafill').style.width=(100*player.stamina/maxStamina())+'%';
-$('#stamina').hidden=combatTime<=0&&player.stamina>=maxStamina();
+$('#stamina').hidden=!alley&&combatTime<=0&&player.stamina>=maxStamina();
 $('#stamina').setAttribute('aria-valuenow',Math.ceil(player.stamina));$('#stamina').setAttribute('aria-valuemax',maxStamina());
 $('#xpnum').textContent=String(save.xp).replace('.',',')+'/'+xpRequired()+' XP';$('#statline').textContent='Stufe '+save.level+(save.pendingLevels?' · L · +'+save.pendingLevels:'');updateWallet();
 if(alley){
  $('#zone').textContent='Isometrische Testgasse';
- $('#progress').textContent='Rechtsklick Laufen · Linksklick leichter Hieb';
+ $('#progress').textContent='Rechtsklick Rennen · Linksklick leichter Hieb';
+ const hint='Strg Schleichen'+(alleySneaking?' (an)':'')+' · Umschalt Rolle · E Interagieren';
+ if($('#alley-help').textContent!==hint)$('#alley-help').textContent=hint;
 }else{
  const lowerPassage=world.underpassAt(player),layer=lowerPassage?0:world.layerAt(player.x,player.y);
 const placeName=lowerPassage?(lowerPassage.style==='bridge'?'Brückenunterführung':'Treppenunterführung'):
  annexByRegion.get(region)?.name??annexPassages.get(region)?.name??(annexPassages.get(region)?.theme===6?'Tempel · Verbindung':roomTitle(area()));
-$('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+([1,2].includes(layer)?layerNames[layer]+' · ':'')+placeName;$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${sanctuary&&inRest(player.x,player.y)?'Im Schutz des Leuchtfeuers':(authorityMode?authorityRemaining:enemies.length)+' Gegner auf dieser Ebene'}${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${world.outsideAt(player.x,player.y)?.light?' · '+({day:'Tag',evening:'Abend',night:'Nacht'}[world.outsideAt(player.x,player.y).light]):''}${world.hailAt(player.x,player.y)?' · Hagel (Frost +35 %)':world.waterAt(player.x,player.y)?' · Wasser (Blitz +35 %)':inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}${items.madnessBonus(save,save.equipment.rings)>1?' · Wahn '+Math.ceil(save.madnessUntil-save.playtime)+' s':''}`;if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
+$('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+([1,2].includes(layer)?layerNames[layer]+' · ':'')+placeName;$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${sanctuary&&inRest(player.x,player.y)?'Im Schutz des Leuchtfeuers':(authorityMode?authorityRemaining:enemies.length)+' Gegner auf dieser Ebene'}${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${world.outsideAt(player.x,player.y)?.light?' · '+({day:'Tag',evening:'Abend',night:'Nacht'}[world.outsideAt(player.x,player.y).light]):''}${world.hailAt(player.x,player.y)?' · Hagel (Frost +35 %)':world.waterAt(player.x,player.y)?' · Wasser (Blitz +35 %)':inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}${items.madnessBonus(save,save.equipment.rings)>1?' · Wahn '+Math.ceil(save.madnessUntil-save.playtime)+' s':''}`;
 }
+if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
 const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=alleyRoute?'Zur Truhe …':interactionHint(near);
 prompt.hidden=!hint||Boolean(modalType);$('#mobileInteract').hidden=!hint||Boolean(modalType)||Boolean(alleyRoute);if(hint){
  const text=alleyRoute?hint:(controllerInUse?'[ A ] ':matchMedia('(pointer:coarse)').matches?'':'[ E ] ')+hint;
@@ -4193,9 +4218,10 @@ function alleyGuardianPose(){
  }
  if(player.moving){
   const clips=['walk','gait-one','gait-two','sprint'];
-  return {clip:clips[Math.round(alleyGaitBlend*3)],progress:alleyGait%1,angle:player.moveAngle};
+  const clip=alleyGaitMode==='sneak'?'sneak':clips[Math.round(alleyGaitBlend*3)];
+  return {clip,progress:alleyGait%1,angle:player.moveAngle};
  }
- return {clip:'idle',progress:(frame%1.3)/1.3,angle:player.dir};
+ return {clip:alleyGaitMode==='sneak'?'crouch-idle':'idle',progress:(frame%1.3)/1.3,angle:player.dir};
 }
 function alleySprites(actor){
  const sprites=[];
@@ -5856,11 +5882,14 @@ function finishLoading(){
  if(alley){
   const controls=$('#alley-help');
   controls.hidden=false;controls.style.display='block';
-  controls.textContent='V Rennen · Umschalt Rolle · E Interagieren';
   const heavyHint=document.createElement('small');
   heavyHint.style.display='block';
   heavyHint.textContent='Leertaste halten und loslassen · schwerer Hieb';
   controls.after(heavyHint);
+  const itemHint=document.createElement('small');
+  itemHint.style.display='block';
+  itemHint.textContent='Y Essen · Q Trank';
+  heavyHint.after(itemHint);
   $('#dpad').style.display='none';
  }
  if(alley)tell(guardian?'Gassenkampf · Der Bogenschütze wartet im Seitenweg hinter dem Tor.':'Gassenkampf · Wächtergrafik konnte nicht geladen werden.');
