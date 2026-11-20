@@ -56,11 +56,12 @@ window.DungeonStairs=(()=>{
   });
   return {...bounds(edges),edges,style,curve:true,width};
  }
+ function cubic(a,c,d,b,t){
+  const u=1-t;
+  return a.map((v,i)=>u**3*v+3*u*u*t*c[i]+3*u*t*t*d[i]+t**3*b[i]);
+ }
  function bend(a,c,d,b,width,style){
-  return ribbon(t=>{
-   const u=1-t;
-   return a.map((v,i)=>u**3*v+3*u*u*t*c[i]+3*u*t*t*d[i]+t**3*b[i]);
-  },width,style,[c.map((v,i)=>v-a[i]),b.map((v,i)=>v-d[i])]);
+  return ribbon(t=>cubic(a,c,d,b,t),width,style,[c.map((v,i)=>v-a[i]),b.map((v,i)=>v-d[i])]);
  }
  function connecting(x,y,goal,top,width,style,landing=false){
   const reach=(y-top)*.43;
@@ -72,10 +73,14 @@ window.DungeonStairs=(()=>{
   return flight;
  }
  function wideSpiral(x,y){
-  const flight=ribbon(t=>{
+  const curve=t=>{
    const angle=lerp(2.73,-1.42,t);
    return [x+7.05*Math.cos(angle),y+4.9*Math.sin(angle)-t*2.65];
-  },2.72,'sanctuary');
+  };
+  // The foot meets the rectangular garden landing perpendicular to its edge.
+  const join=.08,a=[x-7.7,y+2.8],c=[a[0]+1,a[1]],b=curve(join);
+  const d=curve(join-.025);
+  const flight=ribbon(t=>t<join?cubic(a,c,d,b,t/join):curve(t),2.72,'sanctuary',[[1,0]]);
   return {...flight,core:{x,y:y-.35}};
  }
  function sections(flight){

@@ -11,6 +11,20 @@ const center=(x,y)=>({x:(x+.5)*TILE,y:(y+.5)*TILE});
 function looks(view,x,y){const p=center(x,y);return view.sees(p.x,p.y);}
 function knows(view,x,y){const p=center(x,y);return view.remembers(p.x,p.y);}
 
+test('the entire shrine is visible on arrival while unvisited dungeon rooms stay concealed',()=>{
+ const world=geometry.build(run,run.floorState(193,1));
+ const explored=new Set([world.rest.id]);
+ const view=vision.create(world,TILE,world.sightBarriers(),[],explored);
+ view.update(world.spawn,1024,768);
+ for(const room of world.sanctuary.rooms)assert.ok(looks(view,room.cx,room.cy));
+ for(const stair of world.stairs.filter(s=>s.id.startsWith('sanctuary-'))){
+  assert.equal(world.stairCrestClosed(stair,world.spawn,explored),false);
+  assert.ok(knows(view,stair.b.x,stair.b.y));
+ }
+ assert.equal(knows(view,world.rooms[4].cx,world.rooms[4].cy),false);
+ assert.equal(explored.size,1);
+});
+
 function hallWithDoor(){
  const W=19,H=13,map=Array.from({length:H},()=>Array(W).fill(1)),regions=map.map(row=>row.map(()=>-1));
  function carve(left,top,right,bottom,id){

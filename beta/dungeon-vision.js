@@ -145,6 +145,11 @@ window.DungeonVision=(()=>{
   }
   for(const region of explored)revealRoom(region);
   rememberStart();
+  if(world.sanctuary)for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   if(!terrain[y][x]?.startsWith('sanctuary-')&&!world.inRest((x+.5)*tileSize,(y+.5)*tileSize))continue;
+   const cell=y*W+x;
+   litRoomCells[cell]=1;rememberFloor(cell);
+  }
   function update(observer,width,height){
    const x=observer.x/tileSize,y=observer.y/tileSize;
    const col=Math.floor(x),row=Math.floor(y);

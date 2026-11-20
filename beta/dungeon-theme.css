@@ -677,11 +677,11 @@ button.bad { background:#643730!important; }
 .ingredient-list { margin: 10px 0; padding: 0; list-style: none; }
 .ingredient-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px; border-bottom: 1px solid #8b705580; }
 
-body :is(#game,#phaser-host) { transform:var(--dialogue-view,translateZ(0)); }
 body.dialogue-open :is(#hud,#xpHud,#wallet,#quickBar,#right,#coop-peer-tag,#notice) { visibility: hidden; }
 #modalWrap[data-screen="dialogue"] {
  align-items: flex-end; padding: 0 18px clamp(22px,9vh,100px);
  background: radial-gradient(ellipse at 50% 42%,transparent 23%,#0006 62%,#000e 100%);
+ backdrop-filter: none;
 }
 #modalWrap[data-screen="dialogue"] #modal {
  width: min(760px,95vw); max-height: none; padding: 0; border: 0; background: none;

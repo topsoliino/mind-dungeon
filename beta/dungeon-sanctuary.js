@@ -29,10 +29,10 @@ window.DungeonSanctuary=(()=>{
    flights.push({x:left+x,y,w,h,direction,style:'sanctuary'});
   }
   const geometry=window.DungeonStairs;
-  function curvedStair(id,flight,low,high,roomIds,stepIds,a,b){
+  function curvedStair(id,flight,low,high,roomIds,stepIds,a,b,joinsLowerRoom=()=>false){
    const steps=geometry.sections(flight);
    for(const {x,y} of geometry.footprint(flight)){
-    if(map[y][x]===0)continue;
+    if(map[y][x]===0&&!joinsLowerRoom(x,y))continue;
     const near=geometry.sample(steps,x+.5,y+.5);
     fill(x-left,y,near.index+near.t<steps.length/2?stepIds[1]:stepIds[0],'spiral');
    }
@@ -103,9 +103,10 @@ window.DungeonSanctuary=(()=>{
    safe.push(129,130);
   }
   if(terraced){
-   strip(129,'stone',38,14,2,4);
+   strip(129,'stone',37,14,2,3);
    const flight=geometry.wideSpiral(left+46.7,12.7);
-   curvedStair('sanctuary-spiral',flight,1,2,[123,128],[130,129],at(39,15),at(48,5));
+   curvedStair('sanctuary-spiral',flight,1,2,[123,128],[130,129],at(38,15),at(48,5),
+    (x,y)=>x>=left+39&&regions[y][x]===123);
   }else if(winding){
    const geometry=window.DungeonStairs,flight=geometry.spiral(left+46.7,12.7);
    const sections=geometry.sections(flight);
@@ -175,7 +176,7 @@ window.DungeonSanctuary=(()=>{
   rest.name='Schreinvorhalle';
   const dungeonDoor=at(20,30);
   links.push({id:'sanctuary-passage',kind:'stairs',a:dungeonDoor,b:{x:rest.cx,y:rest.cy},labels:['Zur Schreinvorhalle','Zum Ruheschrein']});
-  const seats=[[4,4],[7,3],[12,7],[16,3],[24,4],[32,17],[37,16],[36,25],[34,28],[12,27],[5,26],[18,27]];
+  const seats=[[4,4],[7,3],[12,7],[16,3],[24,4],[32,17],[37,18],[36,25],[34,28],[12,27],[5,26],[18,27]];
   const decor=[
    ['sanctuary-mosaic',20,15],['sanctuary-hearth',20,15],['bench',17,17],['bench',23,17],
    ['sanctuary-smith',5,15],['sanctuary-brazier',3,15],['weapon-rack',6,12],['large-barrel',4,18],

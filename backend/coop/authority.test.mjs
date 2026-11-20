@@ -1751,7 +1751,7 @@ test('large inventories can buy items, pick up loot and collect a cup',()=>{
  assert.equal(host.inventory.length,purchased+2);
 });
 
-test('the shrine has solid arch pillars, clear openings and no loose cup',()=>{
+test('shrine arches sort at the stone feet and plants stay clear of benches',()=>{
  const {sim}=game();
  const {furniture,furnitureAt,regionAt,cupPoint}=sim.floor;
  const arches=furniture.filter(p=>p.type==='sanctuary-arch'||p.type==='sanctuary-vault');
@@ -1764,6 +1764,30 @@ test('the shrine has solid arch pillars, clear openings and no loose cup',()=>{
   const feet=simple?[-39,39]:[-102,9,101],y=arch.y-(simple?1:19);
   for(const x of feet)assert.equal(furnitureAt(arch.x+x,y,0)?.type,arch.type);
   assert.equal(furnitureAt(arch.x+(feet[0]+feet[1])/2,y,9,6),undefined);
+  assert.ok(arch.sortY<y&&y-arch.sortY<1);
+ }
+ const benches=furniture.filter(p=>p.type==='bench'&&sim.floor.inSanctuary(p.x,p.y));
+ const flowers=furniture.filter(p=>p.type==='sanctuary-flowers');
+ assert.ok(benches.length&&flowers.length);
+ for(const p of flowers)assert.ok(benches.every(b=>Math.abs(p.x-b.x)>=54||Math.abs(p.y-b.y)>=31));
+});
+
+test('the spiral stair meets a full-width stone landing in the garden',()=>{
+ const {host,sim}=game();
+ const {terrain,stairFlights}=sim.floor;
+ const stair=stairFlights.find(f=>f.id==='sanctuary-spiral'),[a,b]=stair.edges[0];
+ assert.equal(a[0],b[0]);
+ assert.ok(Math.abs(a[1]-b[1])>2.6);
+ const x=a[0]*TILE,y=(a[1]+b[1])*TILE/2;
+ for(let row=Math.floor(b[1]);row<=Math.floor(a[1]);row++){
+  assert.equal(terrain[row][a[0]-1],'sanctuary-stone');
+ }
+ for(const offset of [-.8,0,.8]){
+  Object.assign(host,{x:x-2.75*TILE,y:y+offset*TILE});
+  assert.ok(sim.move(host,3*TILE,0));
+  assert.ok(Math.abs(host.x-x-TILE/4)<.001);
+  assert.ok(sim.move(host,-3*TILE,0));
+  assert.ok(Math.abs(host.x-x+2.75*TILE)<.001);
  }
 });
 
