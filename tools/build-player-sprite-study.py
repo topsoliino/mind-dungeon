@@ -27,6 +27,15 @@ GAITS = {
 GAIT_BLENDS = {'gait-one': 1/3, 'gait-two': 2/3}
 WALK_FOOT_CENTER = .105
 CONSUMPTION = {'eat': 24, 'drink': 25}
+INTERACTIONS = {
+    'chest': {'frames': 26, 'duration': 1.55, 'distance': .91, 'event': .59},
+    'pickup': {'frames': 18, 'duration': .92, 'distance': .63, 'side': -.12, 'event': .46},
+    'knowledge': {'frames': 24, 'duration': 1.42, 'distance': .68, 'side': -.12, 'event': .48},
+}
+CROUCH_ENTRIES = {f'crouch-from-sprint-{phase}': phase/4 for phase in range(4)}
+CROUCH_EXITS = {f'crouch-up-{phase}': phase/4 for phase in range(4)}
+CHEST_HINGE = Vector((0, -1.15, .51))
+CHEST_LID_DEPTH = .48
 VAULT_FRAMES = 19
 VAULT_ENTRIES = {f'vault-in-{phase}': phase/4 for phase in range(4)}
 VAULT = {'start': -1.20, 'end': 1.21, 'radius': .44, 'height': .83, 'duration': .52, 'exitPhase': .5,
@@ -62,7 +71,11 @@ CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, ROLL_ATTACK_FRAMES) for name in ROLL_ATTACKS),
          *((name, 4) for name in ROLL_ATTACK_LANDINGS),
          *((name, 2) for name in ROLL_ATTACK_GAITS), *CONSUMPTION.items(),
-         ('vault', VAULT_FRAMES), *((name, 2) for name in VAULT_ENTRIES)]
+         ('vault', VAULT_FRAMES), *((name, 2) for name in VAULT_ENTRIES),
+         ('crouch-idle', 4), ('sneak', 16), ('crouch-down', 9),
+         *((name, 9) for name in CROUCH_ENTRIES), *((name, 9) for name in CROUCH_EXITS),
+         *((name, interaction['frames']) for name, interaction in INTERACTIONS.items()),
+         *((name+'-crouched', interaction['frames']) for name, interaction in INTERACTIONS.items())]
 SIDES = [('L', -1), ('R', 1)]
 
 
@@ -418,7 +431,54 @@ def consumption_props(black, brass):
     handle_faces = [(i*6+j, ((i+1)%10)*6+j, ((i+1)%10)*6+(j+1)%6, i*6+(j+1)%6)
                     for i in range(10) for j in range(6)]
     handle = mesh('Tankard handle', handle_points, handle_faces, [brass], 'Prop.L', .004)
-    return {'face': (face,mouth), 'bread': (loaf,), 'bite': (bite,), 'cup': (cup,handle)}
+    ruby = material('Ruby', 'c63f59', .26, .15)
+    glint = material('Ruby facets', 'ec8491', .30, .12)
+    gem = profile('Ruby · held loot', rings([(-.026,0,-.074,.022,.019), (.008,0,-.08,.068,.046),
+                   (.055,0,-.08,.062,.043), (.079,0,-.08,.034,.025)]),
+                  [ruby, glint, ruby, glint], 'Prop.L', 8)
+    return {'face': (face,mouth), 'bread': (loaf,), 'bite': (bite,), 'cup': (cup,handle), 'ruby': (gem,)}
+
+
+def chest_preview():
+    collection = bpy.data.collections.new('Chest · interaction reference')
+    bpy.context.scene.collection.children.link(collection)
+    root = bpy.data.objects.new('Chest reference', None)
+    collection.objects.link(root)
+    root.parent = rig
+    hinge = bpy.data.objects.new('Chest lid hinge', None)
+    collection.objects.link(hinge)
+    hinge.parent = root
+    hinge.location = CHEST_HINGE
+    oak = material('Chest · weathered oak', '79513d')
+    band = material('Chest · brass bands', 'ad8152', .45, .26)
+
+    def box(name, center, size, surface, parent):
+        bpy.ops.mesh.primitive_cube_add(size=1)
+        obj = bpy.context.object
+        for owner in tuple(obj.users_collection):
+            owner.objects.unlink(obj)
+        collection.objects.link(obj)
+        obj.name, obj.parent, obj.location = name, parent, center
+        for vertex in obj.data.vertices:
+            for axis in range(3):
+                vertex.co[axis] *= size[axis]
+        obj.data.materials.append(surface)
+        bevel = obj.modifiers.new('Rounded edges', 'BEVEL')
+        bevel.width, bevel.segments = .014, 2
+        return obj
+
+    center = CHEST_HINGE.y+CHEST_LID_DEPTH/2
+    box('Chest floor', (0,center,.035), (.88,.48,.07), oak, root)
+    for x in (-.42,.42):
+        box('Chest side', (x,center,.27), (.06,.48,.47), oak, root)
+    for y in (center-.21,center+.21):
+        box('Chest wall', (0,y,.27), (.86,.06,.47), oak, root)
+    box('Chest lid', (0,.24,.045), (.9,.50,.09), oak, hinge)
+    for x in (-.30,.30):
+        box('Lid band', (x,.24,.098), (.07,.51,.025), band, hinge)
+        box('Chest band', (x,center+.249,.27), (.07,.02,.46), band, root)
+    box('Lid latch', (0,.507,.035), (.12,.03,.11), band, hinge)
+    return collection, hinge
 
 
 def orient(bone, position, rotation):
@@ -939,6 +999,8 @@ def consumption_pose(kind, t):
 
 def prop_visibility(kind, t):
     visible = set()
+    if kind in ('pickup', 'pickup-crouched') and INTERACTIONS['pickup']['event'] <= t < .84:
+        visible.add('ruby')
     if kind in CONSUMPTION:
         if visor_open(t) > .32:
             visible.add('face')
@@ -1183,9 +1245,152 @@ def vault_pose(t):
         ground_roll_edge()
 
 
+def lower_body(drop, fore, lean, bank=0, turn=0):
+    hips = rest['Hips'][0] + Vector((0, fore, -drop))
+    orient('Hips', hips, Euler((lean*.37, bank*.30, turn*.55)).to_matrix())
+    torso = Euler((lean, bank, turn)).to_matrix()
+    orient('Chest', attached('Hips', rest['Chest'][0]), torso)
+    trail_mantle(torso, .045, -.14*bank, -.20*turn)
+    return torso
+
+
+def reach_arm(side, sign, wrist_goal, finger_direction, torso):
+    shoulder = attached('Chest', rest['Arm.'+side][0])
+    wrist = bend_joint('Arm.'+side, 'Forearm.'+side, shoulder, wrist_goal, (sign*.83, .45, -.24), 1.08)
+    point('Glove.'+side, wrist, wrist+Vector(finger_direction))
+    arm = rig.pose.bones['Arm.'+side].matrix @ rig.data.bones['Arm.'+side].matrix_local.inverted()
+    orient('Pauldron.'+side, shoulder, torso.to_quaternion().slerp(arm.to_quaternion(), .30).to_matrix())
+    return wrist
+
+
+def grip_weapon(wrist, yaw, elevation):
+    shaft = blade_vector(yaw, elevation)
+    point('Grip.R', wrist, wrist+shaft)
+    orient_hammer(wrist, shaft)
+
+
+def crouch_pose(phase=None, breath=0):
+    cycle = 0 if phase is None else phase*math.tau
+    swing = 0 if phase is None else math.sin(cycle)
+    bob = .003*math.sin(breath*math.tau) if phase is None else .020*math.cos(2*cycle+.55)
+    torso = lower_body(.365-bob, .063, .395, -.045*swing, .08*swing)
+    orient('Head', attached('Chest', rest['Head'][0]), Euler((.105, .025*swing, .035*swing)).to_matrix())
+    for side, sign in SIDES:
+        if phase is None:
+            travel, lift, pitch = sign*.075+.028, 0, 0
+        else:
+            travel, lift, pitch = gait_foot((phase+(0 if sign<0 else .5))%1, .39, .64, .058, False)
+            travel -= .077
+            pitch *= .57
+        place_foot(side, sign, travel, lift, pitch, .013)
+        stagger = sign*.084*swing
+        wrist = reach_arm(side, sign, (sign*.34,-.286+stagger,.73+sign*.032*swing),
+                          (0,-.72,-.40), torso)
+        if sign > 0:
+            grip_weapon(wrist, 24-6*swing, 9+7*swing)
+
+
+def crouch_transition(kind, t):
+    if kind in CROUCH_EXITS:
+        crouch_pose(CROUCH_EXITS[kind]+.12*t)
+        source = pose_snapshot()
+        pose('idle', 0)
+    else:
+        if kind in CROUCH_ENTRIES:
+            gait_pose('sprint', (CROUCH_ENTRIES[kind]+.16*t)%1)
+        else:
+            pose('idle', 0)
+        source = pose_snapshot()
+        crouch_pose()
+    blend_pose(source, pose_snapshot(), smooth(t))
+    ground_roll_edge()
+
+
+def chest_lid(t):
+    return sample([(0,0),(.42,0),(.52,.36),(.59,.76),(.68,1.64),(.77,1.45),(1,1.48)],t)[0]
+
+
+def interaction_pose(kind, t, crouched):
+    if crouched:
+        crouch_pose()
+    else:
+        pose('idle',0)
+    if t in (0, 1):
+        return
+    base = pose_snapshot()
+    if kind == 'chest':
+        drop, fore, lean, nod = sample([
+            (0,.18,-.025,.15,.10), (.25,.42,-.016,.55,.61), (.40,.445,-.088,.64,.63),
+            (.54,.435,-.125,.70,.48), (.62,.368,-.104,.73,.27), (.73,.39,-.027,.31,.39),
+            (1,.18,.037,.14,.08)], t)
+    elif kind == 'pickup':
+        drop, fore, lean, nod = sample([
+            (0,.15,.03,.13,.11), (.28,.43,-.020,.73,.74), (.46,.572,-.151,1.02,.81),
+            (.58,.46,-.075,.79,.56), (.78,.20,.025,.28,.21), (1,.13,.03,.10,.10)], t)
+    else:
+        drop, fore, lean, nod = sample([
+            (0,.05,.03,.10,.09), (.31,.135,-.015,.40,.29), (.48,.12,-.04,.37,.23),
+            (.62,.086,.08,-.14,-.45), (.76,.13,.031,.13,-.14), (1,.06,.03,.10,.08)], t)
+    if crouched:
+        drop = max(drop, .30)
+    twist = (0 if kind == 'chest' else -.13)*math.sin(math.pi*t)
+    torso = lower_body(drop, fore, lean, .30*twist, twist)
+    orient('Head', attached('Chest', rest['Head'][0]), Euler((nod, .25*twist, twist*.8)).to_matrix())
+    for side, sign in SIDES:
+        foot = sign*.105-.04*math.sin(math.pi*t) if kind != 'chest' else sign*.058
+        place_foot(side, sign, foot, 0, 0, .025)
+
+    for side, sign in SIDES:
+        fingers = (0,-.57,-.54)
+        if kind == 'chest':
+            start = Vector((sign*.35,-.18,.77))
+            if sign > 0:
+                start = Vector((.40,.03,.65))
+            lift = Matrix.Rotation(chest_lid(min(t,.59)), 3, 'X')
+            lip = CHEST_HINGE+lift@Vector((sign*.258,CHEST_LID_DEPTH,.065))
+            weight = smooth((t-.23)/.15)*smooth((.78-t)/.185)
+            unit = lift@Vector((0,-.96,-.20))
+            wrist_goal = start.lerp(lip-.070*unit, weight)
+            fingers = Vector(fingers).lerp(unit, weight)
+        elif sign > 0:
+            wrist_goal = (.405,.014,.57 if kind == 'pickup' else .81)
+        elif kind == 'pickup':
+            wrist_goal = sample([
+                (0,-.35,-.14,.82),(.32,-.30,-.38,.39),(.46,-.105,-.56,.087),
+                (.58,-.16,-.53,.262),(.71,-.23,-.33,.61),(.84,-.37,-.035,.67),(1,-.36,-.11,.79)],t)
+            fingers = (0,-.71,-.67+.60*smooth((t-.46)/.20))
+        else:
+            wrist_goal = sample([
+                (0,-.35,-.15,.87),(.25,-.26,-.31,.97),(.48,-.105,-.65,.94),
+                (.55,-.11,-.58,1.00),(.69,-.30,-.34,1.20),(.82,-.19,-.30,1.07),(1,-.36,-.14,.87)],t)
+            fingers = (.21,-.9,.13+.60*smooth((t-.49)/.17))
+        wrist = reach_arm(side, sign, wrist_goal, fingers, torso)
+        if sign > 0:
+            if kind == 'chest':
+                stow = smooth((t-.14)/.15)*smooth((.88-t)/.15)
+                grip_weapon(wrist.lerp(Vector((.42,.09,.67)),stow), 25+125*stow, 12-46*stow)
+            else:
+                grip_weapon(wrist, 31, -15)
+        else:
+            orient('Prop.L', wrist, Euler((.18*math.sin(math.pi*t),0,0)).to_matrix())
+    weight = smooth(t/.21)*smooth((1-t)/.18)
+    blend_pose(base, pose_snapshot(), weight)
+    ground_roll_edge()
+
+
 def animation_pose(kind, frame, count):
     rig.pose.bones['Visor'].matrix_basis = Matrix.Identity(4)
     rig.pose.bones['Prop.L'].matrix_basis = Matrix.Identity(4)
+    interaction = kind.removesuffix('-crouched')
+    if interaction in INTERACTIONS:
+        interaction_pose(interaction, frame/(count-1), interaction != kind)
+        return
+    if kind == 'crouch-idle' or kind == 'sneak':
+        crouch_pose(breath=frame/count) if kind == 'crouch-idle' else crouch_pose(frame/count)
+        return
+    if kind == 'crouch-down' or kind in CROUCH_ENTRIES or kind in CROUCH_EXITS:
+        crouch_transition(kind, frame/(count-1))
+        return
     if kind in CONSUMPTION:
         consumption_pose(kind, frame/(count-1))
         return
@@ -1299,6 +1504,13 @@ def key_animations(scene, clips):
             scene.frame_set(index)
             animation_pose(kind, frame, count)
             visible = prop_visibility(kind, frame/(count-1))
+            chest_visible = kind in ('chest', 'chest-crouched')
+            for obj in chest_collection.objects:
+                obj.hide_render = obj.hide_viewport = not chest_visible
+                for flag in ('hide_render','hide_viewport'):
+                    obj.keyframe_insert(data_path=flag,frame=index)
+            lid.rotation_euler.x = chest_lid(frame/(count-1)) if chest_visible else 0
+            lid.keyframe_insert(data_path='rotation_euler',frame=index)
             for group, objects in props.items():
                 for obj in objects:
                     obj.hide_render = obj.hide_viewport = group not in visible
@@ -1321,6 +1533,7 @@ def key_animations(scene, clips):
 
 def export(scene, frames, directory, preview):
     layer = bpy.context.view_layer.layer_collection
+    layer.children[chest_collection.name].exclude = True
     body_layer = layer.children[body.name]
     for part, weapon in [('body', None), ('weapon', 'sword'), ('hammer', 'hammer')]:
         # Only weapon pixels unobstructed by the body reach the weapon layers.
@@ -1332,8 +1545,8 @@ def export(scene, frames, directory, preview):
                 continue
             rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
             for row, (kind, frame) in enumerate(frames):
-                if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll',
-                                           *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION, 'vault'):
+                if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll', 'sneak',
+                                           *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION, *INTERACTIONS, 'vault'):
                     continue
                 if weapon and kind in CHARGE_CLIPS and CHARGE_CLIPS[kind][0] != weapon:
                     continue
@@ -1364,6 +1577,8 @@ if __name__ == '__main__':
     design, soles = model_joints(), {}
     rig, rest = create_rig(design)
     props = model()
+    chest_collection, lid = chest_preview()
+    bpy.context.view_layer.objects.active = rig
     temporary = {obj for objects in props.values() for obj in objects}
     contact_mesh = {}
     for obj in body.objects:
@@ -1383,6 +1598,7 @@ if __name__ == '__main__':
     scene.frame_set(1)
     (directory/'attack-motion.json').write_text(json.dumps(ATTACK_MOTION) + '\n')
     (directory/'vault.json').write_text(json.dumps(VAULT) + '\n')
+    (directory/'interactions.json').write_text(json.dumps(INTERACTIONS) + '\n')
     bpy.context.view_layer.layer_collection.children[weapon_collections['hammer'].name].exclude = True
     rig.rotation_euler.z = math.pi/4
     rig.select_set(False)

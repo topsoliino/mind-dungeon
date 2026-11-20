@@ -1,4 +1,4 @@
-"""Pack cropped Blender body and weapon frames into two web textures."""
+"""Pack cropped Blender body and weapon frames into web textures."""
 import argparse
 import json
 from pathlib import Path
@@ -56,8 +56,9 @@ def main():
     count = sum(frames for _, frames in clips.values())
     motion = json.loads((args.renders / 'attack-motion.json').read_text())
     vault = json.loads((args.renders / 'vault.json').read_text())
-    manifest = {'clips': clips, 'attackMotion': motion, 'vault': vault}
-    for layer, width, other in [('body', 2304, None), ('weapon', 1024, 'hammer'),
+    interactions = json.loads((args.renders / 'interactions.json').read_text())
+    manifest = {'clips': clips, 'attackMotion': motion, 'vault': vault, 'interactions': interactions}
+    for layer, width, other in [('body', 3840, None), ('weapon', 1024, 'hammer'),
                                 ('hammer', 1024, 'sword')]:
         indices = (index for clip, (start, length) in clips.items()
                    if not other or not clip.startswith((f'charge-{other}-', f'heavy-{other}', f'roll-attack-{other}'))
