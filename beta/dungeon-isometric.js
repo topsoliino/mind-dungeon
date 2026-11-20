@@ -30,13 +30,15 @@
   return canvas;
  }
  function create(){
-  const scene=window.AlleyStudyMap,art=createArt(),map=scene.logic;
+  const scene=window.AlleyStudyMap,art=createArt(),map=scene.logic,route=window.AlleyRoute;
   const spawn=unit(map.spawn),chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
   // These are the same ground footprints as the neutral props in the art pass.
   const props=[
    {kind:'chest',point:chest,half:[.26,.36]},
    {kind:'pickup-high',point:unit(map.stations['pickup-high'].at),half:[.43,.64]},
-   {kind:'barrel',point:unit(map.barrel),half:[.23,.23]}
+   {kind:'barrel',point:unit(map.barrel),half:[.23,.23]},
+   {kind:'knowledge',point:unit(map.stations.knowledge.at),half:[.27,.24]},
+   {kind:'apparatus',point:unit(map.stations.lab.at),half:[.40,.31]}
   ];
   const frontAngle=(map.stations.chest.front-1)*Math.PI/4;
   const goal={x:chest.x+Math.cos(frontAngle)*(.43*tile+radius),y:chest.y+Math.sin(frontAngle)*(.43*tile+radius)};
@@ -55,7 +57,7 @@
   const gate=scene.art.foreground.arch,[u,v,r,b]=gate.area,[a,c]=gate.opening;
   const waypoints=[
    ...map.waypoints.map(unit),
-   ...[...map.walkable,[u,v,r,a],[u,c,r,b]].flatMap(corners),
+   ...[...map.walkable.slice(0,3),[u,v,r,a],[u,c,r,b]].flatMap(corners),
    ...props.flatMap(({point,half:[hw,hh]})=>
     [-1,1].flatMap(sx=>[-1,1].map(sy=>({x:point.x+sx*(hw*tile+pad),y:point.y+sy*(hh*tile+pad)}))))
   ].filter(({x,y})=>walkable(x,y));
@@ -132,9 +134,17 @@
     ctx.globalAlpha=1;
    }
   }
-  return {spawn,chest,archer,walkable,clearLine,canInteract,routeTo,cameraOrigin,addLayers,refreshLayers,drawLayers,
-   inEncounter:actor=>actor.x>=9.5*tile&&actor.y<map.encounter.entryV*tile,
-   lootPosition:actor=>walkable(actor.x,actor.y,4)?{x:actor.x,y:actor.y}:archer,
+  const knowledge=unit(map.stations.knowledge.at),lab=unit(map.stations.lab.at);
+  const nearStation=(actor,target)=>Math.hypot(actor.x-target.x,actor.y-target.y)<82&&
+   pointBetween(actor,target,(x,y)=>walkable(x,y,0,false));
+  return {spawn,chest,archer,knowledge,lab,walkable,clearLine,canInteract,routeTo,cameraOrigin,addLayers,refreshLayers,drawLayers,
+   enemies:{archive:map.encounter.archive.map(unit),lab:map.encounter.lab.map(unit)},
+   archiveUnlocked:()=>route.isUnlocked(),unlockArchive:()=>route.unlock(),
+   zoneAt:actor=>route.areaAt(actor.x/tile,actor.y/tile),
+   nearKnowledge:actor=>nearStation(actor,knowledge),
+   nearLab:actor=>nearStation(actor,lab),
+   inEncounter:actor=>actor.x>=9.5*tile&&(actor.y<map.encounter.entryV*tile||actor.x>=14*tile),
+   lootPosition:actor=>walkable(actor.x,actor.y,4,false)?{x:actor.x,y:actor.y}:archer,
    chestRoute:player=>shortestRoute(player,goal,waypoints,clearSegment),
    chestFacing:Math.atan2(chest.y-goal.y,chest.x-goal.x),
    clearStrike:(...points)=>Number(clearLine(...points))};
