@@ -7,25 +7,32 @@ Pack the browser assets with Pillow after rendering:
   python tools/pack-player-sprite-study.py /tmp/player-study beta/art/player-study
 """
 import argparse
+import json
 import math
 from pathlib import Path
 import sys
 
 import bpy
-import numpy as np
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Euler, Matrix, Vector
 
 
-CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('dash', 8), ('down', 20), ('up', 20)]
 CELL = 128
 FACINGS = 8
-ATLAS_COLUMNS = 24
 GAITS = {
     # Forward foot travel during stance, duty factor, swing clearance, trunk lean.
-    'walk': (.59, .60, .084, .051),
+    'walk': (.66, .60, .084, .051),
     'sprint': (.92, .34, .300, .505),
 }
+GAIT_BLENDS = {'gait-one': 1/3, 'gait-two': 2/3}
+ROLL_FRAMES = 28
+ROLL_RECOVERY = 22
+ROLL_ENTRIES = {f'roll-in-{stride}-{phase}': (stride, phase/4)
+                for stride in ('walk', *GAIT_BLENDS, 'sprint') for phase in range(4)}
+ROLL_EXITS = {'roll-out-walk': 'walk', 'roll-out-sprint': 'sprint'}
+CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
+         *((name, 16) for name in GAIT_BLENDS), ('roll', ROLL_FRAMES),
+         *((name, 2) for name in ROLL_ENTRIES), *((name, 4) for name in ROLL_EXITS)]
 SIDES = [('L', -1), ('R', 1)]
 
 
@@ -442,7 +449,6 @@ def pose(kind, t):
     step = math.cos(phase)
     gait = GAITS.get(kind)
     running = kind == 'sprint'
-    dash = kind == 'dash'
     attacking = kind in ATTACKS
     twist, forward, drop, pitch, hx, hy, hz, yaw, elev = sample(ATTACKS[kind], t) if attacking else STEADY
     if gait:
@@ -458,7 +464,7 @@ def pose(kind, t):
             drop = .178
             pelvic_yaw = .118*math.cos(phase+.13)
             chest_yaw = -.157*math.cos(phase-.42)
-            yaw, elev = 36, 5
+            yaw, elev = 20, 7
         else:
             bob, nod = sample([(0, -.008, .006), (.20, -.020, .011), (.53, .015, 0),
                                (.68, .022, -.006), (1, -.008, .006)], half_step)
@@ -471,13 +477,6 @@ def pose(kind, t):
         pitch = lean + nod
     else:
         breath = .008*math.sin(phase) if kind == 'idle' else 0
-        if dash:
-            forward, drop, pitch, tuck = sample([
-                (0, 0, 0, .04, 0), (.22, .034, .10, .20, .37),
-                (.45, -.13, .073, .40, 1), (.65, -.128, .052, .31, .84),
-                (.84, -.049, .094, .14, .25), (1, 0, 0, .04, 0)], t)
-            hx, hy, hz = .414+.01*tuck, -.168+.29*tuck, .924-.067*tuck
-            yaw, elev = 24+105*tuck, 16-7*tuck
         hips = rest['Hips'][0] + Vector((-.041*twist, forward, -.035-drop+breath))
         pelvic_yaw, chest_yaw = twist*.62, twist
     hip_roll = (.032 if running else .038)*math.sin(phase-.1) if gait else -.035*twist
@@ -501,7 +500,7 @@ def pose(kind, t):
         if running:
             flutter += .045*math.sin(2*phase-1.1)
     else:
-        flutter = .08 + .17*abs(twist) + (.41*tuck if dash else 0)
+        flutter = .08 + .17*abs(twist)
     orient('Mantle', mantle, Euler((flutter, .067*math.sin(phase-.8) if gait else .27*twist, chest_yaw*.76)).to_matrix())
 
     for side, sign in SIDES:
@@ -513,13 +512,6 @@ def pose(kind, t):
             # Keep the feet paired with the torso pose at both combo handoffs.
             travel, lift, width = sign*.08, 0, .05*abs(twist)
             foot_pitch = .18*smooth(-forward/.15) if sign > 0 else 0
-        elif dash:
-            travel, lift, foot_pitch = sample([
-                (0, sign*.08, 0, 0), (.22, sign*.13, 0, .10 if sign>0 else - .10),
-                (.47, -.318 if sign<0 else .31, .10 if sign<0 else .16, -.25 if sign<0 else .30),
-                (.68, -.31 if sign<0 else .14, 0 if sign<0 else .12, -.14 if sign<0 else .13),
-                (.86, -.18 if sign<0 else .019, 0, .043), (1, sign*.08, 0, 0)], t)
-            width = .031*tuck
         else:
             travel, lift, foot_pitch, width = sign*.08, 0, 0, 0
         place_foot(side, sign, travel, lift, foot_pitch, width, splay=.5 if kind == 'walk' else 1)
@@ -533,7 +525,7 @@ def pose(kind, t):
                 reach = .108 if running else .040
                 offset = (.065, -.173-reach*swing, (-.344 if running else -.405)+.035*swing)
                 blade_lag = math.cos(phase-.71) if running else swing
-                yaw += (9 if running else 3)*blade_lag
+                yaw += (6 if running else 3)*blade_lag
                 elev += (10 if running else 3)*blade_lag
             else:
                 reach = .276 if running else .087
@@ -544,13 +536,12 @@ def pose(kind, t):
             wrist = (hx, hy, hz)
         else:
             ready = abs(twist)
-            guard = tuck if dash else 0
-            wrist = (-.402+.10*ready, -.085-.17*ready-.19*guard, .898+.19*ready+.12*guard)
+            wrist = (-.402+.10*ready, -.085-.17*ready, .898+.19*ready)
         wrist = bend_joint(arm, 'Forearm.' + side, shoulder, wrist, (sign*.50, .78, -.09))
 
         # A pauldron is strapped to the cuirass and only follows part of the arm swing.
         arm_delta = rig.pose.bones[arm].matrix @ rig.data.bones[arm].matrix_local.inverted()
-        follow = .36 if attacking else .20 if running or dash else .13 if gait else .15
+        follow = .36 if attacking else .20 if running else .13 if gait else .15
         armor_rotation = chest_rotation.to_quaternion().slerp(arm_delta.to_quaternion(), follow)
         orient('Pauldron.'+side, shoulder, armor_rotation.to_matrix())
 
@@ -562,6 +553,190 @@ def pose(kind, t):
         else:
             lag = .08*math.sin(phase-.72) if gait else 0
             point('Glove.' + side, wrist, wrist + Vector((-.012, -.047+lag*.16, -.098)))
+
+
+def pose_snapshot():
+    return [bone.matrix_basis.copy() for bone in rig.pose.bones]
+
+
+def blend_pose(source, target, weight):
+    for bone, a, b in zip(rig.pose.bones, source, target):
+        bone.matrix_basis = a.lerp(b, weight)
+    bpy.context.view_layer.update()
+
+
+def gait_pose(kind, phase):
+    if kind in GAITS:
+        pose(kind, phase)
+    else:
+        weight = GAIT_BLENDS[kind]
+        pose('walk', phase)
+        walk = pose_snapshot()
+        pose('sprint', phase)
+        blend_pose(walk, pose_snapshot(), weight)
+        # Keep the boots planted at the blended cadence even as the torso changes pose.
+        walk_stride, walk_stance, walk_lift, _ = GAITS['walk']
+        run_stride, run_stance, run_lift, _ = GAITS['sprint']
+        stance = walk_stance + (run_stance-walk_stance)*weight
+        travel = walk_stride/walk_stance*(1-weight) + run_stride/run_stance*weight
+        stride = travel*stance
+        clearance = walk_lift + (run_lift-walk_lift)*weight
+        for side, sign in SIDES:
+            foot_phase = (phase + (0 if sign < 0 else .5)) % 1
+            slow = gait_foot(foot_phase, stride, stance, clearance, False)
+            fast = gait_foot(foot_phase, stride, stance, clearance, True)
+            y, lift, pitch = (a+(b-a)*weight for a, b in zip(slow, fast))
+            place_foot(side, sign, y, lift, pitch, -.067+.035*weight, splay=.5+.5*weight)
+
+
+def roll_pose(t):
+    if t in (0, 1):
+        pose('idle', 0)
+        return
+    # The free arm receives the dive before the weight moves across the back.
+    reach, tuck, foot_forward, fold, clearance = sample([
+        (0, 0, 0, 0, 0, 0),
+        (.10, .32, .25, -.15, .16, 0),
+        (.22, .94, .12, .24, .09, .1),
+        (.30, 1, .31, .21, .28, 0),
+        (.38, .66, .60, .04, .55, 0),
+        (.46, .12, .91, -.04, .83, 0),
+        (.59, 0, 1, -.09, .88, 0),
+        (.70, 0, .78, -.24, .65, 0),
+        (.82, .26, .60, -.16, .32, 0),
+        (.94, .13, .25, -.02, .11, 0),
+        (1, 0, 0, 0, 0, 0),
+    ], t)
+    shoulder_load = smooth((t-.23)/.16)*(1 - smooth((t-.58)/.20))
+    pivot = rest['Hips'][0] + Vector((0, 0, -.035))
+    orient('Hips', pivot, Euler((.065*fold, 0, .04*shoulder_load)).to_matrix())
+    chest = attached('Hips', rest['Chest'][0])
+    chest_rotation = Euler((.04 + .67*fold, .09*shoulder_load, .15*shoulder_load)).to_matrix()
+    orient('Chest', chest, chest_rotation)
+    chin = smooth((t-.29)/.115)*(1 - smooth((t-.57)/.21))
+    head = attached('Chest', rest['Head'][0]).lerp(chest + Vector((.085, .085, .129)), .92*chin)
+    orient('Head', head, Euler((.013 + 1.42*chin, -.08*shoulder_load, 0)).to_matrix())
+    mantle = attached('Chest', rest['Mantle'][0])
+    mantle_rotation = Euler((.08 + .80*fold + .50*reach, -.17*shoulder_load, .07*shoulder_load))
+    orient('Mantle', mantle, mantle_rotation.to_matrix())
+
+    draw_in = smooth(t/.20)*(1 - smooth((t-.77)/.23))
+    blade = blade_vector(24 + 89*draw_in, 16 + 11*draw_in)
+    for side, sign in SIDES:
+        boot = 'Boot.' + side
+        ankle = rest[boot][0]
+        # Fold the ankles toward the pelvis during inversion, then bring them under it.
+        target = Vector((ankle.x + sign*.025*tuck,
+                         sign*(.080 - .023*tuck) + foot_forward - .23*tuck,
+                         .012 + ankle.z - min(p.z for p in soles[side]) + .57*tuck))
+        foot_rotation = Euler((.76*tuck - .19*foot_forward, 0, sign*.10)).to_matrix()
+        hip = attached('Hips', rest['Thigh.' + side][0])
+        foot = bend_joint('Thigh.' + side, 'Shin.' + side, hip, target, (sign*.20, -1, .04))
+        orient(boot, foot, foot_rotation)
+
+        arm = 'Arm.' + side
+        shoulder = attached('Chest', rest[arm][0])
+        if sign < 0:
+            wrist = Vector((-.402 + .074*reach, -.085 - .49*reach + .030*fold,
+                            .898 + .53*reach + .20*fold))
+            direction = Vector((-.012, -.047-.53*reach, -.098+.34*reach))
+        else:
+            wrist = Vector((.414-.026*reach, -.168-.24*reach-.08*fold, .924+.26*reach+.27*fold))
+            direction = Vector((-.16*blade.y, -.53, -.68)) + blade*.28
+        wrist = bend_joint(arm, 'Forearm.' + side, shoulder, wrist, (sign*.61, .68, -.16))
+        arm_rotation = rig.pose.bones[arm].matrix @ rig.data.bones[arm].matrix_local.inverted()
+        pad = chest_rotation.to_quaternion().slerp(arm_rotation.to_quaternion(), .26)
+        orient('Pauldron.' + side, shoulder, pad.to_matrix())
+        point('Glove.' + side, wrist, wrist + direction)
+        if sign > 0:
+            point('Grip.R', wrist, wrist + blade)
+
+    # Bank about the lead shoulder and fit the lowest part of the pose to the floor.
+    turn = Euler((math.tau*smooth(t), -.49*shoulder_load, .045*shoulder_load)).to_matrix()
+    lowest = math.inf
+    for bone, vertices in contact_mesh.items():
+        if bone == 'Mantle':
+            continue
+        delta = rig.pose.bones[bone].matrix @ rig.data.bones[bone].matrix_local.inverted()
+        lowest = min(lowest, min((turn @ (delta @ v - pivot)).z for v in vertices))
+    advance = -.11*reach + .06*fold
+    displacement = Vector((-.028*shoulder_load, advance, .012 + clearance - lowest))
+    root = Matrix.Translation(displacement) @ turn.to_4x4() @ Matrix.Translation(-pivot)
+    rig.pose.bones['Hips'].matrix = root @ rig.pose.bones['Hips'].matrix
+    bpy.context.view_layer.update()
+
+    fold_mantle_at_floor()
+    wrist = rig.pose.bones['Grip.R'].head.copy()
+    blade = turn @ blade
+    # Keep the drawn sword close to the right side and above the floor during the turn.
+    lower_limit = -max(0, wrist.z-.042)/.885
+    if blade.z < lower_limit:
+        flat = Vector((blade.x, blade.y, 0)).normalized()
+        blade = flat*math.sqrt(1 - lower_limit**2) + Vector((0, 0, lower_limit))
+    point('Grip.R', wrist, wrist + blade)
+
+    edge = min(t/.105, (1-t)/.135)
+    if edge < 1:
+        roll = pose_snapshot()
+        pose('idle', 0)
+        blend_pose(pose_snapshot(), roll, smooth(edge))
+        ground_roll_edge()
+
+
+def fold_mantle_at_floor():
+    bone = rig.pose.bones['Mantle']
+    anchor = bone.head.copy()
+    delta = bone.matrix @ rig.data.bones['Mantle'].matrix_local.inverted()
+    offsets = [delta @ vertex - anchor for vertex in contact_mesh['Mantle']]
+    floor = .024 - anchor.z
+    if min(v.z for v in offsets) >= floor:
+        return
+    # Fold the hem about its shoulder attachment when it reaches the floor.
+    lo, hi = 0, 2.15
+    for _ in range(12):
+        angle = (lo+hi)/2
+        pivot = Matrix.Rotation(-angle, 3, 'X')
+        if min((pivot @ v).z for v in offsets) < floor:
+            lo = angle
+        else:
+            hi = angle
+    orient('Mantle', anchor, Matrix.Rotation(-hi, 3, 'X') @ delta.to_3x3())
+
+
+def ground_roll_edge():
+    lowest = math.inf
+    for side, _ in SIDES:
+        name = 'Boot.'+side
+        delta = rig.pose.bones[name].matrix @ rig.data.bones[name].matrix_local.inverted()
+        lowest = min(lowest, min((delta @ p).z for p in soles[side]))
+    if lowest < .012:
+        root = rig.pose.bones['Hips']
+        root.matrix = Matrix.Translation((0, 0, .012-lowest)) @ root.matrix
+        bpy.context.view_layer.update()
+
+
+def animation_pose(kind, frame, count):
+    if kind in ROLL_ENTRIES:
+        stride, phase = ROLL_ENTRIES[kind]
+        step = frame + 1
+        gait_pose(stride, (phase + step/16) % 1)
+        source = pose_snapshot()
+        roll_pose(step/(ROLL_FRAMES-1))
+        blend_pose(source, pose_snapshot(), smooth(step/3))
+        ground_roll_edge()
+    elif kind in ROLL_EXITS:
+        index = ROLL_RECOVERY + frame + 1
+        roll_pose(index/(ROLL_FRAMES-1))
+        source = pose_snapshot()
+        gait_pose(ROLL_EXITS[kind], ((index-ROLL_FRAMES+1)/16) % 1)
+        blend_pose(source, pose_snapshot(), smooth((frame+1)/5))
+        ground_roll_edge()
+    elif kind == 'roll':
+        roll_pose(frame/(count-1))
+    elif kind in GAIT_BLENDS or kind in GAITS:
+        gait_pose(kind, frame/count)
+    else:
+        pose(kind, frame/(count if kind == 'idle' else count-1))
 
 
 def light(name, color, energy, position, size):
@@ -612,63 +787,49 @@ def setup(engine):
 
 def key_animations(scene, clips):
     clips_by_frame = []
+    layout = {}
     for kind, count in clips:
         start = len(clips_by_frame)+1
+        layout[kind] = [start-1, count]
         scene.timeline_markers.new(kind.title(), frame=start)
+        rotations = {}
         for frame in range(count):
             index = start+frame
             scene.frame_set(index)
-            looping = kind == 'idle' or kind in GAITS
-            pose(kind, frame/(count if looping else count-1))
+            animation_pose(kind, frame, count)
             for bone in rig.pose.bones:
+                rotation = bone.rotation_quaternion
+                if bone.name in rotations:
+                    if rotation.dot(rotations[bone.name]) < 0:
+                        rotation.negate()
+                rotations[bone.name] = rotation.copy()
                 bone.keyframe_insert(data_path='location', frame=index)
                 bone.keyframe_insert(data_path='rotation_quaternion', frame=index)
                 bone.keyframe_insert(data_path='scale', frame=index)
             clips_by_frame.append((kind,index))
     scene.frame_end = len(clips_by_frame)
     scene.frame_set(1)
-    return clips_by_frame
+    return clips_by_frame, layout
 
 
 def export(scene, frames, directory, preview):
-    rows = math.ceil(len(frames) * FACINGS / ATLAS_COLUMNS)
     layer = bpy.context.view_layer.layer_collection
     body_layer, weapon_layer = layer.children[body.name], layer.children[weapons.name]
     for part in ('body', 'weapon'):
-        # The sword is composited over a complete body sprite. The body still
-        # cuts away hidden sword pixels in this second pass.
+        # Only sword pixels unobstructed by the body reach the second layer.
         body_layer.holdout = part == 'weapon'
         weapon_layer.exclude = part == 'body'
-        atlas = None if preview else np.zeros((rows*CELL, ATLAS_COLUMNS*CELL, 4), dtype=np.float32)
         for facing in range(FACINGS):
-            if preview and facing not in (0, 1, 6):
+            if preview and facing not in (0, 1, 2):
                 continue
-            # 0 is right; increasing directions follow the 2D bank clockwise.
             rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
             for row, (kind, frame) in enumerate(frames):
-                if preview and kind not in GAITS:
+                if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll'):
                     continue
                 scene.frame_set(frame)
                 path = directory / f'{part}-{facing}-{row}.png'
                 scene.render.filepath = str(path)
                 bpy.ops.render.render(write_still=True)
-                if preview:
-                    continue
-                image = bpy.data.images.load(str(path), check_existing=False)
-                pixels = np.empty(CELL*CELL*4, dtype=np.float32)
-                image.pixels.foreach_get(pixels)
-                bpy.data.images.remove(image)
-                y, x = divmod(row * FACINGS + facing, ATLAS_COLUMNS)
-                y = rows - 1 - y
-                atlas[y*CELL:(y+1)*CELL, x*CELL:(x+1)*CELL] = pixels.reshape(CELL,CELL,4)
-        if atlas is not None:
-            image = bpy.data.images.new('Guardian ' + part, width=ATLAS_COLUMNS*CELL, height=rows*CELL, alpha=True)
-            image.colorspace_settings.name = 'sRGB'
-            image.pixels.foreach_set(atlas.reshape(-1))
-            image.file_format = 'PNG'
-            image.filepath_raw = str(directory/f'guardian-{part}.png')
-            image.save()
-            bpy.data.images.remove(image)
 
 
 if __name__ == '__main__':
@@ -687,8 +848,13 @@ if __name__ == '__main__':
     design, soles = model_joints(), {}
     rig, rest = create_rig(design)
     model()
+    contact_mesh = {}
+    for obj in body.objects:
+        bone = obj.parent_bone
+        contact_mesh.setdefault(bone, []).extend(v.co.copy() for v in obj.data.vertices)
     scene = setup(opts.engine)
-    frames = key_animations(scene, CLIPS)
+    frames, layout = key_animations(scene, CLIPS)
+    (directory/'clips.json').write_text(json.dumps(layout) + '\n')
     rig.rotation_euler.z = math.pi/4
     rig.select_set(False)
     for screen in bpy.data.screens:

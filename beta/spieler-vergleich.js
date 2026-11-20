@@ -1,21 +1,15 @@
 (()=>{
  'use strict';
 
- const tile=48,columns=23,rows=13,cell=128,atlasColumns=24;
+ const tile=48,columns=23,rows=13,cell=128;
  const modelSize=110,modelGround=.77597;
  const clips={
-  idle:{start:0,frames:4,duration:1.3},
-  walk:{start:4,frames:16,duration:.77/1.3},
-  sprint:{start:20,frames:16,duration:.49},
-  dash:{start:36,frames:8,duration:.34},
-  down:{start:44,frames:20,duration:.84,comboFrame:13,entryFrame:6},
-  up:{start:64,frames:20,duration:.84,comboFrame:13,entryFrame:4}
+  idle:{duration:1.3},walk:{duration:.576},sprint:{duration:.49},roll:{duration:.76},
+  down:{duration:.84,comboFrame:13,entryFrame:6},up:{duration:.84,comboFrame:13,entryFrame:4}
  };
- // Keep the room speed in step with the planted phase of each Blender gait.
- const strideSpeed={
-  walk:(.59/.60)*(modelSize/3.23)/clips.walk.duration,
-  sprint:(.92/.34)*(modelSize/3.23)/clips.sprint.duration
- },groundY=.882;
+ const gaitPoses=['walk','gait-one','gait-two','sprint'];
+ const walkStride=.66/.60,sprintStride=.92/.34,groundY=.882;
+ const rollRecoveryFrame=22;
  const directions={
   ArrowRight:[1,0],KeyD:[1,0],ArrowLeft:[-1,0],KeyA:[-1,0],
   ArrowDown:[0,1],KeyS:[0,1],ArrowUp:[0,-1],KeyW:[0,-1]
@@ -34,13 +28,21 @@
  const canvas=document.querySelector('#blender'),ctx=canvas.getContext('2d',{alpha:false});
  let width=0,height=0,dpr=1;
  const bodySheet=new Image(),weaponSheet=new Image();
- let weaponFrames=[];
+ let atlas;
  let x=columns*tile/2,y=rows*tile/2,scale=1,facing=1,mode='idle',elapsed=0,last=0,repeat=true;
- let dashX=0,dashY=0,showWeapon=true;
+ let showWeapon=true,gaitPhase=0,gaitBlend=0;
+ let rollEntry=null,rollExit=null,rollStartSpeed=0;
  let nextAttack='down',attackQueued=false;
  const bound=(n,a,b)=>Math.max(a,Math.min(b,n));
  const isAttack=clip=>clips[clip].comboFrame!==undefined;
- const isGait=clip=>Object.hasOwn(strideSpeed,clip);
+ const isGait=clip=>clip==='walk'||clip==='sprint';
+ const mix=(a,b,t)=>a+(b-a)*t;
+ const ease=t=>{t=bound(t,0,1);return t*t*(3-2*t);};
+ const gaitDuration=blend=>mix(clips.walk.duration,clips.sprint.duration,blend);
+ const gaitSpeed=blend=>mix(walkStride,sprintStride,blend)*(modelSize/3.23)/gaitDuration(blend);
+ const heading=(dx,dy)=>(Math.round(Math.atan2(dy/groundY,dx)/(Math.PI/4))+8)%8;
+ const frameAt=(clip,progress)=>bound(Math.floor(progress*atlas.clips[clip][1]),0,atlas.clips[clip][1]-1);
+ const gaitPose=()=>gaitPoses[Math.round(ease(gaitBlend)*3)];
  function resize(){
   width=canvas.clientWidth;height=canvas.clientHeight;
   dpr=Math.min(devicePixelRatio||1,2);
@@ -50,20 +52,45 @@
  resize();
 
  function select(clip,loop,startTime=0){
-  if(isGait(mode)&&isGait(clip))startTime=(elapsed%clips[mode].duration)/clips[mode].duration*clips[clip].duration;
   mode=clip;elapsed=startTime;repeat=loop;attackQueued=false;
   for(const button of buttons)button.setAttribute('aria-pressed',String(button.dataset.clip===clip));
  }
  function startAttack(chained=false,overflow=0){
   const clip=clips[nextAttack];
-  const entry=chained?clip.entryFrame*clip.duration/clip.frames:0;
+  const entry=chained?clip.entryFrame*clip.duration/atlas.clips[nextAttack][1]:0;
   const attack=nextAttack;
   nextAttack=attack==='down'?'up':'down';
   select(attack,false,entry+overflow);
  }
+ function movement(){
+  let dx=0,dy=0;
+  for(const key of presses){dx+=directions[key][0];dy+=directions[key][1];}
+  return {dx,dy,length:Math.hypot(dx,dy),facing:heading(dx,dy),gait:shiftKeys.size?'sprint':'walk'};
+ }
+ function face(value){
+  if(facing===value)return;
+  facing=value;direction.value=String(facing);
+ }
+ function startRoll(){
+  if(mode==='roll'&&!repeat)return;
+  const input=movement();
+  if(input.length)face(input.facing);
+  rollEntry=null;
+  rollExit=null;
+  rollStartSpeed=0;
+  if(isGait(mode)&&!repeat&&input.length){
+   const pose=gaitPose(),phase=Math.round(gaitPhase*4)%4;
+   rollEntry={clip:'roll-in-'+pose+'-'+phase,pose,frame:frameAt(pose,gaitPhase)};
+   rollStartSpeed=gaitSpeed(ease(gaitBlend));
+  }
+  select('roll',false);
+ }
  for(const button of buttons)button.addEventListener('click',()=>select(button.dataset.clip,true));
  canvas.addEventListener('pointerdown',()=>canvas.focus());
- direction.addEventListener('change',()=>{facing=Number(direction.value);});
+ direction.addEventListener('change',()=>{
+  if(mode==='roll'&&!repeat)direction.value=String(facing);
+  else facing=Number(direction.value);
+ });
  zoomButton.addEventListener('click',()=>{
   scale=scale===1?2:1;zoomButton.setAttribute('aria-pressed',String(scale===2));
  });
@@ -71,6 +98,7 @@
   showWeapon=!showWeapon;weaponButton.setAttribute('aria-pressed',String(showWeapon));
  });
  addEventListener('keydown',event=>{
+  if(!atlas)return;
   if(event.code==='ShiftLeft'||event.code==='ShiftRight'){
    shiftKeys.add(event.code);
    return;
@@ -84,7 +112,7 @@
   }
   if(event.code==='KeyK'){
    event.preventDefault();
-   if(event.repeat||(!repeat&&mode==='dash'))return;
+   if(event.repeat||(!repeat&&mode==='roll'))return;
    if(event.target!==canvas)canvas.focus({preventScroll:true});
    if(!repeat&&isAttack(mode))attackQueued=true;
    else startAttack();
@@ -92,9 +120,7 @@
   if(event.code==='Space'&&!event.target.closest?.('button,a')){
    event.preventDefault();
    if(event.repeat)return;
-   const angle=facing*Math.PI/4;
-   dashX=Math.cos(angle);dashY=Math.sin(angle);
-   select('dash',false);
+   startRoll();
   }
  });
  addEventListener('keyup',event=>{
@@ -103,51 +129,100 @@
  });
  addEventListener('blur',()=>{presses.clear();shiftKeys.clear();attackQueued=false;});
 
+ function moveBy(dx,dy){
+  x=bound(x+dx,tile+19,(columns-1)*tile-19);
+  y=bound(y+dy,tile+19,(rows-1)*tile-19);
+ }
+ function rollSpeed(progress){
+  if(progress<.18)return mix(rollStartSpeed,220,ease(progress/.18));
+  if(progress<.53)return 220;
+  const recovery=rollRecoveryFrame/atlas.clips.roll[1];
+  if(progress<recovery)return mix(220,64,ease((progress-.53)/(recovery-.53)));
+  const exitSpeed=rollExit?gaitSpeed(rollExit==='sprint'?1:0):0;
+  return mix(64,exitSpeed,ease((progress-recovery)/(1-recovery)));
+ }
+ function advanceRoll(dt,input){
+  const duration=clips.roll.duration,used=Math.min(dt,duration-elapsed);
+  const halfway=(elapsed+used*.5)/duration;
+  const recovery=rollRecoveryFrame/atlas.clips.roll[1];
+  if(elapsed/duration<recovery&&(elapsed+used)/duration>=recovery){
+   rollExit=input.length&&input.facing===facing?input.gait:null;
+  }
+  const angle=facing*Math.PI/4,distance=used*rollSpeed(halfway);
+  moveBy(Math.cos(angle)*distance,Math.sin(angle)*groundY*distance);
+  elapsed+=used;
+  if(elapsed<duration)return 0;
+  if(rollExit&&input.length&&input.facing===facing){
+   select(rollExit,false);gaitBlend=Number(rollExit==='sprint');gaitPhase=0;
+  }else select('idle',false);
+  return dt-used;
+ }
  function update(dt){
+  const input=movement();
+  if(mode==='roll'&&!repeat){
+   dt=advanceRoll(dt,input);
+   if(dt===0)return;
+  }
   const previous=elapsed;
   elapsed+=dt;
-  let dx=0,dy=0;
-  for(const key of presses){dx+=directions[key][0];dy+=directions[key][1];}
-  const length=Math.hypot(dx,dy);
-  const gait=shiftKeys.size?'sprint':'walk';
-  if(!repeat&&(mode==='dash'||isAttack(mode))){
+  if(!repeat&&isAttack(mode)){
    const clip=clips[mode];
    if(attackQueued){
     // Link at the shared pose. A later press uses the next clip's regular wind-up.
-    const handoff=clip.comboFrame*clip.duration/clip.frames;
+    const handoff=clip.comboFrame*clip.duration/atlas.clips[mode][1];
     if(previous<=handoff&&elapsed>=handoff)startAttack(true,elapsed-handoff);
     else if(elapsed>=clip.duration)startAttack(false,elapsed-clip.duration);
-   }else if(elapsed>=clip.duration)select(length?gait:'idle',false);
+   }else if(elapsed>=clip.duration)select('idle',false);
+   if(isAttack(mode))return;
   }
-  const locked=!repeat&&(mode==='dash'||isAttack(mode));
-  if(length&&!locked){
-   facing=(Math.round(Math.atan2(dy/groundY,dx)/(Math.PI/4))+8)%8;
-   direction.value=String(facing);
-   if(mode!==gait||repeat)select(gait,false);
-  }
-  if(!length&&!repeat&&isGait(mode))select('idle',false);
-  const movingDash=mode==='dash'&&!repeat;
-  const speed=length&&!locked?strideSpeed[gait]*Math.hypot(dx,dy*groundY)/length:0;
-  x=bound(x+dt*(movingDash?dashX*290:length?dx/length*speed:0),tile+19,(columns-1)*tile-19);
-  y=bound(y+dt*(movingDash?dashY*290:length?dy/length*speed:0),tile+19,(rows-1)*tile-19);
+  if(input.length){
+   face(input.facing);
+   if(!isGait(mode)||repeat){gaitBlend=0;gaitPhase=0;}
+   if(mode!==input.gait||repeat)select(input.gait,false);
+   // Changing speed changes cadence and the rendered pose, but keeps the step phase.
+   const target=Number(input.gait==='sprint');
+   gaitBlend+=bound(target-gaitBlend,-dt/.24,dt/.24);
+   const blend=ease(gaitBlend);
+   gaitPhase=(gaitPhase+dt/gaitDuration(blend))%1;
+   const speed=gaitSpeed(blend)*Math.hypot(input.dx,input.dy*groundY)/input.length;
+   moveBy(dt*input.dx/input.length*speed,dt*input.dy/input.length*speed);
+  }else if(!repeat&&isGait(mode))select('idle',false);
  }
- function drawBlender(ctx,clip,progress){
-  const frame=clip.start+Math.min(clip.frames-1,Math.floor(progress*clip.frames));
+ function animationFrame(){
+  const clip=clips[mode];
+  const progress=mode==='idle'||repeat?(elapsed%clip.duration)/clip.duration:Math.min(1,elapsed/clip.duration);
+  let name=mode,frame=frameAt(mode,progress);
+  if(isGait(mode)&&!repeat){
+   name=gaitPose();frame=frameAt(name,gaitPhase);
+  }
+  if(mode==='roll'&&!repeat){
+   if(rollEntry&&frame===0){
+    name=rollEntry.pose;frame=rollEntry.frame;
+   }else if(rollEntry&&frame<3){
+    name=rollEntry.clip;frame-=1;
+   }else if(rollExit&&frame>rollRecoveryFrame){
+    if(frame===atlas.clips.roll[1]-1){name=rollExit;frame=0;}
+    else{name='roll-out-'+rollExit;frame-=rollRecoveryFrame+1;}
+   }
+  }
+  return atlas.clips[name][0]+frame;
+ }
+ function drawPacked(ctx,sheet,frame,left,top){
+  const [sx,sy,w,h,dx,dy]=frame,ratio=modelSize/cell;
+  ctx.drawImage(sheet,sx,sy,w,h,left+dx*ratio,top+dy*ratio,w*ratio,h*ratio);
+ }
+ function drawBlender(ctx,frame){
   const index=frame*8+facing;
   ctx.fillStyle='#110d1780';
   ctx.beginPath();ctx.ellipse(x,y+13,21,5,0,0,Math.PI*2);ctx.fill();
   const left=Math.round(x-modelSize/2),top=Math.round(y+16-modelSize*modelGround);
-  ctx.drawImage(bodySheet,index%atlasColumns*cell,Math.floor(index/atlasColumns)*cell,cell,cell,left,top,modelSize,modelSize);
-  const weapon=showWeapon&&weaponFrames[index];
-  if(weapon){
-   const [sx,sy,w,h,dx,dy]=weapon,ratio=modelSize/cell;
-   ctx.drawImage(weaponSheet,sx,sy,w,h,left+dx*ratio,top+dy*ratio,w*ratio,h*ratio);
-  }
+  drawPacked(ctx,bodySheet,atlas.body[index],left,top);
+  if(showWeapon&&atlas.weapon[index])drawPacked(ctx,weaponSheet,atlas.weapon[index],left,top);
  }
  function camera(pos,visible,extent){
   return visible>=extent?(extent-visible)/2:bound(pos-visible/2,0,extent-visible);
  }
- function draw(clip,progress){
+ function draw(frame){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle='#101212';ctx.fillRect(0,0,width,height);
   const left=camera(x,width/scale,columns*tile),top=camera(y,height/scale,rows*tile);
@@ -156,14 +231,12 @@
   for(const part of ground)ctx.drawImage(part.bitmap,part.x,part.y);
   for(const prop of decor)ctx.drawImage(prop.sprite,prop.x-44,prop.y-53,88,77);
   ctx.imageSmoothingEnabled=scale===1;
-  drawBlender(ctx,clip,progress);
+  drawBlender(ctx,frame);
  }
  function loop(now){
-  const dt=Math.min(.05,(now-last)/1000);
+  const dt=bound((now-last)/1000,0,.05);
   last=now;update(dt);
-  const clip=clips[mode];
-  const progress=repeat||mode==='idle'||isGait(mode)?(elapsed%clip.duration)/clip.duration:Math.min(1,elapsed/clip.duration);
-  draw(clip,progress);
+  draw(animationFrame());
   requestAnimationFrame(loop);
  }
  function loadSheet(image,path){
@@ -174,14 +247,14 @@
   });
  }
  Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=6'),
-  loadSheet(weaponSheet,'art/player-study/guardian-weapon.webp?v=6'),
-  fetch('art/player-study/guardian-weapon.json?v=6').then(response=>{
-   if(!response.ok)throw new Error('Waffen-Frames fehlen.');
+  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=7'),
+  loadSheet(weaponSheet,'art/player-study/guardian-weapon.webp?v=7'),
+  fetch('art/player-study/guardian-frames.json?v=7').then(response=>{
+   if(!response.ok)throw new Error('Animationsdaten fehlen.');
    return response.json();
   })
  ]).then(([, ,frames])=>{
-  weaponFrames=frames;
+  atlas=frames;
   status.hidden=true;
   last=performance.now();requestAnimationFrame(loop);
  }).catch(()=>{status.textContent='Die Blender-Sprites konnten nicht geladen werden.';});
