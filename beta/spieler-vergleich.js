@@ -428,16 +428,16 @@
  function loadWeapon(type){
   if(!weaponSheets.has(type)){
    const image=new Image();
-   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=11')
+   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=12')
     .then(()=>image).catch(error=>{weaponSheets.delete(type);throw error;});
    weaponSheets.set(type,loaded);
   }
   return weaponSheets.get(type);
  }
  Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=11'),
+  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=12'),
   loadWeapon(weaponType),
-  fetch('art/player-study/guardian-frames.json?v=11').then(response=>{
+  fetch('art/player-study/guardian-frames.json?v=12').then(response=>{
    if(!response.ok)throw new Error('Animationsdaten fehlen.');
    return response.json();
   })

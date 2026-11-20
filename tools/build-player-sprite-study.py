@@ -44,7 +44,7 @@ ROLL_ATTACK_GAITS = {f'{name}-{gait}-{phase}': (name, gait, phase/4)
 # Model-space travel, shared by the rig's planted feet and the game's movement.
 ATTACK_MOTION = {
     'heavy-sword': {'distance': .53, 'advance': [.075, .35]},
-    'heavy-hammer': {'distance': .32, 'advance': [.10, .35], 'impactFrame': 7},
+    'heavy-hammer': {'distance': .47, 'advance': [.130, .335], 'impactFrame': 7},
     'roll-attack-sword': {'distance': .36, 'advance': [.07, .49]},
     'roll-attack-hammer': {'distance': .28, 'advance': [.10, .50]},
 }
@@ -500,14 +500,17 @@ ATTACKS.update({
     ],
     'heavy-hammer': [
         (0, *HEAVY_GUARDS['hammer']),
-        (2/21, .05, .016, -.065, -.20, .154, .006, 1.891, 174, 40),
-        (4/21, .03, -.084, .035, .17, .144, -.421, 1.655, 11, 67),
-        (5/21, .01, -.155, .174, .43, .132, -.665, 1.211, 6, 25),
-        (7/21, -.04, -.183, .475, .69, .101, -.558, .323, 0, -8),
-        (8/21, -.07, -.198, .484, .72, .107, -.555, .347, -2, -10),
-        (9/21, -.09, -.204, .479, .73, .114, -.551, .398, -4, -13),
-        (12/21, -.09, -.114, .319, .42, .146, -.491, .683, 9, -4),
-        (14/21, .32, -.019, .166, .11, .295, -.131, 1.179, 62, 45),
+        (2/21, .05, .018, -.021, -.20, .154, .009, 1.918, 174, 40),
+        (3/21, .04, -.030, -.022, -.035, .141, -.121, 1.86, 135, 73),
+        (4/21, .03, -.126, -.030, .27, .124, -.440, 1.644, 18, 76),
+        (5/21, .01, -.211, .082, .56, .113, -.729, 1.267, 6, 29),
+        (6/21, -.02, -.265, .267, .79, .103, -.752, .842, 4, 9),
+        (7/21, -.045, -.291, .465, .96, .099, -.643, .272, 0, -8),
+        (8/21, -.065, -.314, .421, 1.01, .105, -.635, .332, -2, -9),
+        (9/21, -.09, -.311, .370, 1.02, .115, -.625, .379, -4, -11),
+        (11/21, -.10, -.266, .348, .84, .132, -.606, .483, 6, -12),
+        (13/21, .10, -.137, .296, .47, .190, -.382, .889, 30, 14),
+        (14/21, .31, -.057, .174, .19, .289, -.145, 1.188, 62, 45),
         (16/21, *HIGH_GUARD),
         (.90, .29, .020, .032, .02, .459, -.038, 1.105, 56, 32),
         (1, *STEADY),
@@ -594,7 +597,7 @@ def attack_deformation(kind, t):
     if kind == 'heavy-sword':
         return pulse(t, 0, .20, .385), pulse(t, .246, .415, .724)
     if kind == 'heavy-hammer':
-        return pulse(t, 0, .107, .26), pulse(t, .24, .387, .666)
+        return pulse(t, 0, .138, .28), pulse(t, .27, .415, .69)
     if kind == 'roll-attack-sword':
         return pulse(t, .24, .47, .66), pulse(t, .09, .23, .40)
     if kind == 'roll-attack-hammer':
@@ -615,7 +618,9 @@ HAMMER_LIGHT_CONTACT = {
 def orient_hammer(wrist, shaft, kind=None, t=0):
     a, b, _ = rest['Hammer.R']
     rest_shaft = (b-a).normalized()
-    rotation = rest_shaft.rotation_difference(shaft)
+    # Set the resting grip a quarter turn around the haft, before aiming the poll.
+    grip_twist = Matrix.Rotation(math.pi/2, 3, rest_shaft)
+    rotation = rest_shaft.rotation_difference(shaft).to_matrix() @ grip_twist
     face = rotation @ rest_shaft.cross(Vector((0,0,1))).normalized()
     if kind == 'heavy-hammer':
         weight = pulse(t, .11, 7/21, .72)
@@ -631,9 +636,9 @@ def orient_hammer(wrist, shaft, kind=None, t=0):
         striking_face = toward - shaft*shaft.dot(toward)
         if striking_face.length_squared > .001:
             angle = math.atan2(shaft.dot(face.cross(striking_face)), face.dot(striking_face))
-            orient('Hammer.R', wrist, Matrix.Rotation(angle*weight, 3, shaft) @ rotation.to_matrix())
+            orient('Hammer.R', wrist, Matrix.Rotation(angle*weight, 3, shaft) @ rotation)
             return
-    orient('Hammer.R', wrist, rotation.to_matrix())
+    orient('Hammer.R', wrist, rotation)
 
 
 def attack_step(kind, t, front):
@@ -642,10 +647,21 @@ def attack_step(kind, t, front):
     root_travel = motion['distance']*smooth((t-start)/(end-start))
     if kind == 'heavy-sword':
         start, end, lift = (.035, .245, .075) if front else (.228, .55, .067)
+    elif kind == 'heavy-hammer':
+        # Throw the body's weight past the feet. The hammer lands before the
+        # lead boot catches the body, then the trailing boot comes underneath.
+        start, end, lift = (.136, .388, .150) if front else (.173, .507, .202)
     else:
         start, end, lift = (.045, .31, .073) if front else (.41, .70, .058)
     step = max(0, min(1, (t-start)/(end-start)))
     travel = root_travel - motion['distance']*smooth(step)
+    if kind == 'heavy-hammer':
+        if front:
+            reach = .30*pulse(t, .218, .402, .668)
+        else:
+            reach, = sample([(0, 0), (.28, 0), (8/21, -.044),
+                             (9/21, .25), (10/21, .29), (.695, 0), (1, 0)], t)
+        travel -= reach
     return travel, lift*math.sin(math.pi*step)**2
 
 
