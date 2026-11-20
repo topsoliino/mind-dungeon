@@ -2,23 +2,23 @@
  'use strict';
 
  const tile=48,columns=23,rows=13,cell=128;
- const modelSize=110,modelGround=.77597;
+ const modelSize=110,modelGround=.77597,unitsToPixels=modelSize/3.23;
  const lightHoldMs=240;
  const clips={
-  idle:{duration:1.3},walk:{duration:.48},sprint:{duration:.49},roll:{duration:.76},
+  idle:{duration:1.3},walk:{duration:.56},sprint:{duration:.49},roll:{duration:.76},
   down:{duration:.74,guard:6,chain:13,next:'up'},
   up:{duration:.74,guard:4,chain:13,next:'down'}
  };
  const weaponTypes={
   sword:{sheet:'weapon',heavy:{duration:.94,chain:16,next:'up'}},
-  hammer:{sheet:'hammer',heavy:{duration:1.04,chain:16,next:'down',impact:7}}
+  hammer:{sheet:'hammer',heavy:{duration:1.04,chain:16,next:'down'}}
  };
  for(const [type,weapon] of Object.entries(weaponTypes)){
   clips['heavy-'+type]=weapon.heavy;
   for(const light of ['down','up'])clips['charge-'+type+'-'+light]={duration:.18,heavy:'heavy-'+type};
  }
  const gaitPoses=['walk','gait-one','gait-two','sprint'];
- const walkStride=.66/.60,sprintStride=.92/.34,groundY=.882;
+ const walkStride=.77/.60,sprintStride=.92/.34,groundY=.882;
  const rollRecoveryFrame=22;
  const directions={
   ArrowRight:[1,0],KeyD:[1,0],ArrowLeft:[-1,0],KeyA:[-1,0],
@@ -55,7 +55,7 @@
  const mix=(a,b,t)=>a+(b-a)*t;
  const ease=t=>{t=bound(t,0,1);return t*t*(3-2*t);};
  const gaitDuration=blend=>mix(clips.walk.duration,clips.sprint.duration,blend);
- const gaitSpeed=blend=>mix(walkStride,sprintStride,blend)*(modelSize/3.23)/gaitDuration(blend);
+ const gaitSpeed=blend=>mix(walkStride,sprintStride,blend)*unitsToPixels/gaitDuration(blend);
  const heading=(dx,dy)=>(Math.round(Math.atan2(dy/groundY,dx)/(Math.PI/4))+8)%8;
  const frameAt=(clip,progress)=>bound(Math.floor(progress*atlas.clips[clip][1]+1e-8),0,atlas.clips[clip][1]-1);
  const frameTime=(clip,frame)=>frame*clips[clip].duration/atlas.clips[clip][1];
@@ -255,7 +255,7 @@
    const [start,end]=motion.advance;
    const poseTime=clip.duration*(atlas.clips[mode][1]-1)/atlas.clips[mode][1];
    const progress=t=>ease((t/poseTime-start)/(end-start));
-   const distance=motion.distance*(modelSize/3.23)*(progress(next)-progress(previous));
+   const distance=motion.distance*unitsToPixels*(progress(next)-progress(previous));
    const angle=facing*Math.PI/4;
    moveBy(Math.cos(angle)*distance,Math.sin(angle)*groundY*distance);
   }
@@ -342,13 +342,14 @@
    ctx.beginPath();ctx.ellipse(x,y+13,23,6,0,Math.PI*.5,Math.PI*(.5+2*load));ctx.stroke();
    ctx.restore();
   }
-  if(clip.impact){
-   const since=(elapsed%clip.duration)-frameTime(mode,clip.impact);
+  const motion=atlas.attackMotion[mode];
+  if(motion?.floorContact){
+   const since=(elapsed%clip.duration)-frameTime(mode,motion.impactFrame);
    if(since>=0&&since<.18){
     const angle=facing*Math.PI/4;
-    // The hammer lands slightly right of the character's forward axis.
-    const hitX=x+Math.cos(angle)*27+Math.sin(angle)*7;
-    const hitY=y+16+(Math.sin(angle)*27-Math.cos(angle)*7)*.47;
+    const [side,forward]=motion.floorContact;
+    const hitX=x+(Math.cos(angle)*forward+Math.sin(angle)*side)*unitsToPixels;
+    const hitY=y+16+(Math.sin(angle)*forward-Math.cos(angle)*side)*unitsToPixels*.47;
     ctx.save();
     ctx.globalAlpha=.65*(1-since/.18);
     ctx.strokeStyle='#d0ab7c';
@@ -391,16 +392,16 @@
  function loadWeapon(type){
   if(!weaponSheets.has(type)){
    const image=new Image();
-   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=9')
+   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=10')
     .then(()=>image).catch(error=>{weaponSheets.delete(type);throw error;});
    weaponSheets.set(type,loaded);
   }
   return weaponSheets.get(type);
  }
  Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=9'),
+  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=10'),
   loadWeapon(weaponType),
-  fetch('art/player-study/guardian-frames.json?v=9').then(response=>{
+  fetch('art/player-study/guardian-frames.json?v=10').then(response=>{
    if(!response.ok)throw new Error('Animationsdaten fehlen.');
    return response.json();
   })
