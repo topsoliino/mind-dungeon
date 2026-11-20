@@ -36,6 +36,11 @@ HEAVY_FRAMES = 22
 CHARGE_CLIPS = {f'charge-{weapon}-{light}': (weapon, light)
                 for weapon in WEAPON_TYPES for light in ('down', 'up')}
 HEAVY_CLIPS = {f'heavy-{weapon}': weapon for weapon in WEAPON_TYPES}
+# Model-space travel, shared by the rig's planted feet and the game's movement.
+HEAVY_MOTION = {
+    'heavy-sword': {'distance': .53, 'advance': [.075, .35]},
+    'heavy-hammer': {'distance': .32, 'advance': [.10, .35]},
+}
 CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, 16) for name in GAIT_BLENDS), ('roll', ROLL_FRAMES),
          *((name, 2) for name in ROLL_ENTRIES), *((name, 4) for name in ROLL_EXITS),
@@ -394,6 +399,27 @@ def sample(keys, time):
     return keys[-1][1:]
 
 
+def sample_attack(keys, time):
+    # Carry speed across successive strike poses. Stop the curve at reversals so
+    # the blade never overshoots a loaded guard or the hammer's floor contact.
+    def tangent(index, channel):
+        if index == 0 or index == len(keys)-1:
+            return 0
+        before, center, after = keys[index-1:index+2]
+        incoming = (center[channel]-before[channel])/(center[0]-before[0])
+        outgoing = (after[channel]-center[channel])/(after[0]-center[0])
+        return 2*incoming*outgoing/(incoming+outgoing) if incoming*outgoing > 0 else 0
+
+    for index, (a, b) in enumerate(zip(keys, keys[1:])):
+        if time <= b[0]:
+            interval = b[0]-a[0]
+            t = (time-a[0])/interval
+            return [x+(y-x)*smooth(t) + interval*t*(1-t)*(
+                    (1-t)*tangent(index, channel) - t*tangent(index+1, channel))
+                    for channel, (x, y) in enumerate(zip(a[1:], b[1:]), start=1)]
+    return keys[-1][1:]
+
+
 # Time, torso yaw, forward shift, drop, pitch, sword hand target, blade azimuth/elevation.
 STEADY = (0, 0, 0, .04, .414, -.168, .924, 24, 16)
 # Each guard is shared at the exact exported frames where the combo can chain.
@@ -438,21 +464,23 @@ for name, (weapon, light) in CHARGE_CLIPS.items():
 ATTACKS.update({
     'heavy-sword': [
         (0, *HEAVY_GUARDS['sword']),
-        (2/21, .89, .049, .090, -.084, .346, .096, 1.410, 141, 53),
-        (5/21, .28, -.114, .077, .18, .320, -.409, 1.387, 50, 48),
-        (7/21, -.42, -.217, .140, .30, -.023, -.576, 1.121, -35, -6),
-        (10/21, -.86, -.211, .152, .25, -.217, -.394, .922, -119, -19),
+        (2/21, .92, .018, .106, -.094, .380, .151, 1.397, 146, 56),
+        (4/21, .66, -.105, .118, .10, .408, -.178, 1.445, 101, 61),
+        (6/21, .02, -.150, .205, .29, .214, -.568, 1.245, 18, 28),
+        (8/21, -.69, -.155, .221, .38, -.144, -.542, .914, -76, -29),
+        (11/21, -.91, -.133, .171, .32, -.218, -.393, .823, -123, -25),
         (16/21, *LOW_GUARD),
-        (.90, -.31, -.065, .041, .121, .019, -.269, .922, -55, -14),
+        (.89, -.39, -.091, .064, .15, .018, -.298, .908, -63, -18),
         (1, *STEADY),
     ],
     'heavy-hammer': [
         (0, *HEAVY_GUARDS['hammer']),
-        (2/21, .18, .058, .071, -.087, .312, -.056, 1.581, 31, 87),
-        (5/21, .03, -.156, .108, .26, .303, -.532, 1.230, 5, 14),
+        (2/21, .28, .083, .080, -.136, .304, -.036, 1.595, 72, 85),
+        (5/21, .05, -.195, .138, .29, .307, -.546, 1.211, 5, 17),
         (7/21, -.07, -.220, .254, .44, .232, -.538, .625, -4, -63),
-        (9/21, -.09, -.197, .210, .37, .226, -.505, .738, -7, -51),
-        (13/21, .28, -.032, .120, .112, .355, -.099, 1.192, 54, 36),
+        (9/21, -.14, -.231, .257, .436, .216, -.497, .660, -12, -55),
+        (12/21, -.05, -.114, .178, .24, .296, -.295, .945, 7, -14),
+        (14/21, .33, -.018, .123, .07, .355, -.043, 1.240, 62, 45),
         (16/21, *HIGH_GUARD),
         (.90, .29, .020, .032, .02, .459, -.038, 1.105, 56, 32),
         (1, *STEADY),
@@ -461,12 +489,12 @@ ATTACKS.update({
 
 
 def gait_foot(phase, stride, stance, clearance, running):
-    heel, push = (-5, 33) if running else (-15, 22)
+    heel, push = (-9, 36) if running else (-17, 26)
     if phase < stance:
         # The moving body passes over a planted boot at constant speed.
         travel = stride * (phase / stance - .5)
         lift = 0
-        pitch, = sample([(0, heel), (.16, 0), (.65, 0), (1, push)], phase/stance)
+        pitch, = sample([(0, heel), (.19, 0), (.62, 0), (1, push)], phase/stance)
     else:
         swing = (phase - stance) / (1 - stance)
         if running:
@@ -479,8 +507,10 @@ def gait_foot(phase, stride, stance, clearance, running):
             height = arc**1.22 * (1.30 - .60*swing)
             pitch = heel + (push - heel)*(1 - smooth(swing)) + 11*math.sin(math.tau*swing)
         else:
-            progress, height = sample([(0,0,0), (.26,.18,.70), (.52,.57,1),
-                                       (.77,.88,.53), (1,1,0)], swing)
+            arc = math.sin(math.pi*swing)
+            carry = (1-stance)/(math.tau*stance)
+            progress = smooth(swing) - carry*math.sin(math.tau*swing)*(1-.65*arc)
+            height = arc**1.35 * (1.27-.49*swing)
             pitch, = sample([(0, push), (.25, 12), (.71, -12), (1, heel)], swing)
         travel = stride * (.5 - progress)
         lift = clearance * height
@@ -505,21 +535,35 @@ def blade_vector(azimuth, elevation):
     return Vector((math.sin(yaw)*math.cos(pitch), -math.cos(yaw)*math.cos(pitch), math.sin(pitch)))
 
 
+def attack_step(kind, t, front):
+    motion = HEAVY_MOTION[kind]
+    start, end = motion['advance']
+    root_travel = motion['distance']*smooth((t-start)/(end-start))
+    if kind == 'heavy-sword':
+        start, end, lift = (.035, .245, .075) if front else (.228, .55, .067)
+    else:
+        start, end, lift = (.045, .31, .073) if front else (.41, .70, .058)
+    step = max(0, min(1, (t-start)/(end-start)))
+    travel = root_travel - motion['distance']*smooth(step)
+    return travel, lift*math.sin(math.pi*step)**2
+
+
 def pose(kind, t):
     phase = math.tau*t
     step = math.cos(phase)
     gait = GAITS.get(kind)
     running = kind == 'sprint'
     attacking = kind in ATTACKS
-    twist, forward, drop, pitch, hx, hy, hz, yaw, elev = sample(ATTACKS[kind], t) if attacking else STEADY
+    attack_keys = ATTACKS.get(kind)
+    twist, forward, drop, pitch, hx, hy, hz, yaw, elev = sample_attack(attack_keys, t) if attacking else STEADY
     if gait:
         stride, stance, clearance, lean = gait
         half_step = (t % .5)*2
         if running:
             # Carry the hips through toe-off, then let the chest and head follow.
             suspension = math.cos(math.tau*(half_step-.86))
-            bob = .039*suspension - .013
-            nod = .043*math.cos(math.tau*(half_step-.21))
+            bob, nod = sample([(0, .012, .010), (.23, -.053, .053), (.55, .009, .008),
+                               (.84, .055, -.020), (1, .012, .010)], half_step)
             shift = .023
             fore = -.132 - .019*math.cos(math.tau*(half_step-.73))
             drop = .178
@@ -527,12 +571,12 @@ def pose(kind, t):
             chest_yaw = -.157*math.cos(phase-.42)
             yaw, elev = 20, 7
         else:
-            bob, nod = sample([(0, -.008, .006), (.20, -.020, .011), (.53, .015, 0),
-                               (.68, .022, -.006), (1, -.008, .006)], half_step)
-            shift, fore, drop = .026, -.011, .050
+            bob, nod = sample([(0, -.008, .006), (.24, -.026, .014), (.55, .014, 0),
+                               (.72, .023, -.010), (1, -.008, .006)], half_step)
+            shift, fore, drop = .036, -.013, .058
             pelvic_yaw = .074*step
             chest_yaw = -.062*math.cos(phase-.22)
-            yaw, elev = 23, 13
+            yaw, elev = 21, 13
         # At mid-stance the pelvis shifts towards the actual loaded foot.
         hips = rest['Hips'][0] + Vector((-shift*math.sin(phase-.12), fore, -drop+bob))
         pitch = lean + nod
@@ -572,6 +616,9 @@ def pose(kind, t):
         elif attacking:
             # Keep the feet paired with the torso pose at both combo handoffs.
             travel, lift, width = sign*.08, 0, .05*abs(twist)
+            if kind in HEAVY_MOTION:
+                offset, lift = attack_step(kind, t, sign < 0)
+                travel += offset
             foot_pitch = .18*smooth(-forward/.15) if sign > 0 else 0
         else:
             travel, lift, foot_pitch, width = sign*.08, 0, 0, 0
@@ -581,7 +628,7 @@ def pose(kind, t):
         shoulder = attached('Chest', rest[arm][0])
         if gait:
             # The wrist trails the leg rhythm, with a softer elbow on the free side.
-            swing = math.cos(phase-.38)
+            swing = math.cos(phase-.49)
             if sign>0:
                 reach = .108 if running else .040
                 offset = (.065, -.173-reach*swing, (-.344 if running else -.405)+.035*swing)
@@ -589,7 +636,7 @@ def pose(kind, t):
                 yaw += (6 if running else 3)*blade_lag
                 elev += (10 if running else 3)*blade_lag
             else:
-                reach = .276 if running else .087
+                reach = .285 if running else .098
                 drive = .084*(1 - math.cos(phase-.58)) if running else .020*max(0, -swing)
                 offset = (-.053, -.048+reach*swing, (-.385 if running else -.412)+drive)
             wrist = shoulder + Vector(offset)
@@ -923,6 +970,7 @@ if __name__ == '__main__':
     scene = setup(opts.engine)
     frames, layout = key_animations(scene, CLIPS)
     (directory/'clips.json').write_text(json.dumps(layout) + '\n')
+    (directory/'attack-motion.json').write_text(json.dumps(HEAVY_MOTION) + '\n')
     bpy.context.view_layer.layer_collection.children[weapon_collections['hammer'].name].exclude = True
     rig.rotation_euler.z = math.pi/4
     rig.select_set(False)
