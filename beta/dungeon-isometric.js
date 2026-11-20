@@ -93,8 +93,9 @@
    };
    return {x:center(target.x,cw,width),y:center(target.y,ch,height)};
   }
-  const ground=art.groundLayers().map((canvas,i)=>({canvas,x:0,y:0,depth:-4+i}));
-  const atmosphere={canvas:art.overlayLayer(),x:0,y:0,depth:height+1};
+  // Large generated maps are sliced into <=1536px tiles for GPU portability.
+  const ground=art.groundLayers();
+  const atmosphere=art.overlayLayers();
   const scenery=props.flatMap(({kind,point})=>{
    const {x,y}=toView(point.x,point.y),size=104;
    return (kind==='chest'?[false,true]:[false]).map(completed=>{
@@ -109,7 +110,7 @@
   function layers(player,opened){
    const {x,y}=toView(player.x,player.y);
    const buildings=art.structures(x,y-footOffset).map(({image,depth,alpha})=>({...image,depth:depth+footOffset,alpha}));
-   return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),atmosphere];
+   return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),...atmosphere];
   }
   function addLayers(scene,player){
    const images=layers(player,false).map(({canvas,x,y,depth},index)=>{
