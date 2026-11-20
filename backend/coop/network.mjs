@@ -22,7 +22,8 @@ function motion(p,clock){
   p.dominant??null,p.input.seq,q(p.activeBrew?.remaining),
   (p.damageQueue??[]).filter(hit=>hit.amount>0).map(hit=>({amount:hit.amount,type:hit.type,remaining:q(hit.remaining)})),
   p.fall?q(1-p.fall.remaining/fallSeconds):-1,p.fall?.heading??0,
-  ...(p.wallRecoil||p.underpass?[q(p.wallRecoil),q(p.recoilAngle)]:[]),...(p.underpass?[p.underpass]:[])];
+  q(p.wallRecoil),q(p.recoilAngle),p.underpass??null,
+  q(p.moveAngle??(p.back?-Math.PI/2:Math.PI/2)),...(t!==null?[q(t)]:[])];
 }
 export function createProjection(){
  let floor=0,revision=-1,event=0,peerRevision=-1,peerQuiz='',effects='',staticState='',lootKey='';

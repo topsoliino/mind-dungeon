@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
+import {runInNewContext} from 'node:vm';
 import {WebSocket} from 'ws';
 import {run,balance,geometry,vision,defaultPack,makePlayer,items,foes,brewing,TILE,fallSeconds,gap,maxHP,preparePlayer,pools} from './rules.mjs';
 import {Simulation} from './simulation.mjs';
@@ -9,6 +11,10 @@ import {createCoopServer} from './server.mjs';
 import {createProjection} from './network.mjs';
 import {checkpointConflict} from './checkpoints.mjs';
 import {startParty,getFloor,advanceParty,partyState,partyMetadata,restoreParty} from './party.mjs';
+
+const clientContext={window:{},location:{hostname:'localhost',protocol:'http:'}};
+runInNewContext(readFileSync(new URL('../../beta/dungeon-authority.js',import.meta.url),'utf8'),clientContext);
+const {decodeMotion}=clientContext.window.DungeonAuthority;
 
 function game(seed=193,layoutRevision,depth=1){
  const host=makePlayer(1,{name:'Host',classId:'guardian'},defaultPack);
@@ -262,7 +268,7 @@ test('quick food absorbs pending damage, chooses the smallest sufficient portion
  assert.equal(host.hp,hp);
  sim.step(.92);
  assert.equal(host.hp,hp);
- const warning=createProjection()(sim,host).you.at(-3);
+ const warning=decodeMotion(createProjection()(sim,host).you).damageQueue;
  assert.equal(warning[0].type,'frost');
  assert.equal(sim.actions.dispatch(host,'quick-food',{}).item.id,'bread');
  assert.equal(host.consume.end-host.consume.start,1.5);
@@ -596,7 +602,7 @@ test('water beside both bridges drops the hero while sewer water remains walkabl
   assert.equal(sim.floor.abyssAt(host.x,host.y),false);
   host.equipment.rings[0]=null;
   assert.equal(sim.move(host,0,-TILE),false);
-  assert.equal(createProjection()(sim,host).you.at(-1),-Math.PI/2);
+  assert.equal(decodeMotion(createProjection()(sim,host).you).fallHeading,-Math.PI/2);
   sim.stepPlayer(host,fallSeconds);
   assert.ok(sim.events.some(e=>e.kind==='death'&&e.cause==='fall'));
  }
@@ -1326,9 +1332,9 @@ test('the hero can return from the lip, and an eagle can defeat the Ring der Hö
  assert.equal(sim.move(host,-55,0),false);
  assert.equal(host.combatRecord.deaths,0);
  assert.equal(host.fall.remaining,fallSeconds);
- assert.equal(createProjection()(sim,host).you.at(-2),0);
+ assert.equal(decodeMotion(createProjection()(sim,host).you).fallProgress,0);
  sim.stepPlayer(host,fallSeconds*.5);
- assert.equal(createProjection()(sim,host).you.at(-2),.5);
+ assert.equal(decodeMotion(createProjection()(sim,host).you).fallProgress,.5);
  sim.stepPlayer(host,fallSeconds*.5);
  assert.equal(host.combatRecord.deaths,1);
  assert.equal(sim.events.at(-1).cause,'fall');
@@ -1504,6 +1510,22 @@ test('render packets preserve visibility, carry deltas and allow another floor',
  advanceParty(room,hostMember);
  assert.equal(projection(getFloor(room,hostMember),host).floor,2);
  assert.equal(guestMember.floor,2);
+});
+
+test('co-op motion carries diagonal body facing independently of aim and preserves it when stopping',()=>{
+ const {host,guest,sim}=game();
+ arena(sim,host);sim.enemies=[];
+ const projection=createProjection();
+ assert.ok(sim.control(host,{seq:1,x:-1,y:1,aim:-Math.PI/2}));
+ sim.stepPlayer(host,1/30);
+ let motion=decodeMotion(projection(sim,guest).peer);
+ assert.equal(motion.dir,-1.57);
+ assert.equal(motion.moveAngle,2.36);
+ assert.ok(sim.control(host,{seq:2,x:0,y:0,aim:0}));
+ sim.stepPlayer(host,1/30);
+ motion=decodeMotion(projection(sim,guest).peer);
+ assert.equal(motion.moving,0);
+ assert.equal(motion.moveAngle,2.36);
 });
 
 function client(url){

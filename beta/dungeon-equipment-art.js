@@ -154,6 +154,7 @@ window.DungeonEquipmentArt=(()=>{
   windstep:{colors:['#324c61','#50788c','#82b3bb','#c1e5df','#e2f3cb'],shape:'cloth',shoulder:7,hem:1,boot:14,
    crown:[[5,19],[6,13],[10,8],[16,5],[21,5],[26,2],[26,10],[28,13],[26,21],[22,26],[15,25],[10,27],[6,24]]}
  };
+ const armorLook=set=>Object.hasOwn(looks,set)?looks[set]:looks.wanderer;
 
  function badge({r,poly},set,x,y,c){
   switch(set){
@@ -299,7 +300,7 @@ window.DungeonEquipmentArt=(()=>{
 
  function armor(draw,id){
   const [set,slot]=id.split('-');
-  const look=Object.hasOwn(looks,set)?looks[set]:looks.wanderer;
+  const look=armorLook(set);
   switch(slot??set){
    case 'chest':chest(draw,set,look);break;
    case 'legs':legs(draw,set,look);break;
@@ -414,5 +415,5 @@ window.DungeonEquipmentArt=(()=>{
    }
   }
  }
- return {weapon,armor,utility};
+ return {weapon,armor,utility,armorLook,badge};
 })();
