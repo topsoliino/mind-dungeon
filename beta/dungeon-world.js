@@ -16,8 +16,19 @@ function fallEnemy(actor,dt){
 }
 function build(run,save){
 const furnishingSeed=save.dungeonSeed;
-const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[],roof=null,sewerRelic=null,stairs=[],crypt=null,extraRooms=[],alleys=null,sanctuary=null,bossArena:arenaTiles}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth,save.templeRunSeed??save.dungeonSeed);
+const {rooms,corridors,map,regions,gates,annexes,terrain,rest,paths,layers={},links:linkTiles=[],doors:doorTiles=[],lofts=[],sewerRooms=[],roof=null,sewerRelic=null,stairs=[],underpasses=[],crypt=null,extraRooms=[],alleys=null,sanctuary=null,bossArena:arenaTiles}=run.generate(save.dungeonSeed,save.variedRooms,save.layoutRevision,save.floor,save.templeDepth,save.templeRunSeed??save.dungeonSeed);
 const H=map.length,W=map[0].length;
+const passInside=(p,x,y)=>x>=p.x*TILE&&x<(p.x+p.w)*TILE&&y>=p.y*TILE&&y<(p.y+p.h)*TILE;
+const passAt=(x,y)=>underpasses.find(p=>passInside(p,x,y));
+const underpassAt=actor=>{
+ const p=actor?.underpass&&passAt(actor.x,actor.y);
+ return p&&p.id===actor.underpass?p:null;
+};
+const actorRegion=actor=>underpassAt(actor)?.region??regionAt(actor.x,actor.y);
+const separatePassage=(a,b)=>{
+ const p=passAt(a.x,a.y);
+ return Boolean(p&&passInside(p,b.x,b.y)&&(a.underpass===p.id)!==(b.underpass===p.id));
+};
 const stairGeometry=window.DungeonStairs;
 const stairFlights=[...(sanctuary?.flights??[]).map(stairGeometry.straight),...stairs.map(stair=>
  stair.curve?stair:stairGeometry.straight({...stair,style:stair.id.startsWith('jungle-')?'jungle':
@@ -37,6 +48,7 @@ for(const flight of stairFlights){
  }
 }
 function stairMotion(actor,dx,dy){
+ if(underpassAt(actor))return {x:dx,y:dy};
  const x=actor.x/TILE,y=actor.y/TILE;
  const ribbon=ribbonTiles.get(Math.floor(y)*W+Math.floor(x));
  if(ribbon)return stairGeometry.motion(ribbon.flight,stairGeometry.sample(ribbon.steps,x,y),dx,dy);
@@ -82,7 +94,7 @@ const zones=rooms.map((room,i)=>{
 const sanctuaryPoint=key=>tileCenter(sanctuary[key]);
 const mercyWard=new Set(sanctuary?.safe??(rest?[rest.id]:[]));
 const spawn=sanctuary?sanctuaryPoint('spawn'):rest?pointIn(rest,0,1.75):{x:(zones[0].x+1.5)*TILE,y:(zones[0].y+1.5)*TILE};
-const cupPoint=rest&&save.floor<5?(sanctuary?sanctuaryPoint('cup'):pointIn(rest,-1.65,.2)):null;
+const cupPoint=rest&&!sanctuary&&save.floor<5?pointIn(rest,-1.65,.2):null;
 const roomCat=(name,offset,mode)=>rest&&{...(sanctuary?sanctuaryPoint(name):pointIn(rest,offset,.4)),mode,age:0,duration:2,flip:false,target:null};
 const restCat=roomCat('cat',2.65,'idle'),luckyCat=roomCat('luckyCat',-2.4,'sit');
 const well=rest&&(sanctuary?sanctuaryPoint('well'):pointIn(rest,3.4,-2.1));
@@ -360,12 +372,16 @@ const FURNITURE={
  'sanctuary-flowers':{w:27,h:23},'sanctuary-plaque':{w:27,h:22},'sanctuary-vault':{w:91,h:31},
  'lab-bench':{w:59,h:23,solid:true},'lab-apparatus':{w:59,h:25,solid:true},'roof-rubble':{w:45,h:29,solid:true}
 };
-const furniture=[];
+const furniture=[],archPillars=[];
+const archFeet={
+ 'sanctuary-arch':[[-39,-1,15,16],[39,-1,15,16]],
+ 'sanctuary-vault':[[-102,-19,21,22],[9,-19,27,22],[101,-19,21,22]]
+};
 const breakableHP={chair:14,barrel:24,'large-barrel':36,basket:12,bench:26,dresser:46,shelf:40,
  'straw-bed':34,fence:30,'fence-end':30,'weapon-rack':36,'armor-rack':42,
  'lab-bench':28,'lab-apparatus':32,'roof-rubble':44};
 let solidTiles=null;
-const stoneProps=new Set(['sarcophagus','crystal','statue','grave','jungle-shrine','rubble','well','roof-rubble']);
+const stoneProps=new Set(['sarcophagus','crystal','statue','grave','jungle-shrine','rubble','well','roof-rubble',...Object.keys(archFeet)]);
 const woodProps=new Set(['table','chair','bookcase','cabinet','barrel','lectern','tree','pine','birch','roots',
  'provisions','alchemy','banquet','market','round-table','banquet-long','fence','fence-end','weapon-rack',
  'armor-rack','shelf','display','dresser','bench','basket','straw-bed','large-barrel','lab-bench','lab-apparatus']);
@@ -381,7 +397,7 @@ function strikeFurniture(p,damage){
  return hp;
 }
 function furnitureAt(x,y,rx=12,ry=rx,original=false){
- const candidates=solidTiles&&rx<=40&&ry<=40?solidTiles.get(Math.floor(y/TILE)*W+Math.floor(x/TILE))??[]:furniture;
+ const candidates=solidTiles&&rx<=40&&ry<=40?solidTiles.get(Math.floor(y/TILE)*W+Math.floor(x/TILE))??[]:[...furniture,...archPillars];
  return candidates.find(p=>{
   if(!p.solid||(original?p.fallDelay!==undefined:!furnitureIntact(p)))return false;
   const inset=reducedDepth.has(p.type)?Math.min(7,p.h*.24):0;
@@ -534,12 +550,40 @@ function beforeMeleeWall(x,y,tx,ty,weapon,contact){
  const turn=Math.atan2(Math.sin(offset),Math.cos(offset));
  return turn<contact.offset-.05||turn<=contact.offset+.05&&Math.hypot(dx,dy)<contact.distance;
 }
-function valid(x,y,r=12,ignoreSeals=false,feet=false,allowFall=false,originalFurniture=false){
+function valid(x,y,r=12,ignoreSeals=false,feet=false,allowFall=false,originalFurniture=false,below=null){
  const rx=feet?10:r,ry=feet?5:r,solid=feet?footWall:wall;
  for(const dx of [-rx,0,rx])for(const dy of [-ry,0,ry]){
+  if(below&&passInside(below,x+dx,y+dy))continue;
   if(solid(x+dx,y+dy)&&!(allowFall&&abyssAt(x+dx,y+dy))||!ignoreSeals&&(gateBlocked(x+dx,y+dy)||doorAt(x+dx,y+dy)))return false;
  }
  return !furnitureBlocked(x,y,feet?9:r,feet?6:r,originalFurniture);
+}
+function floorStep(actor,x,y,r,feet,allowFall){
+ const fromTile=terrain[Math.floor(actor.y/TILE)]?.[Math.floor(actor.x/TILE)];
+ const toTile=terrain[Math.floor(y/TILE)]?.[Math.floor(x/TILE)];
+ const bridgeSide=fromTile?.startsWith('bridge-')&&toTile==='underpass-floor'||
+  toTile?.startsWith('bridge-')&&fromTile==='underpass-floor';
+ const prior=passAt(actor.x,actor.y),next=passAt(x,y);
+ const p=prior??next??underpasses.find(pass=>{
+  const pad=feet?10:r;
+  return passInside(pass,actor.x+(pass.axis==='x'?pad:0),actor.y+(pass.axis==='y'?pad:0))||
+   passInside(pass,actor.x-(pass.axis==='x'?pad:0),actor.y-(pass.axis==='y'?pad:0));
+ });
+ if(!p)return !bridgeSide&&valid(x,y,r,false,feet,allowFall)?{}:null;
+ const lowerAxis=p.axis==='x'?x:y,across=p.axis==='x'?y:x;
+ const start=(p.axis==='x'?p.x:p.y)*TILE,end=start+(p.axis==='x'?p.w:p.h)*TILE;
+ const near=(p.axis==='x'?p.y:p.x)*TILE,far=near+(p.axis==='x'?p.h:p.w)*TILE;
+ const lowerEntry=(p.axis==='x'?actor.x:actor.y)<start||(p.axis==='x'?actor.x:actor.y)>=end;
+ const wasBelow=prior&&actor.underpass===p.id;
+ const below=Boolean(wasBelow||!prior&&lowerEntry&&across>=near&&across<far);
+ if(bridgeSide&&!below)return null;
+ if(prior&&prior!==next&&((lowerAxis<start||lowerAxis>=end)!==below))return null;
+ if(below){
+  const clearance=feet?(p.axis==='x'?5:10):r;
+  if(across-clearance<near||across+clearance>=far)return null;
+ }
+ if(!valid(x,y,r,false,feet,allowFall,false,below?p:null))return null;
+ return {underpass:below&&next===p?p.id:undefined};
 }
 const merchantRandom=run.random(furnishingSeed^0x7157be6a);
 const preferredMerchantRoom=1+Math.floor(merchantRandom()*4);
@@ -642,19 +686,33 @@ for(const room of run.shuffle(rooms.slice(1),mapRandom)){
 const mapPickup=mapSites[Math.floor(mapRandom()*mapSites.length)]||pointIn(rooms[1],0,0);
 const landmarks=[...links,...(returnPortal?[returnPortal]:[]),...(save.layoutRevision>=10?doors:[]),...stairs.flatMap(s=>[tileCenter(s.a),tileCenter(s.b)]),...(cryptAltar?[cryptAltar]:[]),...(sewerRelic?[tileCenter(sewerRelic)]:[]),...shrines,...chests,merchant,mapPickup,spawn,...bonePiles,...templeShrines,...(restCat?[restCat,wellUse,wellArrival,...(save.layoutRevision>=12?[luckyCat]:[])]:[]),market];
 furniture.push({type:'market',...market,zone:merchantRoomId,...FURNITURE.market});
-function placeRoomSet(pieces,ax,ay,zone){
+const stairFloorCells=new Set();
+for(const flight of stairFlights){
+ for(const {x,y} of stairGeometry.footprint(flight))stairFloorCells.add(y*W+x);
+}
+function stairClear(x,y,rx,ry){
+ for(let row=Math.floor((y-ry)/TILE);row<=Math.floor((y+ry)/TILE);row++)
+  for(let col=Math.floor((x-rx)/TILE);col<=Math.floor((x+rx)/TILE);col++){
+   if(stairFloorCells.has(row*W+col))return false;
+  }
+ return true;
+}
+function placeRoomSet(pieces,ax,ay,zone,options={}){
  const group=[];
  for(const [type,dx,dy] of pieces){
   const d=FURNITURE[type],x=(ax+dx)*TILE,y=(ay+dy)*TILE;
-  if(wall(x,y)||terrain[Math.floor(y/TILE)]?.[Math.floor(x/TILE)]?.startsWith('stairs-'))return false;
+  const extra=type==='sanctuary-tree'?22:8;
+  if(wall(x,y)||!stairClear(x,y,d.w/2+extra,d.h/2+extra)||
+   options.region!==undefined&&regionAt(x,y)!==options.region)return false;
   if(d.solid){
    const rx=d.w/2+4,ry=d.h/2+4;
    if([[-rx,-ry],[rx,-ry],[-rx,ry],[rx,ry]].some(([u,v])=>wall(x+u,y+v)))return false;
    if(entrances.some(p=>Math.hypot(x-p.x,y-p.y)<Math.max(rx,ry)+69))return false;
    if(landmarks.some(p=>Math.hypot(x-p.x,y-p.y)<Math.max(rx,ry)+32))return false;
-   if([...furniture,...group].some(p=>p.solid&&Math.abs(x-p.x)<(p.w+d.w)/2+6&&Math.abs(y-p.y)<(p.h+d.h)/2+6))return false;
+   if([...furniture,...archPillars,...group].some(p=>p.solid&&Math.abs(x-p.x)<(p.w+d.w)/2+6&&Math.abs(y-p.y)<(p.h+d.h)/2+6))return false;
+   if(options.reserved?.some(p=>Math.abs(x-p.x)<d.w/2+23&&Math.abs(y-p.y)<d.h/2+20))return false;
   }
-  group.push({type,x,y,zone,...d});
+  group.push({type,x,y,zone,...d,...(options.variant!==undefined?{variant:options.variant}:{})});
  }
  furniture.push(...group);
  return true;
@@ -752,8 +810,36 @@ const annexDecor={
   ['grass',1.7,3.35],['grass',9.3,3.5],['grass',11.25,4.65],['grass',5,6.8],['grass',8,6.8],['grass',5.2,1.7]]
 };
 if(sanctuary){
- for(const {type,x,y,variant} of sanctuary.decor)furniture.push({type,...tileCenter({x,y}),variant,zone:3,...FURNITURE[type]});
- furniture.push({type:'sanctuary-arch',...sanctuaryPoint('lobby'),zone:3,...FURNITURE['sanctuary-arch']});
+ const anchors=new Set(['sanctuary-hearth','sanctuary-mosaic','sanctuary-smith','sanctuary-archive','sanctuary-plaque','sanctuary-ban-table','well']);
+ const sites=[smith,glossaryStand,ward,wellUse,wellArrival,returnPortal,...sanctuary.seats.map(tileCenter)].filter(Boolean);
+ const pieces=[...sanctuary.decor,{type:'sanctuary-arch',...sanctuary.lobby}];
+ for(const p of pieces.filter(p=>anchors.has(p.type))){
+  furniture.push({...tileCenter(p),type:p.type,zone:3,variant:p.variant,...FURNITURE[p.type]});
+ }
+ for(const anchor of pieces.filter(p=>archFeet[p.type])){
+  const {type,variant}=anchor,preferred=tileCenter(anchor),region=regionAt(preferred.x,preferred.y);
+  for(const dy of [0,-.7,.7,-1.35,1.35]){
+   const y=preferred.y+dy*TILE,x=preferred.x;
+   if(regionAt(x,y)!==region||wall(x,y))continue;
+   const feet=archFeet[type].map(([dx,dy,w,h])=>({type,x:x+dx,y:y+dy,w,h,solid:true}));
+   if(feet.some(p=>!stairClear(p.x,p.y,p.w/2+10,p.h/2+12)||!valid(p.x,p.y,p.w/2,true)||
+    sites.some(site=>Math.abs(site.x-p.x)<p.w/2+15&&Math.abs(site.y-p.y)<p.h/2+18)))continue;
+   furniture.push({type,x,y,variant,zone:3,...FURNITURE[type]});
+   archPillars.push(...feet);
+   break;
+  }
+ }
+ const sanctuaryRooms=new Set(sanctuary.rooms.map(room=>room.id));
+ const offsets=[[0,0],[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1],
+  [-2,0],[2,0],[0,-2],[0,2]];
+ for(const p of pieces.filter(p=>!anchors.has(p.type)&&!archFeet[p.type])){
+  const preferred=tileCenter(p),region=regionAt(preferred.x,preferred.y);
+  offsets.some(([dx,dy])=>{
+   const x=p.x+.5+dx,y=p.y+.5+dy,target=regionAt(x*TILE,y*TILE);
+   if(!sanctuaryRooms.has(target)||sanctuaryRooms.has(region)&&target!==region)return false;
+   return placeRoomSet([[p.type,0,0]],x,y,3,{region:target,variant:p.variant,reserved:sites});
+  });
+ }
 }else if(rest){
  const bed=stairs.length?['straw-bed',3.5,2.85]:['straw-bed',0,-2.7];
  const decor=[['campfire',0,0],['bench',-1.65,.2],['bench',1.65,.2],bed,['torch',-3,-2.5],['torch',2.15,-2.7],
@@ -894,7 +980,7 @@ function clearRoofLanding(actor,rock,radius){
  }
 }
 solidTiles=new Map();
-for(const piece of furniture){
+for(const piece of [...furniture,...archPillars]){
  if(!piece.solid)continue;
  if(Object.hasOwn(breakableHP,piece.type))piece.breakId=piece.type+'@'+Math.round(piece.x*10)+','+Math.round(piece.y*10);
  for(let ty=Math.floor((piece.y-piece.h/2-40)/TILE);ty<=Math.floor((piece.y+piece.h/2+40)/TILE);ty++)
@@ -989,7 +1075,7 @@ if(save.layoutRevision>=15){
  }
 }
 return {
- rooms,corridors,map,regions,gates,annexes,terrain,rest,stairFlights,stairMotion,
+ rooms,corridors,map,regions,gates,annexes,terrain,rest,stairFlights,stairMotion,underpasses,underpassAt,actorRegion,separatePassage,floorStep,
  paths,H,W,alleys,extraRooms,annexByRegion,annexPassages,isPassage,passageSealed,court,cemetery,templeRooms,templeRegions,waterfallBanks,
  bonePiles,templeShrines,labRoom,lab,pointIn,outsideAt,inRain,sightScale,zones,
  spawn,sanctuary,smith,ward,returnPortal,keySources,keyName,keyItem,keyOffers,keyCaches,pantryKeySite,carrierFor,nearestKeyDoor,unlockDoor,cupPoint,restCat,luckyCat,well,wellUse,glossaryStand,wellArrival,inRest,inSanctuary,bossArena,bossBeamFurniture,resetBossFurniture,clearRoofLanding,

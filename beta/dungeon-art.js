@@ -306,6 +306,13 @@ window.DungeonArt = (() => {
        r(x+3,y+3,3,2,day?'#6b6351':'#555161');
       }
      }
+    }else if(type==='underpass-floor'){
+     r(0,0,64,64,'#30292c');
+     for(let y=1;y<64;y+=16){
+      const seam=y%32===1?20:43;
+      r(1,y,seam-2,14,'#594b47');r(seam+1,y,62-seam,14,'#61514a');
+      r(2,y+1,seam-4,2,'#766058');r(seam+2,y+1,59-seam,1,'#79665a');
+     }
     }else if(type==='stair-recess'){
      r(0,0,64,64,'#1b191e');
      for(let y=1;y<64;y+=16){
@@ -476,6 +483,32 @@ window.DungeonArt = (() => {
     const band=(a,b,from,to,color)=>poly([mix(a[0],b[0],from),mix(a[1],b[1],from),
       mix(a[1],b[1],to),mix(a[0],b[0],to)],color);
     const thickness=t=>Math.round(tile*(flight.gateways?.13+t*.61:flight.curve?.18+t*1.21:.13+t*.26));
+    const low=steps[0].a,high=steps.at(-1).b;
+    if(flight.curve&&flight.style==='sanctuary'){
+      const base=(rim,i)=>{
+        const depth=thickness(i/steps.length)+Math.round(tile*.31);
+        return [down(mix(rim[0],rim[1],-.09),depth),down(mix(rim[0],rim[1],1.09),depth)];
+      };
+      for(const {a,b,i} of steps){
+        const front=base(a,i),back=base(b,i+1);
+        const outline=[front[0],front[1],back[1],back[0]];
+        poly(outline.map(p=>down(p,6)),'#222626');
+        poly(outline,i%4<2?'#404640':'#454b43');
+        for(const bank of [0,1]){
+          const p=front[bank],q=back[bank];
+          poly([down(p,-10),down(q,-10),q,p],'#555b50');
+          poly([down(p,-10),down(q,-10),down(q,-8),down(p,-8)],'#717366');
+        }
+      }
+    }
+    for(const [mouth,inside] of [[low,steps[0].b],[high,steps.at(-1).a]]){
+      const far=mouth.map((p,i)=>mix(p,inside[i],-.7));
+      poly([mouth[0],mouth[1],far[1],far[0]],cap);
+      for(const span of [.16,.48,.78]){
+        const p=mix(mouth[0],mouth[1],span),q=mix(far[0],far[1],span);
+        poly([p,q,[q[0]+1,q[1]+1],[p[0]+1,p[1]+1]],side);
+      }
+    }
     if(flight.core){
       const [cx,cy]=px([flight.core.x,flight.core.y]);
       const ellipse=(dx,dy,rx,ry,color)=>poly(Array.from({length:32},(_,i)=>[
@@ -554,7 +587,6 @@ window.DungeonArt = (() => {
         }
       }
     }
-    const [low,high]=[steps[0].a,steps.at(-1).b];
     for(const [a,b] of [low,high])poly([a,b,down(b,3),down(a,3)],edge);
     if(flight.gateways)for(const [a,b] of [low,high]){
       for(const [foot,across] of [[a,b],[b,a]]){
@@ -568,6 +600,25 @@ window.DungeonArt = (() => {
       }
     }
     return {x,y,bitmap};
+  }
+  function underpass(p,tile){
+    const w=p.w*tile,h=p.h*tile,bitmap=surface(w,h),{g,r}=brush(bitmap);
+    for(let y=0;y<p.h;y++)for(let x=0;x<p.w;x++)g.drawImage(terrainTile('underpass-floor',(x+3*y)%12),x*tile,y*tile,tile,tile);
+    const horizontal=p.axis==='x',span=horizontal?w:h,depth=horizontal?h:w;
+    g.save();
+    if(!horizontal){g.translate(w,0);g.rotate(Math.PI/2);}
+    const shade=g.createLinearGradient(0,0,span,0);
+    shade.addColorStop(0,'#15151b08');shade.addColorStop(.24,'#14131bc0');shade.addColorStop(.75,'#14131bc0');shade.addColorStop(1,'#15151b08');
+    g.fillStyle=shade;g.fillRect(0,0,span,depth);
+    for(const y of [0,depth-7]){
+      r(0,y,span,7,'#27232a');r(0,y+1,span,2,'#74645b');
+      for(let x=15;x<span;x+=24)r(x,y+1,1,5,'#352c30');
+    }
+    for(const x of [1,span-9]){
+      r(x,0,8,depth,'#4b414548');r(x+1,6,4,12,'#756355');r(x+1,depth-18,4,12,'#756355');
+    }
+    g.restore();
+    return {x:p.x*tile,y:p.y*tile,bitmap};
   }
   function world(map,zoneAt,lights,seed,terrain,frontWalls,tileSize=SIZE,roof=null,flights=[],terraces=[]) {
     const stairImages=flights.map(flight=>stairBitmap(flight,tileSize));
@@ -595,9 +646,10 @@ window.DungeonArt = (() => {
       g.translate(-x0,-y0);
       for(const {x,y,v,mask,open,surfaceType} of cells){
         const zone=zoneAt(x,y);
-        if(['sanctuary-spiral','sanctuary-spiral-void','sanctuary-terrace-void','stairs-ribbon','jungle-stair-ribbon'].includes(surfaceType))continue;
-        const isFlight=surfaceType?.startsWith('stairs-')||surfaceType?.startsWith('sanctuary-stairs-')||surfaceType==='jungle-stairs';
-        const base=isFlight&&(surfaceType.startsWith('sanctuary-')?'sanctuary-stone':surfaceType==='jungle-stairs'?'jungle-floor':'stair-wall');
+        if(['sanctuary-spiral','sanctuary-spiral-void','sanctuary-terrace-void'].includes(surfaceType))continue;
+        const isFlight=surfaceType?.startsWith('stairs-')||surfaceType?.startsWith('sanctuary-stairs-')||surfaceType?.startsWith('jungle-stair');
+        const base=isFlight&&(surfaceType.startsWith('sanctuary-')?'sanctuary-stone':
+         surfaceType.startsWith('jungle-')?'jungle-mosaic':'stair-recess');
         const image=surfaceType&&surfaceType!=='partition'?terrainTile(base||surfaceType,v):
          open||surfaceType==='partition'?floor(zone,v):wall(zone,mask,v%4);
         const px=x*tileSize,py=y*tileSize;
@@ -2306,5 +2358,5 @@ window.DungeonArt = (() => {
     if(!urls.has(key))urls.set(key,icon(type,id,color).toDataURL());
     return urls.get(key);
   }
-  return {world,furniture,partition,actor,icon,gate,crackedFurniture,woodenDoor,houseDoor,url};
+  return {world,underpass,furniture,partition,actor,icon,gate,crackedFurniture,woodenDoor,houseDoor,url};
 })();

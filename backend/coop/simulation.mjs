@@ -138,7 +138,7 @@ export class Simulation{
   const spawn=this.floor.spawn,offset=p.seat===2?37:0;
   const x=this.floor.valid(spawn.x+offset,spawn.y,HERO_RADIUS,false,true)?spawn.x+offset:spawn.x;
   Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,wallRecoil:0,recoilAngle:0,attackDuration:.4,walk:0,
-   moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,
+   moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,underpass:undefined,
    combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.regionAt(x,spawn.y),entered:this.clock,quiz:null,trial:null,consume:null,
    consumeQueue:transition?p.consumeQueue??[]:[],damageQueue:transition?p.damageQueue??[]:[],damageHistory:transition?p.damageHistory??[]:[],fall:null});
   p.input={seq:p.input.seq,x:0,y:0,aim:0,blocked:false,at:-Infinity};
@@ -173,14 +173,18 @@ export class Simulation{
   const flying=actor.type===foes.EAGLE;
   const canFall=!flying&&(knockback||hero&&!actor.equipment.rings.includes('height'));
   const safe={x:actor.x,y:actor.y},bodyRadius=radius(actor);
-  const pass=(x,y)=>this.floor.valid(x,y,bodyRadius,false,hero,canFall||flying)&&
-   (!flying||!this.floor.wall(x,y)||this.floor.towerAir(x,y))&&
-   (hero?this.floor.heroClearsDoor(actor,x,y):!this.floor.inRest(x,y))&&others.every(other=>clear(x,y,other));
+  const step=(x,y)=>{
+   const floor=this.floor,route=floor.floorStep(actor,x,y,bodyRadius,hero,canFall||flying);
+   if(!route||flying&&floor.wall(x,y)&&!floor.towerAir(x,y)||
+    (hero?!floor.heroClearsDoor(actor,x,y):floor.inRest(x,y)))return;
+   const next={x,y,underpass:route.underpass};
+   if(others.every(other=>clear(x,y,other)||floor.separatePassage(next,other)))Object.assign(actor,next);
+  };
   const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
   for(let i=0;i<steps;i++){
    const x=actor.x+dx/steps,y=actor.y+dy/steps;
-   if(dx&&pass(x,actor.y))actor.x=x;
-   if(dy&&pass(actor.x,y))actor.y=y;
+   if(dx)step(x,actor.y);
+   if(dy)step(actor.x,y);
    if(canFall&&this.floor.pastLedge(actor.x,actor.y,hero?undefined:bodyRadius)){
     actor.fall={remaining:fallSeconds,origin,heading:Math.atan2(dy,dx),...(hero?{}:{safe})};
     actor.attack=0;actor.dash=0;actor.chargeStart=null;actor.moving=false;
@@ -191,7 +195,7 @@ export class Simulation{
   return true;
  }
  travel(p,link){
-  Object.assign(p,link.exit,{dash:0,moving:false,inv:.45,vault:null,chargeStart:null,travelLock:.48});
+  Object.assign(p,link.exit,{dash:0,moving:false,inv:.45,vault:null,chargeStart:null,travelLock:.48,underpass:undefined});
   p.input={...idleInput(),seq:p.input.seq};
   this.emit('travel',{seat:p.seat,x:p.x,y:p.y,link:link.kind});
  }
@@ -241,7 +245,7 @@ export class Simulation{
   return true;
  }
  canTarget(e,p){
-  return p.online&&!e.fall&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&foes.encounterReady(e,p,this.floor,p.entryGrace??0,
+  return p.online&&!e.fall&&!this.floor.separatePassage(p,e)&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&foes.encounterReady(e,p,this.floor,p.entryGrace??0,
    !e.bossRole&&this.sights.get(p.seat)?.seesEnemy(e),this.clock);
  }
  updateSight(p){
@@ -249,7 +253,7 @@ export class Simulation{
   const sight=this.sights.get(p.seat);
   sight.update(p,1180,760);
   for(const e of this.enemies){
-   if(!e.bossRole&&e.hp>0&&e.veilPhase!=='hidden'&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&sight.observeEnemy(e))foes.reveal(e,this.clock);
+   if(!e.bossRole&&e.hp>0&&e.veilPhase!=='hidden'&&!this.floor.separatePassage(p,e)&&!this.floor.hiddenByStairCrest(p,e,this.explored)&&sight.observeEnemy(e))foes.reveal(e,this.clock);
   }
  }
  isWeb(p){
@@ -387,7 +391,7 @@ export class Simulation{
   const face=Math.cos(p.dir);if(Math.abs(face)>.23&&!p.wallRecoil)p.weaponSide=Math.sign(face);
   p.moving=gap(p,before)>.08;
   if(p.moving)p.walk+=dt*(p.dash?23:(drinking?items.potionWalkRate:12)*Math.min(1,length));
-  const region=this.floor.regionAt(p.x,p.y);
+  const region=this.floor.actorRegion(p);
   if(p.region!==region){
    p.region=region;p.entered=this.clock;
    p.entryGrace=region>=0&&!this.explored.has(region)&&!this.floor.isPassage(region)?foes.entryGrace:0;
@@ -456,7 +460,7 @@ export class Simulation{
   const doorHit=door&&beforeWall(door)&&!this.floor.furnitureBetween(p.x,p.y,door.x,door.y);
   if(!rest)for(const e of this.enemies){
    const angle=Math.atan2(e.y-p.y,e.x-p.x);
-   if(e.hp<=0||e.fall||!items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)||!beforeWall(e)||
+   if(e.hp<=0||e.fall||this.floor.separatePassage(p,e)||!items.meleeHit(w,e.x-p.x,e.y-p.y,p.dir,reach,e.size)||!beforeWall(e)||
       this.floor.gateLineBlocked(p.x,p.y,e.x,e.y,e.type===foes.EAGLE))continue;
    const cover=this.floor.furnitureBetween(p.x,p.y,e.x,e.y);
    if(cover){props.add(cover);continue;}

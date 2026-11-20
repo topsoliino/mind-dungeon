@@ -60,6 +60,47 @@ window.DungeonRun = (() => {
   const roll=rng(),count=roll<.22?0:roll<.78?1:2;
   return shuffle([1,2,3,4,5],rng).slice(0,count);
  }
+ function addUnderpasses(layout,revision){
+  const {map,regions,terrain,paths,stairs,corridors,rooms}=layout;
+  const underpasses=[];
+  // A hall can cross the projected footprint of a stair without replacing its treads.
+  for(const path of paths.filter(p=>p.id===66)){
+   for(const stair of stairs){
+    if(stair.x>=path.x+path.w||stair.x+stair.w<=path.x||stair.y>=path.y+path.h||stair.y+stair.h<=path.y)continue;
+    const x=Math.max(path.x,stair.x-1),end=Math.min(path.x+path.w,stair.x+stair.w+1);
+    const overlap=Array.from({length:path.h},(_,dy)=>regions[path.y+dy].slice(x,end)).flat();
+    if(!overlap.some(id=>stair.stepIds.includes(id)))continue;
+    underpasses.push({id:'under-'+stair.id,x,y:path.y,w:end-x,h:path.h,axis:'x',region:path.id,style:'stone'});
+   }
+  }
+  if(revision>=21)for(const c of corridors){
+   const width=c.vertical?c.h:c.w,length=c.vertical?c.w:c.h;
+   if(length<4||!terrain[c.y][c.x]?.startsWith('bridge-'))continue;
+   const axis=c.vertical?'y':'x',from=[rooms[c.from],rooms[c.to]].sort((a,b)=>c.vertical?a.cx-b.cx:a.cy-b.cy)[0];
+   const tile=(u,v)=>c.vertical?{x:c.x+u,y:c.y+v}:{x:c.x+v,y:c.y+u};
+   const middle=Math.max(1,Math.floor((length-2)/2));
+   const below=[];
+   for(let v=-2;v<width+2;v++)for(let u=middle;u<middle+2;u++)below.push({u,v,...tile(u,v)});
+   for(const edge of [-2,width])for(let v=edge;v<edge+2;v++)for(let u=-1;u<middle;u++)below.push({u,v,...tile(u,v)});
+   const deck=({v})=>v>=0&&v<width;
+   const valid=below.every(p=>{
+    const {x,y,u}=p,t=terrain[y]?.[x],region=regions[y]?.[x];
+    if(u<0)return map[y]?.[x]===0&&region===from.i&&!t;
+    if(deck(p))return region===c.id&&t===(c.vertical?'bridge-x':'bridge-y');
+    return map[y]?.[x]===1&&(!t||region===c.id&&['abyss','river'].includes(t));
+   });
+   if(!valid)continue;
+   const region=200+c.id,{x,y}=tile(middle,0),rect={x,y,w:c.vertical?2:width,h:c.vertical?width:2};
+   for(const p of below){
+    if(p.u<0||deck(p))continue;
+    map[p.y][p.x]=0;regions[p.y][p.x]=region;terrain[p.y][p.x]='underpass-floor';
+   }
+   paths.push({id:region,...rect,theme:3,vertical:c.vertical,name:'Brückenunterführung'});
+   underpasses.push({id:'under-bridge-'+c.id,...rect,axis,region,style:'bridge'});
+   break;
+  }
+  return {...layout,underpasses};
+ }
  function generate(seed,varied=true,revision=5,depth=1,templeAt=0,runSeed=seed){
   const rng=random(seed);
   const cells=Array.from({length:6},(_,i)=>({col:i%3,row:i/3|0}));
@@ -232,7 +273,8 @@ window.DungeonRun = (() => {
   const layout=revision>=8?window.DungeonStrata.extend(base,seed,depth,random,shuffle,revision,sewerDepth(runSeed),
    revision>=10&&cryptDepths(runSeed).includes(depth),LAST_DEPTH):base;
   if(temple&&revision>=17)window.DungeonTemple.extend(layout,seed,random,shuffle,revision);
-  return revision>=16?window.DungeonSanctuary.extend(layout,revision):layout;
+  const layered=revision>=20?addUnderpasses(layout,revision):layout;
+  return revision>=16?window.DungeonSanctuary.extend(layered,revision):layered;
 
  }
  function differentLayoutSeed(seed,rooms,gates){
@@ -397,8 +439,8 @@ window.DungeonRun = (() => {
   });
  }
  function floorState(seed,depth){
-  return {dungeonSeed:seed,floor:depth,x:null,y:null,gates:{},doors:{},furnitureDamage:{},access:{},gateProgress:{},gateQuestions:{},opened:[],
-   defeated:[],explored:[REST_ID],seenTiles:[],seenTilesVersion:null,portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:20,bossBattle:null,bossActors:[],cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[],keyCarrier:null,openedCaches:{},floorEnemies:null};
+  return {dungeonSeed:seed,floor:depth,x:null,y:null,underpass:null,gates:{},doors:{},furnitureDamage:{},access:{},gateProgress:{},gateQuestions:{},opened:[],
+   defeated:[],explored:[REST_ID],seenTiles:[],seenTilesVersion:null,portal:null,merchantMapFound:false,souls:[],shopSold:[],searched:[],trialIndex:null,trials:{},ambushes:[],variedRooms:true,stockedRooms:false,serpents:[],altarUses:{},altarQuestions:{},layoutRevision:21,bossBattle:null,bossActors:[],cupClaimed:false,brewBones:0,wellOffer:null,templeAttempts:{},brewIngredients:[],activeBrew:null,brewEffects:[],keyCarrier:null,openedCaches:{},floorEnemies:null};
  }
  function freshRun(seed){
   return {...floorState(seed,1),trialCharmActive:false,alleyRingAwarded:false,templeDepth:templeDepth(seed),bones:0,rubies:0,boneClaims:{},rubyClaims:{},mythicSold:[],mythicStock:null,templeRunSeed:seed,solved:{},questionReview:{},questionSeen:{},questionCount:0,completed:false,floorVersion:1,depthSeeds:{},floorArchives:{},keyring:{},bossOrdinal:null,selectedBoss:null,damageHistory:[],damageQueue:[],fall:null,deathRecap:null};
@@ -412,7 +454,7 @@ window.DungeonRun = (() => {
   const floorArchives={...save.floorArchives},previous=floorArchives[depth];
   delete floorArchives[depth];
   return {...save,...floorState(seed,depth),boneClaims:{},rubyClaims:{},completed:false,...previous,
-   x:null,y:null,wellOffer:save.wellOffer,activeBrew:save.activeBrew,brewEffects:save.brewEffects,
+   x:null,y:null,underpass:null,wellOffer:save.wellOffer,activeBrew:save.activeBrew,brewEffects:save.brewEffects,
    depthSeeds:{...save.depthSeeds,[depth]:previous?.dungeonSeed??seed},
    floorArchives:{...floorArchives,[save.floor]:floorSnapshot(save)}};
  }

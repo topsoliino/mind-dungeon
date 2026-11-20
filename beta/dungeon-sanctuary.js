@@ -180,7 +180,7 @@ window.DungeonSanctuary=(()=>{
    ['sanctuary-mosaic',20,15],['sanctuary-hearth',20,15],['bench',17,17],['bench',23,17],
    ['sanctuary-smith',5,15],['sanctuary-brazier',3,15],['weapon-rack',6,12],['large-barrel',4,18],
    ['sanctuary-archive',20,3],['bookcase',16,4],['bookcase',24,3],['candle',18,3],['candle',22,3],
-   ['sanctuary-vault',20,1],['sanctuary-vault',6,terraced?12:11],['sanctuary-vault',8,3],['sanctuary-vault',7,23],
+   ['sanctuary-vault',20,2],['sanctuary-vault',8,4],['sanctuary-vault',7,25],
    ['well',35,17],['bench',35,19],['sanctuary-brazier',32,20],
    ['sanctuary-arch',20,30],['sanctuary-arch',32,26],['sanctuary-plaque',23,29],
    ['sanctuary-brazier',17,29],['sanctuary-brazier',23,27],['sanctuary-brazier',32,25],
@@ -188,7 +188,7 @@ window.DungeonSanctuary=(()=>{
    ['sanctuary-tree',16,terraced?13:11],['sanctuary-tree',24,terraced?13:11],['sanctuary-tree',14,20],
    ['sanctuary-tree',terraced?25:26,terraced?22:20],
    ['sanctuary-tree',33,10],['sanctuary-tree',36,13],
-   ...(raised?[['sanctuary-ban-table',44,4],['sanctuary-vault',44,1],['sanctuary-pillar',41,3],['sanctuary-pillar',48,3],
+   ...(raised?[['sanctuary-ban-table',44,4],['sanctuary-vault',44,2],['sanctuary-pillar',41,3],['sanctuary-pillar',48,3],
     ['bookcase',39,4],['bookcase',49,4],['sanctuary-brazier',41,6],['sanctuary-brazier',47,6]]:[]),
    ...(winding?[['sanctuary-brazier',39,17]]:raised?[['sanctuary-pillar',40,16],['sanctuary-pillar',44,17],['sanctuary-pillar',48,16],
     ['sanctuary-brazier',47,20],['sanctuary-brazier',52,14],['sanctuary-brazier',49,7]]:[]),
@@ -197,7 +197,7 @@ window.DungeonSanctuary=(()=>{
    ...seats.map(([x,y])=>['sanctuary-seat',x,y-1])
   ].filter(([,x,y])=>map[y]?.[left+x]===0).map(([type,x,y],variant)=>({type,...at(x,y),variant}));
   const points=Object.fromEntries(Object.entries({
-   fire:[20,15],spawn:[20,18],cup:[17,18],cat:[18,16],luckyCat:[22,16],well:[35,17],wellUse:[35,18],
+   fire:[20,15],spawn:[20,18],cat:[18,16],luckyCat:[22,16],well:[35,17],wellUse:[35,18],
    wellArrival:[33,19],archive:[20,3],archiveUse:[20,4],smith:[5,15],smithUse:[5,16],
    retreat:[32,26],ward:[23,29],lobby:[rest.cx-left,rest.cy]
   }).map(([key,[x,y]])=>[key,at(x,y)]));
