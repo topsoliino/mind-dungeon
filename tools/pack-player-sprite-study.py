@@ -10,11 +10,11 @@ FACINGS = 8
 PADDING = 2
 
 
-def pack_layer(directory, layer, count, width):
+def pack_layer(directory, layer, count, width, indices):
     # Each crop keeps its offset from the original Blender camera pivot.
     frames = [None] * (FACINGS * count)
     tiles = []
-    for index in range(len(frames)):
+    for index in indices:
         frame, facing = divmod(index, FACINGS)
         path = directory / f'{layer}-{facing}-{frame}.png'
         with Image.open(path) as source:
@@ -55,8 +55,12 @@ def main():
     clips = json.loads((args.renders / 'clips.json').read_text())
     count = sum(frames for _, frames in clips.values())
     manifest = {'clips': clips}
-    for layer, width in [('body', 2048), ('weapon', 1024)]:
-        atlas, manifest[layer] = pack_layer(args.renders, layer, count, width)
+    for layer, width, other in [('body', 2048, None), ('weapon', 1024, 'hammer'),
+                                ('hammer', 1024, 'sword')]:
+        indices = (index for clip, (start, length) in clips.items()
+                   if not other or not clip.startswith((f'charge-{other}-', f'heavy-{other}'))
+                   for index in range(start*FACINGS, (start+length)*FACINGS))
+        atlas, manifest[layer] = pack_layer(args.renders, layer, count, width, indices)
         atlas.save(args.output / f'guardian-{layer}.webp', quality=89, method=4)
     (args.output / 'guardian-frames.json').write_text(json.dumps(manifest, separators=(',', ':')) + '\n')
     copyfile(args.renders / 'guardian.blend', args.output / 'guardian.blend')

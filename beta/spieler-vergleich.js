@@ -3,10 +3,20 @@
 
  const tile=48,columns=23,rows=13,cell=128;
  const modelSize=110,modelGround=.77597;
+ const lightHoldMs=240;
  const clips={
-  idle:{duration:1.3},walk:{duration:.576},sprint:{duration:.49},roll:{duration:.76},
-  down:{duration:.84,comboFrame:13,entryFrame:6},up:{duration:.84,comboFrame:13,entryFrame:4}
+  idle:{duration:1.3},walk:{duration:.48},sprint:{duration:.49},roll:{duration:.76},
+  down:{duration:.74,guard:6,chain:13,next:'up'},
+  up:{duration:.74,guard:4,chain:13,next:'down'}
  };
+ const weaponTypes={
+  sword:{sheet:'weapon',heavy:{duration:.80,chain:16,next:'up',lunge:13}},
+  hammer:{sheet:'hammer',heavy:{duration:.94,chain:16,next:'down',lunge:8,impact:7}}
+ };
+ for(const [type,weapon] of Object.entries(weaponTypes)){
+  clips['heavy-'+type]=weapon.heavy;
+  for(const light of ['down','up'])clips['charge-'+type+'-'+light]={duration:.18,heavy:'heavy-'+type};
+ }
  const gaitPoses=['walk','gait-one','gait-two','sprint'];
  const walkStride=.66/.60,sprintStride=.92/.34,groundY=.882;
  const rollRecoveryFrame=22;
@@ -23,25 +33,29 @@
  const ground=art.world(map,()=>3,lights,193,terrain,[],tile);
  const decor=lights.map(p=>({...p,sprite:art.furniture('sanctuary-brazier',3,0)}));
  const presses=new Set(),shiftKeys=new Set();
- const direction=document.querySelector('#direction'),zoomButton=document.querySelector('#zoom'),weaponButton=document.querySelector('#weapon');
+ const direction=document.querySelector('#direction'),zoomButton=document.querySelector('#zoom');
+ const weaponButton=document.querySelector('#weapon'),weaponSelect=document.querySelector('#weapon-type');
  const status=document.querySelector('#status'),buttons=Array.from(document.querySelectorAll('[data-clip]'));
  const canvas=document.querySelector('#blender'),ctx=canvas.getContext('2d',{alpha:false});
  let width=0,height=0,dpr=1;
- const bodySheet=new Image(),weaponSheet=new Image();
+ const bodySheet=new Image();
+ const weaponSheets=new Map();
  let atlas;
  let x=columns*tile/2,y=rows*tile/2,scale=1,facing=1,mode='idle',elapsed=0,last=0,repeat=true;
  let showWeapon=true,gaitPhase=0,gaitBlend=0;
  let rollEntry=null,rollExit=null,rollStartSpeed=0;
- let nextAttack='down',attackQueued=false;
+ let weaponType='sword',weaponSheet;
+ let heldAttack=null,attackIntent=null,queuedAttack=null;
  const bound=(n,a,b)=>Math.max(a,Math.min(b,n));
- const isAttack=clip=>clips[clip].comboFrame!==undefined;
+ const isAttack=clip=>clips[clip].next!==undefined||clips[clip].heavy!==undefined;
  const isGait=clip=>clip==='walk'||clip==='sprint';
  const mix=(a,b,t)=>a+(b-a)*t;
  const ease=t=>{t=bound(t,0,1);return t*t*(3-2*t);};
  const gaitDuration=blend=>mix(clips.walk.duration,clips.sprint.duration,blend);
  const gaitSpeed=blend=>mix(walkStride,sprintStride,blend)*(modelSize/3.23)/gaitDuration(blend);
  const heading=(dx,dy)=>(Math.round(Math.atan2(dy/groundY,dx)/(Math.PI/4))+8)%8;
- const frameAt=(clip,progress)=>bound(Math.floor(progress*atlas.clips[clip][1]),0,atlas.clips[clip][1]-1);
+ const frameAt=(clip,progress)=>bound(Math.floor(progress*atlas.clips[clip][1]+1e-8),0,atlas.clips[clip][1]-1);
+ const frameTime=(clip,frame)=>frame*clips[clip].duration/atlas.clips[clip][1];
  const gaitPose=()=>gaitPoses[Math.round(ease(gaitBlend)*3)];
  function resize(){
   width=canvas.clientWidth;height=canvas.clientHeight;
@@ -52,15 +66,22 @@
  resize();
 
  function select(clip,loop,startTime=0){
-  mode=clip;elapsed=startTime;repeat=loop;attackQueued=false;
-  for(const button of buttons)button.setAttribute('aria-pressed',String(button.dataset.clip===clip));
+  mode=clip;elapsed=startTime;repeat=loop;
+  for(const button of buttons){
+   const preview=button.dataset.clip==='heavy'?'heavy-'+weaponType:button.dataset.clip;
+   button.setAttribute('aria-pressed',String(preview===clip));
+  }
  }
- function startAttack(chained=false,overflow=0){
-  const clip=clips[nextAttack];
-  const entry=chained?clip.entryFrame*clip.duration/atlas.clips[nextAttack][1]:0;
-  const attack=nextAttack;
-  nextAttack=attack==='down'?'up':'down';
-  select(attack,false,entry+overflow);
+ function clearAttacks(){
+  attackIntent=null;queuedAttack=null;heldAttack=null;
+ }
+ function startLight(light,intent,linked,overflow=0){
+  const entry=linked?frameTime(light,clips[light].guard):0;
+  intent.startedAt=performance.now()-overflow*1000;
+  intent.committed=false;
+  attackIntent=intent;
+  queuedAttack=null;
+  select(light,false,entry+overflow);
  }
  function movement(){
   let dx=0,dy=0;
@@ -83,9 +104,13 @@
    rollEntry={clip:'roll-in-'+pose+'-'+phase,pose,frame:frameAt(pose,gaitPhase)};
    rollStartSpeed=gaitSpeed(ease(gaitBlend));
   }
-  select('roll',false);
+  clearAttacks();select('roll',false);
  }
- for(const button of buttons)button.addEventListener('click',()=>select(button.dataset.clip,true));
+ for(const button of buttons)button.addEventListener('click',()=>{
+  if(!atlas)return;
+  clearAttacks();
+  select(button.dataset.clip==='heavy'?'heavy-'+weaponType:button.dataset.clip,true);
+ });
  canvas.addEventListener('pointerdown',()=>canvas.focus());
  direction.addEventListener('change',()=>{
   if(mode==='roll'&&!repeat)direction.value=String(facing);
@@ -96,6 +121,24 @@
  });
  weaponButton.addEventListener('click',()=>{
   showWeapon=!showWeapon;weaponButton.setAttribute('aria-pressed',String(showWeapon));
+ });
+ weaponSelect.addEventListener('change',async()=>{
+  const type=weaponSelect.value;
+  try {
+   const sheet=await loadWeapon(type);
+   if(weaponSelect.value!==type)return;
+   const preview=repeat&&mode.startsWith('heavy-');
+   if(isAttack(mode)){clearAttacks();select('idle',false);}
+   weaponType=type;weaponSheet=sheet;
+   status.hidden=true;
+   if(preview)select('heavy-'+type,true);
+   canvas.focus({preventScroll:true});
+  }catch{
+   if(weaponSelect.value===type){
+    weaponSelect.value=weaponType;
+    status.hidden=false;status.textContent='Die Waffe konnte nicht geladen werden.';
+   }
+  }
  });
  addEventListener('keydown',event=>{
   if(!atlas)return;
@@ -114,8 +157,12 @@
    event.preventDefault();
    if(event.repeat||(!repeat&&mode==='roll'))return;
    if(event.target!==canvas)canvas.focus({preventScroll:true});
-   if(!repeat&&isAttack(mode))attackQueued=true;
-   else startAttack();
+   const intent={releasedAt:null,startedAt:null};
+   if(!repeat&&isAttack(mode)){
+    if(queuedAttack)return;
+    queuedAttack=intent;
+   }else startLight('down',intent,false);
+   heldAttack=intent;
   }
   if(event.code==='Space'&&!event.target.closest?.('button,a')){
    event.preventDefault();
@@ -124,10 +171,17 @@
   }
  });
  addEventListener('keyup',event=>{
+  if(event.code==='KeyK'&&heldAttack){
+   heldAttack.releasedAt=performance.now();heldAttack=null;
+  }
   shiftKeys.delete(event.code);
   presses.delete(event.code);
  });
- addEventListener('blur',()=>{presses.clear();shiftKeys.clear();attackQueued=false;});
+ addEventListener('blur',()=>{
+  presses.clear();shiftKeys.clear();
+  if(!repeat&&isAttack(mode))select('idle',false);
+  clearAttacks();
+ });
 
  function moveBy(dx,dy){
   x=bound(x+dx,tile+19,(columns-1)*tile-19);
@@ -157,24 +211,64 @@
   }else select('idle',false);
   return dt-used;
  }
+ function advanceAttack(dt){
+  const clip=clips[mode];
+  const previous=elapsed;
+  const next=elapsed+dt;
+  if(clip.guard!==undefined&&!attackIntent.committed){
+   const guard=frameTime(mode,clip.guard);
+   if(next>=guard){
+    // A buffered hold starts charging at this swing's wind-up.
+    const held=(attackIntent.releasedAt??performance.now())-attackIntent.startedAt;
+    if(held>=lightHoldMs){
+     select('charge-'+weaponType+'-'+mode,false);
+     return 0;
+    }
+    if(attackIntent.releasedAt===null){
+     elapsed=guard;
+     return 0;
+    }
+    attackIntent.committed=true;
+   }
+  }
+  if(clip.heavy){
+   elapsed=Math.min(next,clip.duration);
+   if(next>=clip.duration&&attackIntent.releasedAt!==null)select(clip.heavy,false);
+   return 0;
+  }
+  if(clip.lunge){
+   const progress=t=>ease((t/clip.duration-.09)/.27);
+   const distance=clip.lunge*(progress(next)-progress(previous)),angle=facing*Math.PI/4;
+   moveBy(Math.cos(angle)*distance,Math.sin(angle)*groundY*distance);
+  }
+  const handoff=frameTime(mode,clip.chain);
+  if(queuedAttack&&previous<=handoff&&next>=handoff){
+   startLight(clip.next,queuedAttack,true,next-handoff);
+   return 0;
+  }
+  if(next<clip.duration){
+   elapsed=next;
+   return 0;
+  }
+  const overflow=next-clip.duration;
+  if(queuedAttack){
+   startLight('down',queuedAttack,false,overflow);
+   return 0;
+  }
+  attackIntent=null;select('idle',false);
+  return overflow;
+ }
  function update(dt){
   const input=movement();
   if(mode==='roll'&&!repeat){
    dt=advanceRoll(dt,input);
    if(dt===0)return;
   }
-  const previous=elapsed;
-  elapsed+=dt;
   if(!repeat&&isAttack(mode)){
-   const clip=clips[mode];
-   if(attackQueued){
-    // Link at the shared pose. A later press uses the next clip's regular wind-up.
-    const handoff=clip.comboFrame*clip.duration/atlas.clips[mode][1];
-    if(previous<=handoff&&elapsed>=handoff)startAttack(true,elapsed-handoff);
-    else if(elapsed>=clip.duration)startAttack(false,elapsed-clip.duration);
-   }else if(elapsed>=clip.duration)select('idle',false);
-   if(isAttack(mode))return;
+   dt=advanceAttack(dt);
+   if(dt===0)return;
   }
+  elapsed+=dt;
   if(input.length){
    face(input.facing);
    if(!isGait(mode)||repeat){gaitBlend=0;gaitPhase=0;}
@@ -215,9 +309,33 @@
   const index=frame*8+facing;
   ctx.fillStyle='#110d1780';
   ctx.beginPath();ctx.ellipse(x,y+13,21,5,0,0,Math.PI*2);ctx.fill();
+  const clip=clips[mode];
+  if(clip.heavy){
+   const load=elapsed/clip.duration;
+   ctx.save();
+   ctx.strokeStyle=load===1?'#f2ce87ae':'#dbb4737d';
+   ctx.lineWidth=load===1?2:1;
+   ctx.beginPath();ctx.ellipse(x,y+13,23,6,0,Math.PI*.5,Math.PI*(.5+2*load));ctx.stroke();
+   ctx.restore();
+  }
+  if(clip.impact){
+   const since=(elapsed%clip.duration)-frameTime(mode,clip.impact);
+   if(since>=0&&since<.18){
+    const angle=facing*Math.PI/4;
+    // The hammer lands slightly right of the character's forward axis.
+    const hitX=x+Math.cos(angle)*27+Math.sin(angle)*7;
+    const hitY=y+16+(Math.sin(angle)*27-Math.cos(angle)*7)*.47;
+    ctx.save();
+    ctx.globalAlpha=.65*(1-since/.18);
+    ctx.strokeStyle='#d0ab7c';
+    ctx.beginPath();ctx.ellipse(hitX,hitY,4+since*112,2+since*42,0,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
+   }
+  }
   const left=Math.round(x-modelSize/2),top=Math.round(y+16-modelSize*modelGround);
   drawPacked(ctx,bodySheet,atlas.body[index],left,top);
-  if(showWeapon&&atlas.weapon[index])drawPacked(ctx,weaponSheet,atlas.weapon[index],left,top);
+  const weaponFrame=atlas[weaponTypes[weaponType].sheet][index];
+  if(showWeapon&&weaponFrame)drawPacked(ctx,weaponSheet,weaponFrame,left,top);
  }
  function camera(pos,visible,extent){
   return visible>=extent?(extent-visible)/2:bound(pos-visible/2,0,extent-visible);
@@ -246,15 +364,25 @@
    image.src=path;
   });
  }
+ function loadWeapon(type){
+  if(!weaponSheets.has(type)){
+   const image=new Image();
+   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=8')
+    .then(()=>image).catch(error=>{weaponSheets.delete(type);throw error;});
+   weaponSheets.set(type,loaded);
+  }
+  return weaponSheets.get(type);
+ }
  Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=7'),
-  loadSheet(weaponSheet,'art/player-study/guardian-weapon.webp?v=7'),
-  fetch('art/player-study/guardian-frames.json?v=7').then(response=>{
+  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=8'),
+  loadWeapon(weaponType),
+  fetch('art/player-study/guardian-frames.json?v=8').then(response=>{
    if(!response.ok)throw new Error('Animationsdaten fehlen.');
    return response.json();
   })
- ]).then(([, ,frames])=>{
+ ]).then(([,sheet,frames])=>{
   atlas=frames;
+  weaponSheet=sheet;weaponSelect.disabled=false;
   status.hidden=true;
   last=performance.now();requestAnimationFrame(loop);
  }).catch(()=>{status.textContent='Die Blender-Sprites konnten nicht geladen werden.';});

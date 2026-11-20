@@ -30,9 +30,17 @@ ROLL_RECOVERY = 22
 ROLL_ENTRIES = {f'roll-in-{stride}-{phase}': (stride, phase/4)
                 for stride in ('walk', *GAIT_BLENDS, 'sprint') for phase in range(4)}
 ROLL_EXITS = {'roll-out-walk': 'walk', 'roll-out-sprint': 'sprint'}
+WEAPON_TYPES = ('sword', 'hammer')
+CHARGE_FRAMES = 6
+HEAVY_FRAMES = 22
+CHARGE_CLIPS = {f'charge-{weapon}-{light}': (weapon, light)
+                for weapon in WEAPON_TYPES for light in ('down', 'up')}
+HEAVY_CLIPS = {f'heavy-{weapon}': weapon for weapon in WEAPON_TYPES}
 CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, 16) for name in GAIT_BLENDS), ('roll', ROLL_FRAMES),
-         *((name, 2) for name in ROLL_ENTRIES), *((name, 4) for name in ROLL_EXITS)]
+         *((name, 2) for name in ROLL_ENTRIES), *((name, 4) for name in ROLL_EXITS),
+         *((name, CHARGE_FRAMES) for name in CHARGE_CLIPS),
+         *((name, HEAVY_FRAMES) for name in HEAVY_CLIPS)]
 SIDES = [('L', -1), ('R', 1)]
 
 
@@ -66,12 +74,14 @@ def material(name, color, roughness=.61, metal=0):
     return mat
 
 
-def mesh(name, vertices, faces, mats, bone, bevel=.006, indices=None):
+def mesh(name, vertices, faces, mats, bone, bevel=.006, indices=None, collection=None):
     data = bpy.data.meshes.new(name)
     data.from_pydata([fitted(vertex, bone) for vertex in vertices], [], faces)
     data.update()
     obj = bpy.data.objects.new(name, data)
-    (weapons if bone == 'Grip.R' else body).objects.link(obj)
+    if collection is None:
+        collection = weapon_collections['sword'] if bone == 'Grip.R' else body
+    collection.objects.link(obj)
     for mat in mats:
         data.materials.append(mat)
     if indices:
@@ -118,7 +128,7 @@ def plate(name, points, thickness, mat, bone, bevel=.005):
                 [mat], bone, bevel)
 
 
-def limb(name, a, b, widths, mats, bone, sides=8):
+def limb(name, a, b, widths, mats, bone, sides=8, collection=None):
     a, b = Vector(a), Vector(b)
     axis = (b - a).normalized()
     u = axis.cross(Vector((0, 1, 0))).normalized()
@@ -136,7 +146,7 @@ def limb(name, a, b, widths, mats, bone, sides=8):
             indices.append((i + row) % len(mats))
     faces.append(tuple(range(len(vertices) - sides, len(vertices))))
     indices.append(len(mats) - 1)
-    return mesh(name, vertices, faces, mats, bone, indices=indices)
+    return mesh(name, vertices, faces, mats, bone, indices=indices, collection=collection)
 
 
 def model_joints():
@@ -320,6 +330,22 @@ def model():
     mesh('Longsword · four facets', vertices, faces, [shadow, steel, blade], 'Grip.R', .002,
          [2, 1, 0, 1] * 3)
 
+    hammer = weapon_collections['hammer']
+    limb('War hammer · leather and ash haft', grip-d*.155, grip+d*.645,
+         [(0,.027,.027), (.10,.030,.030), (.32,.024,.024), (.85,.023,.023), (1,.039,.039)],
+         [leather, brass, leather, shadow], 'Grip.R', collection=hammer)
+    head = grip + d*.542
+    vertices = [tuple(head + u*x + v*y + d*z)
+                for x, height, width in [(-.23,.073,.062), (-.09,.103,.092),
+                                          (.12,.113,.094), (.215,.117,.104)]
+                for y,z in [(-width,-height), (width,-height), (width,height), (-width,height)]]
+    faces = [(3,2,1,0), (12,13,14,15)]
+    for row in range(3):
+        faces.extend((row*4+i, row*4+(i+1)%4, (row+1)*4+(i+1)%4, (row+1)*4+i)
+                     for i in range(4))
+    mesh('War hammer · forged head', vertices, faces, [shadow, steel, edge, brass],
+         'Grip.R', .018, [2,2, 0,1,2,1, 1,1,3,1, 0,1,2,1], collection=hammer)
+
 
 def orient(bone, position, rotation):
     anchor = rest[bone][0]
@@ -373,6 +399,11 @@ STEADY = (0, 0, 0, .04, .414, -.168, .924, 24, 16)
 # Each guard is shared at the exact exported frames where the combo can chain.
 HIGH_GUARD = (.55, .050, .060, -.065, .328, .094, 1.39, 104, 64)
 LOW_GUARD = (-.61, -.141, .105, .20, -.185, -.371, .943, -92, -35)
+LIGHT_GUARDS = {'down': HIGH_GUARD, 'up': LOW_GUARD}
+HEAVY_GUARDS = {
+    'sword': (.82, .055, .092, -.105, .335, .156, 1.402, 128, 57),
+    'hammer': (.24, .103, .105, -.145, .339, .045, 1.548, 161, 69),
+}
 ATTACKS = {
     'down': [
         (0, *STEADY),
@@ -399,6 +430,36 @@ ATTACKS = {
         (1, *STEADY),
     ],
 }
+for name, (weapon, light) in CHARGE_CLIPS.items():
+    ATTACKS[name] = [(0, *LIGHT_GUARDS[light]), (1, *HEAVY_GUARDS[weapon])]
+
+# The sword finishes across the hips, set up for a rising light cut.
+# The hammer rebounds into a high guard, ready for a descending light cut.
+ATTACKS.update({
+    'heavy-sword': [
+        (0, *HEAVY_GUARDS['sword']),
+        (2/21, .89, .049, .090, -.084, .346, .096, 1.410, 141, 53),
+        (5/21, .28, -.114, .077, .18, .320, -.409, 1.387, 50, 48),
+        (7/21, -.42, -.217, .140, .30, -.023, -.576, 1.121, -35, -6),
+        (10/21, -.86, -.211, .152, .25, -.217, -.394, .922, -119, -19),
+        (16/21, *LOW_GUARD),
+        (.90, -.31, -.065, .041, .121, .019, -.269, .922, -55, -14),
+        (1, *STEADY),
+    ],
+    'heavy-hammer': [
+        (0, *HEAVY_GUARDS['hammer']),
+        (2/21, .18, .058, .071, -.087, .312, -.056, 1.581, 31, 87),
+        (5/21, .03, -.156, .108, .26, .303, -.532, 1.230, 5, 14),
+        (7/21, -.07, -.220, .254, .44, .232, -.538, .625, -4, -63),
+        (9/21, -.09, -.197, .210, .37, .226, -.505, .738, -7, -51),
+        (13/21, .28, -.032, .120, .112, .355, -.099, 1.192, 54, 36),
+        (16/21, *HIGH_GUARD),
+        (.90, .29, .020, .032, .02, .459, -.038, 1.105, 56, 32),
+        (1, *STEADY),
+    ],
+})
+
+
 def gait_foot(phase, stride, stance, clearance, running):
     heel, push = (-5, 33) if running else (-15, 22)
     if phase < stance:
@@ -814,17 +875,23 @@ def key_animations(scene, clips):
 
 def export(scene, frames, directory, preview):
     layer = bpy.context.view_layer.layer_collection
-    body_layer, weapon_layer = layer.children[body.name], layer.children[weapons.name]
-    for part in ('body', 'weapon'):
-        # Only sword pixels unobstructed by the body reach the second layer.
-        body_layer.holdout = part == 'weapon'
-        weapon_layer.exclude = part == 'body'
+    body_layer = layer.children[body.name]
+    for part, weapon in [('body', None), ('weapon', 'sword'), ('hammer', 'hammer')]:
+        # Only weapon pixels unobstructed by the body reach the weapon layers.
+        body_layer.holdout = weapon is not None
+        for name, collection in weapon_collections.items():
+            layer.children[collection.name].exclude = name != weapon
         for facing in range(FACINGS):
             if preview and facing not in (0, 1, 2):
                 continue
             rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
             for row, (kind, frame) in enumerate(frames):
-                if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll'):
+                if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll',
+                                           *CHARGE_CLIPS, *HEAVY_CLIPS):
+                    continue
+                if weapon and kind in CHARGE_CLIPS and CHARGE_CLIPS[kind][0] != weapon:
+                    continue
+                if weapon and kind in HEAVY_CLIPS and HEAVY_CLIPS[kind] != weapon:
                     continue
                 scene.frame_set(frame)
                 path = directory / f'{part}-{facing}-{row}.png'
@@ -842,8 +909,9 @@ if __name__ == '__main__':
     directory.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     body = bpy.data.collections.new('Guardian armor and body')
-    weapons = bpy.data.collections.new('Grip.R · Longsword')
-    for collection in (body, weapons):
+    weapon_collections = {'sword': bpy.data.collections.new('Grip.R · Longsword'),
+                          'hammer': bpy.data.collections.new('Grip.R · War hammer')}
+    for collection in (body, *weapon_collections.values()):
         bpy.context.scene.collection.children.link(collection)
     design, soles = model_joints(), {}
     rig, rest = create_rig(design)
@@ -855,6 +923,7 @@ if __name__ == '__main__':
     scene = setup(opts.engine)
     frames, layout = key_animations(scene, CLIPS)
     (directory/'clips.json').write_text(json.dumps(layout) + '\n')
+    bpy.context.view_layer.layer_collection.children[weapon_collections['hammer'].name].exclude = True
     rig.rotation_euler.z = math.pi/4
     rig.select_set(False)
     for screen in bpy.data.screens:
