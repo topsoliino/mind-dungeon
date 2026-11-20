@@ -69,7 +69,11 @@ export async function loadRig(url){
   const canvas=document.createElement('canvas');
   canvas.width=canvas.height=renderSize;
   const context=canvas.getContext('2d');
-  let yaw=null,previousTime=null,previousPose='';
+  const animatedNodes=[...new Set(gltf.animations[0].tracks.map(track=>
+  gltf.scene.getObjectByName(track.name.slice(0,track.name.lastIndexOf('.')))
+ ).filter(Boolean))];
+ const lightClip=clip=>clip==='down'||clip==='up';
+ let yaw=null,previousTime=null,previousPose='',previousClip=null,transition=null;
   return {
    canvas,displaySize,ground,
    render(clip,[start,count],progress,viewAngle,armed,time){
@@ -77,9 +81,15 @@ export async function loadRig(url){
     const dt=previousTime===null?0:Math.min(.1,Math.max(0,time-previousTime));
     previousTime=time;
     const difference=yaw===null?0:Math.atan2(Math.sin(angle-yaw),Math.cos(angle-yaw));
-    yaw=yaw===null?angle:yaw+difference*(1-Math.exp(-dt*24));
+    yaw=yaw===null?angle:yaw+difference*(1-Math.exp(-dt*(lightClip(clip)?64:24)));
+    if(previousClip!==null&&clip!==previousClip){
+     transition={duration:lightClip(clip)?.045:.065,elapsed:0,from:animatedNodes.map(node=>({
+      node,position:node.position.clone(),quaternion:node.quaternion.clone(),scale:node.scale.clone()
+     }))};
+    }
+    previousClip=clip;
     const pose=clip+'|'+progress+'|'+yaw+'|'+armed;
-    if(pose===previousPose)return false;
+    if(pose===previousPose&&!transition)return false;
     previousPose=pose;
     pivot.rotation.y=yaw;
     const visible=visibleParts(clip,progress,armed);
@@ -87,6 +97,16 @@ export async function loadRig(url){
     action.paused=false;
     action.enabled=true;
     mixer.setTime((start+clamp(progress)*(count-1))/frameRate);
+    if(transition){
+     transition.elapsed+=dt;
+     const t=clamp(transition.elapsed/transition.duration),weight=t*t*(3-2*t);
+     for(const {node,position,quaternion,scale} of transition.from){
+      node.position.lerp(position,1-weight);
+      node.quaternion.slerp(quaternion,1-weight);
+      node.scale.lerp(scale,1-weight);
+     }
+     if(t===1)transition=null;
+    }
     renderer.render(scene,camera);
     context.clearRect(0,0,renderSize,renderSize);
     context.drawImage(renderer.domElement,0,0);

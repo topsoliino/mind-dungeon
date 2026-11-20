@@ -4,7 +4,8 @@
  const scale=110/128,ground=.77597*110;
  const directionCount=8;
  // In each exported cut, the blade passes through the forward axis here.
- const strikeProgress={down:.51,up:.43,'heavy-sword':.28};
+ const heavyImpact=.28;
+ let light={duration:.36,impact:.25,chain:.8,retime:{}};
  const clamp=value=>Math.max(0,Math.min(1,value));
  const hitClip=share=>share>=.36?'hit-down':share>=.16?'hit-strong':'hit-light';
 
@@ -17,12 +18,15 @@
   })));
  }
  async function load(root){
-  const response=await fetch(root+'guardian-frames.json?v=17');
+  const [response,settings]=await Promise.all([
+   fetch(root+'guardian-frames.json?v=17'),fetch(root+'guardian-light-attacks.json?v=1').catch(()=>null)
+  ]);
   if(!response.ok)throw new Error('Wächter-Animationen konnten nicht geladen werden.');
   const atlas=await response.json();
+  if(settings?.ok)light=await settings.json();
   try{
-   const {loadRig}=await import('./dungeon-guardian-rig.js?v=1');
-   return {atlas,rig:await loadRig(root+'guardian-rig.glb.gz?v=1')};
+   const {loadRig}=await import('./dungeon-guardian-rig.js?v=2');
+   return {atlas,rig:await loadRig(root+'guardian-rig.glb.gz?v=2')};
   }catch(error){
    console.warn('3D-Wächter nicht verfügbar. Sprite-Wächter wird verwendet.',error);
    const layers=await Promise.all(['body','weapon'].map(key=>loadLayer(root,atlas.sheets[key])));
@@ -33,10 +37,18 @@
   const projected=Math.atan2(Math.sin(angle)/.47,Math.cos(angle));
   return (Math.round(projected/(Math.PI/4))+directionCount)%directionCount;
  }
+ function retimedSprite(clip,progress){
+  const points=light.retime[clip];
+  if(!points)return progress;
+  const step=points.findIndex(([t])=>t>=progress);
+  if(step<=0)return step<0?1:0;
+  const [a,from]=points[step-1],[b,to]=points[step];
+  return from+(to-from)*(progress-a)/(b-a);
+ }
  function parts(guardian,clip,progress,angle,x,y,armed,alpha=1){
   const {atlas,layers}=guardian;
   const [start,count]=atlas.clips[clip];
-  const step=Math.min(count-1,Math.floor(clamp(progress)*count));
+  const step=Math.min(count-1,Math.floor(clamp(retimedSprite(clip,progress))*count));
   const index=(start+step)*directionCount+facing(angle);
   const raw=[atlas.body[index],armed?atlas.weapon[index]:null];
   return raw.map((data,layer)=>{
@@ -54,5 +66,5 @@
   const t=clamp((progress-from)/(to-from));
   return a+(b-a)*t*t*(3-2*t);
  }
- window.DungeonGuardian={load,parts,hitClip,hitDistance,strikeProgress};
+ window.DungeonGuardian={load,parts,hitClip,hitDistance,heavyImpact,get light(){return light;}};
 })();

@@ -4,11 +4,51 @@ Run with:
 blender -b beta/art/player-study/guardian.blend -P tools/export-guardian-web.py -- beta/art/player-study/guardian-rig.glb.gz
 """
 import gzip
+import json
+import math
 import sys
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import bpy
+
+
+def sample_curve(keys, progress):
+    for (start, source), (end, finish) in zip(keys, keys[1:]):
+        if progress <= end:
+            ratio = (progress - start) / (end - start)
+            return source + (finish - source) * ratio
+    return keys[-1][1]
+
+
+def retime_light_attacks(scene, rig):
+    # Resample the original authored guards, follow-through and recovery before
+    # replacing any keys. Keep the original clip slots so the manifest and the
+    # rest of the Blender timeline retain their frame addresses.
+    assets = Path(bpy.data.filepath).parent
+    clips = json.loads((assets / 'guardian-frames.json').read_text())['clips']
+    timing = json.loads((assets / 'guardian-light-attacks.json').read_text())
+    bones = tuple(rig.pose.bones)
+    takes = {}
+    for clip, curve in timing['retime'].items():
+        start, length = clips[clip]
+        for index in range(length):
+            source = start + 1 + sample_curve(curve, index / (length - 1)) * (length - 1)
+            frame = math.floor(source)
+            scene.frame_set(frame, subframe=source - frame)
+            takes[start + 1 + index] = tuple(
+                (bone.location.copy(), bone.rotation_quaternion.copy(), bone.scale.copy())
+                for bone in bones
+            )
+
+    for frame, poses in takes.items():
+        scene.frame_set(frame)
+        for bone, (location, rotation, scale) in zip(bones, poses):
+            bone.location = location
+            bone.rotation_quaternion = rotation
+            bone.scale = scale
+            for prop in ('location', 'rotation_quaternion', 'scale'):
+                bone.keyframe_insert(data_path=prop, frame=frame)
 
 
 def main(output):
@@ -41,6 +81,7 @@ def main(output):
     rig.select_set(True)
     bpy.context.view_layer.objects.active = rig
     rig.rotation_euler.z = 0
+    retime_light_attacks(scene, rig)
     scene.frame_set(scene.frame_start)
 
     with TemporaryDirectory() as directory:
