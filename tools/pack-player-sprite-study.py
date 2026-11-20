@@ -54,7 +54,8 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     clips = json.loads((args.renders / 'clips.json').read_text())
     count = sum(frames for _, frames in clips.values())
-    manifest = {'clips': clips}
+    motion = json.loads((args.renders / 'attack-motion.json').read_text())
+    manifest = {'clips': clips, 'attackMotion': motion}
     for layer, width, other in [('body', 2048, None), ('weapon', 1024, 'hammer'),
                                 ('hammer', 1024, 'sword')]:
         indices = (index for clip, (start, length) in clips.items()
