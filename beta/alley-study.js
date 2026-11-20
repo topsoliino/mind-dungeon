@@ -1,7 +1,7 @@
 (() => {
  'use strict';
 
- const width=1104,height=624;
+ const width=1900,height=1050;
  const originX=491,originY=73,stepX=42,stepY=stepX/Math.sqrt(3);
  const footOffset=16;
  const project=(u,v,z=0)=>[originX+(u-v)*stepX,originY+(u+v)*stepY-z];
@@ -67,11 +67,13 @@
   polygon(ctx,top,colors[2],colors[3]);
  }
  const facadeArt=window.AlleyArchitecture.create({project,polygon,line});
+ const route=window.AlleyRoute??null;
  const stone={
   basalt:{pitch:[.47,.29],colors:['#4e5363','#565c6e','#5d6272','#494e5f','#626674','#535565'],edge:'#7e849388'},
   court:{pitch:[.42,.43],colors:['#626577','#6e6e80','#7e7886','#696878','#737184'],edge:'#a69baa9c'},
   curb:{pitch:[.55,.38],colors:['#737385','#80798a','#6f6d80','#817d8e'],edge:'#a9a1acaa'},
-  threshold:{pitch:[.51,.43],colors:['#655568','#705d70','#735e71','#7c687a'],edge:'#a5899eaa'}
+  threshold:{pitch:[.51,.43],colors:['#655568','#705d70','#735e71','#7c687a'],edge:'#a5899eaa'},
+  ...(route?.materials??{})
  };
  function paving(ctx,{area,material},random) {
   const [minU,minV,maxU,maxV]=area;
@@ -203,6 +205,7 @@
   const {arch:gate}=foreground;
   const [u,v,r,b]=gate.area,[a,c]=gate.opening;
   const solids=[[u,v,r,a],[u,c,r,b]];
+  const routePainter={project,polygon,line,block};
   const drawUnderlay=ctx=>{
    const gradient=ctx.createLinearGradient(0,45,0,height);
    gradient.addColorStop(0,'#272637');gradient.addColorStop(.85,'#151622');
@@ -222,10 +225,15 @@
    seed=(Math.imul(1664525,seed)+1013904223)>>>0;
    return seed/4294967296;
   };
-  const floor=bitmap(ctx=>{for(const surface of ground)paving(ctx,surface,random);});
+  const floor=bitmap(ctx=>{
+   for(const surface of ground)paving(ctx,surface,random);
+   route?.renderFloor(ctx,routePainter);
+  });
   const detail=bitmap(ctx=>drawDetails(ctx,groundDetails));
   const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>facadeArt.building(ctx,home))}));
   const gateway=cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
+  const roomWalls=route?.walls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>route.renderWall(ctx,wall,routePainter))}))??[];
+  const labSeal=route?cacheObject(route.seal,88,ctx=>route.renderSeal(ctx,routePainter)):null;
   const artListeners=[];
   const redrawImage=(image,draw)=>{
    const ctx=image.canvas.getContext('2d');
@@ -249,7 +257,7 @@
   function blockedGround(u,v,radius){
    return [[u-radius,v],[u+radius,v],[u,v-radius],[u,v+radius]].some(([a,b])=>
     !walkable.some(area=>contains(area,a,b)))||
-    solids.some(([a,b,c,d])=>contains([a-radius,b-radius,c+radius,d+radius],u,v));
+    (solids.some(([a,b,c,d])=>contains([a-radius,b-radius,c+radius,d+radius],u,v))||Boolean(route?.blocked(u,v,radius)));
   }
   function blocked(x,y){return blockedGround(...unproject(x,y),.23);}
   function clearSegment(from,to){
@@ -275,9 +283,9 @@
   function drawGroundLight(ctx,time){
    if(enabled('light')){
     ctx.save();ctx.globalCompositeOperation='screen';
-    for(const {at,radius,phase} of lighting){
+    for(const {at,radius,phase,tint} of lighting){
      ctx.globalAlpha=.87+.13*Math.sin(time*3.2+phase);
-     glow(ctx,...project(...at),radius,.54,'#a35b4090');
+     glow(ctx,...project(...at),radius,.54,tint??'#a35b4090');
     }
     ctx.restore();
    }
@@ -295,8 +303,12 @@
      result.push({image,depth:behindArch&&enabled('foreground')?Math.min(depth,archDepth-.25):depth,alpha});
     }
    }
+   if(enabled('standing')){
+    for(const wall of roomWalls)result.push({image:wall.image,depth:depthAt(wall.area,x,y),alpha:1});
+   }
    if(enabled('foreground')){
     result.push({image:gateway,depth:archDepth,alpha:1});
+    if(labSeal)result.push({image:labSeal,depth:depthAt(route.seal,x,y),alpha:route.isUnlocked()?0:1});
    }
    return result;
   }
@@ -316,11 +328,11 @@
     }
    }
    if(!enabled('light'))return;
-   for(const {at,height,radius,phase} of lighting){
+   for(const {at,height,radius,phase,tint} of lighting){
     const [x,y]=project(...at,height);
     ctx.save();
     ctx.globalAlpha=.87+.13*Math.sin(time*3.2+phase);
-    glow(ctx,x,y,radius*.47,.87,'#eea25878');
+    glow(ctx,x,y,radius*.47,.87,tint??'#eea25878');
     line(ctx,[[x+5,y-9],[x,y-7],[x,y-4]],'#33313d',2);
     polygon(ctx,[[x-4,y-5],[x+4,y-5],[x+3,y+5],[x-3,y+5]],'#df9962','#392c34');
     ctx.fillStyle='#f4ca93';ctx.fillRect(x-1.5,y-2.5,3,5);
@@ -343,6 +355,7 @@
    const [u,v]=unproject(prop.x,prop.y);
    if(prop.kind==='chest')drawChest(ctx,u,v,prop.completed);
    else if(prop.kind==='pickup-high')drawTable(ctx,u,v,prop.completed);
+   else if(route&&(prop.kind==='knowledge'||prop.kind==='apparatus'))route.renderProp(ctx,prop.kind,u,v,routePainter);
    else drawBarrel(ctx,u,v,vault,units);
   }
   return {spawn:position(...spawn),stations:Object.fromEntries(Object.entries(stations).map(([key,{at,front}])=>[key,{...position(...at),front}])),
