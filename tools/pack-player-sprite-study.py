@@ -59,7 +59,7 @@ def main():
     for layer, width, other in [('body', 2048, None), ('weapon', 1024, 'hammer'),
                                 ('hammer', 1024, 'sword')]:
         indices = (index for clip, (start, length) in clips.items()
-                   if not other or not clip.startswith((f'charge-{other}-', f'heavy-{other}'))
+                   if not other or not clip.startswith((f'charge-{other}-', f'heavy-{other}', f'roll-attack-{other}'))
                    for index in range(start*FACINGS, (start+length)*FACINGS))
         atlas, manifest[layer] = pack_layer(args.renders, layer, count, width, indices)
         atlas.save(args.output / f'guardian-{layer}.webp', quality=89, method=4)

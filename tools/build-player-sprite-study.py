@@ -21,7 +21,7 @@ CELL = 128
 FACINGS = 8
 GAITS = {
     # Forward foot travel during stance, duty factor, swing clearance, trunk lean.
-    'walk': (.77, .60, .100, .051),
+    'walk': (.77, .60, .081, .015),
     'sprint': (.92, .34, .300, .505),
 }
 GAIT_BLENDS = {'gait-one': 1/3, 'gait-two': 2/3}
@@ -36,16 +36,26 @@ HEAVY_FRAMES = 22
 CHARGE_CLIPS = {f'charge-{weapon}-{light}': (weapon, light)
                 for weapon in WEAPON_TYPES for light in ('down', 'up')}
 HEAVY_CLIPS = {f'heavy-{weapon}': weapon for weapon in WEAPON_TYPES}
+ROLL_ATTACK_FRAMES = 18
+ROLL_ATTACKS = {f'roll-attack-{weapon}': weapon for weapon in WEAPON_TYPES}
+ROLL_ATTACK_LANDINGS = {f'{name}-landing': name for name in ROLL_ATTACKS}
+ROLL_ATTACK_GAITS = {f'{name}-{gait}-{phase}': (name, gait, phase/4)
+                     for name in ROLL_ATTACKS for gait in ('walk','sprint') for phase in range(2)}
 # Model-space travel, shared by the rig's planted feet and the game's movement.
-HEAVY_MOTION = {
+ATTACK_MOTION = {
     'heavy-sword': {'distance': .53, 'advance': [.075, .35]},
     'heavy-hammer': {'distance': .32, 'advance': [.10, .35], 'impactFrame': 7},
+    'roll-attack-sword': {'distance': .36, 'advance': [.07, .49]},
+    'roll-attack-hammer': {'distance': .28, 'advance': [.10, .50]},
 }
 CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, 16) for name in GAIT_BLENDS), ('roll', ROLL_FRAMES),
          *((name, 2) for name in ROLL_ENTRIES), *((name, 4) for name in ROLL_EXITS),
          *((name, CHARGE_FRAMES) for name in CHARGE_CLIPS),
-         *((name, HEAVY_FRAMES) for name in HEAVY_CLIPS)]
+         *((name, HEAVY_FRAMES) for name in HEAVY_CLIPS),
+         *((name, ROLL_ATTACK_FRAMES) for name in ROLL_ATTACKS),
+         *((name, 4) for name in ROLL_ATTACK_LANDINGS),
+         *((name, 2) for name in ROLL_ATTACK_GAITS)]
 SIDES = [('L', -1), ('R', 1)]
 
 
@@ -341,16 +351,18 @@ def model():
          [(0,.027,.027), (.10,.030,.030), (.32,.024,.024), (.85,.023,.023), (1,.039,.039)],
          [leather, brass, leather, shadow], 'Hammer.R', collection=hammer)
     head = grip + d*.542
+    # A narrow peen, an eye around the haft, then the short square poll.
+    # The striking face is the last ring, perpendicular to the length of the head.
     vertices = [tuple(head + u*x + v*y + d*z)
-                for x, height, width in [(-.23,.073,.062), (-.09,.103,.092),
-                                          (.12,.113,.094), (.215,.117,.104)]
+                for x, height, width in [(-.245,.018,.032), (-.075,.083,.077),
+                                          (.135,.070,.062), (.215,.071,.064)]
                 for y,z in [(-width,-height), (width,-height), (width,height), (-width,height)]]
     faces = [(3,2,1,0), (12,13,14,15)]
     for row in range(3):
         faces.extend((row*4+i, row*4+(i+1)%4, (row+1)*4+(i+1)%4, (row+1)*4+i)
                      for i in range(4))
     mesh('War hammer · forged head', vertices, faces, [shadow, steel, edge, brass],
-         'Hammer.R', .018, [2,2, 0,1,2,1, 1,1,3,1, 0,1,2,1], collection=hammer)
+         'Hammer.R', .012, [0,2, 0,1,0,1, 1,0,1,0, 0,1,0,1], collection=hammer)
 
 
 def orient(bone, position, rotation):
@@ -491,13 +503,33 @@ ATTACKS.update({
         (2/21, .05, .016, -.065, -.20, .154, .006, 1.891, 174, 40),
         (4/21, .03, -.084, .035, .17, .144, -.421, 1.655, 11, 67),
         (5/21, .01, -.155, .174, .43, .132, -.665, 1.211, 6, 25),
-        (7/21, -.04, -.183, .475, .69, .101, -.594, .380, 0, -17),
-        (8/21, -.07, -.198, .484, .72, .107, -.570, .413, -2, -16),
-        (9/21, -.09, -.204, .479, .73, .114, -.554, .419, -4, -15),
+        (7/21, -.04, -.183, .475, .69, .101, -.558, .323, 0, -8),
+        (8/21, -.07, -.198, .484, .72, .107, -.555, .347, -2, -10),
+        (9/21, -.09, -.204, .479, .73, .114, -.551, .398, -4, -13),
         (12/21, -.09, -.114, .319, .42, .146, -.491, .683, 9, -4),
         (14/21, .32, -.019, .166, .11, .295, -.131, 1.179, 62, 45),
         (16/21, *HIGH_GUARD),
         (.90, .29, .020, .032, .02, .459, -.038, 1.105, 56, 32),
+        (1, *STEADY),
+    ],
+    'roll-attack-sword': [
+        (0, *STEADY),
+        (3/17, -.63, -.170, .235, .37, -.132, -.380, .785, -97, -32),
+        (5/17, -.47, -.134, .179, .28, -.080, -.467, .889, -71, -18),
+        (7/17, .20, -.193, .066, .10, .304, -.589, 1.267, 19, 43),
+        (9/17, .88, -.037, .011, -.11, .495, -.141, 1.533, 112, 73),
+        (12/17, *HIGH_GUARD),
+        (15/17, .35, -.012, .039, .008, .422, -.007, 1.14, 63, 43),
+        (1, *STEADY),
+    ],
+    'roll-attack-hammer': [
+        (0, *STEADY),
+        (3/17, .66, -.102, .218, .32, .393, .030, .784, 108, -23),
+        (5/17, .56, -.121, .219, .27, .456, -.337, .852, 79, -12),
+        (7/17, -.09, -.181, .218, .29, .227, -.614, .857, 8, -8),
+        (9/17, -.83, -.153, .228, .32, -.252, -.490, .825, -83, -7),
+        (12/17, *LOW_GUARD),
+        (15/17, -.35, -.084, .073, .146, -.002, -.273, .898, -68, -15),
         (1, *STEADY),
     ],
 })
@@ -524,9 +556,9 @@ def gait_foot(phase, stride, stance, clearance, running):
         else:
             arc = math.sin(math.pi*swing)
             carry = (1-stance)/(math.tau*stance)
-            progress = smooth(swing) - carry*math.sin(math.tau*swing)*(1-.65*arc)
-            height = arc**1.35 * (1.27-.49*swing)
-            pitch, = sample([(0, push), (.25, 12), (.71, -12), (1, heel)], swing)
+            progress = smooth(swing) - carry*math.sin(math.tau*swing)*(1-.65*arc) - .102*arc**2
+            height = arc**1.45 * (.89+.25*swing)
+            pitch, = sample([(0, push), (.32, 20), (.55, 5), (.81, -15), (1, heel)], swing)
         travel = stride * (.5 - progress)
         lift = clearance * height
     if running:
@@ -563,6 +595,10 @@ def attack_deformation(kind, t):
         return pulse(t, 0, .20, .385), pulse(t, .246, .415, .724)
     if kind == 'heavy-hammer':
         return pulse(t, 0, .107, .26), pulse(t, .24, .387, .666)
+    if kind == 'roll-attack-sword':
+        return pulse(t, .24, .47, .66), pulse(t, .09, .23, .40)
+    if kind == 'roll-attack-hammer':
+        return pulse(t, .22, .385, .55), pulse(t, .14, .28, .66)
     return 0, 0
 
 
@@ -571,6 +607,8 @@ HAMMER_LIGHT_CONTACT = {
              (9/19, -.45, -.61, -.66), (10/19, -.80, .28, -.53), (1, -.80, .28, -.53)],
     'up': [(0, .47, -.66, .59), (7/19, .47, -.66, .59), (8/19, .76, .02, .65),
            (9/19, .49, .63, .60), (1, .49, .63, .60)],
+    'roll-attack-hammer': [(0, 0, -1, 0), (5/17, 0, -1, 0), (7/17, -.7,-.7,0),
+                           (9/17, -1,.22,0), (1, -1,.22,0)],
 }
 
 
@@ -583,7 +621,8 @@ def orient_hammer(wrist, shaft, kind=None, t=0):
         weight = pulse(t, .11, 7/21, .72)
         toward = Vector((0, -.05, -1))
     elif kind in HAMMER_LIGHT_CONTACT:
-        start, full = (.33, .414) if kind == 'down' else (.229, .358)
+        start, full = {'down': (.33,.414), 'up': (.229,.358),
+                       'roll-attack-hammer': (.19,.276)}[kind]
         weight = smooth((t-start)/(full-start))*smooth((.676-t)/.137)
         toward = Vector(sample(HAMMER_LIGHT_CONTACT[kind],t))
     else:
@@ -598,7 +637,7 @@ def orient_hammer(wrist, shaft, kind=None, t=0):
 
 
 def attack_step(kind, t, front):
-    motion = HEAVY_MOTION[kind]
+    motion = ATTACK_MOTION[kind]
     start, end = motion['advance']
     root_travel = motion['distance']*smooth((t-start)/(end-start))
     if kind == 'heavy-sword':
@@ -639,11 +678,11 @@ def pose(kind, t):
             chest_yaw = -.157*math.cos(phase-.42)
             yaw, elev = 20, 7
         else:
-            bob, nod = sample([(0, -.008, .006), (.24, -.026, .014), (.55, .014, 0),
-                               (.72, .023, -.010), (1, -.008, .006)], half_step)
-            shift, fore, drop = .039, -.013, .071
-            pelvic_yaw = .074*step
-            chest_yaw = -.062*math.cos(phase-.22)
+            bob, nod = sample([(0, -.010, .005), (.22, -.016, .007), (.53, .022, -.004),
+                               (.70, .027, -.008), (1, -.010, .005)], half_step)
+            shift, fore, drop = .040, .027, .061
+            pelvic_yaw = .112*math.cos(phase-.13)
+            chest_yaw = -.049*math.cos(phase-.32)
             yaw, elev = 21, 13
         # At mid-stance the pelvis shifts towards the actual loaded foot.
         hips = rest['Hips'][0] + Vector((-shift*math.sin(phase-.12), fore, -drop+bob))
@@ -686,7 +725,7 @@ def pose(kind, t):
         elif attacking:
             # Keep the feet paired with the torso pose at both combo handoffs.
             travel, lift, width = sign*.08, 0, .05*abs(twist)
-            if kind in HEAVY_MOTION:
+            if kind in ATTACK_MOTION:
                 offset, lift = attack_step(kind, t, sign < 0)
                 travel += offset
             foot_pitch = .18*smooth(-forward/.15) if sign > 0 else 0
@@ -919,8 +958,25 @@ def animation_pose(kind, frame, count):
         gait_pose(ROLL_EXITS[kind], ((index-ROLL_FRAMES+1)/16) % 1)
         blend_pose(source, pose_snapshot(), smooth((frame+1)/5))
         ground_roll_edge()
+    elif kind in ROLL_ATTACK_LANDINGS:
+        roll_pose((ROLL_RECOVERY+frame)/(ROLL_FRAMES-1))
+        if frame:
+            source = pose_snapshot()
+            pose(ROLL_ATTACK_LANDINGS[kind], frame/(ROLL_ATTACK_FRAMES-1))
+            blend_pose(source, pose_snapshot(), smooth(frame/(count-1)))
+            ground_roll_edge()
+    elif kind in ROLL_ATTACK_GAITS:
+        attack, gait, phase = ROLL_ATTACK_GAITS[kind]
+        step = frame+1
+        gait_pose(gait, (phase+step/16)%1)
+        source = pose_snapshot()
+        pose(attack, step/(ROLL_ATTACK_FRAMES-1))
+        blend_pose(source, pose_snapshot(), smooth(step/3))
+        ground_roll_edge()
     elif kind == 'roll':
         roll_pose(frame/(count-1))
+    elif kind in ROLL_ATTACKS and frame in (0,count-1):
+        pose('idle', 0)
     elif kind in GAIT_BLENDS or kind in GAITS:
         gait_pose(kind, frame/count)
     else:
@@ -1014,11 +1070,13 @@ def export(scene, frames, directory, preview):
             rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
             for row, (kind, frame) in enumerate(frames):
                 if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll',
-                                           *CHARGE_CLIPS, *HEAVY_CLIPS):
+                                           *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS):
                     continue
                 if weapon and kind in CHARGE_CLIPS and CHARGE_CLIPS[kind][0] != weapon:
                     continue
                 if weapon and kind in HEAVY_CLIPS and HEAVY_CLIPS[kind] != weapon:
+                    continue
+                if weapon and kind.startswith('roll-attack-') and not kind.startswith(f'roll-attack-{weapon}'):
                     continue
                 scene.frame_set(frame)
                 path = directory / f'{part}-{facing}-{row}.png'
@@ -1050,14 +1108,14 @@ if __name__ == '__main__':
     scene = setup(opts.engine)
     frames, layout = key_animations(scene, CLIPS)
     (directory/'clips.json').write_text(json.dumps(layout) + '\n')
-    hammer_motion = HEAVY_MOTION['heavy-hammer']
+    hammer_motion = ATTACK_MOTION['heavy-hammer']
     scene.frame_set(layout['heavy-hammer'][0] + hammer_motion['impactFrame'] + 1)
     hammer_head = bpy.data.objects['War hammer · forged head']
     face = [hammer_head.matrix_world @ vertex.co for vertex in hammer_head.data.vertices[-4:]]
     contact = sum(face, Vector())/len(face)
     hammer_motion['floorContact'] = [contact.x, -contact.y]
     scene.frame_set(1)
-    (directory/'attack-motion.json').write_text(json.dumps(HEAVY_MOTION) + '\n')
+    (directory/'attack-motion.json').write_text(json.dumps(ATTACK_MOTION) + '\n')
     bpy.context.view_layer.layer_collection.children[weapon_collections['hammer'].name].exclude = True
     rig.rotation_euler.z = math.pi/4
     rig.select_set(False)
