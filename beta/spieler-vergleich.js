@@ -21,7 +21,7 @@
   for(const light of ['down','up'])clips['charge-'+type+'-'+light]={duration:.18,heavy:'heavy-'+type};
  }
  const gaitPoses=['walk','gait-one','gait-two','sprint'];
- const walkStride=.77/.60,sprintStride=.92/.34,groundY=.882;
+ const walkStride=.77/.60,sprintStride=.92/.34,groundY=.882,projectionY=.47;
  const rollRecoveryFrame=22;
  const directions={
   ArrowRight:[1,0],KeyD:[1,0],ArrowLeft:[-1,0],KeyA:[-1,0],
@@ -36,6 +36,7 @@
   {x:17.4*tile,y:3.2*tile,radius:142,color:'#cba58d',power:'46'}];
  const ground=art.world(map,()=>3,lights,193,terrain,[],tile);
  const decor=lights.map(p=>({...p,sprite:art.furniture('sanctuary-brazier',3,0)}));
+ const barrel={x:(columns/2+2)*tile,y:(rows/2+2)*tile,sprite:art.furniture('barrel',3,0)};
  const presses=new Set();
  const direction=document.querySelector('#direction'),zoomButton=document.querySelector('#zoom');
  const weaponButton=document.querySelector('#weapon'),weaponSelect=document.querySelector('#weapon-type');
@@ -50,6 +51,7 @@
  let showWeapon=true,gaitPhase=0,gaitBlend=0,sprintEnabled=false;
  let rollEntry=null,rollExit=null,rollStartSpeed=0;
  let rollStartedWalking=false;
+ let vault=null;
  let rollAttackQueued=false,rollAttackUntil=0,rollAttackEntry=null;
  let weaponType='sword',weaponSheet;
  let heldAttack=null,attackIntent=null,queuedAttack=null;
@@ -107,13 +109,13 @@
   facing=value;direction.value=String(facing);
  }
  function startConsumption(clip){
-  if(!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
+  if(vault||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
   const input=movement();
   if(input.length)face(input.facing);
   clearAttacks();select(clip,false);
  }
  function startRoll(){
-  if(mode==='roll'&&!repeat)return;
+  if(vault||mode==='roll'&&!repeat)return;
   if(!repeat&&atlas.attackMotion[mode]&&elapsed<frameTime(mode,clips[mode].chain))return;
   const input=movement();
   if(input.length)face(input.facing);
@@ -140,7 +142,7 @@
   select(attack,false);
  }
  for(const button of buttons)button.addEventListener('click',()=>{
-  if(!atlas)return;
+  if(!atlas||vault)return;
   const clip=previewClip(button.dataset.clip);
   if(clips[clip].consumption){
    canvas.focus({preventScroll:true});
@@ -152,7 +154,7 @@
  });
  canvas.addEventListener('pointerdown',()=>canvas.focus());
  direction.addEventListener('change',()=>{
-  if(mode==='roll'&&!repeat)direction.value=String(facing);
+  if(vault||mode==='roll'&&!repeat)direction.value=String(facing);
   else facing=Number(direction.value);
  });
  zoomButton.addEventListener('click',()=>{
@@ -203,7 +205,7 @@
   }
   if(event.code==='KeyK'){
    event.preventDefault();
-   if(event.repeat||clips[mode].consumption)return;
+   if(event.repeat||vault||clips[mode].consumption)return;
    if(event.target!==canvas)canvas.focus({preventScroll:true});
    if(!repeat&&mode==='roll'){
     rollAttackQueued=true;
@@ -241,9 +243,48 @@
   clearAttacks();
  });
 
+ function hitsBarrel(nx,ny){
+  return Math.hypot(nx-barrel.x,(ny-barrel.y)/projectionY)<(atlas.vault.radius+.21)*unitsToPixels;
+ }
  function moveBy(dx,dy){
-  x=bound(x+dx,tile+19,(columns-1)*tile-19);
-  y=bound(y+dy,tile+19,(rows-1)*tile-19);
+  const nx=bound(x+dx,tile+19,(columns-1)*tile-19);
+  const ny=bound(y+dy,tile+19,(rows-1)*tile-19);
+  if(!hitsBarrel(nx,ny)){x=nx;y=ny;return;}
+  if(!hitsBarrel(nx,y))x=nx;
+  if(!hitsBarrel(x,ny))y=ny;
+ }
+ function tryVault(input){
+  if(input.gait!=='sprint'||gaitBlend<.85)return false;
+  const {start,radius}=atlas.vault;
+  // Use the rig camera's ground projection for trajectory and palm placement.
+  const ox=(barrel.x-x)/unitsToPixels,oy=(barrel.y-y)/(unitsToPixels*projectionY);
+  const stepY=input.dy/projectionY,step=Math.hypot(input.dx,stepY);
+  if(Math.hypot(ox,oy)>-start+.12||(ox*input.dx+oy*stepY)<=0||
+     Math.abs(ox*stepY-oy*input.dx)/step>radius*.80)return false;
+  // Keep the approach facing as the trajectory eases onto the barrel center.
+  const angle=facing*Math.PI/4;
+  const dx=Math.cos(angle)*unitsToPixels,dy=Math.sin(angle)*unitsToPixels*projectionY;
+  const phase=Math.round(gaitPhase*4)%4;
+  vault={dx,dy,offsetX:x-barrel.x-dx*start,offsetY:y-barrel.y-dy*start,
+   entry:'vault-in-'+phase,frame:frameAt('sprint',gaitPhase)};
+  clearAttacks();select('vault',false);
+  return true;
+ }
+ function advanceVault(dt){
+  const {start,end,duration,exitPhase,path}=atlas.vault;
+  const used=Math.min(dt,duration-elapsed);
+  elapsed+=used;
+  const progress=Math.min(1,elapsed/duration),offset=1-ease(progress/.29);
+  let point=1;
+  while(path[point][0]<progress)point++;
+  const [from,begin]=path[point-1], [to,finish]=path[point];
+  const distance=mix(start,end,mix(begin,finish,(progress-from)/(to-from)));
+  x=barrel.x+vault.dx*distance+vault.offsetX*offset;
+  y=barrel.y+vault.dy*distance+vault.offsetY*offset;
+  if(progress<1)return 0;
+  vault=null;
+  select('sprint',false);gaitPhase=exitPhase;gaitBlend=1;
+  return dt-used;
  }
  function rollSpeed(progress){
   if(progress<.18)return mix(rollStartSpeed,220,ease(progress/.18));
@@ -335,6 +376,10 @@
  }
  function update(dt){
   let input=movement();
+  if(vault){
+   dt=advanceVault(dt);
+   if(dt===0)return;
+  }
   if(mode==='roll'&&!repeat){
    dt=advanceRoll(dt,input);
    if(dt===0)return;
@@ -360,6 +405,7 @@
    gaitBlend+=bound(target-gaitBlend,-dt/.24,dt/.24);
    const blend=ease(gaitBlend);
    gaitPhase=(gaitPhase+dt/gaitDuration(blend))%1;
+   if(tryVault(input))return;
    const speed=gaitSpeed(blend)*Math.hypot(input.dx,input.dy*groundY)/input.length;
    moveBy(dt*input.dx/input.length*speed,dt*input.dy/input.length*speed);
   }else if(!repeat&&isGait(mode))select('idle',false);
@@ -370,6 +416,10 @@
   let name=mode,frame=frameAt(mode,progress);
   if(isGait(mode)&&!repeat){
    name=gaitPose();frame=frameAt(name,gaitPhase);
+  }
+  if(vault&&frame<3){
+   if(frame===0){name='sprint';frame=vault.frame;}
+   else{name=vault.entry;frame-=1;}
   }
   if(rollAttackEntry&&!repeat&&mode==='roll-attack-'+weaponType){
    const entry=rollAttackEntry;
@@ -395,8 +445,6 @@
  }
  function drawBlender(ctx,frame){
   const index=frame*8+facing;
-  ctx.fillStyle='#110d1780';
-  ctx.beginPath();ctx.ellipse(x,y+13,21,5,0,0,Math.PI*2);ctx.fill();
   const clip=clips[mode];
   if(clip.heavy){
    const load=elapsed/clip.duration;
@@ -426,6 +474,12 @@
   const weaponFrame=atlas[weaponTypes[weaponType].sheet][index];
   if(showWeapon&&weaponFrame)drawPacked(ctx,weaponSheet,weaponFrame,left,top);
  }
+ function drawBarrel(){
+  const {height,radius}=atlas.vault;
+  // Match the existing dungeon barrel's lid (source y=43) to the modeled palm.
+  const sx=2*radius*unitsToPixels/44,sy=height*unitsToPixels*groundY/29;
+  ctx.drawImage(barrel.sprite,41,35,46,43,barrel.x-23*sx,barrel.y+16-37*sy,46*sx,43*sy);
+ }
  function camera(pos,visible,extent){
   return visible>=extent?(extent-visible)/2:bound(pos-visible/2,0,extent-visible);
  }
@@ -437,8 +491,13 @@
   ctx.imageSmoothingEnabled=false;
   for(const part of ground)ctx.drawImage(part.bitmap,part.x,part.y);
   for(const prop of decor)ctx.drawImage(prop.sprite,prop.x-44,prop.y-53,88,77);
+  ctx.fillStyle='#110d1780';
+  ctx.beginPath();ctx.ellipse(x,y+13,21,5,0,0,Math.PI*2);ctx.fill();
+  const aboveBarrel=vault&&elapsed/clips.vault.duration>=.28&&elapsed/clips.vault.duration<.95;
+  if(y>=barrel.y||aboveBarrel)drawBarrel();
   ctx.imageSmoothingEnabled=scale===1;
   drawBlender(ctx,frame);
+  if(y<barrel.y&&!aboveBarrel){ctx.imageSmoothingEnabled=false;drawBarrel();}
  }
  function loop(now){
   const dt=bound((now-last)/1000,0,.05);
@@ -456,21 +515,22 @@
  function loadWeapon(type){
   if(!weaponSheets.has(type)){
    const image=new Image();
-   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=13')
+   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=14')
     .then(()=>image).catch(error=>{weaponSheets.delete(type);throw error;});
    weaponSheets.set(type,loaded);
   }
   return weaponSheets.get(type);
  }
  Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=13'),
+  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=14'),
   loadWeapon(weaponType),
-  fetch('art/player-study/guardian-frames.json?v=13').then(response=>{
+  fetch('art/player-study/guardian-frames.json?v=14').then(response=>{
    if(!response.ok)throw new Error('Animationsdaten fehlen.');
    return response.json();
   })
  ]).then(([,sheet,frames])=>{
   atlas=frames;
+  clips.vault={duration:atlas.vault.duration};
   weaponSheet=sheet;weaponSelect.disabled=false;
   status.hidden=true;
   last=performance.now();requestAnimationFrame(loop);

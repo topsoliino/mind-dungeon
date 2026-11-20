@@ -27,6 +27,10 @@ GAITS = {
 GAIT_BLENDS = {'gait-one': 1/3, 'gait-two': 2/3}
 WALK_FOOT_CENTER = .105
 CONSUMPTION = {'eat': 24, 'drink': 25}
+VAULT_FRAMES = 19
+VAULT_ENTRIES = {f'vault-in-{phase}': phase/4 for phase in range(4)}
+VAULT = {'start': -1.20, 'end': 1.21, 'radius': .44, 'height': .83, 'duration': .52, 'exitPhase': .5,
+         'path': [(0,0),(.17,.11),(.29,.205),(.335,.238),(.48,.46),(.68,.70),(.84,.86),(1,1)]}
 ROLL_FRAMES = 28
 ROLL_RECOVERY = 22
 ROLL_ENTRIES = {f'roll-in-{stride}-{phase}': (stride, phase/4)
@@ -57,7 +61,8 @@ CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, HEAVY_FRAMES) for name in HEAVY_CLIPS),
          *((name, ROLL_ATTACK_FRAMES) for name in ROLL_ATTACKS),
          *((name, 4) for name in ROLL_ATTACK_LANDINGS),
-         *((name, 2) for name in ROLL_ATTACK_GAITS), *CONSUMPTION.items()]
+         *((name, 2) for name in ROLL_ATTACK_GAITS), *CONSUMPTION.items(),
+         ('vault', VAULT_FRAMES), *((name, 2) for name in VAULT_ENTRIES)]
 SIDES = [('L', -1), ('R', 1)]
 
 
@@ -622,12 +627,12 @@ def gait_foot(phase, stride, stance, clearance, running):
     return travel, lift, math.radians(pitch)
 
 
-def place_foot(side, sign, travel, lift, pitch, width=0, splay=1):
+def place_foot(side, sign, travel, lift, pitch, width=0, splay=1, sidestep=0):
     boot = 'Boot.' + side
     ankle = rest[boot][0]
     rotation = Euler((pitch, 0, sign * .10 * splay)).to_matrix()
     lowest = min((rotation @ (p - ankle)).z for p in soles[side])
-    target = Vector((ankle.x + sign * width, travel, .012 + lift - lowest))
+    target = Vector((ankle.x + sign * width + sidestep, travel, .012 + lift - lowest))
     hip = attached('Hips', rest['Thigh.' + side][0])
     end = bend_joint('Thigh.' + side, 'Shin.' + side, hip, target, (sign * .12 * splay, -1, .03))
     orient(boot, end, rotation)
@@ -718,6 +723,13 @@ def attack_step(kind, t, front):
     return travel, lift*math.sin(math.pi*step)**2
 
 
+def trail_mantle(chest_rotation, lift, sway, yaw):
+    # Set the clearance in chest space so leaning or banking never pushes the
+    # hanging fabric into the armor. Keep the flutter relative to the shoulders.
+    anchor = attached('Chest', rest['Mantle'][0]) + chest_rotation @ Vector((0, .035, 0))
+    orient('Mantle', anchor, chest_rotation @ Euler((lift, sway, yaw)).to_matrix())
+
+
 def pose(kind, t):
     phase = math.tau*t
     step = math.cos(phase)
@@ -777,14 +789,14 @@ def pose(kind, t):
         head_rotation = Euler((pitch*.33, .012*step if gait else 0, chest_yaw*.33))
     orient('Head', head, head_rotation.to_matrix())
 
-    mantle = attached('Chest', rest['Mantle'][0])
-    if gait:
-        flutter = (.40 if running else .042) + (.079 if running else .034)*math.sin(phase-.7)
-        if running:
-            flutter += .045*math.sin(2*phase-1.1)
+    if running:
+        lift = .15 + .061*math.sin(phase-.7) + .026*math.sin(2*phase-1.1)
+        trail_mantle(chest_rotation, lift, .041*math.sin(phase-.8), -.24*chest_yaw)
     else:
-        flutter = .08 + .17*abs(twist)
-    orient('Mantle', mantle, Euler((flutter, .067*math.sin(phase-.8) if gait else .27*twist, chest_yaw*.76)).to_matrix())
+        mantle = attached('Chest', rest['Mantle'][0])
+        flutter = .042 + .034*math.sin(phase-.7) if gait else .08 + .17*abs(twist)
+        sway = .067*math.sin(phase-.8) if gait else .27*twist
+        orient('Mantle', mantle, Euler((flutter, sway, chest_yaw*.76)).to_matrix())
 
     for side, sign in reversed(SIDES):
         if gait:
@@ -1094,11 +1106,99 @@ def ground_roll_edge():
         bpy.context.view_layer.update()
 
 
+def vault_pose(t):
+    if t == 0:
+        gait_pose('sprint', 0)
+        return
+    if t == 1:
+        gait_pose('sprint', VAULT['exitPhase'])
+        return
+
+    # Hips rise while the chest banks toward the supporting hand.
+    height, forward, side, pitch, bank = sample([
+        (0, -.171,-.13,0,.50,0), (.17,-.105,-.192,.015,.68,-.085),
+        (.295,.084,-.162,.065,.96,-.31), (6/18,.167,-.151,.073,.966,-.39),
+        (.43,.19,-.113,.094,.98,-.47),
+        (.55,.204,-.087,.088,.91,-.53), (.65,.18,-.051,.104,.66,-.26),
+        (.80,.033,-.079,.041,.46,-.06), (1,-.171,-.13,0,.50,0),
+    ],t)
+    hips = rest['Hips'][0] + Vector((side,forward,height))
+    orient('Hips',hips,Euler((pitch*.36,bank*.43,-bank*.26)).to_matrix())
+    chest = attached('Hips',rest['Chest'][0])
+    torso = Euler((pitch,bank,-bank*.18)).to_matrix()
+    orient('Chest',chest,torso)
+    orient('Head',attached('Chest',rest['Head'][0]),Euler((pitch*.44,bank*.27,0)).to_matrix())
+    trail_mantle(torso, .12+.22*math.sin(t*math.pi), -.08*bank, .11*bank)
+
+    # Reach the far side with two tucked boots, then extend the leading leg.
+    leg_paths = {
+        'L': [(0,-.29,0,-9,0), (.18,.28,.09,27,.08), (.31,.27,.76,35,.24),
+              (.41,.13,.95,14,.35), (.55,-.06,1.02,-14,.34), (.67,-.32,.92,-24,.26),
+              (.78,-.355,.34,-21,.115), (.87,-.26,0,-14,.027), (1,.10,.17,19,0)],
+        'R': [(0,.15,.14,15,0), (.19,.45,.08,36,.02), (.32,.36,.81,36,.17),
+              (.43,.24,1.02,22,.26), (.56,.14,1.08,6,.30), (.68,-.05,.99,-8,.22),
+              (.80,.026,.53,16,.13), (.89,.058,.25,24,.053), (1,-.39,0,-9,0)]
+    }
+    for side_name, sign in SIDES:
+        travel,lift,angle,shift = sample(leg_paths[side_name],t)
+        place_foot(side_name,sign,travel,lift,math.radians(angle),-.027,sidestep=shift)
+
+    # Use the same forward displacement as the browser. The planted hand slides
+    # a short distance across the lid as the hips travel past it.
+    for (before, start), (after, end) in zip(VAULT['path'],VAULT['path'][1:]):
+        if t <= after:
+            progress = start+(end-start)*(t-before)/(after-before)
+            break
+    root = VAULT['start']+(VAULT['end']-VAULT['start'])*progress
+    skim = -.21+.33*smooth((t-.32)/.29)
+    support = smooth((t-.245)/.10)*smooth((.72-t)/.13)
+    catch = Vector((-.268,root-skim,VAULT['height']+.083))
+    wrist = Vector(sample([(0,-.34,-.12,.99), (.25,-.44,-.49,.94),
+                           (.55,-.49,-.23,.98), (.79,-.41,.17,1.06),
+                           (1,-.37,-.11,.98)],t)).lerp(catch,support)
+    shoulder = attached('Chest',rest['Arm.L'][0])
+    wrist = bend_joint('Arm.L','Forearm.L',shoulder,wrist,(-.62,.64,.05),1.075)
+    point('Glove.L',wrist,wrist+Vector((-.025,-.084,-.048)))
+    orient('Pauldron.L',shoulder,torso)
+
+    shoulder = attached('Chest',rest['Arm.R'][0])
+    offset = Vector(sample([(0,.059,-.19,-.36),(.28,.18,.02,-.32),
+                            (.55,.24,.09,-.37),(.75,.17,-.09,-.38),
+                            (1,.059,-.19,-.36)],t))
+    wrist = bend_joint('Arm.R','Forearm.R',shoulder,shoulder+offset,(.5,.78,-.09))
+    yaw,elev = sample([(0,21,7),(.28,55,24),(.56,78,26),(.75,49,17),(1,21,7)],t)
+    blade = blade_vector(yaw,elev)
+    point('Glove.R',wrist,wrist+Vector((-.16*blade.y,-.53,-.68))+blade*.28)
+    point('Grip.R',wrist,wrist+blade)
+    orient_hammer(wrist,blade)
+    orient('Pauldron.R',shoulder,torso)
+
+    # Preserve cadence at both ends of the maneuver.
+    blend = min(t/.19,(1-t)/.18)
+    if blend < 1:
+        airborne = pose_snapshot()
+        phase = t*.9 if t<.5 else (VAULT['exitPhase']-(1-t)*.6)%1
+        gait_pose('sprint',phase)
+        blend_pose(pose_snapshot(),airborne,smooth(blend))
+        ground_roll_edge()
+
+
 def animation_pose(kind, frame, count):
     rig.pose.bones['Visor'].matrix_basis = Matrix.Identity(4)
     rig.pose.bones['Prop.L'].matrix_basis = Matrix.Identity(4)
     if kind in CONSUMPTION:
         consumption_pose(kind, frame/(count-1))
+        return
+    if kind == 'vault':
+        vault_pose(frame/(count-1))
+        return
+    if kind in VAULT_ENTRIES:
+        step = frame+1
+        gait_pose('sprint',(VAULT_ENTRIES[kind]+step/16)%1)
+        entry = pose_snapshot()
+        vault_pose(step/(VAULT_FRAMES-1))
+        blend_pose(entry,pose_snapshot(),smooth(step/3))
+        ground_roll_edge()
         return
     if kind in ROLL_ENTRIES:
         stride, phase = ROLL_ENTRIES[kind]
@@ -1233,7 +1333,7 @@ def export(scene, frames, directory, preview):
             rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
             for row, (kind, frame) in enumerate(frames):
                 if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll',
-                                           *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION):
+                                           *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION, 'vault'):
                     continue
                 if weapon and kind in CHARGE_CLIPS and CHARGE_CLIPS[kind][0] != weapon:
                     continue
@@ -1282,6 +1382,7 @@ if __name__ == '__main__':
     hammer_motion['floorContact'] = [contact.x, -contact.y]
     scene.frame_set(1)
     (directory/'attack-motion.json').write_text(json.dumps(ATTACK_MOTION) + '\n')
+    (directory/'vault.json').write_text(json.dumps(VAULT) + '\n')
     bpy.context.view_layer.layer_collection.children[weapon_collections['hammer'].name].exclude = True
     rig.rotation_euler.z = math.pi/4
     rig.select_set(False)
