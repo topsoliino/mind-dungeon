@@ -37,6 +37,7 @@ window.DungeonCoopMotion = (() => {
     return {...a,x:mix(a.x,b.x,t),y:mix(a.y,b.y,t),dir:turn(a.dir,b.dir,t),walk:mix(a.walk,b.walk,t),
      wallRecoil:Math.max(0,(a.wallRecoil??0)-(time-a.time)/1000),
      fallProgress:a.fallProgress>=0&&b.fallProgress>=0?mix(a.fallProgress,b.fallProgress,t):a.fallProgress,
+     vaultProgress:a.vaultProgress>=0&&b.vaultProgress>=0?mix(a.vaultProgress,b.vaultProgress,t):a.vaultProgress,
      lift:mix(a.lift,b.lift,t),attack:Math.min(a.attack,Math.max(0,a.attack-(time-a.time)/1000)),charge:a.charge<0||b.charge<0?a.charge:mix(a.charge,b.charge,t),
      moving:a.moving||b.moving&&Math.hypot(b.x-a.x,b.y-a.y)>1};
    }
@@ -106,7 +107,9 @@ window.DungeonCoopMotion = (() => {
        bounded(p.reach,1,1300)&&bounded(p.scale,.05,8)&&typeof p.id==='string'&&p.id.length===36&&typeof p.weapon==='string'&&p.weapon.length<16&&typeof p.type==='string'&&p.type.length<16)onSwing(p,performance.now());
     if(event==='motion'&&bounded(p.clock,0,1e10)&&bounded(p.dir,-4,4)&&bounded(p.walk,0,1e9)&&
        bounded(p.attack,0,2.5)&&bounded(p.attackDuration,.08,2.5)&&bounded(p.dash,0,1.5)&&bounded(p.lift,0,128)&&
-       bounded(p.charge,-1,1)&&Number.isInteger(p.pose)&&bounded(p.pose,-1,17))onMotion(p,performance.now());
+       bounded(p.charge,-1,1)&&Number.isInteger(p.pose)&&bounded(p.pose,-1,17)&&
+       (p.moveAngle===undefined||bounded(p.moveAngle,-Math.PI,Math.PI))&&
+       (p.vaultProgress===undefined||bounded(p.vaultProgress,0,1)))onMotion(p,performance.now());
    };
    ws.onerror=()=>{if(socket===ws)ws.close();};
    ws.onclose=()=>{
@@ -129,7 +132,7 @@ window.DungeonCoopMotion = (() => {
   return {
    motion(p,now=performance.now()){
     if(!joined)return;
-    const state=JSON.stringify([p.x,p.y,p.dir,p.moving,p.back,p.pose,p.ready]);
+    const state=JSON.stringify([p.x,p.y,p.dir,p.moving,p.moveAngle,p.back,p.pose,p.ready]);
     const changed=state!==lastState;
     if(now-lastSent<(active(p)||changed?cadence:idleCadence))return;
     if(broadcast('motion',{...p,clock:now})){lastSent=now;lastState=state;}

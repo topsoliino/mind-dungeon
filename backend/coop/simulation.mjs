@@ -138,7 +138,7 @@ export class Simulation{
   const spawn=this.floor.spawn,offset=p.seat===2?37:0;
   const x=this.floor.valid(spawn.x+offset,spawn.y,HERO_RADIUS,false,true)?spawn.x+offset:spawn.x;
   Object.assign(p,{x,y:spawn.y,dir:0,weaponSide:1,hp:maxHP(p),stamina:p.staminaMax,dash:0,dashCooldown:0,attack:0,wallRecoil:0,recoilAngle:0,attackDuration:.4,walk:0,
-   moving:false,back:false,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,underpass:undefined,
+   moving:false,back:false,moveAngle:Math.PI/2,inv:1.4,poison:null,bleed:0,bleedGrace:0,webSlow:0,grabSlow:0,vault:null,chargeStart:null,underpass:undefined,
    combat:0,staminaRest:0,entryGrace:0,travelLock:0,region:this.floor.regionAt(x,spawn.y),entered:this.clock,quiz:null,trial:null,consume:null,
    consumeQueue:transition?p.consumeQueue??[]:[],damageQueue:transition?p.damageQueue??[]:[],damageHistory:transition?p.damageHistory??[]:[],fall:null});
   p.input={seq:p.input.seq,x:0,y:0,aim:0,blocked:false,at:-Infinity};
@@ -383,6 +383,7 @@ export class Simulation{
    }else{p.x=v.from.x+(v.to.x-v.from.x)*ease;p.y=v.from.y+(v.to.y-v.from.y)*ease;}
   }else if(x||y){
    p.back=y<0;
+   p.moveAngle=Math.atan2(y,x);
    const slow=p.webSlow||p.grabSlow||this.isWeb(p);
    const speed=p.speed*(p.consume?.item.kind==='food'?items.foodMove:drinking?items.potionMove:1)*(p.dash?p.load.dashSpeed*p.mods.dashDistance:1)*(slow?.53:1)*(p.chargeStart!==null?.64:1);
    const stride=this.floor.stairMotion(p,x*speed*dt,y*speed*dt);
@@ -423,7 +424,7 @@ export class Simulation{
   p.dir=Number.isFinite(aim)?normalAngle(aim):p.dir;
   if(vaultFirst){
    const heading=p.input.x||p.input.y?Math.atan2(p.input.y,p.input.x):p.dir,to=this.vaultPath(p,heading);
-   if(to){p.vault={to,from:{x:p.x,y:p.y},start:this.clock};p.back=Math.sin(heading)<-.16;return true;}
+   if(to){p.vault={to,from:{x:p.x,y:p.y},start:this.clock};p.back=Math.sin(heading)<-.16;p.moveAngle=heading;return true;}
   }
   if(!p.weapon)return false;
   p.chargeStart=this.clock;return true;
