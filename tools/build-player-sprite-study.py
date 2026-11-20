@@ -3,8 +3,8 @@
 Run from the repository root:
   blender -b --factory-startup -t 4 -P tools/build-player-sprite-study.py -- --output /tmp/player-study
 
-The comparison page uses a WebP copy of guardian-atlas.png to reduce transfer size.
-Convert the PNG with Pillow at quality 89, preserving its RGBA channels.
+Pack the comparison assets with Pillow after rendering:
+  python tools/pack-player-sprite-study.py /tmp/player-study beta/art/player-study
 """
 import argparse
 import math
@@ -17,26 +17,28 @@ from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Euler, Matrix, Vector
 
 
-CLIPS = [('idle', 4), ('walk', 16), ('dash', 8), ('attack', 20), ('backhand', 20)]
+CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('dash', 8), ('attack', 20), ('backhand', 20)]
 CELL = 128
 FACINGS = 8
 ATLAS_COLUMNS = 24
-STANCE = .48
-STRIDE = .68
+GAITS = {
+    'walk': (.63, .50, .137, .105),
+    'sprint': (.79, .40, .229, .286),
+}
 SIDES = [('L', -1), ('R', 1)]
 
 
 def fitted(vertex, bone):
     """Fit the armor and its attachment points to the same compact silhouette."""
     x, y, z = vertex
-    if bone == 'Sword':
-        grip = design['Sword'][0]
+    if bone == 'Grip.R':
+        grip = design['Grip.R'][0]
         return fitted(grip, 'Glove.R') + Vector(vertex) - Vector(grip)
     if bone == 'Head':
         return Vector((x * .97, y, 1.427 + (z - 1.49) * .96))
     if bone in ('Chest', 'Mantle'):
         return Vector((x * 1.13, y * 1.045, z - .062))
-    if bone.startswith(('Arm.', 'Forearm.', 'Glove.')):
+    if bone.startswith(('Arm.', 'Forearm.', 'Glove.', 'Pauldron.')):
         return Vector((x * 1.10, y, z - .061))
     if bone == 'Hips':
         return Vector((x * 1.08, y, z - .044))
@@ -61,7 +63,7 @@ def mesh(name, vertices, faces, mats, bone, bevel=.006, indices=None):
     data.from_pydata([fitted(vertex, bone) for vertex in vertices], [], faces)
     data.update()
     obj = bpy.data.objects.new(name, data)
-    bpy.context.collection.objects.link(obj)
+    (weapons if bone == 'Grip.R' else body).objects.link(obj)
     for mat in mats:
         data.materials.append(mat)
     if indices:
@@ -143,6 +145,7 @@ def model_joints():
                             (sign * .164, .005, .116))
         joints.update({
             'Arm.' + side: (shoulder, elbow, 'Chest'),
+            'Pauldron.' + side: (shoulder, elbow, 'Chest'),
             'Forearm.' + side: (elbow, wrist, 'Arm.' + side),
             'Glove.' + side: (wrist, (wrist[0], wrist[1], wrist[2] - .09), 'Forearm.' + side),
             'Thigh.' + side: (hip, knee, 'Hips'),
@@ -150,7 +153,7 @@ def model_joints():
             'Boot.' + side: (ankle, (ankle[0], -.14, .06), 'Shin.' + side),
         })
     wrist = joints['Glove.R'][0]
-    joints['Sword'] = (wrist, (wrist[0] + .20, wrist[1] - .53, wrist[2] + .19), 'Glove.R')
+    joints['Grip.R'] = (wrist, (wrist[0] + .20, wrist[1] - .53, wrist[2] + .19), 'Glove.R')
     return joints
 
 
@@ -256,13 +259,14 @@ def model():
         wrist = design['Glove.' + side][0]
         limb('Padded upper arm ' + side, shoulder, elbow, [(0, .097, .097), (.5, .093, .088), (1, .059, .062)],
              [joint, shadow], bone)
+        pauldron = 'Pauldron.' + side
         profile('Segmented pauldron ' + side, [
                 (1.303, sign * .316, .006, .091, .102), (1.39, sign * .309, -.002, .131, .124),
                 (1.452, sign * .285, .007, .130, .122), (1.493, sign * .27, .009, .095, .098)],
-                [shadow, steel, edge], bone)
+                [shadow, steel, edge], pauldron)
         plate('Pauldron plate ' + side, [(sign * .19, -.082, 1.497), (sign * .32, -.120, 1.487),
               (sign * .425, -.087, 1.408), (sign * .329, -.116, 1.354), (sign * .217, -.112, 1.401)],
-              .029, edge, bone, .008)
+              .029, edge, pauldron, .008)
         limb('Vambrace ' + side, elbow, wrist, [(0, .072, .076), (.23, .09, .088),
              (.7, .067, .062), (.96, .046, .05)], [shadow, steel, edge, steel], 'Forearm.' + side)
         hand = design['Glove.' + side][1]
@@ -288,24 +292,24 @@ def model():
 
     # A broad steel blade, modeled around the grip axis so its silhouette
     # remains continuous through the wind-up and follow-through.
-    a, end, _ = design['Sword']
+    a, end, _ = design['Grip.R']
     grip = Vector(a)
     d = (Vector(end) - grip).normalized()
     u = d.cross(Vector((0, 0, 1))).normalized()
     v = d.cross(u)
     grip_end = grip + d * .107
     limb('Leather-wrapped sword grip', grip - d*.092, grip_end, [(0,.031,.033), (.2,.025,.027),
-         (.82,.023,.024), (1,.027,.027)], [leather, brass, shadow], 'Sword')
+         (.82,.023,.024), (1,.027,.027)], [leather, brass, shadow], 'Grip.R')
     limb('Swept bronze crossguard', grip_end - u*.136, grip_end + u*.136, [
          (0,.022,.025), (.17,.036,.027), (.48,.033,.029), (.83,.036,.027), (1,.022,.025)],
-         [shadow, brass, brass], 'Sword')
+         [shadow, brass, brass], 'Grip.R')
     vertices = []
     for distance, width in [(.112,.047), (.207,.060), (.699,.051), (.885,.001)]:
         center = grip + d*distance
         vertices.extend([tuple(center + u*width), tuple(center+v*.012), tuple(center-u*width), tuple(center-v*.012)])
     faces = [(row*4+i, row*4+(i+1)%4, (row+1)*4+(i+1)%4, (row+1)*4+i)
              for row in range(3) for i in range(4)]
-    mesh('Longsword · four facets', vertices, faces, [shadow, steel, blade], 'Sword', .002,
+    mesh('Longsword · four facets', vertices, faces, [shadow, steel, blade], 'Grip.R', .002,
          [2, 1, 0, 1] * 3)
 
 
@@ -361,10 +365,10 @@ STEADY = (0, 0, 0, .04, .414, -.168, .924, 24, 16)
 ATTACKS = {
     'attack': [
         (0, *STEADY),
-        (.16, .34, .055, .036, -.03, .481, .035, 1.135, 89, 40),
-        (.31, .56, .067, .055, -.07, .546, .098, 1.291, 112, 52),
-        (.39, .53, .042, .048, -.05, .523, .062, 1.294, 110, 49),
-        (.50, -.14, -.133, .084, .23, .315, -.468, 1.193, 32, 8),
+        (.13, .24, .066, .034, -.027, .452, -.035, 1.012, 68, 32),
+        (.30, .73, .119, .086, -.11, .569, .201, 1.326, 125, 57),
+        (.39, .70, .094, .083, -.086, .566, .172, 1.324, 122, 55),
+        (.49, -.14, -.133, .084, .23, .315, -.468, 1.193, 32, 8),
         (.61, -.63, -.168, .112, .25, -.161, -.405, 1.018, -81, -22),
         (.74, -.46, -.136, .092, .18, -.171, -.385, .965, -94, -26),
         (.91, -.12, -.044, .026, .08, .319, -.244, .921, -8, 8),
@@ -372,9 +376,9 @@ ATTACKS = {
     ],
     'backhand': [
         (0, *STEADY),
-        (.14, -.24, -.036, .064, .11, .143, -.312, .874, -43, -23),
-        (.31, -.54, .025, .082, .07, -.155, -.303, .865, -105, -29),
-        (.39, -.56, .002, .089, .11, -.139, -.305, .891, -103, -25),
+        (.14, -.26, .027, .061, .11, .143, -.312, .901, -43, -23),
+        (.30, -.681, .069, .111, .10, -.191, -.337, .843, -118, -32),
+        (.39, -.66, .035, .102, .11, -.175, -.35, .863, -114, -28),
         (.51, .15, -.113, .072, .24, .139, -.465, 1.115, -18, 22),
         (.63, .58, -.101, .023, .10, .438, -.182, 1.415, 75, 55),
         (.77, .37, -.092, .027, .045, .461, -.139, 1.344, 76, 48),
@@ -382,19 +386,19 @@ ATTACKS = {
         (1, *STEADY),
     ],
 }
-BOOT_ROLL = [(0, -12), (.11, 0), (.35, 0), (STANCE, 25), (.68, 10), (.85, -14), (1, -12)]
-
-
-def running_foot(phase):
-    if phase < STANCE:
+def running_foot(phase, stride, stance, clearance, sprint):
+    if phase < stance:
         # The moving body passes over a planted boot at constant speed.
-        travel = STRIDE * (phase / STANCE - .5)
+        travel = stride * (phase / stance - .5)
         lift = 0
+        pitch, = sample([(0, -5 if sprint else -11), (.17, 0), (.67, 0),
+                         (1, 34 if sprint else 23)], phase/stance)
     else:
-        swing = (phase - STANCE) / (1 - STANCE)
-        travel = STRIDE * (.5 - smooth(swing))
-        lift = .145 * math.sin(math.pi * swing)**1.25
-    pitch, = sample(BOOT_ROLL, phase)
+        swing = (phase - stance) / (1 - stance)
+        travel = stride * (.5 - smooth(swing))
+        lift = clearance * math.sin(math.pi * swing)**1.22
+        pitch, = sample([(0, 34 if sprint else 23), (.24, 21 if sprint else 14),
+                         (.72, -16), (1, -5 if sprint else -11)], swing)
     return travel, lift, math.radians(pitch)
 
 
@@ -417,70 +421,106 @@ def blade_vector(azimuth, elevation):
 def pose(kind, t):
     phase = math.tau*t
     step = math.cos(phase)
-    run = kind == 'walk'
-    dodge = math.sin(math.pi*t) if kind == 'dash' else 0
+    gait = GAITS.get(kind)
+    sprint = kind == 'sprint'
+    dash = kind == 'dash'
     attacking = kind in ATTACKS
     twist, forward, drop, pitch, hx, hy, hz, yaw, elev = sample(ATTACKS[kind], t) if attacking else STEADY
-    if run:
-        # Left/right weight transfer, opposing pelvis and chest rotation, and
-        # a rise between strides. The head stabilizes above the moving chest.
-        hips = rest['Hips'][0] + Vector((.033*math.sin(phase), -.039, -.079 + .026*math.cos(2*phase+.7)))
-        pelvic_yaw = .12*step
-        chest_yaw, pitch = -.205*step, .17+.025*math.sin(2*phase)
-        hx, hy, hz = .413+.027*step, -.212-.13*step, .965+.045*step
-        yaw, elev = 27+7*step, 12+7*step
+    if gait:
+        stride, stance, clearance, lean = gait
+        shift = .022 if sprint else .028
+        rise = .102 if sprint else .069
+        bob = (.027 if sprint else .019)*math.cos(2*phase-.64)
+        hips = rest['Hips'][0] + Vector((shift*math.sin(phase), -.078 if sprint else -.028, -rise+bob))
+        pelvic_yaw = (.089 if sprint else .060)*step
+        chest_yaw = -(.12 if sprint else .083)*math.cos(phase-.23)
+        pitch = lean + .014*math.sin(2*phase)
+        yaw, elev = (38, 7) if sprint else (26, 14)
     else:
         breath = .008*math.sin(phase) if kind == 'idle' else 0
-        hips = rest['Hips'][0] + Vector((-.034*twist, forward-.071*dodge, -.035-drop-.12*dodge+breath))
+        if dash:
+            forward, drop, pitch, tuck = sample([
+                (0, 0, 0, .04, 0), (.22, .034, .10, .20, .37),
+                (.45, -.13, .073, .40, 1), (.65, -.128, .052, .31, .84),
+                (.84, -.049, .094, .14, .25), (1, 0, 0, .04, 0)], t)
+            hx, hy, hz = .414+.01*tuck, -.168+.29*tuck, .924-.067*tuck
+            yaw, elev = 24+105*tuck, 16-7*tuck
+        hips = rest['Hips'][0] + Vector((-.041*twist, forward, -.035-drop+breath))
         pelvic_yaw, chest_yaw = twist*.62, twist
-        pitch += .25*dodge
-        if dodge:
-            hx, hy, hz = .44, -.13+.19*dodge, .91-.045*dodge
-            yaw, elev = 66+48*dodge, 9
-    orient('Hips', hips, Euler((pitch*.32, .055*step if run else -.035*twist, pelvic_yaw)).to_matrix())
+    orient('Hips', hips, Euler((pitch*.32, .031*step if gait else -.035*twist, pelvic_yaw)).to_matrix())
     chest = attached('Hips', rest['Chest'][0])
-    orient('Chest', chest, Euler((pitch, -.035*step if run else -.10*twist, chest_yaw)).to_matrix())
+    chest_rotation = Euler((pitch, -.019*step if gait else -.10*twist, chest_yaw)).to_matrix()
+    orient('Chest', chest, chest_rotation)
     head = attached('Chest', rest['Head'][0])
-    orient('Head', head, Euler((pitch*.41, .019*step if run else 0, chest_yaw*.37)).to_matrix())
+    orient('Head', head, Euler((pitch*.33, .012*step if gait else 0, chest_yaw*.33)).to_matrix())
 
     mantle = attached('Chest', rest['Mantle'][0])
-    flutter = .16+.071*math.sin(phase-.7) if run else .08 + .17*abs(twist) + .33*dodge
-    orient('Mantle', mantle, Euler((flutter, .09*math.sin(phase-.8) if run else .27*twist, chest_yaw*.76)).to_matrix())
+    if gait:
+        flutter = (.30 if sprint else .05) + (.088 if sprint else .05)*math.sin(phase-.7)
+    else:
+        flutter = .08 + .17*abs(twist) + (.41*tuck if dash else 0)
+    orient('Mantle', mantle, Euler((flutter, .067*math.sin(phase-.8) if gait else .27*twist, chest_yaw*.76)).to_matrix())
 
     for side, sign in SIDES:
-        if run:
-            travel, lift, foot_pitch = running_foot((t+(0 if sign<0 else .5))%1)
-            width = -.016
+        if gait:
+            foot_phase = (t+(0 if sign<0 else .5))%1
+            travel, lift, foot_pitch = running_foot(foot_phase, stride, stance, clearance, sprint)
+            width = -.023 if sprint else -.012
         elif attacking:
             lead = -1 if kind == 'attack' else 1
-            advance = smooth((t-.29)/.19) * (1-smooth((t-.77)/.23))
+            advance = smooth((t-.32)/.16) * (1-smooth((t-.77)/.23))
             moving = sign == lead
             travel = sign*.08 + advance*(-.23 if moving else .06)
             lift = .074 * (math.sin(math.pi*advance)**2) if moving else 0
             foot_pitch = .17 * advance if not moving else -.11 * (math.sin(math.pi*advance)**2)
             width = advance*.055
+        elif dash:
+            travel, lift, foot_pitch = sample([
+                (0, sign*.08, 0, 0), (.22, sign*.13, 0, .10 if sign>0 else - .10),
+                (.47, -.318 if sign<0 else .31, .10 if sign<0 else .16, -.25 if sign<0 else .30),
+                (.68, -.31 if sign<0 else .14, 0 if sign<0 else .12, -.14 if sign<0 else .13),
+                (.86, -.18 if sign<0 else .019, 0, .043), (1, sign*.08, 0, 0)], t)
+            width = .031*tuck
         else:
-            travel, lift, foot_pitch = sign*(.08+.31*dodge), .05*dodge*(1+sign), .09*dodge*sign
-            width = .035*dodge
+            travel, lift, foot_pitch, width = sign*.08, 0, 0, 0
         place_foot(side, sign, travel, lift, foot_pitch, width)
 
-        shoulder = attached('Chest', rest['Arm.' + side][0])
-        if sign>0:
+        arm = 'Arm.'+side
+        shoulder = attached('Chest', rest[arm][0])
+        if gait:
+            # The wrist trails the leg rhythm, with a softer elbow on the free side.
+            swing = math.cos(phase-.38)
+            if sign>0:
+                reach = .097 if sprint else .055
+                offset = (.069, -.175-reach*swing, -.371+.033*swing)
+                yaw += (9 if sprint else 4)*swing
+                elev += (10 if sprint else 5)*swing
+            else:
+                reach = .226 if sprint else .129
+                offset = (-.060, -.080+reach*swing, -.384+.048*abs(swing)+.039*swing)
+            wrist = shoulder + Vector(offset)
+        elif sign>0:
             wrist = (hx, hy, hz)
-        elif run:
-            wrist = (-.402+.032*step, -.054+.246*step, .904+max(0, .093*step))
         else:
             ready = abs(twist)
-            wrist = (-.402+.10*ready, -.085-.17*ready-.16*dodge, .898+.19*ready+.11*dodge)
-        wrist = bend_joint('Arm.' + side, 'Forearm.' + side, shoulder, wrist, (sign*.50, .78, -.09))
+            guard = tuck if dash else 0
+            wrist = (-.402+.10*ready, -.085-.17*ready-.19*guard, .898+.19*ready+.12*guard)
+        wrist = bend_joint(arm, 'Forearm.' + side, shoulder, wrist, (sign*.50, .78, -.09))
+
+        # A pauldron is strapped to the cuirass and only follows part of the arm swing.
+        arm_delta = rig.pose.bones[arm].matrix @ rig.data.bones[arm].matrix_local.inverted()
+        follow = .36 if attacking else .20 if sprint or dash else .15
+        armor_rotation = chest_rotation.to_quaternion().slerp(arm_delta.to_quaternion(), follow)
+        orient('Pauldron.'+side, shoulder, armor_rotation.to_matrix())
+
         if sign>0:
             blade = blade_vector(yaw, elev)
-            # The glove rotates with the grip, so the sword stays in the hand in the cut.
             hand = Vector((-.16*blade.y, -.53, -.68)) + blade*.28
             point('Glove.' + side, wrist, wrist + hand)
-            point('Sword', wrist, wrist + blade)
+            point('Grip.R', wrist, wrist + blade)
         else:
-            point('Glove.' + side, wrist, wrist + Vector((-.012, -.047, -.098)))
+            lag = .08*math.sin(phase-.72) if gait else 0
+            point('Glove.' + side, wrist, wrist + Vector((-.012, -.047+lag*.16, -.098)))
 
 
 def light(name, color, energy, position, size):
@@ -537,7 +577,7 @@ def key_animations(scene, clips):
         for frame in range(count):
             index = start+frame
             scene.frame_set(index)
-            looping = kind in ('idle','walk')
+            looping = kind == 'idle' or kind in GAITS
             pose(kind, frame/(count if looping else count-1))
             for bone in rig.pose.bones:
                 bone.keyframe_insert(data_path='location', frame=index)
@@ -551,35 +591,43 @@ def key_animations(scene, clips):
 
 def export(scene, frames, directory, preview):
     rows = math.ceil(len(frames) * FACINGS / ATLAS_COLUMNS)
-    atlas = None if preview else np.zeros((rows*CELL, ATLAS_COLUMNS*CELL, 4), dtype=np.float32)
-    for facing in range(FACINGS):
-        if preview and facing not in (0, 1, 6):
-            continue
-        # 0 is right; increasing directions follow the 2D bank clockwise.
-        rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
-        for row, (kind, frame) in enumerate(frames):
-            if preview and kind == 'dash':
+    layer = bpy.context.view_layer.layer_collection
+    body_layer, weapon_layer = layer.children[body.name], layer.children[weapons.name]
+    for part in ('body', 'weapon'):
+        # The sword is composited over a complete body sprite. The body still
+        # cuts away hidden sword pixels in this second pass.
+        body_layer.holdout = part == 'weapon'
+        weapon_layer.exclude = part == 'body'
+        atlas = None if preview else np.zeros((rows*CELL, ATLAS_COLUMNS*CELL, 4), dtype=np.float32)
+        for facing in range(FACINGS):
+            if preview and facing not in (0, 1, 6):
                 continue
-            scene.frame_set(frame)
-            path = directory / f'{facing}-{row}.png'
-            scene.render.filepath = str(path)
-            bpy.ops.render.render(write_still=True)
-            if preview:
-                continue
-            image = bpy.data.images.load(str(path), check_existing=False)
-            pixels = np.empty(CELL*CELL*4, dtype=np.float32)
-            image.pixels.foreach_get(pixels)
+            # 0 is right; increasing directions follow the 2D bank clockwise.
+            rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
+            for row, (kind, frame) in enumerate(frames):
+                if preview and row not in (0, 4, 7, 11, 15, 20, 23, 27, 31, 37, 48, 51, 55, 68, 71, 75):
+                    continue
+                scene.frame_set(frame)
+                path = directory / f'{part}-{facing}-{row}.png'
+                scene.render.filepath = str(path)
+                bpy.ops.render.render(write_still=True)
+                if preview:
+                    continue
+                image = bpy.data.images.load(str(path), check_existing=False)
+                pixels = np.empty(CELL*CELL*4, dtype=np.float32)
+                image.pixels.foreach_get(pixels)
+                bpy.data.images.remove(image)
+                y, x = divmod(row * FACINGS + facing, ATLAS_COLUMNS)
+                y = rows - 1 - y
+                atlas[y*CELL:(y+1)*CELL, x*CELL:(x+1)*CELL] = pixels.reshape(CELL,CELL,4)
+        if atlas is not None:
+            image = bpy.data.images.new('Guardian ' + part, width=ATLAS_COLUMNS*CELL, height=rows*CELL, alpha=True)
+            image.colorspace_settings.name = 'sRGB'
+            image.pixels.foreach_set(atlas.reshape(-1))
+            image.file_format = 'PNG'
+            image.filepath_raw = str(directory/f'guardian-{part}.png')
+            image.save()
             bpy.data.images.remove(image)
-            y, x = divmod(row * FACINGS + facing, ATLAS_COLUMNS)
-            y = rows - 1 - y
-            atlas[y*CELL:(y+1)*CELL, x*CELL:(x+1)*CELL] = pixels.reshape(CELL,CELL,4)
-    if atlas is not None:
-        image = bpy.data.images.new('Guardian sheet', width=ATLAS_COLUMNS*CELL, height=rows*CELL, alpha=True)
-        image.colorspace_settings.name = 'sRGB'
-        image.pixels.foreach_set(atlas.reshape(-1))
-        image.file_format = 'PNG'
-        image.filepath_raw = str(directory/'guardian-atlas.png')
-        image.save()
 
 
 if __name__ == '__main__':
@@ -591,6 +639,10 @@ if __name__ == '__main__':
     directory = opts.output.resolve()
     directory.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    body = bpy.data.collections.new('Guardian armor and body')
+    weapons = bpy.data.collections.new('Grip.R · Longsword')
+    for collection in (body, weapons):
+        bpy.context.scene.collection.children.link(collection)
     design, soles = model_joints(), {}
     rig, rest = create_rig(design)
     model()
