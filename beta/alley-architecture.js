@@ -109,18 +109,22 @@
    color(ctx,'#362b3a',x-3,y+h+1.6,w+6,2.1);
   }
   function doorway(ctx,x,h,t,gateWidth){
-   const w=gateWidth,y=h-33;
-   archTop(ctx,x-w/2-3,y-3,w+6,35);ctx.fillStyle='#342735';ctx.fill();
-   archTop(ctx,x-w/2-2,y-2,w+4,34);ctx.strokeStyle=t.trim;ctx.lineWidth=1.1;ctx.stroke();
+   // Doors must read as full-height entrances beside the guardian, not tiny wall ornaments.
+   // Keep the base flush with the ground; only the upper opening changes with building height.
+   const w=gateWidth,doorHeight=Math.min(79,Math.max(64,h*.62)),y=h-doorHeight;
+   archTop(ctx,x-w/2-4,y-4,w+8,doorHeight+4);ctx.fillStyle='#342735';ctx.fill();
+   archTop(ctx,x-w/2-2,y-2,w+4,doorHeight+2);
+   ctx.strokeStyle=t.trim;ctx.lineWidth=2;ctx.stroke();
    ctx.save();
-   archTop(ctx,x-w/2,y,w,33);ctx.clip();
-   wood(ctx,x-w/2,y,w,33,t.shutter,4);
-   color(ctx,'#352a36',x-w/2,y+12,w,2);
-   color(ctx,'#352a36',x-w/2,y+23,w,2);
-   color(ctx,'#d5a86b',x+w*.23,y+19,2,2.8);
+   archTop(ctx,x-w/2,y,w,doorHeight);ctx.clip();
+   wood(ctx,x-w/2,y,w,doorHeight,t.shutter,4);
+   color(ctx,'#352a36',x-w/2,y+doorHeight*.35,w,2.3);
+   color(ctx,'#352a36',x-w/2,y+doorHeight*.7,w,2.3);
+   color(ctx,'#c9a87990',x-w/2+3,y+5,1.3,doorHeight-10);
+   color(ctx,'#d5a86b',x+w*.22,y+doorHeight*.58,2.5,3.6);
    ctx.restore();
-   color(ctx,'#352c39',x-w/2-4,h-2,w+8,2);
-   color(ctx,t.trim,x-w/2-4,h-3,w+8,1.2);
+   color(ctx,'#352c39',x-w/2-5,h-3,w+10,3);
+   color(ctx,t.trim,x-w/2-5,h-4,w+10,1.4);
   }
   function lamp(ctx,x,y,warm){
    const halo=ctx.createRadialGradient(x,y,1,x,y,27);
@@ -163,12 +167,14 @@
    color(ctx,style==='timber'?t.wood:'#46394ba5',0,h*.50,w,2);
    color(ctx,'#d0aa893d',0,h*.50-1,w,1);
    const bays=Math.max(1,Math.round(w/(side?39:33)));
-   const bayWidth=w/bays;
+   const bayWidth=w/bays,doorWidth=Math.min(38,w*.57);
    for(let bay=0;bay<bays;bay++){
     const center=(bay+.5)*bayWidth;
-    windowBay(ctx,center-5,h*.18,10,Math.max(11,h*.19),t,(bay+seed)%3===0,style!=='stone'&&bayWidth>23);
+    // Don't let a window (or its shutter) intersect the larger entrance.
+    if(doorX!==null&&Math.abs(center-doorX)<doorWidth/2+9)continue;
+    windowBay(ctx,center-6,h*.18,12,Math.max(15,h*.20),t,(bay+seed)%3===0,style!=='stone'&&bayWidth>25);
    }
-   if(doorX!==null)doorway(ctx,doorX,h,t,Math.min(22,w*.63));
+   if(doorX!==null)doorway(ctx,doorX,h,t,doorWidth);
    if(lantern)lamp(ctx,lantern.x,h-lantern.height,lantern.warm);
    ctx.restore();
   }

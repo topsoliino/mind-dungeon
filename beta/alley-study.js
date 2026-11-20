@@ -68,10 +68,10 @@
  }
  const facadeArt=window.AlleyArchitecture.create({project,polygon,line});
  const stone={
-  basalt:{pitch:[1.02,.57],colors:['#4e5363','#565c6e','#5d6272','#494e5f','#626674','#535565'],edge:'#7e849388'},
-  court:{pitch:[.83,.83],colors:['#626577','#6e6e80','#7e7886','#696878','#737184'],edge:'#a69baa9c'},
-  curb:{pitch:[.74,.46],colors:['#737385','#80798a','#6f6d80','#817d8e'],edge:'#a9a1acaa'},
-  threshold:{pitch:[.68,.59],colors:['#655568','#705d70','#735e71','#7c687a'],edge:'#a5899eaa'}
+  basalt:{pitch:[.47,.29],colors:['#4e5363','#565c6e','#5d6272','#494e5f','#626674','#535565'],edge:'#7e849388'},
+  court:{pitch:[.42,.43],colors:['#626577','#6e6e80','#7e7886','#696878','#737184'],edge:'#a69baa9c'},
+  curb:{pitch:[.55,.38],colors:['#737385','#80798a','#6f6d80','#817d8e'],edge:'#a9a1acaa'},
+  threshold:{pitch:[.51,.43],colors:['#655568','#705d70','#735e71','#7c687a'],edge:'#a5899eaa'}
  };
  function paving(ctx,{area,material},random) {
   const [minU,minV,maxU,maxV]=area;
@@ -81,9 +81,9 @@
   polygon(ctx,corners(area),'#282935');
   for(let row=0,v=minV;v<maxV;row++,v=minV+row*dv){
    for(let u=minU-row%2*du/2;u<maxU;u+=du){
-    const padU=.025,padV=.035;
+    const padU=.011,padV=.012;
     const a=u+padU,b=v+padV,c=u+du-padU,d=v+dv-padV;
-    const chip=()=>.024+.085*random();
+    const chip=()=>.008+.026*random();
     const shape=[
      project(a+chip(),b),project(c-chip(),b),project(c,b+chip()),project(c,d-chip()),
      project(c-chip(),d),project(a+chip(),d),project(a,d-chip()),project(a,b+chip())
@@ -92,10 +92,10 @@
     line(ctx,[shape[6],shape[7],shape[0],shape[1]],edge);
     line(ctx,[shape[2],shape[3],shape[4],shape[5]],'#1b1d2d90',1.3);
     if(random()<.62){
-     const s=a+.23*random(),t=b+.12+.13*random();
-     line(ctx,[project(s,t),project(s+du*.22,t+.025),project(s+du*.35,t-.014)],'#b0a7ba45');
+     const s=a+du*.18*random(),t=b+dv*(.2+.15*random());
+     line(ctx,[project(s,t),project(s+du*.20,t+.012),project(s+du*.32,t-.007)],'#b0a7ba45');
     }
-    if(random()<.16)line(ctx,[project(c-.13,d),project(c-.21,d-.08),project(c-.19,d-.16)],'#2d263888');
+    if(random()<.12)line(ctx,[project(c-.055,d),project(c-.09,d-.038),project(c-.08,d-.075)],'#2d263888');
    }
   }
   ctx.restore();
