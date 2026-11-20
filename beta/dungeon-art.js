@@ -1776,11 +1776,13 @@ window.DungeonArt = (() => {
   function icon(type,id='',color='') {
     const key=[type,id,color].join('/');
     if(iconCache.has(key))return iconCache.get(key);
-    if(type==='ring'||type==='food-item'||type==='armor-item'||type==='weapon-item'){
+    if(type==='ring'||type.endsWith('-item')){
       const c=surface(32,32),draw=brush(c);
       if(type==='ring')ringSprite(draw,id,color);
       else if(type==='food-item')foodSprite(draw,id);
-      else window.DungeonEquipmentArt[type==='armor-item'?'armor':'weapon'](draw,id);
+      else if(type==='armor-item')window.DungeonEquipmentArt.armor(draw,id);
+      else if(type==='weapon-item')window.DungeonEquipmentArt.weapon(draw,id);
+      else window.DungeonEquipmentArt.utility(draw,type.slice(0,-5),id,color);
       iconCache.set(key,c);return c;
     }
     const c=surface(),{g,r,poly}=brush(c);
