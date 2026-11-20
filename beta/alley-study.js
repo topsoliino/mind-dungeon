@@ -2,8 +2,22 @@
  'use strict';
 
  const generatorMode=Boolean(window.AlleyGenerator?.enabled);
- const width=generatorMode?2850:1900,height=generatorMode?1650:1050;
- const originX=491,originY=73,stepX=42,stepY=stepX/Math.sqrt(3);
+ const stepX=42,stepY=stepX/Math.sqrt(3);
+ // World geometry grows with the generator, not by shrinking the camera.
+ // Reserve room for the cut walls above every floor edge; keep the original
+ // coordinate system untouched when the handcrafted alley is selected.
+ const areas=generatorMode?[
+  ...window.AlleyStudyMap.art.ground.map(o=>o.area),
+  ...window.AlleyStudyMap.art.standing.map(o=>o.area),
+  ...window.AlleyStudyMap.art.backdrop.map(o=>o.area),
+  window.AlleyStudyMap.art.foreground.arch.area
+ ]:[];
+ const uv=areas.flatMap(([u,v,r,b])=>[[u,v],[u,b],[r,v],[r,b]]);
+ const diff=uv.map(([u,v])=>u-v),sum=uv.map(([u,v])=>u+v);
+ const originX=generatorMode?Math.ceil(250-Math.min(...diff)*stepX):491;
+ const originY=generatorMode?Math.ceil(240-Math.min(...sum)*stepY):73;
+ const width=generatorMode?Math.ceil(originX+Math.max(...diff)*stepX+250):1900;
+ const height=generatorMode?Math.ceil(originY+Math.max(...sum)*stepY+180):1050;
  const footOffset=16;
  const project=(u,v,z=0)=>[originX+(u-v)*stepX,originY+(u+v)*stepY-z];
  const position=(u,v)=>{
@@ -233,9 +247,21 @@
   const detail=bitmap(ctx=>drawDetails(ctx,groundDetails));
   const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>facadeArt.building(ctx,home))}));
   const gateway=cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
-  const roomWalls=route?.walls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>route.renderWall(ctx,wall,routePainter))}))??[];
+  // A long wall spans many projected depth values. Split its RENDERING into
+  // short immutable panels; physics still uses the unbroken structural wall.
+  const renderWalls=(route?.walls??[]).flatMap(wall=>{
+   if(!generatorMode||wall.axis==null)return [wall];
+   const count=Math.ceil((wall.end-wall.start)/1.75);
+   return Array.from({length:count},(_,i)=>{
+    const begin=wall.start+(wall.end-wall.start)*i/count;
+    const end=wall.start+(wall.end-wall.start)*(i+1)/count,th=.075;
+    return {...wall,start:begin,end,area:wall.axis==='u'?
+     [wall.p-th,begin,wall.p+th,end]:[begin,wall.p-th,end,wall.p+th]};
+   });
+  });
+  const roomWalls=renderWalls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>route.renderWall(ctx,wall,routePainter))}));
   const labSeal=route?.seal?cacheObject(route.seal,88,ctx=>route.renderSeal(ctx,routePainter)):null;
-  const artListeners=[];
+  const artListeners=[],chunkCache=[];
   const redrawImage=(image,draw)=>{
    const ctx=image.canvas.getContext('2d');
    ctx.resetTransform();
@@ -249,6 +275,12 @@
    drawUnderlay(backdropContext);
    homes.forEach(home=>redrawImage(home.image,ctx=>facadeArt.building(ctx,home)));
    redrawImage(gateway,ctx=>facadeArt.arch(ctx,gate));
+   // Refresh immutable GPU-sized copies after asynchronous facade textures load.
+   for(const {canvas,source,x,y} of chunkCache){
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(source,-x,-y);
+   }
    for(const listener of artListeners)listener();
   });
   const toggles=Object.fromEntries([...(sceneControls?.querySelectorAll('input')??[])].map(input=>[input.value,input]));
@@ -256,9 +288,11 @@
   if(sceneControls)sceneControls.hidden=false;
 
   function blockedGround(u,v,radius){
-   return [[u-radius,v],[u+radius,v],[u,v-radius],[u,v+radius]].some(([a,b])=>
-    !walkable.some(area=>contains(area,a,b)))||
-    (solids.some(([a,b,c,d])=>contains([a-radius,b-radius,c+radius,d+radius],u,v))||Boolean(route?.blocked(u,v,radius)));
+   const samples=[[u-radius,v],[u+radius,v],[u,v-radius],[u,v+radius]];
+   const outside=samples.some(([x,y])=>generatorMode?!route.containsGround(x,y):
+    !walkable.some(area=>contains(area,x,y)));
+   return outside||solids.some(([a,b,c,d])=>
+    contains([a-radius,b-radius,c+radius,d+radius],u,v))||Boolean(route?.blocked(u,v,radius));
   }
   function blocked(x,y){return blockedGround(...unproject(x,y),.23);}
   function clearSegment(from,to){
@@ -269,12 +303,49 @@
    }
    return true;
   }
-  const depthAt=(area,x,y)=>{
-   const [u,v,r,b]=area;
-   const [heroU,heroV]=unproject(x,y);
-   const limit=(value,min,max)=>Math.max(min,Math.min(max,value));
-   return position(limit(heroU,u,r),limit(heroV,v,b)).y;
+  // Depth is purely structural: the camera angle is fixed, so a wall's
+  // projected foot position cannot change when the player moves.
+  const depthAt=area=>position((area[0]+area[2])/2,(area[1]+area[3])/2).y;
+  const occlusionHull=(area,h)=>{
+   const pts=[...corners(area),...corners(area,h)].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+   const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+   const lower=[],upper=[];
+   for(const pt of pts){while(lower.length>=2&&cross(lower.at(-2),lower.at(-1),pt)<=0)lower.pop();lower.push(pt);}
+   for(const pt of pts.slice().reverse()){while(upper.length>=2&&cross(upper.at(-2),upper.at(-1),pt)<=0)upper.pop();upper.push(pt);}
+   return lower.slice(0,-1).concat(upper.slice(0,-1));
   };
+  const segmentsIntersect=(a,b,c,d)=>{
+   const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+   return cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0;
+  };
+  const polygonOverlaps=(poly,box)=>{
+   const rect=[[box.x1,box.y1],[box.x2,box.y1],[box.x2,box.y2],[box.x1,box.y2]];
+   const within=([x,y])=>x>=box.x1&&x<=box.x2&&y>=box.y1&&y<=box.y2;
+   const inside=p=>{
+    let yes=false;
+    for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+     const a=poly[i],b=poly[j];
+     if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])yes=!yes;
+    }
+    return yes;
+   };
+   if(poly.some(within)||rect.some(inside))return true;
+   return poly.some((a,i)=>rect.some((c,j)=>segmentsIntersect(a,poly[(i+1)%poly.length],c,rect[(j+1)%4])));
+  };
+  const wallVisibility=(wall,heroX,heroY)=>{
+   const depth=wall.renderDepth;
+   // Behind-the-player walls are always fully opaque. Foreground panels fade
+   // independently, so two or three overlapping panels can fade together.
+   if(depth<=heroY-footOffset+2)return 1;
+   return polygonOverlaps(wall.hull,{x1:heroX-29,x2:heroX+29,y1:heroY-94,y2:heroY+14})?.24:1;
+  };
+  const structureInfo=(image,area,height)=>({
+   image,area,renderDepth:depthAt(area),hull:occlusionHull(area,height)
+  });
+  const wallPanels=roomWalls.map(wall=>({...structureInfo(wall.image,wall.area,wall.height),wall}));
+  const housePanels=homes.map(home=>({...structureInfo(home.image,home.area,home.height+home.roof),home}));
+  const archPanel=structureInfo(gateway,gate.area,gate.height);
+  const sealPanel=labSeal?structureInfo(labSeal,route.seal,88):null;
   function drawGround(ctx,time){
    if(enabled('background'))ctx.drawImage(underlay,0,0);
    if(enabled('ground'))ctx.drawImage(floor,0,0);
@@ -292,27 +363,28 @@
    }
   }
   function structures(x,y){
-   const result=[];
-   const [heroU,heroV]=unproject(x,y);
-   const archDepth=position(r,Math.max(v,Math.min(heroV,b))).y;
+   const result=[],heroY=y+footOffset;
+   const archDepth=archPanel.renderDepth;
    if(enabled('standing')){
-    for(const {area,image,behindArch} of homes){
-     const [u,v,r,b]=area;
-     const alpha=heroV<v&&v-heroV<1.4&&heroU>u-.55&&heroU<r+.55?.54:1;
-     const depth=depthAt(area,x,y);
-     // Rear facades must stay below the arch for *every* hero position.
-     // Depth sorting alone caused the arch/house overlap to flip on approach.
-     const touchesRearOfArch=area[2]>=gate.area[0]-.18&&area[1]<gate.area[1]&&area[3]<=gate.area[1]+.23;
-     const lockedBehind=behindArch||touchesRearOfArch;
-     result.push({image,depth:lockedBehind&&enabled('foreground')?Math.min(depth,archDepth-2):depth,alpha});
+    for(const {home,image,renderDepth,hull} of housePanels){
+     const area=home.area;
+     // This is a permanent rear-house / gateway ordering, not hero-dependent.
+     const behind=home.behindArch||(area[2]>=gate.area[0]-.18&&
+      area[1]<gate.area[1]&&area[3]<=gate.area[1]+.23);
+     const depth=behind&&enabled('foreground')?Math.min(renderDepth,archDepth-2):renderDepth;
+     const alpha=wallVisibility({renderDepth:depth,hull},x,heroY);
+     result.push({image,depth,alpha});
+    }
+    for(const wall of wallPanels){
+     result.push({image:wall.image,depth:wall.renderDepth,
+      alpha:wallVisibility(wall,x,heroY)});
     }
    }
-   if(enabled('standing')){
-    for(const wall of roomWalls)result.push({image:wall.image,depth:depthAt(wall.area,x,y),alpha:1});
-   }
    if(enabled('foreground')){
-    result.push({image:gateway,depth:archDepth,alpha:1});
-    if(labSeal)result.push({image:labSeal,depth:depthAt(route.seal,x,y),alpha:route.isUnlocked()?0:1});
+    result.push({image:gateway,depth:archDepth,
+     alpha:wallVisibility(archPanel,x,heroY)});
+    if(sealPanel)result.push({image:labSeal,depth:sealPanel.renderDepth,
+     alpha:route.isUnlocked()?0:wallVisibility(sealPanel,x,heroY)});
    }
    return result;
   }
@@ -355,6 +427,17 @@
    marker(spawn,'#79ddce');marker(barrel,'#ff9a81');
    for(const point of Object.values(stations))marker(point.at,'#f4c176');
   }
+  const chunks=(source,depth)=>{
+   const maxSize=1536,out=[];
+   for(let y=0;y<height;y+=maxSize)for(let x=0;x<width;x+=maxSize){
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.min(maxSize,width-x);canvas.height=Math.min(maxSize,height-y);
+    canvas.getContext('2d').drawImage(source,-x,-y);
+    chunkCache.push({canvas,source,x,y});
+    out.push({canvas,x,y,depth});
+   }
+   return out;
+  };
   function drawProp(ctx,prop,vault,units){
    const [u,v]=unproject(prop.x,prop.y);
    if(prop.kind==='chest')drawChest(ctx,u,v,prop.completed);
@@ -365,8 +448,16 @@
   return {spawn:position(...spawn),stations:Object.fromEntries(Object.entries(stations).map(([key,{at,front}])=>[key,{...position(...at),front}])),
    barrel:position(...barrel),waypoints:waypoints.map(point=>position(...point)),
    blocked,blockedGround,clearSegment,drawGround,drawProp,architecture,drawOverlays,drawLogic,structures,
-   groundLayers:()=>[underlay,floor,detail,bitmap(ctx=>drawGroundLight(ctx,0))],
+   groundLayers:()=>{
+    const layers=[underlay,floor,detail,bitmap(ctx=>drawGroundLight(ctx,0))];
+    return generatorMode?layers.flatMap((canvas,i)=>chunks(canvas,-4+i)):
+     layers.map((canvas,i)=>({canvas,x:0,y:0,depth:-4+i}));
+   },
    onArtReady:listener=>artListeners.push(listener),
+   overlayLayers:()=>{
+    const canvas=bitmap(ctx=>drawOverlays(ctx,0));
+    return generatorMode?chunks(canvas,height+1):[{canvas,x:0,y:0,depth:height+1}];
+   },
    overlayLayer:()=>bitmap(ctx=>drawOverlays(ctx,0))};
  }
  window.AlleyStudy={create,shortestRoute,project,unproject,width,height,footOffset};

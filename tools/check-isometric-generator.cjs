@@ -40,6 +40,9 @@ for(let seed=0;seed<150;seed++){
  assert.equal(g.doors.length,9,'one new confirmed connection per new room');
  assert(g.metadata.corridors>=3&&g.metadata.corridors<=5,'balanced corridor share');
  assert.equal(g.stairs.length,1,'one reserved vertical transition');
+ assert.equal(g.metadata.roomLinearScale,2,'rooms and corridors doubled in both axes');
+ assert.equal(g.metadata.wallCutHeight,96,'a contiguous building has one wall cut height');
+ assert(g.walls.every(w=>w.height===96),'all walls in same building share a cut height');
  const seen=new Set();
  for(const room of g.rooms){
   const footprint=new Set(room.cells.map(tile));
@@ -49,6 +52,12 @@ for(let seed=0;seed<150;seed++){
    seen.add(tile(p));
   }
   assert(room.exits.length>=1,'all nodes must be connected to the room graph');
+  if(room.id>0){
+   const xs=room.cells.map(p=>p[0]),ys=room.cells.map(p=>p[1]);
+   assert((Math.max(...xs)-Math.min(...xs)+1)%2===0,'room width grows in exact pairs');
+   assert((Math.max(...ys)-Math.min(...ys)+1)%2===0,'room length grows in exact pairs');
+   assert(room.cells.length%4===0,'each original tile expands to a 2x2 block');
+  }
   const local=[room.cells[0]],visited=new Set([tile(room.cells[0])]);
   for(let i=0;i<local.length;i++)for(const [dx,dy] of dirs){
    const p=[local[i][0]+dx,local[i][1]+dy],id=tile(p);
@@ -58,7 +67,7 @@ for(let seed=0;seed<150;seed++){
  }
  for(const door of g.doors){
   assert(g.rooms[door.from]&&g.rooms[door.to],'door has both rooms');
-  assert(door.edges.length>=1&&door.edges.length<=2,'portal width is one or two cells');
+  assert(door.edges.length>=2&&door.edges.length<=4,'double-width scale creates two-to-four-cell openings');
   for(const [a,b] of door.edges){
    assert.equal(Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1]),1);
    assert(inside(a,g.rooms[door.from])&&inside(b,g.rooms[door.to]));
