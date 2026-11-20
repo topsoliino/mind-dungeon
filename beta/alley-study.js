@@ -66,6 +66,7 @@
   face(ctx,bottom,top,2,3,colors[1],colors[3]);
   polygon(ctx,top,colors[2],colors[3]);
  }
+ const facadeArt=window.AlleyArchitecture.create({project,polygon,line});
  const stone={
   basalt:{pitch:[1.02,.57],colors:['#4e5363','#565c6e','#5d6272','#494e5f','#626674','#535565'],edge:'#7e849388'},
   court:{pitch:[.83,.83],colors:['#626577','#6e6e80','#7e7886','#696878','#737184'],edge:'#a69baa9c'},
@@ -112,51 +113,6 @@
   polygon(ctx,diamond(center,.28),'#b99a82','#e1bca0');
   line(ctx,[project(cu-.39,cv),project(cu+.39,cv)],'#d6b491');
   line(ctx,[project(cu,cv-.39),project(cu,cv+.39)],'#d6b491');
- }
- function building(ctx,{area,height,roof,door}) {
-  const [u,v,r,b]=area;
-  block(ctx,area,height,['#42465a','#57586b','#6d6a80','#282937']);
-  const ridge=(v+b)/2;
-  polygon(ctx,[project(u,v,height),project(r,v,height),project(r,ridge,height+roof),project(u,ridge,height+roof)],'#6b6a80','#353448');
-  polygon(ctx,[project(u,ridge,height+roof),project(r,ridge,height+roof),project(r,b,height),project(u,b,height)],'#79758a','#38384b');
-  polygon(ctx,[project(r,v,height),project(r,ridge,height+roof),project(r,b,height)],'#51536a','#353448');
-  line(ctx,[project(r,v,height-10),project(r,b,height-10),project(u,b,height-10)],'#9290a449',2);
-  line(ctx,[project(r,v,9),project(r,b,9),project(u,b,9)],'#21233370',2);
-  for(let bay=u+.5;bay<r-.37;bay+=.75){
-   polygon(ctx,[project(bay-.13,b,height*.53),project(bay+.13,b,height*.53),
-    project(bay+.13,b,height*.79),project(bay-.13,b,height*.79)],'#39394f','#6f6d84');
-  }
-  if(door){
-   const [x,y]=door;
-   polygon(ctx,[project(x-.22,y),project(x+.22,y),project(x+.22,y,47),project(x-.22,y,47)],'#333344','#858097');
-   line(ctx,[project(x-.29,y),project(x+.29,y)],'#9b899a',2);
-  }
- }
- function archFacade(ctx,data,u,fill,edge) {
-  const [,v0,,v1]=data.area;
-  const [a,b]=data.opening;
-  ctx.beginPath();
-  ctx.moveTo(...project(u,v0));
-  ctx.lineTo(...project(u,a));
-  ctx.lineTo(...project(u,a,data.spring));
-  ctx.quadraticCurveTo(...project(u,(a+b)/2,2*data.peak-data.spring),...project(u,b,data.spring));
-  ctx.lineTo(...project(u,b));
-  ctx.lineTo(...project(u,v1));
-  ctx.lineTo(...project(u,v1,data.height));
-  ctx.lineTo(...project(u,v0,data.height));
-  ctx.closePath();
-  ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=edge;ctx.stroke();
- }
- function arch(ctx,data) {
-  const [u,v,r,b]=data.area;
-  const h=data.height;
-  const [a]=data.opening;
-  archFacade(ctx,data,u,'#3c4053','#222532');
-  polygon(ctx,[project(u,a),project(r,a),project(r,a,data.spring),project(u,a,data.spring)],'#35394b','#252634');
-  polygon(ctx,[project(u,b),project(r,b),project(r,b,h),project(u,b,h)],'#424457','#262736');
-  archFacade(ctx,data,r,'#626276','#2e2e3f');
-  polygon(ctx,corners(data.area,h),'#818094','#363547');
-  line(ctx,[project(r,v,h-6),project(r,b,h-6)],'#a6a0b788',2);
  }
  const timber=['#5a4144','#74534b','#9b735a','#352936'];
  const brass='#c49d6b';
@@ -247,16 +203,20 @@
   const {arch:gate}=foreground;
   const [u,v,r,b]=gate.area,[a,c]=gate.opening;
   const solids=[[u,v,r,a],[u,c,r,b]];
-  const underlay=bitmap(ctx=>{
+  const drawUnderlay=ctx=>{
    const gradient=ctx.createLinearGradient(0,45,0,height);
    gradient.addColorStop(0,'#272637');gradient.addColorStop(.85,'#151622');
    ctx.fillStyle=gradient;ctx.fillRect(0,0,width,height);
-   for(const {area,height} of backdrop)block(ctx,area,height,['#282c3a','#303143','#3d3b50','#242433']);
+   ctx.save();
+   ctx.globalAlpha=.62;
+   for(const [index,building] of backdrop.entries())facadeArt.skyline(ctx,{...building,roof:18+index*5},index);
+   ctx.restore();
    for(const area of walkable){
     const [u,v,r,b]=area;
     block(ctx,[u-.13,v-.13,r+.13,b+.13],0,['#272635','#272635','#39394b','#20212f']);
    }
-  });
+  };
+  const underlay=bitmap(drawUnderlay);
   let seed=71129;
   const random=()=>{
    seed=(Math.imul(1664525,seed)+1013904223)>>>0;
@@ -264,8 +224,24 @@
   };
   const floor=bitmap(ctx=>{for(const surface of ground)paving(ctx,surface,random);});
   const detail=bitmap(ctx=>drawDetails(ctx,groundDetails));
-  const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>building(ctx,home))}));
-  const gateway=cacheObject(gate.area,gate.height,ctx=>arch(ctx,gate));
+  const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>facadeArt.building(ctx,home))}));
+  const gateway=cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
+  const artListeners=[];
+  const redrawImage=(image,draw)=>{
+   const ctx=image.canvas.getContext('2d');
+   ctx.resetTransform();
+   ctx.clearRect(0,0,image.canvas.width,image.canvas.height);
+   ctx.translate(-image.x,-image.y);
+   draw(ctx);
+  };
+  facadeArt.onReady(()=>{
+   const backdropContext=underlay.getContext('2d');
+   backdropContext.clearRect(0,0,width,height);
+   drawUnderlay(backdropContext);
+   homes.forEach(home=>redrawImage(home.image,ctx=>facadeArt.building(ctx,home)));
+   redrawImage(gateway,ctx=>facadeArt.arch(ctx,gate));
+   for(const listener of artListeners)listener();
+  });
   const toggles=Object.fromEntries([...(sceneControls?.querySelectorAll('input')??[])].map(input=>[input.value,input]));
   const enabled=layer=>toggles[layer]?.checked??layer!=='logic';
   if(sceneControls)sceneControls.hidden=false;
@@ -373,6 +349,7 @@
    barrel:position(...barrel),waypoints:waypoints.map(point=>position(...point)),
    blocked,blockedGround,clearSegment,drawGround,drawProp,architecture,drawOverlays,drawLogic,structures,
    groundLayers:()=>[underlay,floor,detail,bitmap(ctx=>drawGroundLight(ctx,0))],
+   onArtReady:listener=>artListeners.push(listener),
    overlayLayer:()=>bitmap(ctx=>drawOverlays(ctx,0))};
  }
  window.AlleyStudy={create,shortestRoute,project,unproject,width,height,footOffset};

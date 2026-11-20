@@ -30,16 +30,17 @@
     {at:[9.25,6.24],height:53,radius:110,phase:3}
    ],
    standing: [
-    {area:[.9,1.25,3.32,3],height:99,roof:19,door:[2.6,3]},
-    {area:[3.42,1.35,6.32,3],height:82,roof:24,door:[4,3]},
-    {area:[6.42,1.05,8.42,3],height:110,roof:14,door:[7.45,3]},
-    {area:[8.52,.95,9.5,3],height:88,roof:19,behindArch:true},
-    {area:[1.4,6.5,3.9,8.1],height:57,roof:18},
-    {area:[10.15,6.5,12.1,7.6],height:51,roof:15}
+    {area:[.9,1.25,3.32,3],height:99,roof:19,door:[2.6,3],style:'plaster',lantern:{at:[1.36,3],height:26,warm:true}},
+    {area:[3.42,1.35,6.32,3],height:82,roof:24,door:[4,3],style:'timber',lantern:{at:[5.8,3],height:29,warm:true}},
+    {area:[6.42,1.05,8.42,3],height:110,roof:14,door:[7.45,3],style:'stone'},
+    {area:[8.52,.95,9.5,3],height:88,roof:19,behindArch:true,style:'teal'},
+    {area:[1.4,6.5,3.9,8.1],height:57,roof:18,style:'stone'},
+    {area:[10.15,6.5,12.1,7.6],height:51,roof:15,style:'plaster'}
    ],
    atmosphere:[{at:[1.1,4.3],radius:130,phase:.6},{at:[11.6,1.6],radius:103,phase:2.2}],
    foreground: {
-    arch:{area:[8.55,3,9.22,6.5],height:96,opening:[3.58,5.92],spring:56,peak:78}
+    arch:{area:[8.55,3,9.22,6.5],height:96,opening:[3.58,5.92],spring:56,peak:78,
+     lantern:{at:[9.22,6.2],height:22,warm:true}}
    }
   },
   logic: {
