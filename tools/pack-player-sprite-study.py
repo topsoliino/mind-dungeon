@@ -8,10 +8,10 @@ from PIL import Image
 
 CELL = 128
 FACINGS = 8
-ATLAS_COLUMNS = 28
+ATLAS_COLUMNS = 24
 WEAPON_WIDTH = 1024
 PADDING = 2
-CLIP_FRAMES = (4, 16, 16, 16, 8, 20, 20)
+CLIP_FRAMES = (4, 16, 16, 8, 20, 20)
 
 
 def pack_weapons(source):

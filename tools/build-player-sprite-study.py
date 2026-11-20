@@ -1,9 +1,9 @@
-"""Build an editable Blender character and export the comparison sprite sheet.
+"""Build an editable Blender guardian and export the practice sprites.
 
 Run from the repository root:
   blender -b --factory-startup -t 4 -P tools/build-player-sprite-study.py -- --output /tmp/player-study
 
-Pack the comparison assets with Pillow after rendering:
+Pack the browser assets with Pillow after rendering:
   python tools/pack-player-sprite-study.py /tmp/player-study beta/art/player-study
 """
 import argparse
@@ -17,15 +17,14 @@ from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Euler, Matrix, Vector
 
 
-CLIPS = [('idle', 4), ('walk', 16), ('run', 16), ('sprint', 16), ('dash', 8), ('attack', 20), ('backhand', 20)]
+CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('dash', 8), ('down', 20), ('up', 20)]
 CELL = 128
 FACINGS = 8
-ATLAS_COLUMNS = 28
+ATLAS_COLUMNS = 24
 GAITS = {
     # Forward foot travel during stance, duty factor, swing clearance, trunk lean.
     'walk': (.59, .60, .084, .051),
-    'run': (.80, .375, .255, .365),
-    'sprint': (.82, .34, .280, .447),
+    'sprint': (.92, .34, .300, .505),
 }
 SIDES = [('L', -1), ('R', 1)]
 
@@ -364,27 +363,32 @@ def sample(keys, time):
 
 # Time, torso yaw, forward shift, drop, pitch, sword hand target, blade azimuth/elevation.
 STEADY = (0, 0, 0, .04, .414, -.168, .924, 24, 16)
+# Each guard is shared at the exact exported frames where the combo can chain.
+HIGH_GUARD = (.55, .050, .060, -.065, .328, .094, 1.39, 104, 64)
+LOW_GUARD = (-.61, -.141, .105, .20, -.185, -.371, .943, -92, -35)
 ATTACKS = {
-    'attack': [
+    'down': [
         (0, *STEADY),
-        (.13, .24, .066, .034, -.027, .452, -.035, 1.012, 68, 32),
-        (.30, .73, .119, .086, -.11, .569, .201, 1.326, 125, 57),
-        (.39, .70, .094, .083, -.086, .566, .172, 1.324, 122, 55),
-        (.49, -.14, -.133, .084, .23, .315, -.468, 1.193, 32, 8),
-        (.61, -.63, -.168, .112, .25, -.161, -.405, 1.018, -81, -22),
-        (.74, -.46, -.136, .092, .18, -.171, -.385, .965, -94, -26),
-        (.91, -.12, -.044, .026, .08, .319, -.244, .921, -8, 8),
+        (.15, .30, .060, .038, -.025, .459, .020, 1.093, 66, 35),
+        (6/19, *HIGH_GUARD),
+        (.41, .60, .061, .060, -.068, .295, .061, 1.423, 110, 75),
+        (.48, .25, -.042, .053, .09, .314, -.259, 1.356, 51, 62),
+        (.56, -.34, -.145, .107, .22, .051, -.522, 1.116, -32, -14),
+        (13/19, *LOW_GUARD),
+        (.83, -.44, -.088, .055, .15, -.094, -.330, .915, -75, -28),
+        (.93, -.14, -.035, .025, .07, .316, -.213, .916, -8, 4),
         (1, *STEADY),
     ],
-    'backhand': [
+    'up': [
         (0, *STEADY),
-        (.14, -.26, .027, .061, .11, .143, -.312, .901, -43, -23),
-        (.30, -.681, .069, .111, .10, -.191, -.337, .843, -118, -32),
-        (.39, -.66, .035, .102, .11, -.175, -.35, .863, -114, -28),
-        (.51, .15, -.113, .072, .24, .139, -.465, 1.115, -18, 22),
-        (.63, .58, -.101, .023, .10, .438, -.182, 1.415, 75, 55),
-        (.77, .37, -.092, .027, .045, .461, -.139, 1.344, 76, 48),
-        (.94, .064, -.018, .019, .04, .401, -.186, .976, 31, 21),
+        (.10, -.27, -.073, .063, .115, .078, -.297, .858, -52, -29),
+        (4/19, *LOW_GUARD),
+        (.31, -.66, -.066, .120, .17, -.201, -.289, .849, -113, -42),
+        (.40, -.34, -.100, .079, .19, -.04, -.461, 1.038, -57, -8),
+        (.48, .14, -.126, .048, .13, .263, -.487, 1.237, 16, 31),
+        (.57, .51, -.057, .019, .015, .488, -.189, 1.438, 63, 59),
+        (13/19, *HIGH_GUARD),
+        (.84, .26, .019, .035, .015, .444, -.057, 1.185, 67, 36),
         (1, *STEADY),
     ],
 }
@@ -413,7 +417,7 @@ def gait_foot(phase, stride, stance, clearance, running):
         travel = stride * (.5 - progress)
         lift = clearance * height
     if running:
-        travel += .056
+        travel += .046
     return travel, lift, math.radians(pitch)
 
 
@@ -437,8 +441,7 @@ def pose(kind, t):
     phase = math.tau*t
     step = math.cos(phase)
     gait = GAITS.get(kind)
-    sprint = kind == 'sprint'
-    running = kind in ('run', 'sprint')
+    running = kind == 'sprint'
     dash = kind == 'dash'
     attacking = kind in ATTACKS
     twist, forward, drop, pitch, hx, hy, hz, yaw, elev = sample(ATTACKS[kind], t) if attacking else STEADY
@@ -451,11 +454,11 @@ def pose(kind, t):
             bob = .039*suspension - .013
             nod = .043*math.cos(math.tau*(half_step-.21))
             shift = .023
-            fore = (-.124 if sprint else -.096) - .019*math.cos(math.tau*(half_step-.73))
-            drop = .151 if sprint else .114
+            fore = -.132 - .019*math.cos(math.tau*(half_step-.73))
+            drop = .178
             pelvic_yaw = .118*math.cos(phase+.13)
             chest_yaw = -.157*math.cos(phase-.42)
-            yaw, elev = (36, 5) if sprint else (30, 8)
+            yaw, elev = 36, 5
         else:
             bob, nod = sample([(0, -.008, .006), (.20, -.020, .011), (.53, .015, 0),
                                (.68, .022, -.006), (1, -.008, .006)], half_step)
@@ -485,14 +488,16 @@ def pose(kind, t):
     chest_rotation = Euler((pitch, chest_roll, chest_yaw)).to_matrix()
     orient('Chest', chest, chest_rotation)
     head = attached('Chest', rest['Head'][0])
-    head_pitch = lean*.40 + .021*math.cos(math.tau*(half_step-.32)) if running else pitch*.33
     if running:
-        head.z -= .012*suspension
-    orient('Head', head, Euler((head_pitch, .012*step if gait else 0, chest_yaw*.33)).to_matrix())
+        head.z -= .007*suspension
+        head_rotation = Euler((pitch*.84 - .012, chest_roll*.64, chest_yaw*.67))
+    else:
+        head_rotation = Euler((pitch*.33, .012*step if gait else 0, chest_yaw*.33))
+    orient('Head', head, head_rotation.to_matrix())
 
     mantle = attached('Chest', rest['Mantle'][0])
     if gait:
-        flutter = (.40 if sprint else .31 if running else .042) + (.079 if running else .034)*math.sin(phase-.7)
+        flutter = (.40 if running else .042) + (.079 if running else .034)*math.sin(phase-.7)
         if running:
             flutter += .045*math.sin(2*phase-1.1)
     else:
@@ -505,13 +510,9 @@ def pose(kind, t):
             travel, lift, foot_pitch = gait_foot(foot_phase, stride, stance, clearance, running)
             width = -.032 if running else -.067
         elif attacking:
-            lead = -1 if kind == 'attack' else 1
-            advance = smooth((t-.32)/.16) * (1-smooth((t-.77)/.23))
-            moving = sign == lead
-            travel = sign*.08 + advance*(-.23 if moving else .06)
-            lift = .074 * (math.sin(math.pi*advance)**2) if moving else 0
-            foot_pitch = .17 * advance if not moving else -.11 * (math.sin(math.pi*advance)**2)
-            width = advance*.055
+            # Keep the feet paired with the torso pose at both combo handoffs.
+            travel, lift, width = sign*.08, 0, .05*abs(twist)
+            foot_pitch = .18*smooth(-forward/.15) if sign > 0 else 0
         elif dash:
             travel, lift, foot_pitch = sample([
                 (0, sign*.08, 0, 0), (.22, sign*.13, 0, .10 if sign>0 else - .10),
@@ -529,13 +530,13 @@ def pose(kind, t):
             # The wrist trails the leg rhythm, with a softer elbow on the free side.
             swing = math.cos(phase-.38)
             if sign>0:
-                reach = .108 if sprint else .084 if running else .040
+                reach = .108 if running else .040
                 offset = (.065, -.173-reach*swing, (-.344 if running else -.405)+.035*swing)
                 blade_lag = math.cos(phase-.71) if running else swing
                 yaw += (9 if running else 3)*blade_lag
                 elev += (10 if running else 3)*blade_lag
             else:
-                reach = .276 if sprint else .246 if running else .087
+                reach = .276 if running else .087
                 drive = .084*(1 - math.cos(phase-.58)) if running else .020*max(0, -swing)
                 offset = (-.053, -.048+reach*swing, (-.385 if running else -.412)+drive)
             wrist = shoulder + Vector(offset)
