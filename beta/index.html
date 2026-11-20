@@ -2802,7 +2802,7 @@ if(alley){
  $('#zone').textContent=alley.zoneAt(player);
  $('#progress').textContent=save.isoLabDone?'Route geschafft · Protokoll gesichert':
   (alley.archiveUnlocked()?'Labor betreten und Versuch abschließen':'Archiv finden · Wissenssiegel öffnen');
- const hint='Strg Schleichen'+(alleySneaking?' (an)':'')+' · Rechtsklick Laufen · E Untersuchen';
+ const hint='Strg Schleichen'+(alleySneaking?' (an)':'')+' · Rechtsklick Laufen · Umschalt Rolle · E Untersuchen';
  if($('#alley-help').textContent!==hint)$('#alley-help').textContent=hint;
 }else{
  const lowerPassage=world.underpassAt(player),layer=lowerPassage?0:world.layerAt(player.x,player.y);
@@ -3092,7 +3092,7 @@ function continueSoloDeath(data){
 function retreatAfterDeath(cause,finalHit){
  if(deathPending||modalType==='death')return;
  if(alley){
-  show('<h2 class="md-title">Du bist gefallen</h2><div class="actions"><button id="alley-retry">Gassenkampf neu starten</button><button id="alley-leave">Zur Beta</button></div>','death');
+  show('<h2 class="md-title">Du bist gefallen</h2><div class="actions"><button id="alley-retry">Isometrische Route neu starten</button><button id="alley-leave">Zur Beta</button></div>','death');
   mdButton('alley-retry',()=>location.reload());
   mdButton('alley-leave',()=>location.assign(location.pathname));
   return;
@@ -5013,7 +5013,7 @@ function pauseMenu(){
 function mdTitle(){
  atTitle=true;authorityTitleWait=null;audio?.setAmbience({});
  if(alley){
-  show('<h2 class="md-title">Isometrische Testgasse</h2><div class="actions">'+
+  show('<h2 class="md-title">Isometrische Route · Etappe 4a</h2><div class="actions">'+
    '<button class="primary" id="alley-restart">Test neu starten</button><button id="alley-exit">Zum regulären Spiel</button></div>','title');
   mdButton('alley-restart',()=>location.reload());
   mdButton('alley-exit',()=>location.assign(location.pathname));
@@ -5036,7 +5036,7 @@ function mdTitle(){
   '<button class="primary" id="md-continue">Fortsetzen</button><button id="md-create">Neuer Charakter</button>'+
   '<button id="md-coop">Online-Koop</button><p id="coop-warmup" class="coop-warmup" role="status"></p><button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-saves">Spielstände</button>'+
   '<button id="md-journal">Lernjournal</button><button id="md-settings">Einstellungen</button><button id="md-login">Konto / Cloud</button>'+
-  '<button id="md-alley-test">Isometrische Gasse testen</button>'+
+  '<button id="md-alley-test">Isometrische Route · Etappe 4a testen</button>'+
   '</div></div></div></main>','title');
  unmountTitleGlow=window.DungeonTitle?.mount($('.title-glow'))??null;
  mountPortrait($('#md-title-portrait'),hero,save.equipment.weapon,save.equipment.armor);
