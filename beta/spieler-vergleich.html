@@ -52,6 +52,9 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
   <button type="button" data-clip="heavy" aria-pressed="false">Schwerer Hieb</button>
   <button type="button" data-clip="eat" aria-pressed="false">Essen</button>
   <button type="button" data-clip="drink" aria-pressed="false">Trinken</button>
+  <button type="button" data-clip="hit-light" aria-pressed="false">Leichter Treffer</button>
+  <button type="button" data-clip="hit-strong" aria-pressed="false">Starker Treffer</button>
+  <button type="button" data-clip="hit-down" aria-pressed="false">Niederschlag</button>
  </div>
  <div class="settings">
   <label for="direction">Blickrichtung</label>
@@ -72,13 +75,14 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
 </div>
 <canvas id="blender" tabindex="0" aria-label="Begehbarer Übungsraum mit dem Blender-Wächter"></canvas>
 <div class="practice-status"><output id="interaction-prompt" aria-live="polite"></output><button id="reset-stations" type="button">Stationen zurücksetzen</button></div>
-<p class="hint">Bewegen mit <kbd>WASD</kbd> oder den <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> schaltet Rennen um, <kbd>Strg</kbd> schaltet Schleichen um (<output id="movement-mode">Gehmodus</output>). Mit <kbd>E</kbd> öffnest du die Truhe, nimmst den Rubin auf oder studierst am Wissensaltar ein Buch.</p>
+<p class="hint">Bewegen mit <kbd>WASD</kbd> oder den <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> schaltet Rennen um, <kbd>Strg</kbd> schaltet Schleichen um (<output id="movement-mode">Gehmodus</output>). Mit <kbd>E</kbd> interagierst du mit Truhe, Bodenfund, Tisch oder Wissensaltar. <kbd>Esc</kbd> bricht das automatische Annähern ab.</p>
 <p class="hint"><kbd>Leertaste</kbd> rollt vorwärts und schaltet danach auf Rennen. <kbd>K</kbd> antippen für einen leichten Hieb oder halten und loslassen für einen schweren Hieb. Während oder kurz nach der Rolle löst <kbd>K</kbd> den Rollangriff aus. Drück <kbd>K</kbd> erneut, um den nächsten Hieb anzuhängen. <kbd>F</kbd> isst Brot, <kbd>T</kbd> trinkt aus dem Becher. Mit einer Richtungstaste gehst du dabei weiter.</p>
 <p class="hint">Für den Parcours mit <kbd>Umschalt</kbd> auf Rennen schalten und auf das Holzfass rechts unterhalb der Startposition zulaufen.</p>
-<p class="hint"><a href="art/player-study/guardian.blend?v=16" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
+<p class="hint">Mit <kbd>1</kbd>, <kbd>2</kbd> und <kbd>3</kbd> löst du die drei Trefferreaktionen aus.</p>
+<p class="hint"><a href="art/player-study/guardian.blend?v=17" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
 <p id="status" role="status">Der Übungsraum lädt …</p>
 </main>
 <script src="dungeon-art.js?v=47"></script>
-<script src="spieler-vergleich.js?v=16"></script>
+<script src="spieler-vergleich.js?v=17"></script>
 </body>
 </html>

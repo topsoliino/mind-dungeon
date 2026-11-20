@@ -31,6 +31,8 @@
   ArrowDown:[0,1],KeyS:[0,1],ArrowUp:[0,-1],KeyW:[0,-1]
  };
  const consumptionKeys={KeyF:'eat',KeyT:'drink'};
+ const hitKeys={Digit1:'hit-light',Digit2:'hit-strong',Digit3:'hit-down'};
+ const hitLabels={'hit-light':'Leichter Treffer','hit-strong':'Starker Treffer','hit-down':'Niederschlag'};
  const art=window.DungeonArt;
  const map=Array.from({length:rows},(_,y)=>Array.from({length:columns},(_,x)=>
   Number(y===0||y===rows-1||x===0||x===columns-1)));
@@ -47,11 +49,13 @@
  poly([[25,34],[29,31],[35,31],[39,34],[32,41]],'#c63f59');
  poly([[25,34],[29,31],[35,31],[32,35]],'#ec8491');
  const stations=[
-  {kind:'chest',x:9.4*tile,y:5.05*tile,radius:.49,scale:.70,base:48,
-   sprite:art.icon('chest'),used:art.icon('chest','open'),prompt:'Truhe öffnen',done:'Truhe geöffnet'},
+  {kind:'chest',x:9.4*tile,y:5.05*tile,radius:.49,scale:.70,base:48,front:2,
+   sprite:art.icon('chest'),used:art.icon('chest','open'),prompt:'Truhe öffnen',approaching:'Zur Truhe …',done:'Truhe geöffnet'},
   {kind:'pickup',x:13.8*tile,y:5.05*tile,radius:0,scale:.48,base:42,
-   sprite:ruby,prompt:'Rubin nehmen',done:'Rubin aufgenommen'},
-  {kind:'knowledge',x:9.1*tile,y:9.4*tile,radius:.32,scale:.91,base:57,
+   sprite:ruby,prompt:'Rubin nehmen',approaching:'Zum Rubin …',done:'Rubin aufgenommen'},
+  {kind:'pickup-high',x:16.25*tile,y:7.2*tile,radius:.50,halfWidth:1.05,front:2,mustStand:true,
+   table:art.furniture('table',0),prompt:'Rubin vom Tisch nehmen',approaching:'Zum Tisch …',done:'Rubin vom Tisch genommen'},
+  {kind:'knowledge',x:9.1*tile,y:9.4*tile,radius:.32,scale:.91,base:57,mustStand:true,
    sprite:art.icon('shrine','','#91e6d2'),used:art.icon('shrine','','#576b6a'),
    prompt:'Wissen erlangen',done:'Wissen erlangt'},
  ];
@@ -65,18 +69,19 @@
  const status=document.querySelector('#status'),buttons=Array.from(document.querySelectorAll('[data-clip]'));
  const canvas=document.querySelector('#blender'),ctx=canvas.getContext('2d',{alpha:false});
  let width=0,height=0,dpr=1;
- const bodySheet=new Image();
  const weaponSheets=new Map();
- let atlas;
+ let atlas,spriteFiles,bodyLayers,colliders;
  let x=columns*tile/2,y=rows*tile/2,scale=1,facing=1,mode='idle',elapsed=0,last=0,repeat=true;
  let showWeapon=true,gaitPhase=0,gaitBlend=0,movementStyle='walk',crouched=false,stanceChange=null;
  let rollEntry=null,rollExit=null,rollStartSpeed=0;
  let rollStartedWalking=false;
  let vault=null;
  let interaction=null,interactionNotice='';
+ let approach=null,knockback=null;
+ let blockedApproachUntil=0;
  let standingAction=null,consumingWalking=false;
  let rollAttackQueued=false,rollAttackUntil=0,rollAttackEntry=null;
- let weaponType='sword',weaponSheet;
+ let weaponType='sword',weaponLayers;
  let heldAttack=null,attackIntent=null,queuedAttack=null;
  let comboFollowup=null;
  const bound=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -124,7 +129,7 @@
   showMovementStyle();
  }
  function showMovementStyle(){
-  const style=clips[mode].consumption?'walk':movementStyle;
+  const style=approach?(crouched?'sneak':'walk'):clips[mode].consumption?'walk':movementStyle;
   movementMode.textContent={walk:'Gehmodus',sprint:'Rennmodus',sneak:'Schleichmodus'}[style];
  }
  function movement(){
@@ -143,7 +148,7 @@
   return true;
  }
  function startConsumption(clip){
-  if(vault||interaction||stanceChange||standingAction||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
+  if(vault||interaction||approach||knockback||stanceChange||standingAction||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
   if(standBefore(()=>startConsumption(clip)))return;
   const input=movement();
   consumingWalking=Boolean(input.length);
@@ -152,7 +157,7 @@
   clearAttacks();select(clip,false);
  }
  function startRoll(){
-  if(vault||interaction||stanceChange||standingAction||crouched||clips[mode].consumption||mode==='roll'&&!repeat)return;
+  if(vault||interaction||approach||knockback||stanceChange||standingAction||crouched||clips[mode].consumption||mode==='roll'&&!repeat)return;
   if(!repeat&&atlas.attackMotion[mode]&&elapsed<frameTime(mode,clips[mode].chain))return;
   const input=movement();
   if(input.length)face(input.facing);
@@ -179,8 +184,14 @@
   select(attack,false);
  }
  for(const button of buttons)button.addEventListener('click',()=>{
-  if(!atlas||vault||interaction||stanceChange||standingAction)return;
+  if(!atlas)return;
   const clip=previewClip(button.dataset.clip);
+  if(clips[clip].knockback){
+   startKnockback(clip);
+   canvas.focus({preventScroll:true});
+   return;
+  }
+  if(vault||interaction||approach||knockback||stanceChange||standingAction)return;
   if(clips[clip].consumption){
    canvas.focus({preventScroll:true});
    startConsumption(clip);
@@ -194,7 +205,7 @@
  });
  canvas.addEventListener('pointerdown',()=>canvas.focus());
  direction.addEventListener('change',()=>{
-  if(vault||interaction||stanceChange||mode==='roll'&&!repeat)direction.value=String(facing);
+  if(vault||interaction||approach||knockback||stanceChange||mode==='roll'&&!repeat)direction.value=String(facing);
   else facing=Number(direction.value);
  });
  zoomButton.addEventListener('click',()=>{
@@ -204,7 +215,7 @@
   showWeapon=!showWeapon;weaponButton.setAttribute('aria-pressed',String(showWeapon));
  });
  resetStations.addEventListener('click',()=>{
-  if(interaction)return;
+  if(interaction||approach||standingAction)return;
   for(const station of stations)station.completed=false;
   interactionNotice='';
   canvas.focus({preventScroll:true});
@@ -217,7 +228,7 @@
    const preview=repeat&&['heavy','roll-attack'].find(clip=>previewClip(clip)===mode);
    clearAttacks();
    if(isAttack(mode))select('idle',false);
-   weaponType=type;weaponSheet=sheet;
+   weaponType=type;weaponLayers=sheet;
    status.hidden=true;
    if(preview)select(previewClip(preview),true);
    canvas.focus({preventScroll:true});
@@ -232,16 +243,31 @@
   if(!atlas)return;
   if(event.key==='Shift'||event.key==='Control'){
    if(event.key==='Control')event.preventDefault();
-   if(!event.repeat&&!vault&&!interaction&&!standingAction&&!(mode==='roll'&&!repeat)){
+   if(!event.repeat&&!vault&&!interaction&&!approach&&!knockback&&!standingAction&&!(mode==='roll'&&!repeat)){
     if(event.key==='Control')setMovementStyle(movementStyle==='sneak'?'walk':'sneak');
     else setMovementStyle(movementStyle==='sprint'?'walk':'sprint');
    }
    return;
   }
   if(event.target.closest?.('select'))return;
+  if(Object.hasOwn(hitKeys,event.code)){
+   event.preventDefault();
+   if(!event.repeat){
+    canvas.focus({preventScroll:true});
+    startKnockback(hitKeys[event.code]);
+   }
+   return;
+  }
+  if(event.code==='Escape'&&(approach||standingAction)){
+   event.preventDefault();
+   if(approach)cancelApproach();
+   standingAction=null;
+   return;
+  }
   if(Object.hasOwn(directions,event.code)){
    event.preventDefault();
    if(event.target!==canvas)canvas.focus({preventScroll:true});
+   if(approach&&!event.repeat)cancelApproach();
    presses.add(event.code);
    return;
   }
@@ -263,7 +289,7 @@
   }
   if(event.code==='KeyK'){
    event.preventDefault();
-   if(event.repeat||vault||interaction||stanceChange||standingAction||crouched||clips[mode].consumption)return;
+   if(event.repeat||vault||interaction||approach||knockback||stanceChange||standingAction||crouched||clips[mode].consumption)return;
    if(event.target!==canvas)canvas.focus({preventScroll:true});
    if(!repeat&&mode==='roll'){
     rollAttackQueued=true;
@@ -297,18 +323,20 @@
  });
  addEventListener('blur',()=>{
   presses.clear();
+  if(approach)cancelApproach();
   if(!repeat&&(isAttack(mode)||clips[mode].consumption))select('idle',false);
   clearAttacks();
  });
 
+ function collider(prop,halfWidth,halfDepth,padding){
+  return {x:prop.x,y:prop.y,rx:(halfWidth+padding)*unitsToPixels,ry:(halfDepth+padding)*unitsToPixels*projectionY};
+ }
+ const minX=tile+19,maxX=(columns-1)*tile-19,minY=tile+19,maxY=(rows-1)*tile-19;
  function hitsScenery(nx,ny){
-  return Math.hypot(nx-barrel.x,(ny-barrel.y)/projectionY)<(atlas.vault.radius+.21)*unitsToPixels||
-   stations.some(station=>station.radius&&Math.hypot(nx-station.x,(ny-station.y)/projectionY)<
-    (station.radius+.22)*unitsToPixels);
+  return colliders.some(({x,y,rx,ry})=>((nx-x)/rx)**2+((ny-y)/ry)**2<1);
  }
  function moveBy(dx,dy){
-  const nx=bound(x+dx,tile+19,(columns-1)*tile-19);
-  const ny=bound(y+dy,tile+19,(rows-1)*tile-19);
+  const nx=bound(x+dx,minX,maxX),ny=bound(y+dy,minY,maxY);
   if(!hitsScenery(nx,ny)){x=nx;y=ny;return;}
   if(!hitsScenery(nx,y))x=nx;
   if(!hitsScenery(x,ny))y=ny;
@@ -325,20 +353,100 @@
   }
   return nearest;
  }
- function startInteraction(target=nearestStation()){
-  if(vault||interaction||stanceChange||standingAction||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
-  if(!target)return;
-  if(target.kind==='knowledge'&&standBefore(()=>startInteraction(target)))return;
-  const {distance,side=0,event}=atlas.interactions[target.kind];
-  face((Math.round(Math.atan2((target.y-y)/projectionY,target.x-x)/(Math.PI/4))+8)%8);
-  const angle=facing*Math.PI/4;
-  interaction={target,event,fromX:x,fromY:y,x,y};
-  if(distance!==undefined){
-   const dx=Math.cos(angle)*distance+Math.sin(angle)*side;
-   const dy=Math.sin(angle)*distance-Math.cos(angle)*side;
-   interaction.x=target.x-dx*unitsToPixels;
-   interaction.y=target.y-dy*projectionY*unitsToPixels;
+ function clearApproachSegment(from,to){
+  // The nearest point on a segment in ellipse space gives a swept footprint test.
+  return colliders.every(({x,y,rx,ry})=>{
+   const sx=(from.x-x)/rx,sy=(from.y-y)/ry;
+   const dx=(to.x-from.x)/rx,dy=(to.y-from.y)/ry;
+   const t=bound(-(sx*dx+sy*dy)/(dx*dx+dy*dy||1),0,1);
+   return (sx+t*dx)**2+(sy+t*dy)**2>=1-1e-8;
+  });
+ }
+ function approachRoute(goal){
+  const valid=p=>p.x>=minX&&p.x<=maxX&&p.y>=minY&&p.y<=maxY&&!hitsScenery(p.x,p.y);
+  if(!valid(goal))return null;
+  const start={x,y};
+  if(clearApproachSegment(start,goal))return [goal];
+  // Detour through the shortest chain of clear segments around the scenery.
+  const around=colliders.flatMap(obstacle=>Array.from({length:12},(_,i)=>{
+   const angle=i*Math.PI/6;
+   return {x:obstacle.x+1.16*obstacle.rx*Math.cos(angle),y:obstacle.y+1.16*obstacle.ry*Math.sin(angle)};
+  })).filter(valid);
+  const nodes=[start,goal,...around],cost=nodes.map(()=>Infinity),parent=nodes.map(()=>-1),closed=new Set();
+  cost[0]=0;
+  while(true){
+   let current=-1,best=Infinity;
+   for(let i=0;i<nodes.length;i++)if(!closed.has(i)&&cost[i]<best){current=i;best=cost[i];}
+   if(current===-1)return null;
+   if(current===1){
+    const route=[];
+    for(let i=1;i!==0;i=parent[i])route.push(nodes[i]);
+    return route.reverse();
+   }
+   closed.add(current);
+   const from=nodes[current];
+   for(let i=1;i<nodes.length;i++){
+    if(closed.has(i))continue;
+    const to=nodes[i],candidate=best+Math.hypot(to.x-from.x,to.y-from.y);
+    if(candidate<cost[i]&&clearApproachSegment(from,to)){cost[i]=candidate;parent[i]=current;}
+   }
   }
+ }
+ function startInteraction(target=nearestStation()){
+  if(vault||interaction||approach||knockback||stanceChange||standingAction||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
+  if(!target)return;
+  if(target.mustStand&&standBefore(()=>startInteraction(target)))return;
+  const {distance,side=0}=atlas.interactions[target.kind];
+  const finalFacing=target.front===undefined
+   ?(Math.round(Math.atan2((target.y-y)/projectionY,target.x-x)/(Math.PI/4))+8)%8
+   :(target.front+4)%8;
+  if(distance===undefined){beginInteraction(target,finalFacing);return;}
+  const angle=finalFacing*Math.PI/4;
+  const dx=Math.cos(angle)*distance+Math.sin(angle)*side;
+  const dy=Math.sin(angle)*distance-Math.cos(angle)*side;
+  const goal={x:target.x-dx*unitsToPixels,y:target.y-dy*projectionY*unitsToPixels};
+  const route=approachRoute(goal);
+  if(!route){
+   interactionNotice='Der Weg ist versperrt.';
+   blockedApproachUntil=performance.now()+1300;
+   return;
+  }
+  blockedApproachUntil=0;
+  if(Math.hypot(goal.x-x,goal.y-y)<1e-6){beginInteraction(target,finalFacing);return;}
+  approach={target,finalFacing,route};
+  interactionNotice=target.approaching;
+  if(!isGait(mode)&&mode!=='sneak')gaitPhase=0;
+  gaitBlend=0;clearAttacks();select(crouched?'sneak':'walk',false);
+ }
+ function cancelApproach(){
+  approach=null;interactionNotice='';
+  select(crouched?'crouch-idle':'idle',false);
+ }
+ function advanceApproach(dt){
+  while(approach.route.length){
+   const next=approach.route[0],dx=next.x-x,dy=next.y-y,distance=Math.hypot(dx,dy);
+   if(distance>1e-6){
+    if(dt===0)return 0;
+    face(heading(dx,dy));
+    const gait=crouched?'sneak':'walk';
+    const speed=(crouched?sneakSpeed:gaitSpeed(0))*Math.hypot(dx,dy*groundY)/distance;
+    const used=Math.min(dt,distance/speed),progress=Math.min(1,used*speed/distance);
+    x+=dx*progress;y+=dy*progress;
+    gaitPhase=(gaitPhase+used/clips[gait].duration)%1;
+    dt-=used;
+    if(progress<1)return 0;
+   }
+   x=next.x;y=next.y;
+   approach.route.shift();
+  }
+  const {target,finalFacing}=approach;
+  approach=null;
+  beginInteraction(target,finalFacing);
+  return dt;
+ }
+ function beginInteraction(target,finalFacing){
+  face(finalFacing);
+  interaction={target,event:atlas.interactions[target.kind].event};
   interactionNotice=target.kind==='knowledge'?'Buch studieren …':'';
   gaitBlend=0;
   clearAttacks();select(target.kind+(crouched?'-crouched':''),false);
@@ -346,9 +454,6 @@
  function advanceInteraction(dt){
   const duration=clips[mode].duration,used=Math.min(dt,duration-elapsed);
   elapsed+=used;
-  const progress=elapsed/duration,approach=ease(progress/.27);
-  x=mix(interaction.fromX,interaction.x,approach);
-  y=mix(interaction.fromY,interaction.y,approach);
   const [start,frames]=atlas.clips[mode];
   if(animationFrame()-start>=Math.ceil(interaction.event*(frames-1))&&!interaction.target.completed){
    interaction.target.completed=true;
@@ -357,6 +462,31 @@
   if(elapsed<duration)return 0;
   interaction=null;
   select(crouched?'crouch-idle':'idle',false);
+  return dt-used;
+ }
+ function startKnockback(clip){
+  if(vault||knockback)return;
+  const angle=facing*Math.PI/4;
+  knockback={dx:-Math.cos(angle)*unitsToPixels,dy:-Math.sin(angle)*unitsToPixels*projectionY,distance:0};
+  approach=interaction=stanceChange=standingAction=null;
+  crouched=false;gaitBlend=0;
+  if(movementStyle==='sneak')setMovementStyle('walk');
+  interactionNotice=hitLabels[clip];
+  clearAttacks();select(clip,false);
+ }
+ function advanceKnockback(dt){
+  const {duration,path}=atlas.knockback[mode],used=Math.min(dt,duration-elapsed);
+  elapsed+=used;
+  const progress=elapsed/duration;
+  let end=1;
+  while(end<path.length-1&&progress>path[end][0])end++;
+  const [a,from]=path[end-1],[b,to]=path[end];
+  const distance=mix(from,to,ease((progress-a)/(b-a))),delta=distance-knockback.distance;
+  moveBy(knockback.dx*delta,knockback.dy*delta);
+  knockback.distance=distance;
+  if(elapsed<duration)return 0;
+  knockback=null;
+  select('idle',false);
   return dt-used;
  }
  function advanceConsumption(dt,input){
@@ -530,6 +660,14 @@
  }
  function update(dt){
   let input=movement();
+  if(knockback){
+   dt=advanceKnockback(dt);
+   if(dt===0)return;
+  }
+  if(approach){
+   dt=advanceApproach(dt);
+   if(dt===0)return;
+  }
   if(interaction){
    dt=advanceInteraction(dt);
    if(dt===0)return;
@@ -620,9 +758,9 @@
   }
   return atlas.clips[name][0]+frame;
  }
- function drawPacked(ctx,sheet,frame,left,top){
-  const [sx,sy,w,h,dx,dy]=frame,ratio=modelSize/cell;
-  ctx.drawImage(sheet,sx,sy,w,h,left+dx*ratio,top+dy*ratio,w*ratio,h*ratio);
+ function drawPacked(ctx,sheets,frame,left,top){
+  const [sx,sy,w,h,dx,dy,page]=frame,ratio=modelSize/cell;
+  ctx.drawImage(sheets[page],sx,sy,w,h,left+dx*ratio,top+dy*ratio,w*ratio,h*ratio);
  }
  function drawBlender(ctx,frame){
   const index=frame*8+facing;
@@ -651,9 +789,9 @@
    }
   }
   const left=Math.round(x-modelSize/2),top=Math.round(y+16-modelSize*modelGround);
-  drawPacked(ctx,bodySheet,atlas.body[index],left,top);
+  drawPacked(ctx,bodyLayers,atlas.body[index],left,top);
   const weaponFrame=atlas[weaponTypes[weaponType].sheet][index];
-  if(showWeapon&&weaponFrame)drawPacked(ctx,weaponSheet,weaponFrame,left,top);
+  if(showWeapon&&weaponFrame)drawPacked(ctx,weaponLayers,weaponFrame,left,top);
  }
  function drawBarrel(){
   const {height,radius}=atlas.vault;
@@ -662,6 +800,16 @@
   ctx.drawImage(barrel.sprite,41,35,46,43,barrel.x-23*sx,barrel.y+16-37*sy,46*sx,43*sy);
  }
  function drawStation(station){
+  if(station.table){
+   const size=.82,baseY=station.y+16;
+   ctx.drawImage(station.table,station.x-64*size,baseY-80*size,128*size,112*size);
+   if(!station.completed){
+    const itemX=station.x+.19*unitsToPixels;
+    const itemY=baseY+(.38*projectionY-.985*groundY)*unitsToPixels;
+    ctx.drawImage(ruby,itemX-32*.48,itemY-36*.48,64*.48,64*.48);
+   }
+   return;
+  }
   const img=station.completed?station.used:station.sprite;
   if(!img)return;
   const size=64*station.scale;
@@ -693,7 +841,13 @@
   for(const part of ground)ctx.drawImage(part.bitmap,part.x,part.y);
   for(const prop of decor)ctx.drawImage(prop.sprite,prop.x-44,prop.y-53,88,77);
   ctx.fillStyle='#110d1780';
-  ctx.beginPath();ctx.ellipse(x,y+13,21,5,0,0,Math.PI*2);ctx.fill();
+  const fall=mode==='hit-down'?elapsed/clips[mode].duration:0;
+  const down=ease((fall-.28)/.15)*ease((.81-fall)/.16);
+  const angle=facing*Math.PI/4,shadowAngle=Math.atan2(Math.sin(angle)*projectionY,Math.cos(angle));
+  ctx.beginPath();
+  ctx.ellipse(x-12*down*Math.cos(angle),y+13-12*down*Math.sin(angle)*projectionY,21+7*down,5+3*down,
+   shadowAngle*down,0,Math.PI*2);
+  ctx.fill();
   const aboveBarrel=vault&&elapsed/clips.vault.duration>=.28&&elapsed/clips.vault.duration<.95;
   const inFront=prop=>prop!==interaction?.target&&(prop!==barrel||!aboveBarrel)&&prop.y>y;
   const drawProp=prop=>prop===barrel?drawBarrel():drawStation(prop);
@@ -709,7 +863,8 @@
   last=now;update(dt);
   draw(animationFrame());
   const target=nearestStation();
-  const prompt=!interaction&&target?'E · '+target.prompt:interactionNotice;
+  const prompt=!interaction&&!approach&&!knockback&&target&&now>=blockedApproachUntil
+   ?'E · '+target.prompt:interactionNotice;
   if(interactionPrompt.textContent!==prompt)interactionPrompt.textContent=prompt;
   requestAnimationFrame(loop);
  }
@@ -722,22 +877,27 @@
  }
  function loadWeapon(type){
   if(!weaponSheets.has(type)){
-   const image=new Image();
-   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=16')
-    .then(()=>image).catch(error=>{weaponSheets.delete(type);throw error;});
+   const loaded=loadLayer(weaponTypes[type].sheet).catch(error=>{weaponSheets.delete(type);throw error;});
    weaponSheets.set(type,loaded);
   }
   return weaponSheets.get(type);
  }
- Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=16'),
-  loadWeapon(weaponType),
-  fetch('art/player-study/guardian-frames.json?v=16').then(response=>{
-   if(!response.ok)throw new Error('Animationsdaten fehlen.');
-   return response.json();
-  })
- ]).then(([,sheet,frames])=>{
+ function loadLayer(layer){
+  return Promise.all(spriteFiles[layer].map(file=>{
+   const image=new Image();
+   return loadSheet(image,'art/player-study/'+file+'?v=17').then(()=>image);
+  }));
+ }
+ fetch('art/player-study/guardian-frames.json?v=17').then(response=>{
+  if(!response.ok)throw new Error('Animationsdaten fehlen.');
+  return response.json();
+ }).then(async frames=>{
+  spriteFiles=frames.sheets;
+  [bodyLayers,weaponLayers]=await Promise.all([loadLayer('body'),loadWeapon(weaponType)]);
   atlas=frames;
+  colliders=[collider(barrel,atlas.vault.radius,atlas.vault.radius,.21),
+   ...stations.filter(station=>station.radius).map(station=>
+    collider(station,station.halfWidth??station.radius,station.radius,.22))];
   clips.walk.duration=atlas.consumption.walkCycle;
   for(const [kind,duration] of Object.entries(atlas.consumption.durations))clips[kind].duration=duration;
   clips.vault={duration:atlas.vault.duration};
@@ -745,12 +905,13 @@
    clips[kind]={duration};
    if(Object.hasOwn(atlas.clips,kind+'-crouched'))clips[kind+'-crouched']=clips[kind];
   }
+  for(const [kind,{duration}] of Object.entries(atlas.knockback))clips[kind]={duration,knockback:true};
   for(const kind of Object.keys(atlas.clips)){
    if(kind==='crouch-down'||kind.startsWith('crouch-from-')||kind.startsWith('crouch-up-')){
     clips[kind]={duration:stanceDuration};
    }
   }
-  weaponSheet=sheet;weaponSelect.disabled=false;
+  weaponSelect.disabled=false;
   status.hidden=true;
   last=performance.now();requestAnimationFrame(loop);
  }).catch(()=>{status.textContent='Die Blender-Sprites konnten nicht geladen werden.';});
