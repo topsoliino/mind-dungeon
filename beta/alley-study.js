@@ -261,7 +261,7 @@
   });
   const roomWalls=renderWalls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>route.renderWall(ctx,wall,routePainter))}));
   const labSeal=route?.seal?cacheObject(route.seal,88,ctx=>route.renderSeal(ctx,routePainter)):null;
-  const artListeners=[];
+  const artListeners=[],chunkCache=[];
   const redrawImage=(image,draw)=>{
    const ctx=image.canvas.getContext('2d');
    ctx.resetTransform();
@@ -275,6 +275,12 @@
    drawUnderlay(backdropContext);
    homes.forEach(home=>redrawImage(home.image,ctx=>facadeArt.building(ctx,home)));
    redrawImage(gateway,ctx=>facadeArt.arch(ctx,gate));
+   // Refresh immutable GPU-sized copies after asynchronous facade textures load.
+   for(const {canvas,source,x,y} of chunkCache){
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(source,-x,-y);
+   }
    for(const listener of artListeners)listener();
   });
   const toggles=Object.fromEntries([...(sceneControls?.querySelectorAll('input')??[])].map(input=>[input.value,input]));
@@ -328,7 +334,7 @@
    const depth=wall.renderDepth;
    // Behind-the-player walls are always fully opaque. Foreground panels fade
    // independently, so two or three overlapping panels can fade together.
-   if(depth<=heroY+2)return 1;
+   if(depth<=heroY-footOffset+2)return 1;
    return polygonOverlaps(wall.hull,{x1:heroX-29,x2:heroX+29,y1:heroY-94,y2:heroY+14})?.24:1;
   };
   const structureInfo=(image,area,height)=>({
@@ -425,6 +431,7 @@
     const canvas=document.createElement('canvas');
     canvas.width=Math.min(maxSize,width-x);canvas.height=Math.min(maxSize,height-y);
     canvas.getContext('2d').drawImage(source,-x,-y);
+    chunkCache.push({canvas,source,x,y});
     out.push({canvas,x,y,depth});
    }
    return out;
