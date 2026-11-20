@@ -17,13 +17,15 @@ from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Euler, Matrix, Vector
 
 
-CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('dash', 8), ('attack', 20), ('backhand', 20)]
+CLIPS = [('idle', 4), ('walk', 16), ('run', 16), ('sprint', 16), ('dash', 8), ('attack', 20), ('backhand', 20)]
 CELL = 128
 FACINGS = 8
-ATLAS_COLUMNS = 24
+ATLAS_COLUMNS = 28
 GAITS = {
-    'walk': (.63, .50, .137, .105),
-    'sprint': (.79, .40, .229, .286),
+    # Forward foot travel during stance, duty factor, swing clearance, trunk lean.
+    'walk': (.59, .60, .084, .051),
+    'run': (.78, .375, .235, .207),
+    'sprint': (.82, .34, .263, .294),
 }
 SIDES = [('L', -1), ('R', 1)]
 
@@ -386,19 +388,26 @@ ATTACKS = {
         (1, *STEADY),
     ],
 }
-def running_foot(phase, stride, stance, clearance, sprint):
+def gait_foot(phase, stride, stance, clearance, running):
+    heel, push = (-5, 33) if running else (-15, 22)
     if phase < stance:
         # The moving body passes over a planted boot at constant speed.
         travel = stride * (phase / stance - .5)
         lift = 0
-        pitch, = sample([(0, -5 if sprint else -11), (.17, 0), (.67, 0),
-                         (1, 34 if sprint else 23)], phase/stance)
+        pitch, = sample([(0, heel), (.16, 0), (.65, 0), (1, push)], phase/stance)
     else:
         swing = (phase - stance) / (1 - stance)
-        travel = stride * (.5 - smooth(swing))
-        lift = clearance * math.sin(math.pi * swing)**1.22
-        pitch, = sample([(0, 34 if sprint else 23), (.24, 21 if sprint else 14),
-                         (.72, -16), (1, -5 if sprint else -11)], swing)
+        if running:
+            # The heel folds behind the hip before the shin swings through.
+            progress, height = sample([(0,0,0), (.23,.075,.73), (.43,.37,1),
+                                       (.72,.85,.65), (.91,.98,.24), (1,1,0)], swing)
+        else:
+            progress, height = sample([(0,0,0), (.26,.18,.70), (.52,.57,1),
+                                       (.77,.88,.53), (1,1,0)], swing)
+        travel = stride * (.5 - progress)
+        lift = clearance * height
+        pitch, = sample([(0, push), (.25, 20 if running else 12),
+                         (.71, -12), (1, heel)], swing)
     return travel, lift, math.radians(pitch)
 
 
@@ -423,19 +432,31 @@ def pose(kind, t):
     step = math.cos(phase)
     gait = GAITS.get(kind)
     sprint = kind == 'sprint'
+    running = kind in ('run', 'sprint')
     dash = kind == 'dash'
     attacking = kind in ATTACKS
     twist, forward, drop, pitch, hx, hy, hz, yaw, elev = sample(ATTACKS[kind], t) if attacking else STEADY
     if gait:
         stride, stance, clearance, lean = gait
-        shift = .022 if sprint else .028
-        rise = .102 if sprint else .069
-        bob = (.027 if sprint else .019)*math.cos(2*phase-.64)
-        hips = rest['Hips'][0] + Vector((shift*math.sin(phase), -.078 if sprint else -.028, -rise+bob))
-        pelvic_yaw = (.089 if sprint else .060)*step
-        chest_yaw = -(.12 if sprint else .083)*math.cos(phase-.23)
-        pitch = lean + .014*math.sin(2*phase)
-        yaw, elev = (38, 7) if sprint else (26, 14)
+        half_step = (t % .5)*2
+        if running:
+            # Compress on landing, extend through toe-off, then rise in suspension.
+            bob, nod = sample([(0, 0, .007), (.19, -.039, .043), (.55, -.020, .02),
+                               (.76, .014, -.012), (.88, .034, -.015), (1, 0, .007)], half_step)
+            shift, fore, drop = .023, -.076 if sprint else -.052, .105 if sprint else .089
+            pelvic_yaw = .112*step
+            chest_yaw = -.150*math.cos(phase-.22)
+            yaw, elev = (38, 7) if sprint else (32, 12)
+        else:
+            bob, nod = sample([(0, -.008, .006), (.20, -.020, .011), (.53, .015, 0),
+                               (.68, .022, -.006), (1, -.008, .006)], half_step)
+            shift, fore, drop = .035, -.011, .050
+            pelvic_yaw = .074*step
+            chest_yaw = -.062*math.cos(phase-.22)
+            yaw, elev = 23, 13
+        # At mid-stance the pelvis shifts towards the actual loaded foot.
+        hips = rest['Hips'][0] + Vector((-shift*math.sin(phase-.12), fore, -drop+bob))
+        pitch = lean + nod
     else:
         breath = .008*math.sin(phase) if kind == 'idle' else 0
         if dash:
@@ -447,16 +468,19 @@ def pose(kind, t):
             yaw, elev = 24+105*tuck, 16-7*tuck
         hips = rest['Hips'][0] + Vector((-.041*twist, forward, -.035-drop+breath))
         pelvic_yaw, chest_yaw = twist*.62, twist
-    orient('Hips', hips, Euler((pitch*.32, .031*step if gait else -.035*twist, pelvic_yaw)).to_matrix())
+    hip_roll = (.032 if running else .038)*math.sin(phase-.1) if gait else -.035*twist
+    hip_pitch = pitch*(.39 if gait else .32)
+    orient('Hips', hips, Euler((hip_pitch, hip_roll, pelvic_yaw)).to_matrix())
     chest = attached('Hips', rest['Chest'][0])
-    chest_rotation = Euler((pitch, -.019*step if gait else -.10*twist, chest_yaw)).to_matrix()
+    chest_roll = -(.047 if running else .019)*math.sin(phase-.36) if gait else -.10*twist
+    chest_rotation = Euler((pitch, chest_roll, chest_yaw)).to_matrix()
     orient('Chest', chest, chest_rotation)
     head = attached('Chest', rest['Head'][0])
     orient('Head', head, Euler((pitch*.33, .012*step if gait else 0, chest_yaw*.33)).to_matrix())
 
     mantle = attached('Chest', rest['Mantle'][0])
     if gait:
-        flutter = (.30 if sprint else .05) + (.088 if sprint else .05)*math.sin(phase-.7)
+        flutter = (.32 if sprint else .196 if running else .042) + (.079 if running else .034)*math.sin(phase-.7)
     else:
         flutter = .08 + .17*abs(twist) + (.41*tuck if dash else 0)
     orient('Mantle', mantle, Euler((flutter, .067*math.sin(phase-.8) if gait else .27*twist, chest_yaw*.76)).to_matrix())
@@ -464,8 +488,8 @@ def pose(kind, t):
     for side, sign in SIDES:
         if gait:
             foot_phase = (t+(0 if sign<0 else .5))%1
-            travel, lift, foot_pitch = running_foot(foot_phase, stride, stance, clearance, sprint)
-            width = -.023 if sprint else -.012
+            travel, lift, foot_pitch = gait_foot(foot_phase, stride, stance, clearance, running)
+            width = -.023 if running else -.006
         elif attacking:
             lead = -1 if kind == 'attack' else 1
             advance = smooth((t-.32)/.16) * (1-smooth((t-.77)/.23))
@@ -491,13 +515,14 @@ def pose(kind, t):
             # The wrist trails the leg rhythm, with a softer elbow on the free side.
             swing = math.cos(phase-.38)
             if sign>0:
-                reach = .097 if sprint else .055
-                offset = (.069, -.175-reach*swing, -.371+.033*swing)
-                yaw += (9 if sprint else 4)*swing
-                elev += (10 if sprint else 5)*swing
+                reach = .108 if sprint else .084 if running else .040
+                offset = (.065, -.173-reach*swing, (-.344 if running else -.405)+.035*swing)
+                yaw += (8 if running else 3)*swing
+                elev += (8 if running else 3)*swing
             else:
-                reach = .226 if sprint else .129
-                offset = (-.060, -.080+reach*swing, -.384+.048*abs(swing)+.039*swing)
+                reach = .249 if sprint else .211 if running else .087
+                drive = max(0, -swing)*(.106 if running else .020)
+                offset = (-.053, -.062+reach*swing, (-.373 if running else -.412)+drive)
             wrist = shoulder + Vector(offset)
         elif sign>0:
             wrist = (hx, hy, hz)
@@ -509,7 +534,7 @@ def pose(kind, t):
 
         # A pauldron is strapped to the cuirass and only follows part of the arm swing.
         arm_delta = rig.pose.bones[arm].matrix @ rig.data.bones[arm].matrix_local.inverted()
-        follow = .36 if attacking else .20 if sprint or dash else .15
+        follow = .36 if attacking else .20 if running or dash else .13 if gait else .15
         armor_rotation = chest_rotation.to_quaternion().slerp(arm_delta.to_quaternion(), follow)
         orient('Pauldron.'+side, shoulder, armor_rotation.to_matrix())
 
@@ -605,7 +630,7 @@ def export(scene, frames, directory, preview):
             # 0 is right; increasing directions follow the 2D bank clockwise.
             rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
             for row, (kind, frame) in enumerate(frames):
-                if preview and row not in (0, 4, 7, 11, 15, 20, 23, 27, 31, 37, 48, 51, 55, 68, 71, 75):
+                if preview and kind not in GAITS:
                     continue
                 scene.frame_set(frame)
                 path = directory / f'{part}-{facing}-{row}.png'
