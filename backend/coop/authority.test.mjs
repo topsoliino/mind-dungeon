@@ -1731,7 +1731,7 @@ test('seeded temple rooms form connected complexes with immediate waterfall reve
 });
 
 test('large inventories can buy items, pick up loot and collect a cup',()=>{
- const {host,sim}=game();
+ const {host,sim}=game(193,15);
  host.inventory=Array.from({length:84},()=>({...host.inventory[0]}));
  host.gold=2000;
  Object.assign(host,sim.floor.merchant);
@@ -1749,6 +1749,41 @@ test('large inventories can buy items, pick up loot and collect a cup',()=>{
  Object.assign(host,sim.floor.cupPoint);
  sim.actions.dispatch(host,'interact',{kind:'cup'});
  assert.equal(host.inventory.length,purchased+2);
+});
+
+test('the shrine has solid arch pillars, clear openings and no loose cup',()=>{
+ const {sim}=game();
+ const {furniture,furnitureAt,regionAt,cupPoint}=sim.floor;
+ const arches=furniture.filter(p=>p.type==='sanctuary-arch'||p.type==='sanctuary-vault');
+ assert.ok(arches.some(p=>p.type==='sanctuary-vault'));
+ assert.ok(arches.some(p=>p.type==='sanctuary-arch'));
+ assert.equal(cupPoint,null);
+ for(const arch of arches){
+  assert.notEqual(regionAt(arch.x,arch.y),122);
+  const simple=arch.type==='sanctuary-arch';
+  const feet=simple?[-39,39]:[-102,9,101],y=arch.y-(simple?1:19);
+  for(const x of feet)assert.equal(furnitureAt(arch.x+x,y,0)?.type,arch.type);
+  assert.equal(furnitureAt(arch.x+(feet[0]+feet[1])/2,y,9,6),undefined);
+ }
+});
+
+test('players can walk in both directions below a stair and a bridge without switching decks',()=>{
+ const {host,sim}=game(-1640531527,21);
+ sim.enemies=[];
+ const {underpasses,underpassAt,floorStep}=sim.floor;
+ assert.deepEqual(Array.from(underpasses,p=>p.style),['stone','bridge']);
+ for(const p of underpasses)for(const dir of [-1,1]){
+  const x=(p.x+p.w/2)*TILE,y=(p.y+p.h/2)*TILE,horizontal=p.axis==='x';
+  const travel=((horizontal?p.w:p.h)*TILE/2+16)*dir;
+  const dx=horizontal?travel:0,dy=horizontal?0:travel;
+  Object.assign(host,{x:x-dx,y:y-dy,underpass:null});
+  assert.ok(sim.move(host,dx,dy));
+  assert.equal(underpassAt(host)?.id,p.id);
+  assert.equal(floorStep({x,y},x+dx,y+dy,14,true,false),null);
+  assert.ok(sim.move(host,dx,dy));
+  assert.equal(underpassAt(host),null);
+  assert.ok(Math.hypot(host.x-x-dx,host.y-y-dy)<.001);
+ }
 });
 
 test('combat audio fires with projectile release, web landing and the start of fire breath',()=>{
