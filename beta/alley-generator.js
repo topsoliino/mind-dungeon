@@ -96,7 +96,32 @@ function generate(n){
   }
   if(!accepted)return null;
  }
- return {rooms,doors,occ};
+ // Grow every generated room by 2x in each ground-plane dimension, including
+ // the corridor footprints. The starter alley keeps its established scale.
+ // Transform doors as *edges*, not just their centre points: every expanded
+ // portal spans at least two full cells so the guardian can pass comfortably.
+ const unit=2,expand=([x,y])=>[12+(x-12)*unit,4+(y-y0)*unit];
+ const largerCells=cell=>{const [x,y]=expand(cell);return [
+  [x,y],[x+1,y],[x,y+1],[x+1,y+1]
+ ];};
+ const expandedOccupancy=new Map(start.cells.map(p=>[key(...p),0]));
+ for(const room of rooms.slice(1)){
+  room.cells=room.cells.flatMap(largerCells);
+  for(const cell of room.cells)expandedOccupancy.set(key(...cell),room.id);
+ }
+ for(const portal of doors){
+  if(portal.from===0){
+   portal.edges=[[[11,4],[12,4]],[[11,5],[12,5]]];continue;
+  }
+  portal.edges=portal.edges.flatMap(([a,b])=>{
+   const [ax,ay]=expand(a),[bx,by]=expand(b),dx=b[0]-a[0],dy=b[1]-a[1];
+   if(dx===1)return [0,1].map(j=>[[ax+1,ay+j],[bx,by+j]]);
+   if(dx===-1)return [0,1].map(j=>[[ax,ay+j],[bx+1,by+j]]);
+   if(dy===1)return [0,1].map(j=>[[ax+j,ay+1],[bx+j,by]]);
+   return [0,1].map(j=>[[ax+j,ay],[bx+j,by+1]]);
+  });
+ }
+ return {rooms,doors,occ:expandedOccupancy};
 }
 let result=null,actualSeed=seed;
 for(let i=0;i<15&&!result;i++){actualSeed=(seed+i*7919)>>>0;result=generate(actualSeed);}
@@ -109,9 +134,10 @@ for(const room of rooms.slice(1))for(const [x,y] of room.cells)for(const [dx,dy,
  if(other===room.id||openings.has(edge([x,y],[nx,ny])))continue;
  if(other>0&&room.id>other)continue; // one partition, not overlapping duplicates
  const axis=dx?'u':'v',p=dx?x+(dx>0?1:0):y+(dy>0?1:0),start=dx?y:x;
- const tall=side==='north'||side==='west';
+ // All partitions in one contiguous building share the SAME cut height.
+ // Their location (not a random height offset) establishes front/back order.
  segments.push({axis,p,start,end:start+1,room:room.id,side,
-  height:tall?92+room.id%3*11:13,tone:['grey-a','grey-b','grey-c'][room.id%3]});
+  height:96,tone:['grey-a','grey-b','grey-c'][room.id%3]});
 }
 segments.sort((a,b)=>a.room-b.room||a.axis.localeCompare(b.axis)||a.p-b.p||a.side.localeCompare(b.side)||a.start-b.start);
 const groups=[];
@@ -125,6 +151,16 @@ const th=.075;
 const rect=g=>g.axis==='u'?[g.p-th,g.start,g.p+th,g.end]:[g.start,g.p-th,g.end,g.p+th];
 const walls=groups.map(g=>({...g,area:rect(g)}));
 const wallBlocks=segments.map(rect);
+// Spatial hash: testing a nearby wall costs O(local wall segments), not O(all walls).
+// The key covers the wall footprint and neighbouring cells for hero-radius checks.
+const wallIndex=new Map();
+for(const area of wallBlocks){
+ for(let x=Math.floor(area[0]-1);x<=Math.ceil(area[2]+1);x++)
+  for(let y=Math.floor(area[1]-1);y<=Math.ceil(area[3]+1);y++){
+   const cell=key(x,y),batch=wallIndex.get(cell)||[];
+   batch.push(area);wallIndex.set(cell,batch);
+  }
+}
 const materials={
  'grey-a':{pitch:[.59,.53],colors:['#606575','#687082','#727585','#565f72'],edge:'#a0a6b1a8'},
  'grey-b':{pitch:[.46,.55],colors:['#5b6470','#68717a','#596977','#737985'],edge:'#9caeb2a8'},
@@ -176,8 +212,12 @@ for(const room of rooms.filter(p=>p.kind==='raum').sort((a,b)=>b.cells.length-a.
  for(const [a,b] of [[minY,opening],[opening+1,maxY+1]]){
   if(b<=a)continue;
   const wall={axis:'u',p:chosen,start:a,end:b,room:room.id,side:'west',
-   height:78,tone:['grey-a','grey-b','grey-c'][room.id%3],interior:true};
+   height:96,tone:['grey-a','grey-b','grey-c'][room.id%3],interior:true};
   wall.area=rect(wall);walls.push(wall);wallBlocks.push(wall.area);innerWalls.push(wall);
+  for(let x=Math.floor(wall.area[0]-1);x<=Math.ceil(wall.area[2]+1);x++)
+   for(let y=Math.floor(wall.area[1]-1);y<=Math.ceil(wall.area[3]+1);y++){
+    const k=key(x,y),list=wallIndex.get(k)||[];list.push(wall.area);wallIndex.set(k,list);
+   }
  }
 }
 const depth=Math.max(1,Math.min(12,Number(query.get('tiefe'))||1));
@@ -196,7 +236,8 @@ for(const room of rooms){
 }
 if(stairs)rooms[stairs.roomId].plannedUse='Treppenraum';
 const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.length,
- corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,interiorWalls:innerWalls.length,stairs:stairs?[stairs]:[],depth};
+ corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,
+ interiorWalls:innerWalls.length,stairs:stairs?[stairs]:[],depth,roomLinearScale:2,wallCutHeight:96};
 function extend(map){
  const strips=new Map();
  for(const room of rooms.slice(1))for(const [x,y] of room.cells){
@@ -217,7 +258,13 @@ function extend(map){
  map.art.routeWalls=walls;
 }
 function blocked(u,v,r=0){
- return wallBlocks.some(([a,b,c,d])=>u+r>a&&u-r<c&&v+r>b&&v-r<d);
+ return (wallIndex.get(key(Math.floor(u),Math.floor(v)))||[]).some(([a,b,c,d])=>
+  u+r>a&&u-r<c&&v+r>b&&v-r<d);
+}
+const alleyGround=[[1,2.75,12,6.85],[4.5,6.8,8.1,9.4],[9.5,.8,12,2.75]];
+function containsGround(u,v){
+ return occ.has(key(Math.floor(u),Math.floor(v)))||
+  alleyGround.some(([a,b,c,d])=>u>=a&&u<=c&&v>=b&&v<=d);
 }
 function areaAt(u,v){
  const id=occ.get(key(Math.floor(u),Math.floor(v)));
@@ -318,7 +365,7 @@ function path(from,target,canWalk){
  return {goal,steps};
 }
 const generator={
- enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors,walls,
+ enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors,walls,containsGround,
  stairs:stairs?[stairs]:[],materials,metadata,seal:null,
  extend,blocked,areaAt,renderFloor,renderWall,
  renderSeal(){},renderProp(){},unlock(){},isUnlocked(){return true;},path
