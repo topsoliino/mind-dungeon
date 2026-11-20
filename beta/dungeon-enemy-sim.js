@@ -17,7 +17,7 @@ function create(api){
  function asHero(actor,action){const prior=player;player=actor;try{return action();}finally{player=prior;}}
  const origin=enemyRules.damageOrigin;
  const eyeRange=(e,angle)=>enemyRules.eyeRange(e.type,e.boss,Math.min(cw,W*TILE),Math.min(ch,H*TILE),angle)*(floor.sightScale?.(e.x,e.y)??1);
- const damageActive=(source,amount,split,status,depth,cue,critical)=>takeDamage(player,amount,split,status,depth,cue,critical,source);
+ const damageActive=(source,amount,split,status,depth,cue,critical,impactAngle)=>takeDamage(player,amount,split,status,depth,cue,critical,source,impactAngle);
  const bleedActive=(e,amount)=>addBleed(player,amount,origin(e,'Blutverlust'));
  const poison=(actor,options)=>applyPoison(actor,options);
  const recover=(enemy,seconds)=>{
@@ -585,7 +585,7 @@ function updateBolts(dt){
     const damage=p.type==='trap'?10:p.type==='bow'?11:16;
     const split=p.type==='trap'?{physical:.70,poison:.30}:p.type==='crossbow'?{physical:.75,dark:.25}:p.type==='frost-crossbow'?{frost:1}:{physical:1};
     asHero(target,()=>{
-     if(!damageActive(p.origin,damage,split))return;
+     if(!damageActive(p.origin,damage,split,false,undefined,undefined,undefined,p.angle))return;
      if(p.type==='trap'&&!player.poison)poison(player,{untilTick:.67,ticks:2,power:.55,origin:{source:'Tempelfalle',action:'Giftwirkung'}});
     });
     return false;

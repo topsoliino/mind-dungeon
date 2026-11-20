@@ -309,15 +309,18 @@
   function structures(x,y){
    const result=[];
    const [heroU,heroV]=unproject(x,y);
+   const archDepth=position(r,Math.max(v,Math.min(heroV,b))).y;
    if(enabled('standing')){
-    for(const {area,image} of homes){
+    for(const {area,image,behindArch} of homes){
      const [u,v,r,b]=area;
      const alpha=heroV<v&&v-heroV<1.4&&heroU>u-.55&&heroU<r+.55?.54:1;
-     result.push({image,depth:depthAt(area,x,y),alpha});
+     const depth=depthAt(area,x,y);
+     // Where the rear house meets the arch, their paint order is fixed.
+     result.push({image,depth:behindArch&&enabled('foreground')?Math.min(depth,archDepth-.25):depth,alpha});
     }
    }
    if(enabled('foreground')){
-    result.push({image:gateway,depth:position(r,Math.max(v,Math.min(heroV,b))).y,alpha:1});
+    result.push({image:gateway,depth:archDepth,alpha:1});
    }
    return result;
   }
