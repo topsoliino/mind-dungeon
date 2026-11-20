@@ -26,12 +26,14 @@ GAITS = {
 }
 GAIT_BLENDS = {'gait-one': 1/3, 'gait-two': 2/3}
 WALK_FOOT_CENTER = .105
-CONSUMPTION = {'eat': 24, 'drink': 25}
+WALK_CYCLE = .56
+CONSUMPTION = {'eat': (24, 1.43), 'drink': (25, 1.57)}
 INTERACTIONS = {
     'chest': {'frames': 26, 'duration': 1.55, 'distance': .91, 'event': .59},
     'pickup': {'frames': 18, 'duration': .92, 'distance': .63, 'side': -.12, 'event': .46},
-    'knowledge': {'frames': 24, 'duration': 1.42, 'distance': .68, 'side': -.12, 'event': .48},
+    'knowledge': {'frames': 44, 'duration': 3.32, 'event': .85},
 }
+CROUCHED_INTERACTIONS = ('chest', 'pickup')
 CROUCH_ENTRIES = {f'crouch-from-sprint-{phase}': phase/4 for phase in range(4)}
 CROUCH_EXITS = {f'crouch-up-{phase}': phase/4 for phase in range(4)}
 CHEST_HINGE = Vector((0, -1.15, .51))
@@ -70,12 +72,14 @@ CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, HEAVY_FRAMES) for name in HEAVY_CLIPS),
          *((name, ROLL_ATTACK_FRAMES) for name in ROLL_ATTACKS),
          *((name, 4) for name in ROLL_ATTACK_LANDINGS),
-         *((name, 2) for name in ROLL_ATTACK_GAITS), *CONSUMPTION.items(),
+         *((name, 2) for name in ROLL_ATTACK_GAITS),
+         *((name, frames) for name, (frames, _) in CONSUMPTION.items()),
          ('vault', VAULT_FRAMES), *((name, 2) for name in VAULT_ENTRIES),
          ('crouch-idle', 4), ('sneak', 16), ('crouch-down', 9),
          *((name, 9) for name in CROUCH_ENTRIES), *((name, 9) for name in CROUCH_EXITS),
          *((name, interaction['frames']) for name, interaction in INTERACTIONS.items()),
-         *((name+'-crouched', interaction['frames']) for name, interaction in INTERACTIONS.items())]
+         *((name+'-crouched', INTERACTIONS[name]['frames']) for name in CROUCHED_INTERACTIONS),
+         *((name+'-walk', frames) for name, (frames, _) in CONSUMPTION.items())]
 SIDES = [('L', -1), ('R', 1)]
 
 
@@ -437,6 +441,81 @@ def consumption_props(black, brass):
                    (.055,0,-.08,.062,.043), (.079,0,-.08,.034,.025)]),
                   [ruby, glint, ruby, glint], 'Prop.L', 8)
     return {'face': (face,mouth), 'bread': (loaf,), 'bite': (bite,), 'cup': (cup,handle), 'ruby': (gem,)}
+
+
+def scholar_book():
+    asset = bpy.data.collections.new('Scholar’s book · reusable prop')
+    asset.asset_mark()
+    asset.asset_data.description = 'Leather-bound study book, closed and ready to place on shelves or tables'
+    leather = material('Book · forest leather', '315d55', .60)
+    gold = material('Book · embossed brass', 'bf9861', .46, .18)
+    edges = material('Book · parchment edges', 'bd9c73', .70)
+    paper = material('Book · cream parchment', 'e7d1a5', .72)
+    ink = material('Book · faded ink', '72554b', .78)
+    red = material('Book · bookmark ribbon', 'a3484b', .75)
+
+    def hinge(name, height):
+        obj = bpy.data.objects.new(name, None)
+        asset.objects.link(obj)
+        obj.location.z = height
+        return obj
+
+    def box(name, at, size, surface, parent=None, bevel=.006, turn=0):
+        x,y,z = size
+        verts = [(a*x/2,b*y/2,c*z/2) for c in (-1,1) for a,b in ((-1,-1),(1,-1),(1,1),(-1,1))]
+        faces = [(3,2,1,0), (4,5,6,7), (0,1,5,4), (1,2,6,5), (2,3,7,6), (3,0,4,7)]
+        data = bpy.data.meshes.new(name)
+        data.from_pydata(verts, [], faces)
+        data.update()
+        obj = bpy.data.objects.new(name, data)
+        asset.objects.link(obj)
+        obj.parent, obj.location, obj.rotation_euler.z = parent, at, turn
+        data.materials.append(surface)
+        if bevel:
+            mod = obj.modifiers.new('Rounded corners', 'BEVEL')
+            mod.width, mod.segments = bevel, 2
+        return obj
+
+    cover = hinge('Book · cover hinge', .105)
+    leaf = hinge('Book · page hinge', .071)
+    box('Book · back cover', (.107,0,.013), (.248,.354,.026), leather)
+    box('Book · spine', (-.013,0,.053), (.048,.350,.106), leather, bevel=.014)
+    for y in (-.113, .113):
+        box('Book · raised spine band', (-.014,y,.055), (.050,.018,.108), gold)
+    box('Book · front cover', (.108,0,.003), (.248,.354,.025), leather, cover)
+    for x in (.014,.202):
+        box('Book · cover tooling', (x,0,.016), (.010,.304,.004), gold, cover, .001)
+    for y in (-.148,.148):
+        box('Book · cover tooling', (.108,y,.016), (.205,.010,.004), gold, cover, .001)
+    box('Book · cover emblem', (.108,0,.017), (.069,.069,.006), gold, cover, .006, math.pi/4)
+    box('Book · bookmark', (.054,.170,.052), (.023,.063,.007), red, bevel=.002)
+    box('Book · sewn page block', (.110,0,.047), (.211,.314,.041), edges)
+    for z in (.035,.045,.055,.065):
+        box('Book · cut page edges', (.110,0,z), (.214,.316,.003), paper, bevel=.001)
+    box('Book · inside cover pages', (.105,0,-.020), (.207,.313,.014), paper, cover, .004)
+    box('Book · turning leaf', (.106,0,.004), (.209,.312,.008), paper, leaf, .002)
+    for y, width in zip((-.092,-.045,.003,.052,.095),(.133,.165,.150,.165,.107)):
+        for parent, z in ((None,.070), (cover,-.028), (leaf,.011), (leaf,-.002)):
+            box('Book · ruled ink', (.102,y,z), (width,.011,.002), ink, parent, .001)
+    # The decoration is a closed standalone asset. Animate copies of its objects
+    # in the held instance while sharing the same mesh and material data.
+    for obj in asset.objects:
+        if obj == leaf or obj.parent == leaf:
+            obj.hide_render = obj.hide_viewport = True
+    animated = bpy.data.collections.new('Scholar’s book · reading rig')
+    copies = {}
+    for obj in asset.objects:
+        duplicate = obj.copy()
+        animated.objects.link(duplicate)
+        copies[obj] = duplicate
+    for obj, duplicate in copies.items():
+        duplicate.parent = copies.get(obj.parent)
+    held = bpy.data.objects.new('Held scholar’s book', None)
+    body.objects.link(held)
+    held.parent = rig
+    held.instance_type = 'COLLECTION'
+    held.instance_collection = animated
+    return held, copies[cover], copies[leaf], tuple(obj for obj in animated.objects if obj.parent==copies[leaf])
 
 
 def chest_preview():
@@ -964,8 +1043,11 @@ def visor_open(t):
     return smooth((t-.127)/.20)*smooth((.974-t)/.14)
 
 
-def consumption_pose(kind, t):
-    pose('idle', 0)
+def consumption_pose(kind, t, phase=None):
+    if phase is None:
+        pose('idle', 0)
+    else:
+        gait_pose('walk', phase)
     if t in (0, 1):
         return
     lean, nod, twist, x, y, z, tilt, touch = sample_attack(CONSUMPTION_POSES[kind],t)
@@ -1001,6 +1083,9 @@ def prop_visibility(kind, t):
     visible = set()
     if kind in ('pickup', 'pickup-crouched') and INTERACTIONS['pickup']['event'] <= t < .84:
         visible.add('ruby')
+    if kind == 'knowledge' and .14 <= t < .95:
+        visible.add('book')
+    kind = kind.removesuffix('-walk')
     if kind in CONSUMPTION:
         if visor_open(t) > .32:
             visible.add('face')
@@ -1273,8 +1358,8 @@ def crouch_pose(phase=None, breath=0):
     cycle = 0 if phase is None else phase*math.tau
     swing = 0 if phase is None else math.sin(cycle)
     bob = .003*math.sin(breath*math.tau) if phase is None else .020*math.cos(2*cycle+.55)
-    torso = lower_body(.365-bob, .063, .395, -.045*swing, .08*swing)
-    orient('Head', attached('Chest', rest['Head'][0]), Euler((.105, .025*swing, .035*swing)).to_matrix())
+    torso = lower_body(.365-bob, .063, .59 if phase is not None else .53, -.045*swing, .08*swing)
+    orient('Head', attached('Chest', rest['Head'][0]), Euler((.17, .025*swing, .035*swing)).to_matrix())
     for side, sign in SIDES:
         if phase is None:
             travel, lift, pitch = sign*.075+.028, 0, 0
@@ -1284,7 +1369,7 @@ def crouch_pose(phase=None, breath=0):
             pitch *= .57
         place_foot(side, sign, travel, lift, pitch, .013)
         stagger = sign*.084*swing
-        wrist = reach_arm(side, sign, (sign*.34,-.286+stagger,.73+sign*.032*swing),
+        wrist = reach_arm(side, sign, (sign*.34,-.322+stagger,.71+sign*.032*swing),
                           (0,-.72,-.40), torso)
         if sign > 0:
             grip_weapon(wrist, 24-6*swing, 9+7*swing)
@@ -1310,6 +1395,57 @@ def chest_lid(t):
     return sample([(0,0),(.42,0),(.52,.36),(.59,.76),(.68,1.64),(.77,1.45),(1,1.48)],t)[0]
 
 
+def read_book(t):
+    pose('idle', 0)
+    base = pose_snapshot()
+    read = smooth((t-.26)/.16)*smooth((.94-t)/.13)
+    lean = .055+.085*read
+    torso = Euler((lean, .018*read, -.043*read)).to_matrix()
+    orient('Chest', attached('Hips', rest['Chest'][0]), torso)
+    trail_mantle(torso, .025, 0, 0)
+    nod = .16+.23*read+.043*math.sin(t*math.tau*3)*read
+    orient('Head', attached('Chest', rest['Head'][0]), Euler((nod, .035*read, -.04*read)).to_matrix())
+    center = Vector(sample([
+        (0,-.41,.02,.85),(.14,-.38,.015,.88),(.24,-.20,-.32,1.09),
+        (.36,-.114,-.395,1.155),(.53,-.095,-.379,1.139),(.70,-.111,-.398,1.17),
+        (.84,-.126,-.368,1.15),(.95,-.39,.007,.89),(1,-.41,.02,.85),
+    ],t))
+    pitch, bank, yaw = sample([(0,.68,-.88,.15),(.23,-.22,-.31,.06),
+                               (.38,-.17,-.12,.02),(.80,-.20,-.10,.04),(1,.68,-.88,.15)],t)
+    orientation = Euler((pitch, bank, yaw))
+    space = orientation.to_matrix()
+    book.location, book.rotation_euler = center, orientation
+    cover_angle = -math.pi*.972*read
+    cover.rotation_euler.y = cover_angle
+    cover.location.z = .105-.031*read
+
+    turn = next(((t-start)/(stop-start) for start,stop in ((.445,.565),(.635,.755)) if start<=t<stop), None)
+    turning = turn is not None
+    leaf.rotation_euler.y = -math.pi*smooth(turn) if turning else 0
+    for obj in leaves:
+        obj.hide_render = obj.hide_viewport = not turning
+    reach_arm('L', -1, center+space@Vector((-.096,.069,-.028)), space@Vector((.48,-.55,.31)), torso)
+
+    rest_hand = Vector((.418,.065,.887))
+    reading_hand = center+space@Vector((.235,.071,.090))
+    assist = smooth((t-.20)/.075)*smooth((.92-t)/.095)
+    if turning:
+        # The fingers push the outer corner up, then the page settles by itself.
+        follow = 1-smooth((turn-.56)/.43)
+        pivot = Matrix.Rotation(max(leaf.rotation_euler.y, -1.63), 3, 'Y')
+        edge = Vector((0,0,.071))+pivot@Vector((.199,.078,.024))
+        reading_hand = reading_hand.lerp(center+space@edge, follow)
+    elif .26 <= t <= .41 or .82 <= t <= .93:
+        pivot = Matrix.Rotation(max(cover_angle,-1.33), 3, 'Y')
+        edge = Vector((0,0,cover.location.z))+pivot@Vector((.211,.090,.018))
+        follow = smooth((t-.26)/.045)*smooth((.41-t)/.05) if t<.5 else smooth((t-.82)/.035)
+        reading_hand = reading_hand.lerp(center+space@edge, follow)
+    wrist = reach_arm('R', 1, rest_hand.lerp(reading_hand,assist), (-.42,-.52,-.42), torso)
+    stow = smooth((t-.07)/.12)*smooth((1-t)/.12)
+    grip_weapon(wrist.lerp(rest_hand,stow), 25+125*stow, 12-46*stow)
+    blend_pose(base, pose_snapshot(), smooth(t/.13)*smooth((1-t)/.105))
+
+
 def interaction_pose(kind, t, crouched):
     if crouched:
         crouch_pose()
@@ -1323,14 +1459,10 @@ def interaction_pose(kind, t, crouched):
             (0,.18,-.025,.15,.10), (.25,.42,-.016,.55,.61), (.40,.445,-.088,.64,.63),
             (.54,.435,-.125,.70,.48), (.62,.368,-.104,.73,.27), (.73,.39,-.027,.31,.39),
             (1,.18,.037,.14,.08)], t)
-    elif kind == 'pickup':
+    else:
         drop, fore, lean, nod = sample([
             (0,.15,.03,.13,.11), (.28,.43,-.020,.73,.74), (.46,.572,-.151,1.02,.81),
             (.58,.46,-.075,.79,.56), (.78,.20,.025,.28,.21), (1,.13,.03,.10,.10)], t)
-    else:
-        drop, fore, lean, nod = sample([
-            (0,.05,.03,.10,.09), (.31,.135,-.015,.40,.29), (.48,.12,-.04,.37,.23),
-            (.62,.086,.08,-.14,-.45), (.76,.13,.031,.13,-.14), (1,.06,.03,.10,.08)], t)
     if crouched:
         drop = max(drop, .30)
     twist = (0 if kind == 'chest' else -.13)*math.sin(math.pi*t)
@@ -1353,17 +1485,12 @@ def interaction_pose(kind, t, crouched):
             wrist_goal = start.lerp(lip-.070*unit, weight)
             fingers = Vector(fingers).lerp(unit, weight)
         elif sign > 0:
-            wrist_goal = (.405,.014,.57 if kind == 'pickup' else .81)
-        elif kind == 'pickup':
+            wrist_goal = (.405,.014,.57)
+        else:
             wrist_goal = sample([
                 (0,-.35,-.14,.82),(.32,-.30,-.38,.39),(.46,-.105,-.56,.087),
                 (.58,-.16,-.53,.262),(.71,-.23,-.33,.61),(.84,-.37,-.035,.67),(1,-.36,-.11,.79)],t)
             fingers = (0,-.71,-.67+.60*smooth((t-.46)/.20))
-        else:
-            wrist_goal = sample([
-                (0,-.35,-.15,.87),(.25,-.26,-.31,.97),(.48,-.105,-.65,.94),
-                (.55,-.11,-.58,1.00),(.69,-.30,-.34,1.20),(.82,-.19,-.30,1.07),(1,-.36,-.14,.87)],t)
-            fingers = (.21,-.9,.13+.60*smooth((t-.49)/.17))
         wrist = reach_arm(side, sign, wrist_goal, fingers, torso)
         if sign > 0:
             if kind == 'chest':
@@ -1382,7 +1509,10 @@ def animation_pose(kind, frame, count):
     rig.pose.bones['Visor'].matrix_basis = Matrix.Identity(4)
     rig.pose.bones['Prop.L'].matrix_basis = Matrix.Identity(4)
     interaction = kind.removesuffix('-crouched')
-    if interaction in INTERACTIONS:
+    if kind == 'knowledge':
+        read_book(frame/(count-1))
+        return
+    if interaction in CROUCHED_INTERACTIONS:
         interaction_pose(interaction, frame/(count-1), interaction != kind)
         return
     if kind == 'crouch-idle' or kind == 'sneak':
@@ -1391,8 +1521,10 @@ def animation_pose(kind, frame, count):
     if kind == 'crouch-down' or kind in CROUCH_ENTRIES or kind in CROUCH_EXITS:
         crouch_transition(kind, frame/(count-1))
         return
-    if kind in CONSUMPTION:
-        consumption_pose(kind, frame/(count-1))
+    consume = kind.removesuffix('-walk')
+    if consume in CONSUMPTION:
+        phase = frame/count*CONSUMPTION[consume][1]/WALK_CYCLE % 1 if consume != kind else None
+        consumption_pose(consume, frame/(count-1), phase)
         return
     if kind == 'vault':
         vault_pose(frame/(count-1))
@@ -1503,6 +1635,14 @@ def key_animations(scene, clips):
             index = start+frame
             scene.frame_set(index)
             animation_pose(kind, frame, count)
+            if kind == 'knowledge':
+                for obj in (book, cover):
+                    obj.keyframe_insert(data_path='location',frame=index)
+                    obj.keyframe_insert(data_path='rotation_euler',frame=index)
+                leaf.keyframe_insert(data_path='rotation_euler',frame=index)
+                for obj in leaves:
+                    for flag in ('hide_render','hide_viewport'):
+                        obj.keyframe_insert(data_path=flag,frame=index)
             visible = prop_visibility(kind, frame/(count-1))
             chest_visible = kind in ('chest', 'chest-crouched')
             for obj in chest_collection.objects:
@@ -1545,8 +1685,9 @@ def export(scene, frames, directory, preview):
                 continue
             rig.rotation_euler.z = math.pi/2 - facing*math.pi/4
             for row, (kind, frame) in enumerate(frames):
-                if preview and kind not in ('walk', 'sprint', 'gait-one', 'gait-two', 'roll', 'sneak',
-                                           *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION, *INTERACTIONS, 'vault'):
+                if preview and kind.removesuffix('-walk') not in (
+                        'walk', 'sprint', 'gait-one', 'gait-two', 'roll', 'sneak',
+                        *CHARGE_CLIPS, *HEAVY_CLIPS, *ROLL_ATTACKS, *CONSUMPTION, *INTERACTIONS, 'vault'):
                     continue
                 if weapon and kind in CHARGE_CLIPS and CHARGE_CLIPS[kind][0] != weapon:
                     continue
@@ -1577,6 +1718,8 @@ if __name__ == '__main__':
     design, soles = model_joints(), {}
     rig, rest = create_rig(design)
     props = model()
+    book, cover, leaf, leaves = scholar_book()
+    props['book'] = (book,)
     chest_collection, lid = chest_preview()
     bpy.context.view_layer.objects.active = rig
     temporary = {obj for objects in props.values() for obj in objects}
@@ -1599,6 +1742,8 @@ if __name__ == '__main__':
     (directory/'attack-motion.json').write_text(json.dumps(ATTACK_MOTION) + '\n')
     (directory/'vault.json').write_text(json.dumps(VAULT) + '\n')
     (directory/'interactions.json').write_text(json.dumps(INTERACTIONS) + '\n')
+    durations = {name: duration for name, (_, duration) in CONSUMPTION.items()}
+    (directory/'consumption.json').write_text(json.dumps({'walkCycle': WALK_CYCLE, 'durations': durations}) + '\n')
     bpy.context.view_layer.layer_collection.children[weapon_collections['hammer'].name].exclude = True
     rig.rotation_euler.z = math.pi/4
     rig.select_set(False)

@@ -8,7 +8,7 @@
  const clips={
   idle:{duration:1.3},walk:{duration:.56},sprint:{duration:.49},roll:{duration:.76},
   'crouch-idle':{duration:1.4},sneak:{duration:.65},
-  eat:{duration:1.43,consumption:true},drink:{duration:1.57,consumption:true},
+  eat:{consumption:true},drink:{consumption:true},
   down:{duration:.74,guard:6,chain:13,next:'up'},
   up:{duration:.74,guard:4,chain:13,next:'down'}
  };
@@ -74,6 +74,7 @@
  let rollStartedWalking=false;
  let vault=null;
  let interaction=null,interactionNotice='';
+ let standingAction=null,consumingWalking=false;
  let rollAttackQueued=false,rollAttackUntil=0,rollAttackEntry=null;
  let weaponType='sword',weaponSheet;
  let heldAttack=null,attackIntent=null,queuedAttack=null;
@@ -100,6 +101,7 @@
 
  function select(clip,loop,startTime=0){
   mode=clip;elapsed=startTime;repeat=loop;
+  showMovementStyle();
   for(const button of buttons){
    button.setAttribute('aria-pressed',String(previewClip(button.dataset.clip)===clip));
   }
@@ -119,6 +121,10 @@
  }
  function setMovementStyle(style){
   movementStyle=style;
+  showMovementStyle();
+ }
+ function showMovementStyle(){
+  const style=clips[mode].consumption?'walk':movementStyle;
   movementMode.textContent={walk:'Gehmodus',sprint:'Rennmodus',sneak:'Schleichmodus'}[style];
  }
  function movement(){
@@ -130,14 +136,23 @@
   if(facing===value)return;
   facing=value;direction.value=String(facing);
  }
+ function standBefore(action){
+  if(!crouched)return false;
+  standingAction=action;
+  setMovementStyle('walk');
+  return true;
+ }
  function startConsumption(clip){
-  if(vault||interaction||stanceChange||crouched||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
+  if(vault||interaction||stanceChange||standingAction||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
+  if(standBefore(()=>startConsumption(clip)))return;
   const input=movement();
+  consumingWalking=Boolean(input.length);
   if(input.length)face(input.facing);
+  gaitBlend=0;
   clearAttacks();select(clip,false);
  }
  function startRoll(){
-  if(vault||interaction||stanceChange||crouched||mode==='roll'&&!repeat)return;
+  if(vault||interaction||stanceChange||standingAction||crouched||clips[mode].consumption||mode==='roll'&&!repeat)return;
   if(!repeat&&atlas.attackMotion[mode]&&elapsed<frameTime(mode,clips[mode].chain))return;
   const input=movement();
   if(input.length)face(input.facing);
@@ -164,7 +179,7 @@
   select(attack,false);
  }
  for(const button of buttons)button.addEventListener('click',()=>{
-  if(!atlas||vault||interaction||stanceChange)return;
+  if(!atlas||vault||interaction||stanceChange||standingAction)return;
   const clip=previewClip(button.dataset.clip);
   if(clips[clip].consumption){
    canvas.focus({preventScroll:true});
@@ -217,7 +232,7 @@
   if(!atlas)return;
   if(event.key==='Shift'||event.key==='Control'){
    if(event.key==='Control')event.preventDefault();
-   if(!event.repeat&&!vault&&!interaction&&!(mode==='roll'&&!repeat)){
+   if(!event.repeat&&!vault&&!interaction&&!standingAction&&!(mode==='roll'&&!repeat)){
     if(event.key==='Control')setMovementStyle(movementStyle==='sneak'?'walk':'sneak');
     else setMovementStyle(movementStyle==='sprint'?'walk':'sprint');
    }
@@ -248,7 +263,7 @@
   }
   if(event.code==='KeyK'){
    event.preventDefault();
-   if(event.repeat||vault||interaction||stanceChange||crouched||clips[mode].consumption)return;
+   if(event.repeat||vault||interaction||stanceChange||standingAction||crouched||clips[mode].consumption)return;
    if(event.target!==canvas)canvas.focus({preventScroll:true});
    if(!repeat&&mode==='roll'){
     rollAttackQueued=true;
@@ -298,6 +313,10 @@
   if(!hitsScenery(nx,y))x=nx;
   if(!hitsScenery(x,ny))y=ny;
  }
+ function moveWithInput(input,dt,speed){
+  const distance=dt*speed*Math.hypot(input.dx,input.dy*groundY)/input.length;
+  moveBy(input.dx/input.length*distance,input.dy/input.length*distance);
+ }
  function nearestStation(){
   let nearest=null,best=1.55*unitsToPixels;
   for(const station of stations){
@@ -306,20 +325,21 @@
   }
   return nearest;
  }
- function startInteraction(){
-  if(vault||interaction||stanceChange||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
-  const target=nearestStation();
+ function startInteraction(target=nearestStation()){
+  if(vault||interaction||stanceChange||standingAction||!repeat&&(mode==='roll'||isAttack(mode)||clips[mode].consumption))return;
   if(!target)return;
+  if(target.kind==='knowledge'&&standBefore(()=>startInteraction(target)))return;
   const {distance,side=0,event}=atlas.interactions[target.kind];
   face((Math.round(Math.atan2((target.y-y)/projectionY,target.x-x)/(Math.PI/4))+8)%8);
   const angle=facing*Math.PI/4;
-  const dx=Math.cos(angle)*distance+Math.sin(angle)*side;
-  const dy=Math.sin(angle)*distance-Math.cos(angle)*side;
-  interaction={
-   target,event,fromX:x,fromY:y,
-   x:target.x-dx*unitsToPixels,y:target.y-dy*projectionY*unitsToPixels
-  };
-  interactionNotice='';
+  interaction={target,event,fromX:x,fromY:y,x,y};
+  if(distance!==undefined){
+   const dx=Math.cos(angle)*distance+Math.sin(angle)*side;
+   const dy=Math.sin(angle)*distance-Math.cos(angle)*side;
+   interaction.x=target.x-dx*unitsToPixels;
+   interaction.y=target.y-dy*projectionY*unitsToPixels;
+  }
+  interactionNotice=target.kind==='knowledge'?'Buch studieren …':'';
   gaitBlend=0;
   clearAttacks();select(target.kind+(crouched?'-crouched':''),false);
  }
@@ -337,6 +357,19 @@
   if(elapsed<duration)return 0;
   interaction=null;
   select(crouched?'crouch-idle':'idle',false);
+  return dt-used;
+ }
+ function advanceConsumption(dt,input){
+  const duration=clips[mode].duration,used=Math.min(dt,duration-elapsed);
+  elapsed+=used;
+  consumingWalking=Boolean(input.length);
+  if(consumingWalking){
+   face(input.facing);
+   moveWithInput(input,used,gaitSpeed(0));
+  }
+  if(elapsed<duration)return 0;
+  gaitPhase=(duration/clips.walk.duration)%1;
+  select(consumingWalking?'walk':'idle',false);
   return dt-used;
  }
  function startStanceChange(input){
@@ -515,10 +548,8 @@
    if(dt===0)return;
   }
   if(clips[mode].consumption){
-   const remaining=clips[mode].duration-elapsed;
-   if(dt<remaining){elapsed+=dt;return;}
-   dt-=remaining;
-   select('idle',false);
+   dt=advanceConsumption(dt,input);
+   if(dt===0)return;
   }
   if(!stanceChange)startStanceChange(input);
   if(stanceChange){
@@ -526,14 +557,19 @@
    if(dt===0)return;
    if(crouched!==(input.gait==='sneak'))return;
   }
+  if(standingAction){
+   const action=standingAction;
+   standingAction=null;
+   action();
+   return;
+  }
   elapsed+=dt;
   if(input.length){
    face(input.facing);
    if(crouched){
     if(mode!=='sneak'){gaitPhase=0;select('sneak',false);}
     gaitPhase=(gaitPhase+dt/clips.sneak.duration)%1;
-    const speed=sneakSpeed*Math.hypot(input.dx,input.dy*groundY)/input.length;
-    moveBy(dt*input.dx/input.length*speed,dt*input.dy/input.length*speed);
+    moveWithInput(input,dt,sneakSpeed);
     return;
    }
    if(!isGait(mode)||repeat){gaitBlend=0;gaitPhase=0;}
@@ -544,15 +580,14 @@
    const blend=ease(gaitBlend);
    gaitPhase=(gaitPhase+dt/gaitDuration(blend))%1;
    if(tryVault(input))return;
-   const speed=gaitSpeed(blend)*Math.hypot(input.dx,input.dy*groundY)/input.length;
-   moveBy(dt*input.dx/input.length*speed,dt*input.dy/input.length*speed);
+   moveWithInput(input,dt,gaitSpeed(blend));
   }else if(!repeat&&(isGait(mode)||mode==='sneak'))select(crouched?'crouch-idle':'idle',false);
  }
  function animationFrame(){
   const clip=clips[mode];
   const loop=mode==='idle'||mode==='crouch-idle'||repeat;
   const progress=loop?(elapsed%clip.duration)/clip.duration:Math.min(1,elapsed/clip.duration);
-  let name=mode,frame=frameAt(mode,progress);
+  let name=clip.consumption&&consumingWalking?mode+'-walk':mode,frame=frameAt(name,progress);
   if(stanceChange){
    if(stanceChange.reverse)frame=atlas.clips[mode][1]-1-frame;
    else if(frame===0&&stanceChange.source){
@@ -633,25 +668,15 @@
   ctx.drawImage(img,station.x-size/2,station.y+16-station.base*station.scale,size,size);
  }
  function drawInteractionEffect(){
-  if(!interaction?.target.completed||interaction.target.kind==='pickup')return;
+  if(!interaction?.target.completed||interaction.target.kind!=='chest')return;
   const {target,event}=interaction,progress=elapsed/clips[mode].duration;
   const t=bound((progress-event)/(1-event),0,1);
-  const knowledge=target.kind==='knowledge';
-  const fromY=target.y+16-(knowledge?28:15);
-  if(knowledge){
-   ctx.strokeStyle='rgba(142,244,221,'+(.60*(1-t))+')';
-   ctx.lineWidth=1.4;
-   ctx.beginPath();
-   ctx.moveTo(target.x,fromY);
-   ctx.quadraticCurveTo(mix(target.x,x,.55),fromY-22,x,y-29);
-   ctx.stroke();
-  }
-  ctx.fillStyle=knowledge?'#b7f6d9':'#f6d78e';
+  ctx.fillStyle='#f6d78e';
   ctx.globalAlpha=1-t;
   for(let i=0;i<8;i++){
    const angle=i*2.4,drift=4+10*t;
-   const px=(knowledge?mix(target.x,x,t):target.x)+Math.cos(angle)*drift;
-   const py=(knowledge?mix(fromY,y-28,t):fromY-19*t)+Math.sin(angle)*drift*.68;
+   const px=target.x+Math.cos(angle)*drift;
+   const py=target.y+1-19*t+Math.sin(angle)*drift*.68;
    ctx.fillRect(Math.round(px),Math.round(py),i%3===0?2:1,2);
   }
   ctx.globalAlpha=1;
@@ -698,24 +723,27 @@
  function loadWeapon(type){
   if(!weaponSheets.has(type)){
    const image=new Image();
-   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=15')
+   const loaded=loadSheet(image,'art/player-study/guardian-'+weaponTypes[type].sheet+'.webp?v=16')
     .then(()=>image).catch(error=>{weaponSheets.delete(type);throw error;});
    weaponSheets.set(type,loaded);
   }
   return weaponSheets.get(type);
  }
  Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=15'),
+  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=16'),
   loadWeapon(weaponType),
-  fetch('art/player-study/guardian-frames.json?v=15').then(response=>{
+  fetch('art/player-study/guardian-frames.json?v=16').then(response=>{
    if(!response.ok)throw new Error('Animationsdaten fehlen.');
    return response.json();
   })
  ]).then(([,sheet,frames])=>{
   atlas=frames;
+  clips.walk.duration=atlas.consumption.walkCycle;
+  for(const [kind,duration] of Object.entries(atlas.consumption.durations))clips[kind].duration=duration;
   clips.vault={duration:atlas.vault.duration};
   for(const [kind,{duration}] of Object.entries(atlas.interactions)){
-   clips[kind]=clips[kind+'-crouched']={duration};
+   clips[kind]={duration};
+   if(Object.hasOwn(atlas.clips,kind+'-crouched'))clips[kind+'-crouched']=clips[kind];
   }
   for(const kind of Object.keys(atlas.clips)){
    if(kind==='crouch-down'||kind.startsWith('crouch-from-')||kind.startsWith('crouch-up-')){
