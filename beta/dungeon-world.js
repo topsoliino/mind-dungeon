@@ -153,6 +153,7 @@ function stairConnected(a,b){
  return stairsNear(a).some(s=>s.regions.has(br))||stairsNear(b).some(s=>s.regions.has(ar));
 }
 function stairCrestClosed(stair,observer,explored){
+ if(stair.id.startsWith('sanctuary-'))return false;
  if(stair.curve){
   const landing=stair.roomIds[1];
   if(explored.has(landing)||regionAt(observer.x,observer.y)===landing)return false;
@@ -704,6 +705,8 @@ function placeRoomSet(pieces,ax,ay,zone,options={}){
   const extra=type==='sanctuary-tree'?22:8;
   if(wall(x,y)||!stairClear(x,y,d.w/2+extra,d.h/2+extra)||
    options.region!==undefined&&regionAt(x,y)!==options.region)return false;
+  if(type==='sanctuary-flowers'&&furniture.some(p=>(p.solid||p.type===type)&&
+   Math.abs(x-p.x)<(p.w+d.w)/2+13&&Math.abs(y-p.y)<(p.h+d.h)/2+9))return false;
   if(d.solid){
    const rx=d.w/2+4,ry=d.h/2+4;
    if([[-rx,-ry],[rx,-ry],[-rx,ry],[rx,ry]].some(([u,v])=>wall(x+u,y+v)))return false;
@@ -824,7 +827,7 @@ if(sanctuary){
    const feet=archFeet[type].map(([dx,dy,w,h])=>({type,x:x+dx,y:y+dy,w,h,solid:true}));
    if(feet.some(p=>!stairClear(p.x,p.y,p.w/2+10,p.h/2+12)||!valid(p.x,p.y,p.w/2,true)||
     sites.some(site=>Math.abs(site.x-p.x)<p.w/2+15&&Math.abs(site.y-p.y)<p.h/2+18)))continue;
-   furniture.push({type,x,y,variant,zone:3,...FURNITURE[type]});
+   furniture.push({type,x,y,sortY:Math.max(...feet.map(p=>p.y))-.25,variant,zone:3,...FURNITURE[type]});
    archPillars.push(...feet);
    break;
   }
@@ -832,7 +835,9 @@ if(sanctuary){
  const sanctuaryRooms=new Set(sanctuary.rooms.map(room=>room.id));
  const offsets=[[0,0],[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1],
   [-2,0],[2,0],[0,-2],[0,2]];
- for(const p of pieces.filter(p=>!anchors.has(p.type)&&!archFeet[p.type])){
+ const roomDecor=pieces.filter(p=>!anchors.has(p.type)&&!archFeet[p.type]);
+ roomDecor.sort((a,b)=>Number(b.type!=='sanctuary-flowers')-Number(a.type!=='sanctuary-flowers'));
+ for(const p of roomDecor){
   const preferred=tileCenter(p),region=regionAt(preferred.x,preferred.y);
   offsets.some(([dx,dy])=>{
    const x=p.x+.5+dx,y=p.y+.5+dy,target=regionAt(x*TILE,y*TILE);
