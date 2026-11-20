@@ -10,14 +10,7 @@
   return {x:px,y:py};
  };
  const toWorld=(x,y)=>unit(unproject(x,y-footOffset));
- const origin=toWorld(0,0);
  const atOrigin=toView(0,0);
- function screenDirection({x,y}){
-  if(!x&&!y)return {x,y};
-  const world=toWorld(x,y),dx=world.x-origin.x,dy=world.y-origin.y;
-  const scale=Math.hypot(x,y)/Math.hypot(dx,dy);
-  return {x:dx*scale,y:dy*scale};
- }
  function viewAngle(angle) {
   const point=toView(Math.cos(angle),Math.sin(angle));
   return Math.atan2(point.y-atOrigin.y,point.x-atOrigin.x);
@@ -37,7 +30,7 @@
   return canvas;
  }
  function create(){
-  const art=createArt(),map=window.AlleyStudyMap.logic;
+  const scene=window.AlleyStudyMap,art=createArt(),map=scene.logic;
   const spawn=unit(map.spawn),chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
   // These are the same ground footprints as the neutral props in the art pass.
   const props=[
@@ -57,9 +50,32 @@
   const clearLine=(x,y,endX,endY)=>pointBetween({x,y},{x:endX,y:endY},(px,py)=>walkable(px,py,0));
   const clearSegment=(from,to)=>pointBetween(from,to,walkable);
   const pad=radius+4;
-  const waypoints=[...map.waypoints.map(unit),...props.flatMap(({point,half:[a,b]})=>
-   [-1,1].flatMap(sx=>[-1,1].map(sy=>({x:point.x+sx*(a*tile+pad),y:point.y+sy*(b*tile+pad)}))))]
-   .filter(({x,y})=>walkable(x,y));
+  const offsets=(x,y)=>[-pad,pad].flatMap(dx=>[-pad,pad].map(dy=>({x:x+dx,y:y+dy})));
+  const corners=([u,v,r,b])=>[u,r].flatMap(x=>[v,b].flatMap(y=>offsets(x*tile,y*tile)));
+  const gate=scene.art.foreground.arch,[u,v,r,b]=gate.area,[a,c]=gate.opening;
+  const waypoints=[
+   ...map.waypoints.map(unit),
+   ...[...map.walkable,[u,v,r,a],[u,c,r,b]].flatMap(corners),
+   ...props.flatMap(({point,half:[hw,hh]})=>
+    [-1,1].flatMap(sx=>[-1,1].map(sy=>({x:point.x+sx*(hw*tile+pad),y:point.y+sy*(hh*tile+pad)}))))
+  ].filter(({x,y})=>walkable(x,y));
+  function nearestWalkable(goal){
+   if(walkable(goal.x,goal.y))return goal;
+   // A click just inside a wall or prop may land next to its footprint.
+   for(let radius=4;radius<=36;radius+=4){
+    for(let i=0;i<24;i++){
+     const angle=i*Math.PI/12,x=goal.x+Math.cos(angle)*radius,y=goal.y+Math.sin(angle)*radius;
+     if(walkable(x,y))return {x,y};
+    }
+   }
+   return null;
+  }
+  function routeTo(start,target){
+   const goal=nearestWalkable(target);
+   if(!goal)return null;
+   const steps=shortestRoute(start,goal,waypoints,clearSegment);
+   return steps?{goal,steps}:null;
+  }
   function canInteract(actor){
    return Math.hypot(actor.x-chest.x,actor.y-chest.y)<=88&&
     pointBetween(actor,chest,(x,y)=>walkable(x,y,0,false));
@@ -114,12 +130,12 @@
     ctx.globalAlpha=1;
    }
   }
-  return {spawn,chest,archer,walkable,clearLine,canInteract,cameraOrigin,addLayers,refreshLayers,drawLayers,
+  return {spawn,chest,archer,walkable,clearLine,canInteract,routeTo,cameraOrigin,addLayers,refreshLayers,drawLayers,
    inEncounter:actor=>actor.x>=9.5*tile&&actor.y<map.encounter.entryV*tile,
    lootPosition:actor=>walkable(actor.x,actor.y,4)?{x:actor.x,y:actor.y}:archer,
    chestRoute:player=>shortestRoute(player,goal,waypoints,clearSegment),
    chestFacing:Math.atan2(chest.y-goal.y,chest.x-goal.x),
    clearStrike:(...points)=>Number(clearLine(...points))};
  }
- window.DungeonIsometric={create,toView,toWorld,screenDirection,viewAngle,width,height};
+ window.DungeonIsometric={create,toView,toWorld,viewAngle,width,height};
 })();
