@@ -57,8 +57,10 @@ def main():
     motion = json.loads((args.renders / 'attack-motion.json').read_text())
     vault = json.loads((args.renders / 'vault.json').read_text())
     interactions = json.loads((args.renders / 'interactions.json').read_text())
-    manifest = {'clips': clips, 'attackMotion': motion, 'vault': vault, 'interactions': interactions}
-    for layer, width, other in [('body', 3840, None), ('weapon', 1024, 'hammer'),
+    consumption = json.loads((args.renders / 'consumption.json').read_text())
+    manifest = {'clips': clips, 'attackMotion': motion, 'vault': vault,
+                'interactions': interactions, 'consumption': consumption}
+    for layer, width, other in [('body', 4096, None), ('weapon', 1024, 'hammer'),
                                 ('hammer', 1024, 'sword')]:
         indices = (index for clip, (start, length) in clips.items()
                    if not other or not clip.startswith((f'charge-{other}-', f'heavy-{other}', f'roll-attack-{other}'))
