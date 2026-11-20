@@ -39,16 +39,13 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
  <a href="./">Zurück zur Beta</a>
 </header>
 <div class="control-panel">
- <div class="controls" role="group" aria-label="Gangart">
-  <button type="button" data-gait="walk" aria-pressed="false">Gehen</button>
-  <button type="button" data-gait="run" aria-pressed="true">Laufen</button>
- </div>
  <div class="controls" role="group" aria-label="Animation abspielen">
   <button type="button" data-clip="idle" aria-pressed="true">Stand</button>
-  <button type="button" data-clip="sprint" aria-pressed="false">Sprint</button>
-  <button type="button" data-clip="dash" aria-pressed="false">Dash</button>
-  <button type="button" data-clip="attack" aria-pressed="false">Schwerthieb</button>
-  <button type="button" data-clip="backhand" aria-pressed="false">Rückhieb</button>
+  <button type="button" data-clip="walk" aria-pressed="false">Gehen</button>
+  <button type="button" data-clip="sprint" aria-pressed="false">Rennen</button>
+  <button type="button" data-clip="dash" aria-pressed="false">Ausweichen</button>
+  <button type="button" data-clip="down" aria-pressed="false">Abwärtshieb</button>
+  <button type="button" data-clip="up" aria-pressed="false">Aufwärtshieb</button>
  </div>
  <div class="settings">
   <label for="direction">Blickrichtung</label>
@@ -62,12 +59,12 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
   <button id="weapon" type="button" aria-pressed="true">Schwert</button>
  </div>
 </div>
-<canvas id="blender" aria-label="Begehbarer Übungsraum mit dem Blender-Wächter"></canvas>
-<p class="hint">Bewegen mit <kbd>WASD</kbd> oder <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> wechselt zwischen Gehen und Laufen. <kbd>Q</kbd> halten zum Sprinten, <kbd>X</kbd> zum Ausweichen, <kbd>Leertaste</kbd> für den Hieb und <kbd>F</kbd> für den Rückhieb.</p>
-<p class="hint"><a href="art/player-study/guardian.blend?v=5" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
+<canvas id="blender" tabindex="0" aria-label="Begehbarer Übungsraum mit dem Blender-Wächter"></canvas>
+<p class="hint">Gehen mit <kbd>WASD</kbd> oder den <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> halten zum Rennen. <kbd>Leertaste</kbd> zum Ausweichen, <kbd>K</kbd> zum Schlagen. Drück <kbd>K</kbd> während eines Hiebs erneut, um den nächsten anzuhängen.</p>
+<p class="hint"><a href="art/player-study/guardian.blend?v=6" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
 <p id="status" role="status">Der Übungsraum lädt …</p>
 </main>
 <script src="dungeon-art.js?v=47"></script>
-<script src="spieler-vergleich.js?v=5"></script>
+<script src="spieler-vergleich.js?v=6"></script>
 </body>
 </html>
