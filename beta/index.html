@@ -21,7 +21,7 @@
 .rpg-equip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.rpg-equip button{min-height:120px;text-align:center;display:grid;justify-items:center;gap:4px;padding:8px}
 .rpg-equip .item-glyph{width:60px;height:60px}.rpg-note{font-size:12px;color:#bdb2cd}
 @media(max-width:680px){.rpg-shell{grid-template-columns:1fr}.rpg-grid{grid-template-columns:repeat(5,1fr)}}
-.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=32"><link rel="stylesheet" href="beta/dungeon-boss.css?v=6"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-controller.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=5"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=12"></script><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small><small id="alley-help" hidden></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="controller-target" aria-hidden="true" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-boss.js?v=6"></script><script src="beta/dungeon-boss-art.js?v=5"></script><script src="beta/dungeon-strata.js?v=13"></script><script src="beta/dungeon-strata-fx.js?v=6"></script><script src="beta/dungeon-stairs.js?v=3"></script><script src="beta/dungeon-sanctuary.js?v=6"></script><script src="beta/dungeon-temple.js?v=2"></script><script src="beta/dungeon-run.js?v=36"></script><script src="beta/dungeon-world.js?v=31"></script><script src="beta/dungeon-vision.js?v=13"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=21"></script><script src="beta/dungeon-items.js?v=32"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=26"></script><script src="beta/dungeon-enemy-sim.js?v=19"></script><script src="beta/dungeon-effects-art.js?v=25"></script><script src="beta/dungeon-equipment-art.js?v=3"></script><script src="beta/dungeon-art.js?v=47"></script><script src="beta/dungeon-hero-art.js?v=1"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-soundpack4-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=9"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="beta/alley-study-map.js?v=2"></script><script src="beta/alley-study.js?v=3"></script><script src="beta/dungeon-isometric.js?v=2"></script><script src="beta/dungeon-guardian.js?v=1"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+.md-title{font-family:Georgia,serif;letter-spacing:.15em;text-transform:uppercase;color:#ffe2a3;text-shadow:0 2px 20px #b565d880}.md-kicker{font-size:11px;letter-spacing:.3em;color:#b5a1d5;text-transform:uppercase}.md-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-card{border:1px solid #9774ba88;border-radius:9px;background:linear-gradient(155deg,#241e38,#111725);padding:13px;text-align:left}.md-card.active{border-color:#ffd68a;box-shadow:inset 0 0 20px #c18b4622}.md-card:hover{border-color:#eac78b}.md-field{display:grid;gap:5px;font-size:12px;color:#c8b4da;margin:8px 0}.md-field input,.md-field select{width:100%;background:#0c1020;border:1px solid #795d9b;color:#fff3de;border-radius:6px;padding:10px}.md-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.md-stat{display:flex;justify-content:space-between;border-bottom:1px solid #ffffff15;padding:4px 0}.md-hero{display:flex;align-items:center;gap:12px}.md-portrait{width:66px;height:82px;border-radius:10px;background:#100e20;display:grid;place-items:center;border:2px solid var(--md-accent,#9d75df);font-size:38px}.md-status{font-size:12px;color:#d6bfa7}.md-slot{display:flex;align-items:center;justify-content:space-between;border:1px solid #6c547c;background:#111628;padding:11px;margin:7px 0;border-radius:7px}.md-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.md-actions button{flex:1}.md-class{cursor:pointer;width:100%;color:#eee}.md-class h3{margin:0 0 5px;color:#ffe2a3}.md-class p{margin:0;font-size:12px}.md-badge{display:inline-block;padding:3px 8px;border:1px solid #bba0d8;border-radius:30px;font-size:11px}.md-warning{color:#ffca8c;font-size:12px}.md-theme{border-top:2px solid #d9b77d}@media(max-width:650px){.md-layout{grid-template-columns:1fr}}</style><link rel="stylesheet" href="beta/dungeon-theme.css?v=32"><link rel="stylesheet" href="beta/dungeon-boss.css?v=6"><style>#dungeon-loading{position:fixed;inset:0;z-index:3000;display:grid;background-color:#100d17;color:#f5e5ba;box-sizing:border-box}#dungeon-loading[hidden]{display:none}</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-controller.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=5"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=12"></script><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small><small id="alley-help" hidden></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="controller-target" aria-hidden="true" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile"><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><button id="mobileNav" aria-label="Navigation">☰</button><button id="mobileInteract" hidden>Interagieren</button><button id="attack">⚔<br>ANGRIFF</button></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-boss.js?v=6"></script><script src="beta/dungeon-boss-art.js?v=5"></script><script src="beta/dungeon-strata.js?v=13"></script><script src="beta/dungeon-strata-fx.js?v=6"></script><script src="beta/dungeon-stairs.js?v=3"></script><script src="beta/dungeon-sanctuary.js?v=6"></script><script src="beta/dungeon-temple.js?v=2"></script><script src="beta/dungeon-run.js?v=36"></script><script src="beta/dungeon-world.js?v=31"></script><script src="beta/dungeon-vision.js?v=13"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=21"></script><script src="beta/dungeon-items.js?v=32"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=26"></script><script src="beta/dungeon-enemy-sim.js?v=19"></script><script src="beta/dungeon-effects-art.js?v=25"></script><script src="beta/dungeon-equipment-art.js?v=3"></script><script src="beta/dungeon-art.js?v=47"></script><script src="beta/dungeon-hero-art.js?v=1"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-soundpack4-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=9"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-title.js?v=1"></script><script src="beta/alley-study-map.js?v=2"></script><script src="beta/alley-study.js?v=3"></script><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script src="beta/dungeon-isometric.js?v=3"></script><script src="beta/dungeon-guardian.js?v=2"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
 const expedition=window.DungeonExpedition,balance=window.DungeonBalance;
@@ -35,7 +35,7 @@ const bossTest=testParams.get('boss-test')==='1';
 const isometricTest=!bossTest&&testParams.get('szene')==='gasse';
 const testRun=bossTest||isometricTest;
 const iso=window.DungeonIsometric,alley=isometricTest?iso.create():null;
-let alleyRoute=null,alleyZoom=1,guardian=null;
+let alleyRoute=null,alleyMove=null,alleyMarker=null,alleyRoll=null,alleyZoom=1,guardian=null;
 let alleySwing=null,alleyHit=null,alleyChest=null,alleyNextLight='down',alleyGait=0,alleyGaitBlend=0;
 const guardianArt=window.DungeonGuardian;
 const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>{guardian=data;}).catch(error=>{
@@ -1011,10 +1011,10 @@ const noMovement={x:0,y:0};
 let controllerMove=noMovement,controllerDash=false,controllerInUse=false,controllerTarget=null,vaultInput=null;
 let controllerMoveSuppressed=false;
 function movementInput(){
+ if(alley)return noMovement;
  const x=Number(Boolean(keys.KeyD||keys.ArrowRight))-Number(Boolean(keys.KeyA||keys.ArrowLeft));
  const y=Number(Boolean(keys.KeyS||keys.ArrowDown))-Number(Boolean(keys.KeyW||keys.ArrowUp));
- const input=x||y?{x,y}:controllerMove;
- return alley?iso.screenDirection(input):input;
+ return x||y?{x,y}:controllerMove;
 }
 function setControllerPrompts(active){
  if(controllerInUse===active)return;
@@ -1075,7 +1075,7 @@ let conversation=null;
 let renderedView=null,dialogueView=null;
 const gameMusicScene=()=>!atTitle&&world.inSanctuary(player.x,player.y)?'shrine':null;
 function show(content,type='menu'){
- if(alley){alleyRoute=null;alleySwing=null;alleyChest=null;player.attack=0;}
+ if(alley){alleyRoute=alleyMove=alleyMarker=alleyRoll=alleySwing=alleyChest=null;player.attack=0;}
  if(type!=='dialogue')endConversation();
  unmountTitleGlow?.();unmountTitleGlow=null;
  if(!paused&&type!=='quiz'&&performance.now()-lastUiSound>48)soundUI('ui_open');
@@ -1187,12 +1187,12 @@ function controllerAim(state){
  if(target&&lockableEnemy(target))player.dir=Math.atan2(target.y-player.y,target.x-player.x);
  else{
   controllerTarget=null;
-  const stick={x,y};
-  const aim=x||y?(alley?iso.screenDirection(stick):stick):movementInput();
+  const aim=x||y?{x,y}:movementInput();
   if(aim.x||aim.y)player.dir=Math.atan2(aim.y,aim.x);
  }
 }
 function pollController(now){
+ if(alley)return;
  if(document.hidden||!document.hasFocus()){
   if(controllerInUse)cancelController();
   return;
@@ -1766,6 +1766,7 @@ function startAttack(input,canVault=false){
   authorityCommand('charge',{vault:canVault});
   if(jumping)vaultInput=input;
  }
+ if(alley)alleyMove=alleyMarker=null;
  if(!jumping)heldAttack={input,started:combatClock};
 }
 function releaseAttack(input){
@@ -2171,6 +2172,7 @@ function canApproachAlleyChest(){
 }
 function approachAlleyChest(){
  if(!canApproachAlleyChest())return;
+ alleyMove=alleyMarker=null;
  alleyRoute=alley.chestRoute(player);
  if(!alleyRoute)tell('Der Weg zur Truhe ist versperrt.');
 }
@@ -2274,26 +2276,64 @@ window.addEventListener('keydown',e=>{
  if(e.code==='KeyC')equipmentMenu();
  if(e.code==='KeyM'&&(save.merchantMapFound||world.links.length))dungeonMapMenu();
  if(e.code==='KeyL')levelMenu();
- if(e.code==='KeyF')aimMode='keyboard';
- if(e.code==='Escape'&&alleyRoute){alleyRoute=null;return;}
+ if(e.code==='KeyF'&&!alley)aimMode='keyboard';
+ if(alley&&(e.code==='ShiftLeft'||e.code==='ShiftRight')){
+  const point=mouseWorld();
+  const dx=point.x-player.x,dy=point.y-player.y;
+  alleyRoll=Math.hypot(dx,dy)>1?Math.atan2(dy,dx):player.dir;
+ }
+ if(e.code==='Escape'&&(alleyRoute||alleyMove)){alleyRoute=alleyMove=alleyMarker=null;return;}
  if(e.code==='KeyP'||e.code==='Escape')pauseMenu();
  if(e.code==='KeyR')navigationMenu();
 });
 window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')releaseAttack('keyboard');});
-window.addEventListener('blur',()=>{for(const key in keys)keys[key]=false;clearHeldAttack();cancelController();});
-function faceMouse(){
+window.addEventListener('blur',()=>{
+ for(const key in keys)keys[key]=false;
+ alleyMove=alleyMarker=alleyRoll=null;
+ clearHeldAttack();cancelController();
+});
+function mouseWorld(){
  const {x,y,zoom=1}=renderedView??cam;
  const mx=x+cw/2+(mouse.x-cw/2)/zoom,my=y+ch/2+(mouse.y-ch/2)/zoom;
- const target=alley?iso.toWorld(mx,my):{x:mx,y:my};
- player.dir=Math.atan2(target.y-player.y,target.x-player.x);
+ return alley?iso.toWorld(mx,my):{x:mx,y:my};
+}
+function faceMouse(){
+ const target=mouseWorld();
+ if(!alley||Math.hypot(target.x-player.x,target.y-player.y)>1)player.dir=Math.atan2(target.y-player.y,target.x-player.x);
+}
+function nextAlleyMove(){
+ if(!alleyMove||alleyRoute||alleyHit||alleyChest||alleySwing||heldAttack||player.dash>0)return null;
+ if(!alleyMove.steps){
+  const route=alley.routeTo(player,alleyMove.target);
+  if(!route){
+   alleyMarker={point:alleyMove.target,until:frame+.55,valid:false};
+   alleyMove=null;
+   return null;
+  }
+  alleyMove.steps=route.steps;
+  alleyMarker={point:route.goal,until:Infinity,valid:true};
+ }
+ const {steps}=alleyMove;
+ while(steps.length&&Math.hypot(steps[0].x-player.x,steps[0].y-player.y)<=.05)steps.shift();
+ if(steps.length)return steps[0];
+ alleyMove=null;
+ alleyMarker.until=frame+.32;
+ return null;
 }
 window.addEventListener('pointermove',e=>{
  if(modalType||e.target.closest?.('#modalWrap'))return;
  setControllerPrompts(false);controllerTarget=null;
  mouse.x=e.clientX;mouse.y=e.clientY;aimMode='mouse';
- if(!alleyChest&&!alleyHit&&!alleySwing&&!alleyRoute)faceMouse();
+ if(!alleyChest&&!alleyHit&&!alleySwing&&!alleyRoute&&!alleyMove&&!(alley&&player.dash>0))faceMouse();
 });
 window.addEventListener('pointerdown',e=>{
+ if(alley&&e.pointerType==='mouse'&&e.button===2&&!modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,button')){
+  e.preventDefault();
+  mouse={x:e.clientX,y:e.clientY};aimMode='mouse';
+  alleyRoute=null;
+  alleyMove={target:mouseWorld(),steps:null};
+  return;
+ }
  if(e.pointerType==='mouse'&&e.button===0&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
   setControllerPrompts(false);controllerTarget=null;aimMode='mouse';
   if(alley){
@@ -2303,6 +2343,7 @@ window.addEventListener('pointerdown',e=>{
   startAttack(e.pointerId);
  }
 });
+if(alley)window.addEventListener('contextmenu',event=>{if(!modalType)event.preventDefault();});
 if(alley)window.addEventListener('wheel',event=>{
  if(modalType)return;
  event.preventDefault();
@@ -2345,7 +2386,7 @@ function startAlleyHit(damage,impactAngle){
  if(alleyHit&&alleyHit.clip==='hit-down')return;
  const threat=enemies.find(enemy=>enemy.hp>0);
  const pushAngle=impactAngle??(threat?Math.atan2(player.y-threat.y,player.x-threat.x):player.dir+Math.PI);
- alleyRoute=alleySwing=alleyChest=null;
+ alleyRoute=alleyMove=alleyMarker=alleySwing=alleyChest=null;
  clearHeldAttack();
  player.attack=0;player.dir=pushAngle-Math.PI;player.inv=Math.max(player.inv,guardian.atlas.knockback[clip].duration);
  alleyHit={clip,pushAngle,elapsed:0,distance:0};
@@ -2388,7 +2429,7 @@ function update(dt){
   return;
  }
  if(authorityMode&&authorityOwn?.fallProgress>=0){frame+=dt;authorityInput(0,0);return;}
- if(!modalType&&aimMode==='mouse'&&!alleyRoute&&!alleyChest&&!alleyHit&&!alleySwing)faceMouse();
+ if(!modalType&&aimMode==='mouse'&&!alleyRoute&&!alleyMove&&!alleyChest&&!alleyHit&&!alleySwing&&!(alley&&player.dash>0))faceMouse();
  frame+=dt;combatClock+=dt;save.playtime+=dt;
  if(alley)updateAlleyActions(dt);
  const forgeBeat=Math.floor(frame);
@@ -2420,19 +2461,21 @@ function update(dt){
  const length=alleyHit||alleyChest?0:Math.hypot(inputX,inputY);
  if(alleyRoute&&(length||controllerDash||player.attack>0||player.dash>0))alleyRoute=null;
  finishAlleyApproach();
- const next=alleyRoute?.[0];
+ const next=alleyRoute?.[0]??nextAlleyMove();
  const routeX=next?next.x-player.x:0,routeY=next?next.y-player.y:0;
  const routeDistance=Math.hypot(routeX,routeY);
  let dx=next?routeX/routeDistance:length?inputX/Math.max(1,length):0;
  let dy=next?routeY/routeDistance:length?inputY/Math.max(1,length):0;
- const step=controllerDash;
+ const step=controllerDash,rollAngle=alleyRoll;
+ alleyRoll=null;
  if(!authorityMode)controllerDash=false;
  if(!vault&&!alleyHit&&!alleyChest&&!player.wallRecoil&&!isConsuming()&&player.dashCooldown<=0&&
-  (step||length&&(keys.ShiftLeft||keys.ShiftRight))&&spendStamina(dashCost())){
+  (alley?rollAngle!==null:step||length&&(keys.ShiftLeft||keys.ShiftRight))&&spendStamina(dashCost())){
   clearHeldAttack();
-  if(alley){alleySwing=null;player.attack=0;}
+  if(alley){alleyRoute=alleyMove=alleyMarker=alleySwing=null;player.attack=0;}
   soundWorld('hero_dash',player,{priority:2,rate:load.name==='Schwer'?.84:load.name==='Leicht'?1.13:1});
   player.dash=player.dashDuration=alley?.5:load.dashTime;player.dashCooldown=.85*brewBonus.dashCooldown*items.dashCooldown(save.equipment.armor)*(pickedRarity(usableWeapon())==='mythic'?balance.weaponMythicDash:1);player.dashX=length?inputX/length:-Math.cos(player.dir);player.dashY=length?inputY/length:-Math.sin(player.dir);
+  if(alley){player.dashX=Math.cos(rollAngle);player.dashY=Math.sin(rollAngle);player.dir=rollAngle;}
   player.dashSpeed=load.dashSpeed*brewBonus.dashDistance*(alley?load.dashTime/player.dashDuration:1);burst(player.x,player.y,'#ae94f8',12);
  }
  if(player.dash>0){dx=player.dashX;dy=player.dashY;}
@@ -2449,9 +2492,9 @@ function update(dt){
   const slow=player.webSlow>0||player.grabSlow>0||onWeb();
   const speed=player.speed*brewBonus.speed*load.move*mythicArmorMove()*(food?items.foodMove:drinking?items.potionMove:heldAttack?.64:1)*(slow?.53:1)*(player.dash>0?(player.dashSpeed??load.dashSpeed):1);
   const oldX=player.x,oldY=player.y;
-  const sprint=alley&&keys.KeyV&&!next&&!food&&!drinking&&!heldAttack&&!alleySwing&&player.dash<=0;
+  const sprint=alley&&keys.KeyV&&!alleyRoute&&!food&&!drinking&&!heldAttack&&!alleySwing&&player.dash<=0;
   const strideSpeed=speed*(sprint?1.42:1);
-  const distance=next?Math.min(routeDistance,strideSpeed*dt):strideSpeed*dt;
+  const distance=next&&player.dash<=0?Math.min(routeDistance,strideSpeed*dt):strideSpeed*dt;
   const stride=world.stairMotion(player,dx*distance,dy*distance);
   if(!moveActor(player,stride.x,stride.y))return;
   player.moving=Math.hypot(player.x-oldX,player.y-oldY)>.1;
@@ -2462,7 +2505,8 @@ function update(dt){
   }
   playFootstep(oldX,oldY);
   if(next&&!player.moving&&Math.hypot(next.x-player.x,next.y-player.y)>.05){
-   alleyRoute=null;tell('Der Weg zur Truhe ist versperrt.');
+   if(alleyRoute){alleyRoute=null;tell('Der Weg zur Truhe ist versperrt.');}
+   if(alleyMove){alleyMove=null;alleyMarker.until=frame+.32;}
   }else finishAlleyApproach();
  }
  if(authorityMode){
@@ -2652,7 +2696,7 @@ $('#stamina').setAttribute('aria-valuenow',Math.ceil(player.stamina));$('#stamin
 $('#xpnum').textContent=String(save.xp).replace('.',',')+'/'+xpRequired()+' XP';$('#statline').textContent='Stufe '+save.level+(save.pendingLevels?' · L · +'+save.pendingLevels:'');updateWallet();
 if(alley){
  $('#zone').textContent='Isometrische Testgasse';
- $('#progress').textContent='V Rennen · Umschalt Rolle · Klick Angriff';
+ $('#progress').textContent='Rechtsklick Laufen · Linksklick Angriff';
 }else{
  const lowerPassage=world.underpassAt(player),layer=lowerPassage?0:world.layerAt(player.x,player.y);
 const placeName=lowerPassage?(lowerPassage.style==='bridge'?'Brückenunterführung':'Treppenunterführung'):
@@ -4123,8 +4167,16 @@ function alleySprites(actor){
  const add=(image,key,x,y,width,height,options={})=>sprites.push({image,key,x,y,width,height,depth:y,...options});
  if(guardian){
   const {clip,progress,angle,hideWeapon}=alleyGuardianPose();
-  const parts=guardianArt.parts(guardian,clip,progress,iso.viewAngle(angle),actor.x,actor.y,!hideWeapon&&Boolean(save.equipment.weapon));
-  parts.forEach((part,i)=>sprites.push({...part,depth:actor.y+i*.02,originX:0,originY:0}));
+  const facing=iso.viewAngle(angle),armed=!hideWeapon&&Boolean(save.equipment.weapon);
+  if(guardian.rig){
+   const rig=guardian.rig;
+   const live=rig.render(clip,guardian.atlas.clips[clip],progress,facing,armed,performance.now()/1000);
+   add(rig.canvas,'alley-guardian-rig',actor.x-rig.displaySize/2,actor.y-rig.ground,rig.displaySize,rig.displaySize,
+    {originX:0,originY:0,depth:actor.y,live});
+  }else{
+   const parts=guardianArt.parts(guardian,clip,progress,facing,actor.x,actor.y,armed);
+   parts.forEach((part,i)=>sprites.push({...part,depth:actor.y+i*.02,originX:0,originY:0}));
+  }
  }
  for(const e of enemies){
   const p=iso.toView(e.x,e.y),step=foeFrame(e),size=foeDisplaySize(e);
@@ -4150,13 +4202,20 @@ function drawAlleySprite(ctx,sprite){
  ctx.save();
  ctx.translate(x,y);ctx.rotate(angle);if(flip)ctx.scale(-1,1);
  ctx.globalAlpha=alpha;
- ctx.imageSmoothingEnabled=Boolean(sprite.frame);
+ ctx.imageSmoothingEnabled=Boolean(sprite.frame)||sprite.key==='alley-guardian-rig';
  const left=-originX*width,top=-originY*height;
  if(sprite.frame)ctx.drawImage(image,sprite.sx,sprite.sy,sprite.w,sprite.h,left,top,width,height);
  else ctx.drawImage(image,left,top,width,height);
  ctx.restore();
 }
 function alleyGroundEffects(ellipse,path){
+ if(alleyMarker&&frame<alleyMarker.until){
+  const p=iso.toView(alleyMarker.point.x,alleyMarker.point.y),color=alleyMarker.valid?'#e3c895':'#c97775';
+  const opacity=Math.min(.57,(alleyMarker.until-frame)*2);
+  ellipse(p.x,p.y,9,5,color,opacity*.36);
+  const marker=Array.from({length:17},(_,i)=>({x:p.x+9*Math.cos(i*Math.PI/8),y:p.y+5*Math.sin(i*Math.PI/8)}));
+  path(marker,color,opacity,1.3);
+ }
  for(const actor of [player,...enemies,...save.souls]){
   const p=iso.toView(actor.x,actor.y);
   ellipse(p.x,p.y,actor===player?19:14,actor===player?7:5,'#16101a',.47);
@@ -4380,6 +4439,7 @@ class DungeonScene extends Phaser.Scene{
    const {key,image,x,y,width,height,originX=.5,originY=.5,alpha=1,angle=0,flip=false,depth}=sprite;
    const texture=this.textures.exists(key)?this.textures.get(key):image instanceof HTMLCanvasElement
     ?this.textures.addCanvas(key,image):this.textures.addImage(key,image);
+   if(sprite.live)texture.refresh();
    if(sprite.frame&&!texture.has(sprite.frame))texture.add(sprite.frame,0,sprite.sx,sprite.sy,sprite.w,sprite.h);
    const target=this.alleySprites[index]??=this.add.image(0,0,key);
    target.setVisible(true).setTexture(key,sprite.frame).setPosition(x,y).setOrigin(originX,originY)
@@ -5761,7 +5821,8 @@ function finishLoading(){
  if(alley){
   const controls=$('#alley-help');
   controls.hidden=false;controls.style.display='block';
-  controls.textContent='WASD · Klick halten für schweren Hieb · E · Mausrad';
+  controls.textContent='V Rennen · Umschalt Rolle · E Interagieren';
+  $('#dpad').style.display='none';
  }
  if(alley)tell(guardian?'Gassenkampf · Der Bogenschütze wartet im Seitenweg hinter dem Tor.':'Gassenkampf · Wächtergrafik konnte nicht geladen werden.');
  if(bossTest)tell('Boss-Test · Fallgitter im Laborflur links ist offen');

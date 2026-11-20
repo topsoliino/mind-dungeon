@@ -20,8 +20,14 @@
   const response=await fetch(root+'guardian-frames.json?v=17');
   if(!response.ok)throw new Error('Wächter-Animationen konnten nicht geladen werden.');
   const atlas=await response.json();
-  const layers=await Promise.all(['body','weapon'].map(key=>loadLayer(root,atlas.sheets[key])));
-  return {atlas,layers};
+  try{
+   const {loadRig}=await import('./dungeon-guardian-rig.js?v=1');
+   return {atlas,rig:await loadRig(root+'guardian-rig.glb.gz?v=1')};
+  }catch(error){
+   console.warn('3D-Wächter nicht verfügbar. Sprite-Wächter wird verwendet.',error);
+   const layers=await Promise.all(['body','weapon'].map(key=>loadLayer(root,atlas.sheets[key])));
+   return {atlas,layers};
+  }
  }
  function facing(angle){
   const projected=Math.atan2(Math.sin(angle)/.47,Math.cos(angle));
