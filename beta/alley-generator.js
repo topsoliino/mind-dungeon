@@ -1,0 +1,274 @@
+(() => {
+'use strict';
+const query=new URLSearchParams(window.location.search);
+if(query.get('szene')!=='gasse'||query.get('modus')!=='generator'){
+ window.AlleyGenerator={enabled:false};return;
+}
+const input=Number(query.get('seed'));
+const seed=Number.isSafeInteger(input)&&input>=0?input>>>0:4147;
+const key=(x,y)=>x+','+y;
+const edge=(a,b)=>[key(...a),key(...b)].sort().join('|');
+const dirs=[[1,0,'east'],[-1,0,'west'],[0,1,'south'],[0,-1,'north']];
+const rgen=n=>()=>{n=(n+0x6d2b79f5)>>>0;let t=n;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};
+const between=(rnd,a,b)=>a+Math.floor(rnd()*(b-a+1));
+const pick=(rnd,arr)=>arr[Math.floor(rnd()*arr.length)];
+const has=(arr,x,y)=>arr.some(p=>p[0]===x&&p[1]===y);
+function connected(mask){
+ const known=new Set([key(...mask[0])]),queue=[mask[0]];
+ for(let i=0;i<queue.length;i++)for(const [dx,dy] of dirs){
+  const a=queue[i],x=a[0]+dx,y=a[1]+dy;
+  if(has(mask,x,y)&&!known.has(key(x,y))){queue.push([x,y]);known.add(key(x,y));}
+ }
+ return known.size===mask.length;
+}
+function makeShape(rnd,kind,dx){
+ const len=between(rnd,4,8),wide=between(rnd,1,3);
+ const w=kind==='gang'?(dx?len:wide):between(rnd,4,8);
+ const h=kind==='gang'?(dx?wide:len):between(rnd,4,7);
+ const style=kind==='gang'?pick(rnd,['gerade','gerade','versatz','bucht']):
+  pick(rnd,['L-form','Eckabschnitt','Abstufung','Nische','Saal','Doppelnische']);
+ const mask=[];
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  let omit=false;
+  if(kind==='gang'){
+   if(style==='versatz'&&dx&&h>=2)omit=(x<w/2&&y===h-1)||(x>=w/2&&y===0);
+   if(style==='versatz'&&!dx&&w>=2)omit=(y<h/2&&x===w-1)||(y>=h/2&&x===0);
+   if(style==='bucht'&&dx&&h>=2)omit=(x<2||x>w-3)&&y===h-1;
+   if(style==='bucht'&&!dx&&w>=2)omit=(y<2||y>h-3)&&x===w-1;
+  }else{
+   if(style==='L-form')omit=x>=w-2&&y<h-2;
+   if(style==='Eckabschnitt')omit=(x===0&&y===h-1)||(x===w-1&&y===0);
+   if(style==='Abstufung')omit=(x===0&&y<h-2)||(x===w-1&&y>1);
+   if(style==='Nische')omit=x<2&&y<h-2;
+   if(style==='Doppelnische')omit=(x===0||x===w-1)&&y<h-2;
+  }
+  if(!omit)mask.push([x,y]);
+ }
+ return connected(mask)?{mask,kind,style,w,h}:null;
+}
+function generate(n){
+ const rnd=rgen(n),occ=new Map();
+ const start={id:0,kind:'start',style:'Gasse',cells:[[11,3],[11,4],[11,5],[11,6]],exits:[],level:0};
+ const rooms=[start],doors=[];
+ for(const p of start.cells)occ.set(key(...p),0);
+ const len=between(rnd,3,6),width=between(rnd,2,3),y0=width===2?4:3,first=[];
+ for(let x=12;x<12+len;x++)for(let y=y0;y<y0+width;y++)first.push([x,y]);
+ const passage={id:1,kind:'gang',style:width===2?'schmal':'breit',cells:first,parent:0,exits:[],level:0};
+ first.forEach(p=>occ.set(key(...p),1));rooms.push(passage);
+ const door={from:0,to:1,edges:[[[11,4],[12,4]]],side:'east'};
+ if(width===3)door.edges.push([[11,5],[12,5]]);
+ doors.push(door);start.exits.push(door);passage.exits.push(door);
+ for(let id=2;id<10;id++){
+  let accepted=false;
+  for(let trial=0;trial<1600&&!accepted;trial++){
+   const parents=rooms.slice(1).filter(p=>p.exits.length<(p.kind==='gang'?3:4));
+   if(!parents.length)break;
+   const parent=pick(rnd,parents),anchor=pick(rnd,parent.cells),d=pick(rnd,dirs);
+   const [dx,dy,side]=d,neighbor=[anchor[0]+dx,anchor[1]+dy];
+   if(occ.has(key(...neighbor)))continue;
+   const kind=[3,6,8].includes(id)||rnd()<.33?'gang':'raum';
+   const shape=makeShape(rnd,kind,dx);if(!shape)continue;
+   const border=shape.mask.filter(([x,y])=>!has(shape.mask,x-dx,y-dy));
+   const touching=pick(rnd,border),ox=neighbor[0]-touching[0],oy=neighbor[1]-touching[1];
+   const cells=shape.mask.map(([x,y])=>[x+ox,y+oy]);
+   if(cells.some(([x,y])=>x<12||x>37||y< -9||y>17||occ.has(key(x,y))))continue;
+   let collision=false;
+   for(const [x,y] of cells){
+    for(const [sx,sy] of dirs){
+     const other=occ.get(key(x+sx,y+sy));
+     if(other!==undefined&&other!==parent.id){collision=true;break;}
+    }
+    if(collision)break;
+   }
+   if(collision)continue;
+   const connection={from:parent.id,to:id,edges:[[anchor,neighbor]],side};
+   if(rnd()<.38)for(const sign of [-1,1]){
+    const sx=dx?0:sign,sy=dx?sign:0;
+    const a=[anchor[0]+sx,anchor[1]+sy],b=[neighbor[0]+sx,neighbor[1]+sy];
+    if(occ.get(key(...a))===parent.id&&has(cells,...b)){
+     connection.edges.push([a,b]);break;
+    }
+   }
+   const room={id,kind,style:shape.style,cells,parent:parent.id,exits:[connection],level:0};
+   rooms.push(room);parent.exits.push(connection);doors.push(connection);
+   cells.forEach(p=>occ.set(key(...p),id));accepted=true;
+  }
+  if(!accepted)return null;
+ }
+ return {rooms,doors,occ};
+}
+let result=null,actualSeed=seed;
+for(let i=0;i<15&&!result;i++){actualSeed=(seed+i*7919)>>>0;result=generate(actualSeed);}
+if(!result)throw Error('Generator: kein zusammenhängender 10-Raum-Grundriss möglich');
+const {rooms,doors,occ}=result;
+const openings=new Set(doors.flatMap(p=>p.edges.map(([a,b])=>edge(a,b))));
+const segments=[];
+for(const room of rooms.slice(1))for(const [x,y] of room.cells)for(const [dx,dy,side] of dirs){
+ const nx=x+dx,ny=y+dy,other=occ.get(key(nx,ny));
+ if(other===room.id||openings.has(edge([x,y],[nx,ny])))continue;
+ if(other>0&&room.id>other)continue; // one partition, not overlapping duplicates
+ const axis=dx?'u':'v',p=dx?x+(dx>0?1:0):y+(dy>0?1:0),start=dx?y:x;
+ const tall=side==='north'||side==='west';
+ segments.push({axis,p,start,end:start+1,room:room.id,side,
+  height:tall?92+room.id%3*11:13,tone:['grey-a','grey-b','grey-c'][room.id%3]});
+}
+segments.sort((a,b)=>[a.room,a.axis,a.p,a.side,a.start].join('|').localeCompare([b.room,b.axis,b.p,b.side,b.start].join('|')));
+const groups=[];
+for(const segment of segments){
+ const last=groups[groups.length-1];
+ if(last&&last.room===segment.room&&last.axis===segment.axis&&last.p===segment.p&&
+  last.side===segment.side&&last.end===segment.start){last.end=segment.end;continue;}
+ groups.push({...segment});
+}
+const th=.075;
+const rect=g=>g.axis==='u'?[g.p-th,g.start,g.p+th,g.end]:[g.start,g.p-th,g.end,g.p+th];
+const walls=groups.map(g=>({...g,area:rect(g)}));
+const wallBlocks=segments.map(rect);
+const materials={
+ 'grey-a':{pitch:[.59,.53],colors:['#606575','#687082','#727585','#565f72'],edge:'#a0a6b1a8'},
+ 'grey-b':{pitch:[.46,.55],colors:['#5b6470','#68717a','#596977','#737985'],edge:'#9caeb2a8'},
+ 'grey-c':{pitch:[.54,.44],colors:['#666378','#5d6279','#777186','#555b6f'],edge:'#b4a7b2a8'}
+};
+let stairs=null;
+for(const room of rooms.slice(2).reverse()){
+ if(room.kind!=='raum'||room.cells.length<14)continue;
+ for(const [x,y] of room.cells){
+  const patch=[];
+  for(let dx=0;dx<2;dx++)for(let dy=0;dy<3;dy++)patch.push([x+dx,y+dy]);
+  if(!patch.every(p=>has(room.cells,...p)))continue;
+  if(doors.some(d=>d.edges.some(pair=>pair.some(([u,v])=>Math.abs(u-x-1)<2.1&&Math.abs(v-y-1.5)<2.4))))continue;
+  stairs={roomId:room.id,area:[x,y,x+2,y+3],levelFrom:0,levelTo:1,reserved:true};break;
+ }
+ if(stairs)break;
+}
+const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.length,
+ corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,stairs:stairs?[stairs]:[]};
+function extend(map){
+ const strips=new Map();
+ for(const room of rooms.slice(1))for(const [x,y] of room.cells){
+  const name=room.id+':'+y,values=strips.get(name)||[];values.push(x);strips.set(name,values);
+  map.logic.walkable.push([x,y,x+1,y+1]);
+ }
+ for(const [id,xs] of strips){
+  const [room,y]=id.split(':').map(Number),sorted=xs.sort((a,b)=>a-b);
+  let start=sorted[0],end=start;
+  for(let i=1;i<=sorted.length;i++){
+   if(i<sorted.length&&sorted[i]===end+1){end=sorted[i];continue;}
+   map.art.ground.push({area:[start,y,end+1,y+1],material:['grey-a','grey-b','grey-c'][room%3]});
+   if(i<sorted.length)start=end=sorted[i];
+  }
+ }
+ for(const door of doors)for(const [a,b] of door.edges)
+  map.logic.waypoints.push([(a[0]+b[0]+1)/2,(a[1]+b[1]+1)/2]);
+ map.art.routeWalls=walls;
+}
+function blocked(u,v,r=0){
+ return wallBlocks.some(([a,b,c,d])=>u+r>a&&u-r<c&&v+r>b&&v-r<d);
+}
+function areaAt(u,v){
+ const id=occ.get(key(Math.floor(u),Math.floor(v)));
+ if(id===undefined||id===0)return 'Gasse · Startraum';
+ const room=rooms[id];
+ return String(id+1).padStart(2,'0')+' / 10 · '+(room.kind==='gang'?'Gang':'Raum')+' · '+room.style;
+}
+function renderFloor(ctx,{project,polygon,line}){
+ for(const room of rooms.slice(1)){
+  const [u,v]=room.cells.reduce((a,b)=>[a[0]+b[0],a[1]+b[1]],[0,0]).map(t=>t/room.cells.length);
+  const [x,y]=project(u+.5,v+.5);
+  ctx.save();ctx.font='bold 16px system-ui';ctx.textAlign='center';
+  ctx.fillStyle='#dfd4c4';ctx.fillText(String(room.id+1).padStart(2,'0'),x,y);
+  ctx.font='10px system-ui';ctx.fillStyle='#ddd3d4';
+  ctx.fillText(room.kind==='gang'?'GANG':room.style.toUpperCase(),x,y+14);ctx.restore();
+ }
+ for(const door of doors)for(const [a,b] of door.edges){
+  const u=(a[0]+b[0]+1)/2,v=(a[1]+b[1]+1)/2,du=a[0]!==b[0]?.13:.4,dv=a[1]!==b[1]?.13:.4;
+  polygon(ctx,[project(u-du,v-dv),project(u+du,v-dv),project(u+du,v+dv),project(u-du,v+dv)],
+   '#ad9b8a87','#dcc8aa');
+ }
+ if(stairs){
+  const [u,v,r,b]=stairs.area;
+  polygon(ctx,[project(u,v),project(r,v),project(r,b),project(u,b)],'#4d5368','#b5b9c6');
+  for(let i=0;i<7;i++){
+   const at=v+(b-v)*i/7,z=i*4.8;
+   polygon(ctx,[project(u,at,z),project(r,at,z),project(r,at+(b-v)/8,z),project(u,at+(b-v)/8,z)],
+    i%2?'#8b91a5':'#757f96','#c3bbc9');
+  }
+  const [x,y]=project(u+1,v+1.4,19);
+  ctx.save();ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillStyle='#ffe4bb';
+  ctx.fillText('↑ 1. ETAGE',x,y);ctx.restore();
+ }
+}
+function renderWall(ctx,wall,{project,polygon,line}){
+ const [u,v,r,b]=wall.area,{height,side,tone}=wall;
+ const palette=tone==='grey-a'?['#5e6475','#424a5d','#82889c']:
+  tone==='grey-b'?['#586874','#3d4d5b','#8499a2']:['#655f73','#454059','#998f9e'];
+ const lower=[project(u,v),project(r,v),project(r,b),project(u,b)];
+ const top=[project(u,v,height),project(r,v,height),project(r,b,height),project(u,b,height)];
+ polygon(ctx,[lower[1],lower[2],top[2],top[1]],palette[0],'#343446');
+ polygon(ctx,[lower[2],lower[3],top[3],top[2]],palette[1],'#343446');
+ polygon(ctx,top,palette[2],'#b6aeba');
+ line(ctx,[top[0],top[1],top[2],top[3]],'#c6b6c6',1.3);
+ if(side==='south'||side==='east')return;
+ const along=wall.axis==='u'?[[u,v],[u,b]]:[[u,v],[r,v]];
+ for(let z=18;z<height;z+=22)line(ctx,along.map(p=>project(...p,z)),'#29283a9b',1.2);
+}
+function path(from,target,canWalk){
+ const radius=48;
+ const clear=(a,b)=>{
+  const n=Math.max(1,Math.ceil(Math.hypot(a.x-b.x,a.y-b.y)/3));
+  for(let i=1;i<=n;i++)if(!canWalk(a.x+(b.x-a.x)*i/n,a.y+(b.y-a.y)*i/n))return false;
+  return true;
+ };
+ const goal={x:target.x,y:target.y};
+ if(!canWalk(goal.x,goal.y))return null;
+ if(clear(from,goal))return {goal,steps:[goal]};
+ const cells=new Map();
+ for(const [u,v,r,b] of window.AlleyStudyMap.logic.walkable)
+  for(let x=Math.floor(u);x<Math.ceil(r);x++)for(let y=Math.floor(v);y<Math.ceil(b);y++){
+   const p={x:(x+.5)*radius,y:(y+.5)*radius,gx:x,gy:y};
+   if(canWalk(p.x,p.y))cells.set(key(x,y),p);
+  }
+ const nearest=p=>[...cells.values()].sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))
+  .filter(q=>clear(p,q)).slice(0,6);
+ const startNodes=nearest(from),endNodes=nearest(goal);
+ if(!startNodes.length||!endNodes.length)return null;
+ const targetKeys=new Set(endNodes.map(p=>key(p.gx,p.gy))),frontier=[],prev=new Map(),dist=new Map();
+ for(const node of startNodes){
+  const id=key(node.gx,node.gy),g=Math.hypot(from.x-node.x,from.y-node.y);
+  if(g<(dist.get(id)??Infinity)){dist.set(id,g);prev.set(id,null);frontier.push({node,g});}
+ }
+ let found=null;
+ while(frontier.length){
+  frontier.sort((a,b)=>a.g-b.g);
+  const {node,g}=frontier.shift(),id=key(node.gx,node.gy);
+  if(g>dist.get(id)+1e-6)continue;
+  if(targetKeys.has(id)){found=id;break;}
+  for(const [dx,dy] of dirs){
+   const k=key(node.gx+dx,node.gy+dy),other=cells.get(k);
+   if(!other||!clear(node,other))continue;
+   const score=g+radius;if(score>=(dist.get(k)??Infinity))continue;
+   dist.set(k,score);prev.set(k,id);frontier.push({node:other,g:score});
+  }
+ }
+ if(!found)return null;
+ const ordered=[];
+ for(let at=found;at;at=prev.get(at))ordered.push(cells.get(at));
+ ordered.reverse();
+ const points=[from,...ordered,goal],steps=[];
+ let i=0;
+ while(i<points.length-1){
+  let far=i+1;
+  for(let j=points.length-1;j>far;j--)if(clear(points[i],points[j])){far=j;break;}
+  steps.push({x:points[far].x,y:points[far].y});i=far;
+ }
+ return {goal,steps};
+}
+const generator={
+ enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors,walls,
+ stairs:stairs?[stairs]:[],materials,metadata,seal:null,
+ extend,blocked,areaAt,renderFloor,renderWall,
+ renderSeal(){},renderProp(){},unlock(){},isUnlocked(){return true;},path
+};
+generator.extend(window.AlleyStudyMap);
+window.AlleyGenerator=generator;
+})();
