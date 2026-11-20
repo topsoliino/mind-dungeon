@@ -24,8 +24,8 @@ ATLAS_COLUMNS = 28
 GAITS = {
     # Forward foot travel during stance, duty factor, swing clearance, trunk lean.
     'walk': (.59, .60, .084, .051),
-    'run': (.78, .375, .235, .207),
-    'sprint': (.82, .34, .263, .294),
+    'run': (.80, .375, .255, .365),
+    'sprint': (.82, .34, .280, .447),
 }
 SIDES = [('L', -1), ('R', 1)]
 
@@ -398,27 +398,33 @@ def gait_foot(phase, stride, stance, clearance, running):
     else:
         swing = (phase - stance) / (1 - stance)
         if running:
-            # The heel folds behind the hip before the shin swings through.
-            progress, height = sample([(0,0,0), (.23,.075,.73), (.43,.37,1),
-                                       (.72,.85,.65), (.91,.98,.24), (1,1,0)], swing)
+            # Match the planted foot's backward velocity into and out of swing.
+            # Let the heel trail after push-off before the knee brings it forward.
+            arc = math.sin(math.pi * swing)
+            carry = (1 - stance) / (math.tau * stance)
+            follow_through = carry*math.sin(math.tau*swing)*(1 - .38*arc)
+            progress = smooth(swing) - follow_through - .075*arc**2
+            height = arc**1.22 * (1.30 - .60*swing)
+            pitch = heel + (push - heel)*(1 - smooth(swing)) + 11*math.sin(math.tau*swing)
         else:
             progress, height = sample([(0,0,0), (.26,.18,.70), (.52,.57,1),
                                        (.77,.88,.53), (1,1,0)], swing)
+            pitch, = sample([(0, push), (.25, 12), (.71, -12), (1, heel)], swing)
         travel = stride * (.5 - progress)
         lift = clearance * height
-        pitch, = sample([(0, push), (.25, 20 if running else 12),
-                         (.71, -12), (1, heel)], swing)
+    if running:
+        travel += .056
     return travel, lift, math.radians(pitch)
 
 
-def place_foot(side, sign, travel, lift, pitch, width=0):
+def place_foot(side, sign, travel, lift, pitch, width=0, splay=1):
     boot = 'Boot.' + side
     ankle = rest[boot][0]
-    rotation = Euler((pitch, 0, sign * .10)).to_matrix()
+    rotation = Euler((pitch, 0, sign * .10 * splay)).to_matrix()
     lowest = min((rotation @ (p - ankle)).z for p in soles[side])
     target = Vector((ankle.x + sign * width, travel, .012 + lift - lowest))
     hip = attached('Hips', rest['Thigh.' + side][0])
-    end = bend_joint('Thigh.' + side, 'Shin.' + side, hip, target, (sign * .12, -1, .03))
+    end = bend_joint('Thigh.' + side, 'Shin.' + side, hip, target, (sign * .12 * splay, -1, .03))
     orient(boot, end, rotation)
 
 
@@ -440,17 +446,20 @@ def pose(kind, t):
         stride, stance, clearance, lean = gait
         half_step = (t % .5)*2
         if running:
-            # Compress on landing, extend through toe-off, then rise in suspension.
-            bob, nod = sample([(0, 0, .007), (.19, -.039, .043), (.55, -.020, .02),
-                               (.76, .014, -.012), (.88, .034, -.015), (1, 0, .007)], half_step)
-            shift, fore, drop = .023, -.076 if sprint else -.052, .105 if sprint else .089
-            pelvic_yaw = .112*step
-            chest_yaw = -.150*math.cos(phase-.22)
-            yaw, elev = (38, 7) if sprint else (32, 12)
+            # Carry the hips through toe-off, then let the chest and head follow.
+            suspension = math.cos(math.tau*(half_step-.86))
+            bob = .039*suspension - .013
+            nod = .043*math.cos(math.tau*(half_step-.21))
+            shift = .023
+            fore = (-.124 if sprint else -.096) - .019*math.cos(math.tau*(half_step-.73))
+            drop = .151 if sprint else .114
+            pelvic_yaw = .118*math.cos(phase+.13)
+            chest_yaw = -.157*math.cos(phase-.42)
+            yaw, elev = (36, 5) if sprint else (30, 8)
         else:
             bob, nod = sample([(0, -.008, .006), (.20, -.020, .011), (.53, .015, 0),
                                (.68, .022, -.006), (1, -.008, .006)], half_step)
-            shift, fore, drop = .035, -.011, .050
+            shift, fore, drop = .026, -.011, .050
             pelvic_yaw = .074*step
             chest_yaw = -.062*math.cos(phase-.22)
             yaw, elev = 23, 13
@@ -476,11 +485,16 @@ def pose(kind, t):
     chest_rotation = Euler((pitch, chest_roll, chest_yaw)).to_matrix()
     orient('Chest', chest, chest_rotation)
     head = attached('Chest', rest['Head'][0])
-    orient('Head', head, Euler((pitch*.33, .012*step if gait else 0, chest_yaw*.33)).to_matrix())
+    head_pitch = lean*.40 + .021*math.cos(math.tau*(half_step-.32)) if running else pitch*.33
+    if running:
+        head.z -= .012*suspension
+    orient('Head', head, Euler((head_pitch, .012*step if gait else 0, chest_yaw*.33)).to_matrix())
 
     mantle = attached('Chest', rest['Mantle'][0])
     if gait:
-        flutter = (.32 if sprint else .196 if running else .042) + (.079 if running else .034)*math.sin(phase-.7)
+        flutter = (.40 if sprint else .31 if running else .042) + (.079 if running else .034)*math.sin(phase-.7)
+        if running:
+            flutter += .045*math.sin(2*phase-1.1)
     else:
         flutter = .08 + .17*abs(twist) + (.41*tuck if dash else 0)
     orient('Mantle', mantle, Euler((flutter, .067*math.sin(phase-.8) if gait else .27*twist, chest_yaw*.76)).to_matrix())
@@ -489,7 +503,7 @@ def pose(kind, t):
         if gait:
             foot_phase = (t+(0 if sign<0 else .5))%1
             travel, lift, foot_pitch = gait_foot(foot_phase, stride, stance, clearance, running)
-            width = -.023 if running else -.006
+            width = -.032 if running else -.067
         elif attacking:
             lead = -1 if kind == 'attack' else 1
             advance = smooth((t-.32)/.16) * (1-smooth((t-.77)/.23))
@@ -507,7 +521,7 @@ def pose(kind, t):
             width = .031*tuck
         else:
             travel, lift, foot_pitch, width = sign*.08, 0, 0, 0
-        place_foot(side, sign, travel, lift, foot_pitch, width)
+        place_foot(side, sign, travel, lift, foot_pitch, width, splay=.5 if kind == 'walk' else 1)
 
         arm = 'Arm.'+side
         shoulder = attached('Chest', rest[arm][0])
@@ -517,12 +531,13 @@ def pose(kind, t):
             if sign>0:
                 reach = .108 if sprint else .084 if running else .040
                 offset = (.065, -.173-reach*swing, (-.344 if running else -.405)+.035*swing)
-                yaw += (8 if running else 3)*swing
-                elev += (8 if running else 3)*swing
+                blade_lag = math.cos(phase-.71) if running else swing
+                yaw += (9 if running else 3)*blade_lag
+                elev += (10 if running else 3)*blade_lag
             else:
-                reach = .249 if sprint else .211 if running else .087
-                drive = max(0, -swing)*(.106 if running else .020)
-                offset = (-.053, -.062+reach*swing, (-.373 if running else -.412)+drive)
+                reach = .276 if sprint else .246 if running else .087
+                drive = .084*(1 - math.cos(phase-.58)) if running else .020*max(0, -swing)
+                offset = (-.053, -.048+reach*swing, (-.385 if running else -.412)+drive)
             wrist = shoulder + Vector(offset)
         elif sign>0:
             wrist = (hx, hy, hz)
