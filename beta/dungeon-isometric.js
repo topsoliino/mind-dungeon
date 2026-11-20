@@ -107,11 +107,13 @@
    return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),atmosphere];
   }
   function addLayers(scene,player){
-   return layers(player,false).map(({canvas,x,y,depth},index)=>{
+   const images=layers(player,false).map(({canvas,x,y,depth},index)=>{
     const key='alley-layer-'+index;
     scene.textures.addCanvas(key,canvas);
     return scene.add.image(x,y,key).setOrigin(0).setDepth(depth);
    });
+   art.onArtReady(()=>images.forEach(image=>image.texture.refresh()));
+   return images;
   }
   function refreshLayers(images,player,opened){
    const current=layers(player,opened);
