@@ -21,7 +21,7 @@ CELL = 128
 FACINGS = 8
 GAITS = {
     # Forward foot travel during stance, duty factor, swing clearance, trunk lean.
-    'walk': (.66, .60, .084, .051),
+    'walk': (.77, .60, .100, .051),
     'sprint': (.92, .34, .300, .505),
 }
 GAIT_BLENDS = {'gait-one': 1/3, 'gait-two': 2/3}
@@ -39,7 +39,7 @@ HEAVY_CLIPS = {f'heavy-{weapon}': weapon for weapon in WEAPON_TYPES}
 # Model-space travel, shared by the rig's planted feet and the game's movement.
 HEAVY_MOTION = {
     'heavy-sword': {'distance': .53, 'advance': [.075, .35]},
-    'heavy-hammer': {'distance': .32, 'advance': [.10, .35]},
+    'heavy-hammer': {'distance': .32, 'advance': [.10, .35], 'impactFrame': 7},
 }
 CLIPS = [('idle', 4), ('walk', 16), ('sprint', 16), ('down', 20), ('up', 20),
          *((name, 16) for name in GAIT_BLENDS), ('roll', ROLL_FRAMES),
@@ -52,7 +52,7 @@ SIDES = [('L', -1), ('R', 1)]
 def fitted(vertex, bone):
     """Fit the armor and its attachment points to the same compact silhouette."""
     x, y, z = vertex
-    if bone == 'Grip.R':
+    if bone in ('Grip.R', 'Hammer.R'):
         grip = design['Grip.R'][0]
         return fitted(grip, 'Glove.R') + Vector(vertex) - Vector(grip)
     if bone == 'Head':
@@ -177,6 +177,7 @@ def model_joints():
         })
     wrist = joints['Glove.R'][0]
     joints['Grip.R'] = (wrist, (wrist[0] + .20, wrist[1] - .53, wrist[2] + .19), 'Glove.R')
+    joints['Hammer.R'] = (*joints['Grip.R'][:2], 'Grip.R')
     return joints
 
 
@@ -336,9 +337,9 @@ def model():
          [2, 1, 0, 1] * 3)
 
     hammer = weapon_collections['hammer']
-    limb('War hammer · leather and ash haft', grip-d*.155, grip+d*.645,
+    limb('War hammer · leather and ash haft', grip-d*.32, grip+d*.645,
          [(0,.027,.027), (.10,.030,.030), (.32,.024,.024), (.85,.023,.023), (1,.039,.039)],
-         [leather, brass, leather, shadow], 'Grip.R', collection=hammer)
+         [leather, brass, leather, shadow], 'Hammer.R', collection=hammer)
     head = grip + d*.542
     vertices = [tuple(head + u*x + v*y + d*z)
                 for x, height, width in [(-.23,.073,.062), (-.09,.103,.092),
@@ -349,7 +350,7 @@ def model():
         faces.extend((row*4+i, row*4+(i+1)%4, (row+1)*4+(i+1)%4, (row+1)*4+i)
                      for i in range(4))
     mesh('War hammer · forged head', vertices, faces, [shadow, steel, edge, brass],
-         'Grip.R', .018, [2,2, 0,1,2,1, 1,1,3,1, 0,1,2,1], collection=hammer)
+         'Hammer.R', .018, [2,2, 0,1,2,1, 1,1,3,1, 0,1,2,1], collection=hammer)
 
 
 def orient(bone, position, rotation):
@@ -359,9 +360,16 @@ def orient(bone, position, rotation):
     bpy.context.view_layer.update()
 
 
-def point(bone, head, tail):
+def point(bone, head, tail, stretch=1):
     a, b, _ = rest[bone]
-    orientation = (b - a).rotation_difference(Vector(tail) - Vector(head)).to_matrix()
+    direction = (b-a).normalized()
+    orientation = direction.rotation_difference(Vector(tail)-Vector(head)).to_matrix()
+    if stretch != 1:
+        extension = Matrix.Identity(3)
+        for row in range(3):
+            for column in range(3):
+                extension[row][column] += (stretch-1)*direction[row]*direction[column]
+        orientation @= extension
     orient(bone, head, orientation)
 
 
@@ -370,19 +378,22 @@ def attached(bone, anchor):
     return frame @ anchor
 
 
-def bend_joint(upper, lower, a, end, bias):
+def bend_joint(upper, lower, a, end, bias, stretch=1):
     a, end = Vector(a), Vector(end)
     ab = (rest[upper][1] - rest[upper][0]).length
     bc = (rest[lower][1] - rest[lower][0]).length
     delta = end - a
+    scale = max(1, min(stretch, (delta.length+.001)/(ab+bc)))
+    ab *= scale
+    bc *= scale
     axis = delta.normalized()
     distance = max(abs(ab - bc) + .001, min(ab + bc - .001, delta.length))
     offset = (ab*ab - bc*bc + distance*distance) / (2*distance)
     normal = Vector(bias) - axis * axis.dot(Vector(bias))
     knee = a + axis * offset + normal.normalized() * math.sqrt(max(0, ab*ab - offset*offset))
     end = a + axis * distance
-    point(upper, a, knee)
-    point(lower, knee, end)
+    point(upper, a, knee, scale)
+    point(lower, knee, end, scale)
     return end
 
 
@@ -423,21 +434,22 @@ def sample_attack(keys, time):
 # Time, torso yaw, forward shift, drop, pitch, sword hand target, blade azimuth/elevation.
 STEADY = (0, 0, 0, .04, .414, -.168, .924, 24, 16)
 # Each guard is shared at the exact exported frames where the combo can chain.
-HIGH_GUARD = (.55, .050, .060, -.065, .328, .094, 1.39, 104, 64)
-LOW_GUARD = (-.61, -.141, .105, .20, -.185, -.371, .943, -92, -35)
+HIGH_GUARD = (.70, .051, .062, -.09, .39, .12, 1.42, 121, 61)
+LOW_GUARD = (-.73, -.135, .126, .235, -.246, -.35, .890, -118, -27)
 LIGHT_GUARDS = {'down': HIGH_GUARD, 'up': LOW_GUARD}
 HEAVY_GUARDS = {
-    'sword': (.82, .055, .092, -.105, .335, .156, 1.402, 128, 57),
-    'hammer': (.24, .103, .105, -.145, .339, .045, 1.548, 161, 69),
+    'sword': (.90, .064, .11, -.149, .421, .172, 1.410, 142, 64),
+    'hammer': (.03, .030, -.025, -.115, .137, .004, 1.792, 177, 26),
 }
 ATTACKS = {
     'down': [
         (0, *STEADY),
         (.15, .30, .060, .038, -.025, .459, .020, 1.093, 66, 35),
         (6/19, *HIGH_GUARD),
-        (.41, .60, .061, .060, -.068, .295, .061, 1.423, 110, 75),
-        (.48, .25, -.042, .053, .09, .314, -.259, 1.356, 51, 62),
-        (.56, -.34, -.145, .107, .22, .051, -.522, 1.116, -32, -14),
+        (.39, .80, .048, .025, -.125, .407, -.007, 1.539, 109, 85),
+        (.47, .32, -.103, .082, .19, .419, -.500, 1.384, 62, 35),
+        (.53, -.39, -.188, .171, .33, .040, -.670, 1.064, -31, -21),
+        (.61, -.89, -.179, .169, .31, -.303, -.336, .841, -143, -29),
         (13/19, *LOW_GUARD),
         (.83, -.44, -.088, .055, .15, -.094, -.330, .915, -75, -28),
         (.93, -.14, -.035, .025, .07, .316, -.213, .916, -8, 4),
@@ -447,10 +459,11 @@ ATTACKS = {
         (0, *STEADY),
         (.10, -.27, -.073, .063, .115, .078, -.297, .858, -52, -29),
         (4/19, *LOW_GUARD),
-        (.31, -.66, -.066, .120, .17, -.201, -.289, .849, -113, -42),
-        (.40, -.34, -.100, .079, .19, -.04, -.461, 1.038, -57, -8),
-        (.48, .14, -.126, .048, .13, .263, -.487, 1.237, 16, 31),
-        (.57, .51, -.057, .019, .015, .488, -.189, 1.438, 63, 59),
+        (.29, -.85, -.080, .183, .25, -.306, -.302, .752, -141, -37),
+        (.37, -.46, -.153, .121, .27, -.121, -.573, .960, -64, -9),
+        (.45, .18, -.191, -.012, .055, .306, -.613, 1.312, 23, 49),
+        (.54, .80, -.063, -.036, -.10, .522, -.269, 1.613, 86, 77),
+        (.61, .86, .017, .039, -.103, .498, .049, 1.519, 116, 68),
         (13/19, *HIGH_GUARD),
         (.84, .26, .019, .035, .015, .444, -.057, 1.185, 67, 36),
         (1, *STEADY),
@@ -464,23 +477,25 @@ for name, (weapon, light) in CHARGE_CLIPS.items():
 ATTACKS.update({
     'heavy-sword': [
         (0, *HEAVY_GUARDS['sword']),
-        (2/21, .92, .018, .106, -.094, .380, .151, 1.397, 146, 56),
-        (4/21, .66, -.105, .118, .10, .408, -.178, 1.445, 101, 61),
-        (6/21, .02, -.150, .205, .29, .214, -.568, 1.245, 18, 28),
-        (8/21, -.69, -.155, .221, .38, -.144, -.542, .914, -76, -29),
-        (11/21, -.91, -.133, .171, .32, -.218, -.393, .823, -123, -25),
+        (2/21, 1.06, .014, .053, -.21, .478, .115, 1.573, 151, 66),
+        (4/21, .72, -.120, .112, .14, .477, -.310, 1.523, 89, 62),
+        (6/21, -.13, -.171, .218, .34, .241, -.695, 1.174, -6, 18),
+        (8/21, -.92, -.169, .266, .45, -.276, -.510, .831, -105, -27),
+        (11/21, -1.13, -.111, .202, .34, -.330, -.312, .808, -156, -18),
         (16/21, *LOW_GUARD),
         (.89, -.39, -.091, .064, .15, .018, -.298, .908, -63, -18),
         (1, *STEADY),
     ],
     'heavy-hammer': [
         (0, *HEAVY_GUARDS['hammer']),
-        (2/21, .28, .083, .080, -.136, .304, -.036, 1.595, 72, 85),
-        (5/21, .05, -.195, .138, .29, .307, -.546, 1.211, 5, 17),
-        (7/21, -.07, -.220, .254, .44, .232, -.538, .625, -4, -63),
-        (9/21, -.14, -.231, .257, .436, .216, -.497, .660, -12, -55),
-        (12/21, -.05, -.114, .178, .24, .296, -.295, .945, 7, -14),
-        (14/21, .33, -.018, .123, .07, .355, -.043, 1.240, 62, 45),
+        (2/21, .05, .016, -.065, -.20, .154, .006, 1.891, 174, 40),
+        (4/21, .03, -.084, .035, .17, .144, -.421, 1.655, 11, 67),
+        (5/21, .01, -.155, .174, .43, .132, -.665, 1.211, 6, 25),
+        (7/21, -.04, -.183, .475, .69, .101, -.594, .380, 0, -17),
+        (8/21, -.07, -.198, .484, .72, .107, -.570, .413, -2, -16),
+        (9/21, -.09, -.204, .479, .73, .114, -.554, .419, -4, -15),
+        (12/21, -.09, -.114, .319, .42, .146, -.491, .683, 9, -4),
+        (14/21, .32, -.019, .166, .11, .295, -.131, 1.179, 62, 45),
         (16/21, *HIGH_GUARD),
         (.90, .29, .020, .032, .02, .459, -.038, 1.105, 56, 32),
         (1, *STEADY),
@@ -535,6 +550,53 @@ def blade_vector(azimuth, elevation):
     return Vector((math.sin(yaw)*math.cos(pitch), -math.cos(yaw)*math.cos(pitch), math.sin(pitch)))
 
 
+def pulse(t, start, peak, end):
+    return smooth((t-start)/(peak-start))*smooth((end-t)/(end-peak))
+
+
+def attack_deformation(kind, t):
+    if kind == 'down':
+        return pulse(t, .326, .438, .545), pulse(t, .47, .559, .68)
+    if kind == 'up':
+        return pulse(t, .35, .49, .655), pulse(t, .216, .306, .415)
+    if kind == 'heavy-sword':
+        return pulse(t, 0, .20, .385), pulse(t, .246, .415, .724)
+    if kind == 'heavy-hammer':
+        return pulse(t, 0, .107, .26), pulse(t, .24, .387, .666)
+    return 0, 0
+
+
+HAMMER_LIGHT_CONTACT = {
+    'down': [(0, .32, -.86, -.40), (8/19, .32, -.86, -.40),
+             (9/19, -.45, -.61, -.66), (10/19, -.80, .28, -.53), (1, -.80, .28, -.53)],
+    'up': [(0, .47, -.66, .59), (7/19, .47, -.66, .59), (8/19, .76, .02, .65),
+           (9/19, .49, .63, .60), (1, .49, .63, .60)],
+}
+
+
+def orient_hammer(wrist, shaft, kind=None, t=0):
+    a, b, _ = rest['Hammer.R']
+    rest_shaft = (b-a).normalized()
+    rotation = rest_shaft.rotation_difference(shaft)
+    face = rotation @ rest_shaft.cross(Vector((0,0,1))).normalized()
+    if kind == 'heavy-hammer':
+        weight = pulse(t, .11, 7/21, .72)
+        toward = Vector((0, -.05, -1))
+    elif kind in HAMMER_LIGHT_CONTACT:
+        start, full = (.33, .414) if kind == 'down' else (.229, .358)
+        weight = smooth((t-start)/(full-start))*smooth((.676-t)/.137)
+        toward = Vector(sample(HAMMER_LIGHT_CONTACT[kind],t))
+    else:
+        weight = 0
+    if weight:
+        striking_face = toward - shaft*shaft.dot(toward)
+        if striking_face.length_squared > .001:
+            angle = math.atan2(shaft.dot(face.cross(striking_face)), face.dot(striking_face))
+            orient('Hammer.R', wrist, Matrix.Rotation(angle*weight, 3, shaft) @ rotation.to_matrix())
+            return
+    orient('Hammer.R', wrist, rotation.to_matrix())
+
+
 def attack_step(kind, t, front):
     motion = HEAVY_MOTION[kind]
     start, end = motion['advance']
@@ -556,6 +618,12 @@ def pose(kind, t):
     attacking = kind in ATTACKS
     attack_keys = ATTACKS.get(kind)
     twist, forward, drop, pitch, hx, hy, hz, yaw, elev = sample_attack(attack_keys, t) if attacking else STEADY
+    stretch, squash = attack_deformation(kind, t)
+    double_grip = 0
+    if kind == 'heavy-hammer':
+        double_grip = 1-smooth((t-.532)/.223)
+    elif kind.startswith('charge-hammer-'):
+        double_grip = smooth(t)
     if gait:
         stride, stance, clearance, lean = gait
         half_step = (t % .5)*2
@@ -573,7 +641,7 @@ def pose(kind, t):
         else:
             bob, nod = sample([(0, -.008, .006), (.24, -.026, .014), (.55, .014, 0),
                                (.72, .023, -.010), (1, -.008, .006)], half_step)
-            shift, fore, drop = .036, -.013, .058
+            shift, fore, drop = .039, -.013, .071
             pelvic_yaw = .074*step
             chest_yaw = -.062*math.cos(phase-.22)
             yaw, elev = 21, 13
@@ -590,7 +658,9 @@ def pose(kind, t):
     chest = attached('Hips', rest['Chest'][0])
     chest_roll = -(.047 if running else .019)*math.sin(phase-.36) if gait else -.10*twist
     chest_rotation = Euler((pitch, chest_roll, chest_yaw)).to_matrix()
-    orient('Chest', chest, chest_rotation)
+    spine_height = 1 + .185*stretch - .22*squash
+    spine_width = 1 + .12*squash - .07*stretch
+    orient('Chest', chest, chest_rotation @ Matrix.Diagonal((spine_width, spine_width, spine_height)))
     head = attached('Chest', rest['Head'][0])
     if running:
         head.z -= .007*suspension
@@ -608,7 +678,7 @@ def pose(kind, t):
         flutter = .08 + .17*abs(twist)
     orient('Mantle', mantle, Euler((flutter, .067*math.sin(phase-.8) if gait else .27*twist, chest_yaw*.76)).to_matrix())
 
-    for side, sign in SIDES:
+    for side, sign in reversed(SIDES):
         if gait:
             foot_phase = (t+(0 if sign<0 else .5))%1
             travel, lift, foot_pitch = gait_foot(foot_phase, stride, stance, clearance, running)
@@ -645,7 +715,11 @@ def pose(kind, t):
         else:
             ready = abs(twist)
             wrist = (-.402+.10*ready, -.085-.17*ready, .898+.19*ready)
-        wrist = bend_joint(arm, 'Forearm.' + side, shoulder, wrist, (sign*.50, .78, -.09))
+            wrist = Vector(wrist) + Vector((-.137*stretch, .12*stretch, .035*squash))
+            if double_grip:
+                wrist = wrist.lerp(grip_wrist - blade*.185, double_grip)
+        extension = 1 + .21*stretch + .085*squash + .22*double_grip
+        wrist = bend_joint(arm, 'Forearm.' + side, shoulder, wrist, (sign*.50, .78, -.09), extension)
 
         # A pauldron is strapped to the cuirass and only follows part of the arm swing.
         arm_delta = rig.pose.bones[arm].matrix @ rig.data.bones[arm].matrix_local.inverted()
@@ -655,12 +729,17 @@ def pose(kind, t):
 
         if sign>0:
             blade = blade_vector(yaw, elev)
+            grip_wrist = wrist
             hand = Vector((-.16*blade.y, -.53, -.68)) + blade*.28
             point('Glove.' + side, wrist, wrist + hand)
             point('Grip.R', wrist, wrist + blade)
+            orient_hammer(wrist, blade, kind, t)
         else:
             lag = .08*math.sin(phase-.72) if gait else 0
-            point('Glove.' + side, wrist, wrist + Vector((-.012, -.047+lag*.16, -.098)))
+            hand = Vector((-.012, -.047+lag*.16, -.098))
+            if double_grip:
+                hand = hand.lerp(Vector((.045, -.073, -.053)) + blade*.035, double_grip)
+            point('Glove.' + side, wrist, wrist + hand)
 
 
 def pose_snapshot():
@@ -782,6 +861,7 @@ def roll_pose(t):
         flat = Vector((blade.x, blade.y, 0)).normalized()
         blade = flat*math.sqrt(1 - lower_limit**2) + Vector((0, 0, lower_limit))
     point('Grip.R', wrist, wrist + blade)
+    orient_hammer(wrist, blade)
 
     edge = min(t/.105, (1-t)/.135)
     if edge < 1:
@@ -970,6 +1050,13 @@ if __name__ == '__main__':
     scene = setup(opts.engine)
     frames, layout = key_animations(scene, CLIPS)
     (directory/'clips.json').write_text(json.dumps(layout) + '\n')
+    hammer_motion = HEAVY_MOTION['heavy-hammer']
+    scene.frame_set(layout['heavy-hammer'][0] + hammer_motion['impactFrame'] + 1)
+    hammer_head = bpy.data.objects['War hammer · forged head']
+    face = [hammer_head.matrix_world @ vertex.co for vertex in hammer_head.data.vertices[-4:]]
+    contact = sum(face, Vector())/len(face)
+    hammer_motion['floorContact'] = [contact.x, -contact.y]
+    scene.frame_set(1)
     (directory/'attack-motion.json').write_text(json.dumps(HEAVY_MOTION) + '\n')
     bpy.context.view_layer.layer_collection.children[weapon_collections['hammer'].name].exclude = True
     rig.rotation_euler.z = math.pi/4
