@@ -3,16 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spieler-Vergleich · Mind Dungeon</title>
+<title>Blender-Wächter · Mind Dungeon</title>
 <style>
 :root { color-scheme: dark; font: 16px system-ui, sans-serif; background: #15131c; color: #f3ead9; }
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 54% 0, #292335 0%, #15131c 61%); }
 main { max-width: 1160px; margin: auto; padding: clamp(20px, 4vw, 48px); }
 header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin-bottom: 25px; }
-h1, h2 { margin: 0; font-family: Georgia, serif; color: #f1dbb0; font-weight: 500; }
-h1 { font-size: clamp(29px, 4vw, 48px); }
-h2 { font-size: 23px; }
+h1 { margin: 0; font: 500 clamp(29px, 4vw, 48px) Georgia, serif; color: #f1dbb0; }
 header p { margin: 7px 0 0; color: #c1b3c4; }
 a { color: #e3cfaa; text-underline-offset: 4px; }
 .control-panel { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 13px; padding: 14px; margin: 0 0 16px; border: 1px solid #595064; border-radius: 9px; background: #211c2a; }
@@ -23,32 +21,30 @@ button[aria-pressed="true"] { color: #221b1a; background: #dfc395; border-color:
 button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid #f4d7a2; outline-offset: 3px; }
 label { color: #d6cad8; }
 .settings label { padding-left: 7px; }
-.views { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
-article { overflow: hidden; border: 1px solid #605364; border-radius: 9px; background: #221d29; }
-article h2 { border-bottom: 1px solid #605364; padding: 12px 15px; }
-canvas { display: block; width: 100%; height: clamp(245px, 36vw, 390px); background: #15151b; }
+canvas { display: block; width: 100%; height: clamp(320px, 53vh, 490px); background: #15151b; border: 1px solid #605364; border-radius: 9px; }
 .hint { margin: 16px 0 0; color: #c1b3c4; line-height: 1.55; }
 kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px solid #5b5265; border-radius: 4px; padding: 1px 5px; }
 #status { color: #f4d7a2; }
 @media (max-width: 580px) {
  main { padding: 17px; }
  header { margin-bottom: 18px; }
- .views { gap: 8px; }
- article h2 { padding: 10px; font-size: 17px; }
- canvas { height: 240px; }
+ canvas { height: 320px; }
 }
 </style>
 </head>
 <body>
 <main>
 <header>
- <div><h1>Spieler-Sprites im Vergleich</h1><p>Wächter im Ritterset</p></div>
+ <div><h1>Blender-Wächter</h1><p>Übungsraum · Ritterset</p></div>
  <a href="./">Zurück zur Beta</a>
 </header>
 <div class="control-panel">
- <div class="controls" role="group" aria-label="Animation">
-  <button type="button" data-clip="idle" aria-pressed="false">Stand</button>
-  <button type="button" data-clip="walk" aria-pressed="true">Lauf</button>
+ <div class="controls" role="group" aria-label="Gangart">
+  <button type="button" data-gait="walk" aria-pressed="false">Gehen</button>
+  <button type="button" data-gait="run" aria-pressed="true">Laufen</button>
+ </div>
+ <div class="controls" role="group" aria-label="Animation abspielen">
+  <button type="button" data-clip="idle" aria-pressed="true">Stand</button>
   <button type="button" data-clip="sprint" aria-pressed="false">Sprint</button>
   <button type="button" data-clip="dash" aria-pressed="false">Dash</button>
   <button type="button" data-clip="attack" aria-pressed="false">Schwerthieb</button>
@@ -66,19 +62,12 @@ kbd { font-family: inherit; color: #e6dbc5; background: #25202e; border: 1px sol
   <button id="weapon" type="button" aria-pressed="true">Schwert</button>
  </div>
 </div>
-<div class="views">
- <article><h2>Pixelart · 64×64</h2><canvas id="pixel" aria-label="Wächter als Pixelart im Dungeon"></canvas></article>
- <article><h2>Blender · 128×128</h2><canvas id="blender" aria-label="Wächter als vorgerenderte Blender-Sprites im Dungeon"></canvas></article>
-</div>
-<p class="hint">Laufen mit <kbd>WASD</kbd> oder <kbd>Pfeiltasten</kbd>. <kbd>Q</kbd> halten zum Sprinten, <kbd>Umschalt</kbd> zum Ausweichen, <kbd>Leertaste</kbd> für den Hieb und <kbd>F</kbd> für den Rückhieb.</p>
-<p class="hint"><a href="art/player-study/guardian.blend?v=3" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
-<p id="status" role="status">Die Vergleichsszene lädt …</p>
+<canvas id="blender" aria-label="Begehbarer Übungsraum mit dem Blender-Wächter"></canvas>
+<p class="hint">Bewegen mit <kbd>WASD</kbd> oder <kbd>Pfeiltasten</kbd>. <kbd>Umschalt</kbd> wechselt zwischen Gehen und Laufen. <kbd>Q</kbd> halten zum Sprinten, <kbd>X</kbd> zum Ausweichen, <kbd>Leertaste</kbd> für den Hieb und <kbd>F</kbd> für den Rückhieb.</p>
+<p class="hint"><a href="art/player-study/guardian.blend?v=4" download="guardian.blend">Blender-Modell mit Animationen herunterladen</a></p>
+<p id="status" role="status">Der Übungsraum lädt …</p>
 </main>
-<script src="dungeon-balance.js?v=21"></script>
-<script src="dungeon-items.js?v=32"></script>
-<script src="dungeon-equipment-art.js?v=3"></script>
 <script src="dungeon-art.js?v=47"></script>
-<script src="dungeon-hero-art.js?v=1"></script>
-<script src="spieler-vergleich.js?v=3"></script>
+<script src="spieler-vergleich.js?v=4"></script>
 </body>
 </html>
