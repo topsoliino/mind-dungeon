@@ -5,8 +5,8 @@
  const modelSize=110,modelGround=.77597;
  const clips={
   idle:{start:0,frames:4,duration:1.3},
-  walk:{start:4,frames:16,duration:.88},
-  run:{start:20,frames:16,duration:.61},
+  walk:{start:4,frames:16,duration:.77},
+  run:{start:20,frames:16,duration:.54},
   sprint:{start:36,frames:16,duration:.49},
   dash:{start:52,frames:8,duration:.34},
   attack:{start:60,frames:20,duration:.84},
@@ -15,7 +15,7 @@
  // Keep the room speed in step with the planted phase of each Blender gait.
  const strideSpeed={
   walk:(.59/.60)*(modelSize/3.23)/clips.walk.duration,
-  run:(.78/.375)*(modelSize/3.23)/clips.run.duration,
+  run:(.80/.375)*(modelSize/3.23)/clips.run.duration,
   sprint:(.82/.34)*(modelSize/3.23)/clips.sprint.duration
  },groundY=.882;
  const directions={
@@ -162,9 +162,9 @@
   });
  }
  Promise.all([
-  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=4'),
-  loadSheet(weaponSheet,'art/player-study/guardian-weapon.webp?v=4'),
-  fetch('art/player-study/guardian-weapon.json?v=4').then(response=>{
+  loadSheet(bodySheet,'art/player-study/guardian-body.webp?v=5'),
+  loadSheet(weaponSheet,'art/player-study/guardian-weapon.webp?v=5'),
+  fetch('art/player-study/guardian-weapon.json?v=5').then(response=>{
    if(!response.ok)throw new Error('Waffen-Frames fehlen.');
    return response.json();
   })
