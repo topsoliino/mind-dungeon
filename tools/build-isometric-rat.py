@@ -305,14 +305,22 @@ def pose(clip, t):
     head=rig.pose.bones["Head"]
     jaw=rig.pose.bones["Jaw"]
     phase=2*PI*t
-    root.location.z=.012*math.sin(phase)
-    chest.rotation_euler.x=.025*math.sin(phase)
-    head.rotation_euler.x=.04*math.sin(phase+.8)
+    # A living animal even while idle: respiration, asymmetric sniffs,
+    # tiny whisker twitches and independent tail vertebrae.
+    sniff=math.sin(phase*2.3)
+    root.location.z=.008*math.sin(phase)
+    root.rotation_euler.y=.025*math.sin(phase*.67)
+    chest.rotation_euler.x=.042*math.sin(phase)
+    head.rotation_euler.x=.055*math.sin(phase+.8)
+    head.rotation_euler.z=.045*math.sin(phase*.42)
+    rig.pose.bones["Nose"].rotation_euler.x=.035*sniff
     jaw.rotation_euler.x=.045+max(0,math.sin(phase*.5))*.09
     for i in range(6):
-        rig.pose.bones["Tail"+str(i)].rotation_euler.z=.11*math.sin(phase-i*.55)
+        tail=rig.pose.bones["Tail"+str(i)]
+        tail.rotation_euler.z=.10*math.sin(phase-i*.55)
+        tail.rotation_euler.x=.042*math.sin(phase*.82-i*.8)
     for n, sign in (("L",1),("R",-1)):
-        rig.pose.bones["Ear"+n].rotation_euler.y=.04*math.sin(phase+sign)
+        rig.pose.bones["Ear"+n].rotation_euler.y=.08*math.sin(phase+sign)
         rig.pose.bones["Shoulder"+n].rotation_euler.x=.025*sign
         rig.pose.bones["Hip"+n].rotation_euler.x=.025*sign
         rig.pose.bones["Foreleg"+n].rotation_euler.x=-.055
@@ -322,8 +330,9 @@ def pose(clip, t):
         stride=.19 if stalk else .49
         bob=.016 if stalk else .063
         root.location.z=bob*abs(math.sin(phase))
-        chest.rotation_euler.x=.10 if stalk else .17
-        head.rotation_euler.x=-.14 if stalk else -.08
+        chest.rotation_euler.x=.13 if stalk else .22
+        head.rotation_euler.x=-.19 if stalk else -.12
+        head.rotation_euler.z=.06*math.sin(phase+(0 if stalk else .4))
         root.rotation_euler.z=.018*math.sin(phase)
         for n, sign in (("L",1),("R",-1)):
             swing=math.sin(phase+sign*PI/2)
@@ -331,6 +340,8 @@ def pose(clip, t):
             rig.pose.bones["Hip"+n].rotation_euler.x=-stride*swing
             rig.pose.bones["Foreleg"+n].rotation_euler.x=-.2-.24*max(0,swing)
             rig.pose.bones["Hindleg"+n].rotation_euler.x=.22+.30*max(0,-swing)
+            rig.pose.bones["FrontPaw"+n].rotation_euler.x=-.19*max(0,swing)
+            rig.pose.bones["HindPaw"+n].rotation_euler.x=.14*max(0,-swing)
         for i in range(6):
             rig.pose.bones["Tail"+str(i)].rotation_euler.z=(.08 if stalk else .21)*math.sin(phase-i*.60)
         if stalk:
@@ -341,7 +352,9 @@ def pose(clip, t):
         ready=1-smooth(t/.18) if t<.18 else 0
         lift=max(0,math.sin(PI*clamp((t-.16)/.72)))
         root.location.z=-.12*ready+.45*lift
-        root.location.y=-.26*smooth((t-.20)/.65)
+        # Runtime physics already advances the world-space leap. Preserve
+        # in-place animation (vertical take-off only), avoiding double travel.
+        root.location.y=-.055*math.sin(PI*smooth((t-.20)/.65))
         chest.rotation_euler.x=-.2*ready+.28*lift
         head.rotation_euler.x=.26*ready-.26*lift
         for n in ("L","R"):
@@ -356,20 +369,24 @@ def pose(clip, t):
         contacts=[.48] if clip=="bite" else [.30,.67]
         snap=sum(bell(t, contact, .095) for contact in contacts)
         anticipate=(smooth(t/.24)*(1-smooth((t-contacts[0])/.15)))
-        chest.rotation_euler.x=-.23*anticipate+.50*snap
-        head.rotation_euler.x=.30*anticipate-.43*snap
-        jaw.rotation_euler.x=.52*anticipate-.21*snap
-        root.location.y=-.12*max(anticipate, snap)
+        chest.rotation_euler.x=-.31*anticipate+.64*snap
+        head.rotation_euler.x=.38*anticipate-.58*snap
+        jaw.rotation_euler.x=.67*anticipate-.29*snap
+        for n in ("L","R"):
+            rig.pose.bones["Ear"+n].rotation_euler.x=-.22*anticipate+.07*snap
+        root.location.y=-.055*max(anticipate,snap)
         root.location.z=-.06*anticipate+.07*snap
         for n in ("L","R"):
             rig.pose.bones["Shoulder"+n].rotation_euler.x=.28*anticipate-.38*snap
             rig.pose.bones["Hip"+n].rotation_euler.x=-.24*anticipate
     elif clip in ("dodge", "dodge-left"):
         across=smooth(t/.56)
-        root.location.x=(-.50 if clip=="dodge-left" else .50)*across
+        # Side dodge advances through the collision system in gameplay.
+        # Do not bake a second 0.5-metre root displacement into its atlas.
+        root.location.x=(-.065 if clip=="dodge-left" else .065)*math.sin(PI*t)
         root.location.z=.12*math.sin(PI*t)
         root.rotation_euler.y=( -.19 if clip=="dodge-left" else .19)*math.sin(PI*t)
-        chest.rotation_euler.z=-.27*math.sin(PI*t)
+        chest.rotation_euler.z=(-.24 if clip=="dodge-left" else .24)*math.sin(PI*t)
         for n,sign in (("L",1),("R",-1)):
             rig.pose.bones["Shoulder"+n].rotation_euler.x=.30*sign*math.sin(PI*t)
             rig.pose.bones["Hip"+n].rotation_euler.x=-.35*sign*math.sin(PI*t)
@@ -390,7 +407,9 @@ def pose(clip, t):
             rig.pose.bones["Foreleg"+n].rotation_euler.z=sign*.30*fall
             rig.pose.bones["Hindleg"+n].rotation_euler.x=.56*fall
         for i in range(6):
-            rig.pose.bones["Tail"+str(i)].rotation_euler.z=.15*math.sin(i*1.7)*fall
+            tail=rig.pose.bones["Tail"+str(i)]
+            tail.rotation_euler.z=.27*math.sin(i*1.7)*fall
+            tail.rotation_euler.x=-.34*fall
     for pb in rig.pose.bones:
         pb.keyframe_insert(data_path="location", frame=1+round(t*48))
         pb.keyframe_insert(data_path="rotation_euler", frame=1+round(t*48))
