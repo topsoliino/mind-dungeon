@@ -1,36 +1,56 @@
-# Etappe 4a · Leiter, Treppe und vertikale Isometrie
+# Etappe 4a · Treppen, Leitern und Geschosssichtbarkeit
 
-**Test:** https://topsoliino.github.io/mind-dungeon/beta/?szene=gasse&modus=generator&seed=4147&v=4
+**Test:** https://topsoliino.github.io/mind-dungeon/beta/?szene=gasse&modus=generator&seed=4147&v=5
 
-## Implementiert
+## Treppengrammatik (Greybox)
 
-- Der prozedurale Generator hält die Gasse als Start und generiert weiterhin zehn Räume/Gänge.
-- Eine größere generierte Kammer enthält eine **wirklich erhöhte Bodenplatte** (Z = 132 Bildpixel), einschließlich ausgesparter Treppenzone und Leiterschacht.
-- Eine Treppe besteht aus neun aufeinander folgenden **soliden isometrischen 3D-Trittstufen**, massiven Setzstufen, Wangen und Geländer.
-- Eine Leiter wird nur an einer **tatsächlich vorhandenen Außenwand** der Kammer angebracht. Ihr Lagerort und ihre Himmelsrichtung sind vom Seed abhängig. Sie besitzt zwei Holme, Sprossen und obere Haltegriffe.
-- Beide Verbindungen besitzen einen expliziten Einstiegspunkt und einen Zielpunkt auf der anderen Höhe. **E in der Nähe** setzt den Weg zum Einstieg, positioniert die Spielfigur automatisch und startet erst dann den Übergang. Rechtsklick-Bewegung oder Angriffe dürfen einen begonnenen Übergang nicht abbrechen.
-- Leiter auf / Leiter ab sind zwei neue, unterschiedlich phasierte **prozedurale Animationsabläufe auf dem bestehenden exportierten Blender-Rig**. Hände, Oberkörper, Hüften, Beine und Füße bewegen sich; beim Erreichen des oberen Randes gibt es eine kurze Aufstütz-/Ausstiegsbewegung. Das bestehende GLB wurde **nicht neu in Blender exportiert**; eine gebackene Blender-Aktion ist eine spätere mögliche Qualitätsverbesserung.
-- Das Geschoss ist eine eigene physikalische Ebene. Auf der oberen Plattform sind die unteren Wände keine unsichtbaren Kollisionen. Eine andere Etage wird erst nach vollständigem Überstieg freigegeben.
-- Der obere Boden wird als separate, deckende Ebene über dem Erdgeschoss gerendert. Steht der Spieler direkt darunter, blendet die Bodenplatte auf 24 % Deckkraft ab, damit der Wächter sichtbar bleibt. Auf dem Obergeschoss ist die Bodenplatte deckend und der Held wird darüber gezeichnet.
-- Mausziel und Kamera kompensieren den Höhenversatz. Die Mini-Karte zeigt Treppe, Leiter und das aktuelle Geschoss.
-- Keine neuen Gegner, Möbel oder thematischen Raumsets in diesem Prototyp.
+Der Generator verwendet `beta/alley-stair-geometry.js` zur **baulich zusammenhängenden** Erzeugung von acht Treppenfamilien:
 
-## Geometrische Regeln
+| Familie (`treppe=`) | Laufprinzip | Höhe / Stufen |
+| --- | --- | --- |
+| `straight-narrow` | Schmaler gerader Lauf | 132 / 12 |
+| `straight-wide` | Breiter gerader Lauf | 132 / 12 |
+| `grand` | Lange, große Freitreppe | 132 / 16 |
+| `quarter` | L-Wendung mit einem echten Zwischenpodest | 132 / 14 |
+| `switchback` | U-Wendung, zwei parallele Läufe, gemeinsames Zwischenpodest | 132 / 16 |
+| `spiral-tight` | Enge Spindeltreppe mit schmalen Keilstufen | 132 / 13 |
+| `spiral-wide` | Weite Spindeltreppe mit gleichbleibend breiten Keilstufen | 132 / 17 |
+| `curved` | Geschwungene, offene Freitreppe ohne Mittelspindel | 132 / 12 |
 
-- Leiterstelle: eine besetzte Raumzelle \`c\` und eine Richtung \`d\`, für die \`c + d\` **außerhalb** der Kammer liegt und \`c - d\` innerhalb.
-- Aufgänge enden auf einer passierbaren Fläche derselben ausgewählten Kammer; die Verbindung der obersten Treppenstufe mit dem oberen Leiter-Landeplatz wird durch Flood-Fill geprüft.
-- Höhenfunktion während des Übergangs: \`z(t)=H·smoothstep(clamp((t-0.11)/0.78))\` beim Aufstieg, beim Abstieg \`H-z(t)\`, mit \`H=132\` Bildpixel.
-- Rendering benutzt Ebenen-Prioritäten statt beweglicher Wandtiefen. Die bereits statischen Mauertiefen bleiben unangetastet.
+`treppe` ist im Generator-Testmodus in der Minikarte auswählbar. `seed` steuert weiterhin die restliche Etage und – ohne explizite Treppenauswahl – die Bauart.
 
-## Test
+Jede Bauart hat eine Vorlage mit tatsächlichen **Trittflächen** (vier Bodenecken), **Setzstufen** (vertikale Vorderflächen), seitlichen tragenden Wangen, nötigen **Podesten**, Handläufen und festen oberen/unteren Einstiegspunkten. Die Keilstufen einer Wendeltreppe besitzen einen gemeinsamen Mittelpunkt und gleichen Innen- und Außenradius über alle Stufen. Die Höhenzunahme ist einheitlich: `z_i = i·H/N`.
 
-\`\`\`bash
+Ein Treppentyp wird nur gewählt, wenn ein genügend großes rechteckiges Baufeld vollständig in einer Kammer liegt, keine bestehende Innenwand hindurchläuft und die zwei Einstiege genügend Platz haben. Wenn die Wunschform nicht passt, wählt der Generator eine passende alternative Treppe. Reservierungsdaten (`generator.stairs`) werden auf die **wirklich gewählte** Grundfläche synchronisiert. Die alte 2×3-Zellen-Platzhalterzeichnung ist im vertikalen Modus deaktiviert.
+
+## Etagen & Rendering
+
+- Die neue Empore liegt auf `Z=132`; ausgesparte Treppenzellen ergeben einen **Deckendurchbruch**. Der obere Boden ist ein eigener, kollidierender Raum-Layer.
+- **Unten:** Die zur Etage hinaufführende Treppe und die untere Wandleiter sind sichtbar. Die *obere Bodenplatte* sowie ausschließlich zum Obergeschoss gehörende Podestmarkierungen und künftiges dortiges Interieur sind **vollständig unsichtbar**.
+- **Aufstieg:** Obergeschossobjekte erscheinen erst während der letzten 16 % des Übergangs. **Abstieg:** Die obere Schicht verschwindet bereits während der ersten 18 % des Übergangs.
+- **Oben:** Der obere Boden ist opak und der Held darüber sichtbar. Der feste Depth-Wert der unteren Treppe stammt aus dem isometrisch projizierten Fußpunkt, nicht aus dem beweglichen Wächter.
+- Die bislang bestehende **automatische Leiter- und Treppeninteraktion mit E** bleibt erhalten: Weg zum passenden Einstieg, Ausrichtung, kontinuierlicher Höhenverlauf, Endpunkt und Geschosswechsel. Die bereits vorhandenen prozeduralen `climb-up`/`climb-down`-Bewegungen auf dem **exportierten Blender-Skelett** bleiben; die originale `.blend` wurde noch nicht neu gebacken.
+- Die obere Wegfindung bleibt unabhängig von den unteren Wänden. Beim Platzieren der Leiter wird geprüft, dass ihr Deckenausschnitt den Obergeschossweg vom oberen Treppenpodest zur Leiter nicht unterbricht.
+- Die Minikarte zeichnet die **wirkliche Form der Treppenstufen** und bietet einen Selektor zur vergleichenden Sichtprüfung.
+
+## Geometrische Invarianten
+
+1. `N` Trittflächen, jede mit `Δz = H/N`, nicht schwebende Quader unterschiedlicher Höhe.
+2. Eine echte, durchgehende Laufspur `P(s) = (u(s),v(s),z(s))` mit konstanten Höhenabschnitten an Zwischenpodesten; die Animation interpoliert entlang der Laufspur in beide Richtungen.
+3. Ein Geschossübergang findet erst am Ende der Bewegung statt. Keine Teleportation zwischen Räumen auf anderem `z`.
+4. Eine Leiter hat eine angrenzende Außenwand, einen offenen Einstieg und eine zusammenhängende obere Ausstiegsfläche.
+5. Obere Bauteile mit `level=1` werden im Erdgeschoss **nicht** gerendert. Sie benutzen dieselben Sichtbarkeitsregeln in Phaser und Canvas.
+
+## Regressionstests
+
+```bash
 node tools/check-isometric-generator.cjs
 node tools/check-isometric-vertical.cjs
+node tools/check-isometric-stair-render.cjs
 node tools/check-isometric-occlusion.cjs
 node tools/check-isometric-stage4.cjs
-\`\`\`
+```
 
-Die Vertikal-Regression prüft 120 Seeds: Anbindung an Außenwände, Platzierung der oberen Platte, Erreichbarkeit beider Landungen, beide Auf-/Abstiegskurven sowie das erwartete Endgeschoss. Einen vollständigen visuellen Browserdurchlauf der **veröffentlichten** GitHub-Pages-Version ersetzt der Code-Test nicht.
+`check-isometric-vertical` prüft 200 Seeds auf gleiche Setzstufenhöhen, nicht entartete Trittflächen, Anschlüsse, Höhenmonotonie, beidseitige Laufwege und alle acht Bauarten. `check-isometric-stair-render` baut acht Varianten samt isometrischem Renderer auf und prüft die **unsichtbaren Obergeschoss-Layer** unten, ihren Übergang, die feste Sortierung und tatsächliche Pfade zu Leiter und Treppe.
 
-**Bewusste Grenze der Etappe 4a:** Der Generator besitzt zunächst einen oberen Emporenbereich **in einer** Kammer, noch keine komplette zweite, wiederum aus zehn Räumen bestehende Ebene. Weitere Geschosse, Treppenkollision in jedem Animationsframe, Fall-/Abgrundregeln, Koop-Synchronisierung von Geschosswechseln und gebackene Blender-Clips sind spätere Aufgaben.
+**Stand:** Das ist weiterhin ein Greybox-Prototyp mit einer **erhöhten Kammer-/Emporenebene**, nicht bereits ein ganzer zweiter prozeduraler Zehn-Raum-Grundriss. Die gebackenen Blender-Treppenassets, echte stufenweise Begehung ohne E, Sturzphysik, kooperative Synchronisierung und ein vollständiger visueller Browserabnahmetest stehen noch aus.
