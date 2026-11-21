@@ -129,6 +129,40 @@ function transform(template,origin,rotation){
   origin,region:[origin[0],origin[1],origin[0]+(rotation%2?h:w),origin[1]+(rotation%2?w:h)],
   length:template.steps.length};
 }
+// Shared 2D footprint kernel for candidate navigation. A stair is a solid
+// occupied surface except for the short approach apron at its foot.
+const distanceLine=(p,a,b)=>{
+ const dx=b.x-a.x,dy=b.y-a.y,len=dx*dx+dy*dy;
+ const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/Math.max(len,.00001)));
+ return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);
+};
+function nearPolygon(p,points,r){
+ let pos=false,neg=false;
+ for(let i=0;i<points.length;i++){
+  const a=points[i],b=points[(i+1)%points.length];
+  const cross=(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
+  pos||=cross>1e-7;neg||=cross< -1e-7;
+ }
+ return !(pos&&neg)||r>0&&points.some((a,i)=>
+  distanceLine(p,a,points[(i+1)%points.length])<=r);
+}
+function blocksCandidate(model,u,v,r){
+ const p=vec(u,v);
+ if(dist(p,model.bottom)<=.58+r*.65)return false;
+ return model.steps.concat(model.landings).some(part=>nearPolygon(p,part.corners,r));
+}
+function candidateAccessible(generator,model){
+ const start=window.AlleyStudyMap.logic.spawn,TILE=48,R=.29;
+ const destination={x:model.bottom.x*TILE,y:model.bottom.y*TILE};
+ const walkable=(px,py)=>{
+  const u=px/TILE,v=py/TILE;
+  return [[u-R,v],[u+R,v],[u,v-R],[u,v+R]].every(([x,y])=>
+   generator.containsGround(x,y))&&
+   !generator.blocked(u,v,R)&&!blocksCandidate(model,u,v,R);
+ };
+ return walkable(destination.x,destination.y)&&
+  Boolean(generator.path({x:start[0]*TILE,y:start[1]*TILE},destination,walkable));
+}
 function select(generator){
  const asked=new URLSearchParams(window.location.search).get('treppe');
  const preferred=styles.includes(asked)?asked:styles[generator.seed%styles.length],
@@ -169,10 +203,14 @@ function select(generator){
     }
    }
   }
-  if(viable.length)break;
+  if(viable.length){
+   viable.sort((a,b)=>b.score-a.score);
+   const possible=viable.find(model=>candidateAccessible(generator,model));
+   if(possible){viable.length=0;viable.push(possible);break;}
+   viable.length=0;
+  }
  }
- if(!viable.length)throw Error('No geometrically valid stair template fits any chamber');
- viable.sort((a,b)=>b.score-a.score);
+ if(!viable.length)throw Error('No physically reachable stair footprint fits any chamber');
  const chosen=viable[0],room=chosen.room;
  const avoid=new Set();
  for(const step of chosen.steps){
