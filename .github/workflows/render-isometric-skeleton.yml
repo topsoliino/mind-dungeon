@@ -44,9 +44,19 @@ jobs:
           git add beta/art/skeleton/skeleton.blend beta/art/skeleton/*.webp
           if ! git diff --cached --quiet; then
             git commit -m "Blender: render 32 facings for both skeleton weapons and every animation"
-            git fetch origin main
-            git rebase origin/main
-            git push origin HEAD:main
+            # Other active workflows may commit during a 32-view Blender
+            # bake. Retry ordinary fast-forward pushes instead of losing art.
+            for attempt in 1 2 3 4 5 6; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                echo "Skeleton assets committed on attempt $attempt"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "Could not publish skeleton render after retries" >&2
+            exit 1
           else
             echo "Skeleton art unchanged."
           fi
