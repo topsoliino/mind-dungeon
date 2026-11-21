@@ -63,7 +63,7 @@ async function run(){
  };
  const spawns=skeleton.encounters({rooms},world);
  assert.equal(spawns.length,4,'ten-room generator should have up to four encounters');
- assert.deepEqual(spawns.map(p=>p.skeleton),['sabre','bow','sabre','bow']);
+ assert.deepEqual(Array.from(spawns,p=>p.skeleton),['sabre','bow','sabre','bow']);
  assert(spawns.every(p=>Math.hypot(p.x-24,p.y-24)>=168));
  assert.equal(JSON.stringify(spawns),JSON.stringify(skeleton.encounters({rooms},world)),'deterministic seeds');
  assert.equal(skeleton.encounters({rooms:[]},world).length,0);
