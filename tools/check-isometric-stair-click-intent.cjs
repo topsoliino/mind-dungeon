@@ -76,6 +76,13 @@ for(const kind of ['switchback','curved']){
  assert(frames<1600&&vertical.state.floor===0,'must reach the ground portal');
  assert(alley.routeTo(actor,ui.floorGoal.target),
   'the remembered ground click must be reachable after exiting');
+ // Even from a separate room, clicking the floating upper exit guide must
+ // plan a path to the stair foot first (while the upstairs floor stays hidden).
+ actor.x=alley.spawn.x;actor.y=alley.spawn.y;
+ mouse.x=top.center.x;mouse.y=top.center.y;
+ assert(ui.approachClickStairs(),'ground-to-upstairs beacon must trigger');
+ assert(vertical.state.pending&&vertical.state.pending.up===true,
+  'upper beacon from ground should approach the lower stair entrance');
  result.push({kind,groundClicks:true,upstairsBeacon:true,frames});
 }
 assert(html.includes('if(aimAlleyStairFloor(screen))return;'),
