@@ -5,6 +5,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const path=require('node:path'),noop=()=>{};
 const read=name=>fs.readFileSync(path.join(__dirname,'../beta',name),'utf8');
 const files=['alley-study-map.js','alley-generator.js','alley-stair-geometry.js',
+ 'alley-stair-navigation.js','alley-stair-controller.js',
  'alley-vertical.js','alley-route.js','alley-architecture.js',
  'alley-study.js','dungeon-isometric.js'];
 function fakeContext(){
@@ -86,8 +87,11 @@ for(let seed=0;seed<expected.length;seed++){
  for(const step of v.plan.steps){
   const projected=window.DungeonIsometric.toView(
    step.center.x*48,step.center.y*48,step.z);
-  assert(v.pickStair(projected,window.DungeonIsometric),
-   'isometric right-click hit-test should resolve visible treads');
+  const picked=v.pickStair(projected,window.DungeonIsometric);
+  assert(picked&&picked.part===step,
+   'every projected tread center must select the correct physical tread');
+  assert(v.navigation.canStand(picked.point),
+   'clicked tread must produce a radius-safe traversable target');
  }
  v.state.floor=0;v.state.transition=null;v.state.z=0;
  const feet=p=>({x:p.x*48,y:p.y*48});
