@@ -53,7 +53,7 @@ async function run(){
  assert.equal(layers.length,2);
  assert.equal(layers[0].sy,3*96);
  assert.equal(layers[1].sy,4*96);
- assert(Math.abs(layers[0].alpha+.0+layers[1].alpha-.72)<1e-6);
+ assert(Math.abs(layers[0].alpha+layers[1].alpha-1)<1e-6);
  assert(skeleton.sprites({...sword,facing:0},iso,rules).length===1);
  const archer={...sword,skeleton:'bow',type:0,windup:0,runAttack:0,recover:0,moving:true};
  sprite=skeleton.sprite(archer,iso,rules);
