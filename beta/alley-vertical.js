@@ -172,7 +172,8 @@ function createLayers({project,polygon,line,block,cacheObject}){
   {kind:'ladder-3d',image:ladderImage,depth:5100,level:0}
  ];
 }
-const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,ladder,upper,connectors,
+const state={floor:0,z:0,transition:null,pending:null};
+const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,ladder,upper,connectors,state,
  insideTop,playerInChamber,nearby,pose,createLayers};
 window.AlleyVertical=api;
 })();
