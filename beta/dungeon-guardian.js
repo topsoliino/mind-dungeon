@@ -19,18 +19,22 @@
  }
  async function load(root){
   const [response,settings]=await Promise.all([
-   fetch(root+'guardian-frames.json?v=17'),fetch(root+'guardian-light-attacks.json?v=1').catch(()=>null)
+   fetch(root+'guardian-frames.json?v=18'),fetch(root+'guardian-light-attacks.json?v=1').catch(()=>null)
   ]);
   if(!response.ok)throw new Error('Wächter-Animationen konnten nicht geladen werden.');
   const atlas=await response.json();
   if(settings?.ok)light=await settings.json();
   try{
-   const {loadRig}=await import('./dungeon-guardian-rig.js?v=3');
-   return {atlas,rig:await loadRig(root+'guardian-rig.glb.gz?v=2')};
+   const {loadRig}=await import('./dungeon-guardian-rig.js?v=4');
+   return {atlas,rig:await loadRig(root+'guardian-rig.glb.gz?v=3',atlas.clips)};
   }catch(error){
    console.warn('3D-Wächter nicht verfügbar. Sprite-Wächter wird verwendet.',error);
    const layers=await Promise.all(['body','weapon'].map(key=>loadLayer(root,atlas.sheets[key])));
-   return {atlas,layers};
+   // The pre-existing sprite atlas does not contain the newly keyed 3D
+   // ladder takes. Use the walk frames instead of indexing past the atlas.
+   const spriteAtlas={...atlas,clips:{...atlas.clips,
+    'climb-up':atlas.clips.walk,'climb-down':atlas.clips.walk}};
+   return {atlas:spriteAtlas,layers};
   }
  }
  function facing(angle){
