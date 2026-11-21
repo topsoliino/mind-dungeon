@@ -369,7 +369,9 @@ function prewarm(canWalk,floor=0){
  // through already verified neighbors; it does not redo collision sampling.
  for(const p of cells.values()){
   p.links=[];
-  for(const [dx,dy] of dirs){
+  // Eight-way, collision-checked links smooth paths around mid-room stairs.
+  // Diagonals never cut through walls because lineClear sweeps each edge.
+  for(const [dx,dy] of [...dirs,[1,1],[-1,1],[1,-1],[-1,-1]]){
    const other=cells.get(key(p.gx+dx,p.gy+dy));
    if(other&&lineClear(p,other,canWalk))p.links.push(other);
   }
@@ -414,7 +416,8 @@ function path(from,target,canWalk,floorOverride=null){
   if(current.g>(dist.get(current.id)??Infinity)+1e-6)continue;
   if(goalIds.has(current.id)){found=current.id;break;}
   for(const other of current.node.links){
-   const id=key(other.gx,other.gy),g=current.g+NAV_TILE;
+   const id=key(other.gx,other.gy),
+    g=current.g+Math.hypot(other.x-current.node.x,other.y-current.node.y);
    if(g>=(dist.get(id)??Infinity))continue;
    prev.set(id,current.id);push(other,g);
   }
