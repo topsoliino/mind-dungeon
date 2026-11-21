@@ -1,5 +1,5 @@
 // node tools/check-isometric-stair-render.cjs
-// Headless structural rendering test: all eight staircase families, Phaser layer
+// Headless structural rendering test: all nine staircase families, Phaser layer
 // visibility, Canvas draw path, real navigation and two-story transition frames.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const path=require('node:path'),noop=()=>{};
@@ -33,7 +33,7 @@ function build(seed){
  return {window,iso:window.DungeonIsometric.create(),scene:window.AlleyStudy.create()};
 }
 const expected=['straight-narrow','straight-wide','grand','quarter',
- 'switchback','spiral-tight','spiral-wide','curved'];
+ 'switchback','spiral-tight','spiral-wide','curved','switchback-closed'];
 for(let seed=0;seed<expected.length;seed++){
  const {window,iso,scene:art}=build(seed),v=window.AlleyVertical;
  assert.equal(v.plan.kind,expected[seed],
@@ -104,4 +104,4 @@ for(let seed=0;seed<expected.length;seed++){
  assert(iso.routeTo(feet(v.plan.top),feet(v.ladder.top)),
   'upper-story stairs and ladder must be connected by actual pathfinding');
 }
-console.log('Eight stair families: individual depth-sorted treads, baked floor tiles, hidden upper floor and two-way routes OK.');
+console.log('Nine stair families: individual depth-sorted treads, baked floor tiles, hidden upper floor and two-way routes OK.');
