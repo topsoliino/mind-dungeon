@@ -123,6 +123,9 @@ function controller({plan,state,nav,length,speeds,curving}){
       (curving?speeds.curvedDown:speeds.straightDown);
     factor=Math.hypot(along*forwardSpeed,across*speeds.across);
    }
+   // Running remains running on the stairs. An uphill grade is felt
+   // slightly, but must not silently switch the hero to a walk cadence.
+   if(options?.running)factor=Math.max(.88,factor);
    if(options?.rolling)factor=1;
    let step=(Math.max(0,worldSpeed)/48)*Math.min(.05,dt)*factor;
    if(!manual&&ride.path)step=Math.min(step,distance(ride.path[0],ride));
