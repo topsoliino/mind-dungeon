@@ -105,8 +105,12 @@ function controller({plan,state,nav,length,speeds,curving}){
   if(!manual&&ride.path&&distance(ride,ride.target)<.075){
    ride.target=null;ride.path=null;
   }
-  const atHead=state.z>=H-.35&&distance(ride,plan.top)<.32;
-  const atFoot=state.z<=.35&&distance(ride,plan.bottom)<.32;
+  // Only leave through a gate when moving toward it. Merely standing in
+  // its proximity after a sideways dodge must not terminate the stair ride.
+  const into=(gate)=>(gate.x-old.x)*(ride.x-old.x)+
+   (gate.y-old.y)*(ride.y-old.y)>1e-5;
+  const atHead=state.z>=H-.35&&distance(ride,plan.top)<.32&&into(plan.top);
+  const atFoot=state.z<=.35&&distance(ride,plan.bottom)<.32&&into(plan.bottom);
   if(ride.traveled>.07&&
    (atHead&&(ride.entry==='bottom'||ride.leftEntry)||
     atFoot&&(ride.entry==='top'||ride.leftEntry))){
