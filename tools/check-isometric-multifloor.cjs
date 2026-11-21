@@ -91,6 +91,49 @@ assert(returned,'after failing to find the hero, return downstairs to the origin
 assert(Math.hypot(guard.x-bottom.x,guard.y-bottom.y)<26);
 console.log('Guard: same-floor LOS, cross-floor damage blocking, real portal climb, reacquisition, last-seen search and return home OK');
 
+// Verify the ACTUAL enemy simulator no longer lets a sabre slash or projectile
+// hit through the slab, even when the two actors have identical planar XY.
+vm.runInNewContext(read('dungeon-enemies.js'),{window:w});
+vm.runInNewContext(read('dungeon-enemy-sim.js'),{window:w});
+const rules=w.DungeonEnemies,damages=[],crossHero={...bottom,hp:100,inv:0,dash:0};
+const enemy={...bottom,type:rules.SKELETON,skeleton:'sabre',hp:100,max:100,
+ angle:0,phase:0,attack:0,hit:0,aggro:7,windup:0,recover:0,runAttack:0,
+ emerge:0,alleyFloor:0};
+const floor={W:80,H:80,regionAt:()=>0,inRest:()=>false,
+ outsideAt:()=>false,layerAt:()=>0,valid:()=>true,
+ furnitureAt:()=>null,furnitureBetween:()=>null,gateLineBlocked:()=>false,
+ furnitureBlocked:()=>false,wall:()=>false,gateBlocked:()=>false,
+ pressurePlates:[],doorAt:()=>null};
+const sim=w.DungeonEnemySim.create({
+ floor,enemyRules:rules,alleyEnemyPursuit:pursuer,
+ state:{bolts:[{...bottom,z:40,angle:0,speed:0,life:2,type:'bow',
+   alleyFloor:0}],waterArcs:[],enemyHazards:[],stormStrikes:[],
+   webShots:[],webPatches:[]},
+ save:{floor:1},items:{foes:[],foeAttack:[]},balance:{counterSeconds:.3},
+ actorRadius:()=>12,nearActor:()=>true,enemyEncounterReady:()=>true,
+ coopActors:()=>[crossHero],getEnemies:()=>[enemy],
+ takeDamage:(_hero,amount)=>{damages.push(amount);return true;},
+ addBleed:noop,maxHP:()=>100,rand:()=>1,soundWorld:noop,
+ landArrow:noop,arrowGroundClear:()=>true,
+ arrowTargetHeight:()=>v.state.z,moveActor:move
+});
+v.state.floor=1;v.state.z=v.height;
+let combatTime=0;
+for(let i=0;i<120;i++){
+ sim.moveFrom(dt,crossHero,combatTime,1280,720);
+ sim.act(enemy,dt,crossHero,combatTime,1280,720);
+ combatTime+=dt;
+}
+assert.deepEqual(damages,[],'EG attacks and arrows cannot hit an OG hero at the exact same XY');
+v.state.floor=0;v.state.z=0;
+for(let i=0;i<200;i++){
+ sim.moveFrom(dt,crossHero,combatTime,1280,720);
+ sim.act(enemy,dt,crossHero,combatTime,1280,720);
+ combatTime+=dt;
+}
+assert(damages.includes(19),'ordinary same-floor sabre attacks must still work');
+console.log('Actual enemy sim: EG sword and bow shots blocked by OG, normal same-floor combat intact');
+
 const html=read('index.html');
 assert(html.includes('const alleyEnemyPursuit=generationMode&&alleyVertical?'));
 assert(html.includes('!next&&!player.attack&&!player.dash'),
