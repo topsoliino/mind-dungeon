@@ -313,53 +313,88 @@ function renderWall(ctx,wall,{project,polygon,line}){
  const along=wall.axis==='u'?[[u,v],[u,b]]:[[u,v],[r,v]];
  for(let z=18;z<height;z+=22)line(ctx,along.map(p=>project(...p,z)),'#29283a9b',1.2);
 }
-function path(from,target,canWalk){
- const radius=48;
- const clear=(a,b)=>{
-  const n=Math.max(1,Math.ceil(Math.hypot(a.x-b.x,a.y-b.y)/3));
-  for(let i=1;i<=n;i++)if(!canWalk(a.x+(b.x-a.x)*i/n,a.y+(b.y-a.y)*i/n))return false;
-  return true;
- };
- const goal={x:target.x,y:target.y};
- if(!canWalk(goal.x,goal.y))return null;
- if(clear(from,goal))return {goal,steps:[goal]};
+// One deterministic navigation graph per generated floor and collision
+// model. Geometry is baked once, before gameplay, not rebuilt on each click.
+const navigation=new Map(),NAV_TILE=48;
+function lineClear(a,b,canWalk){
+ const n=Math.max(1,Math.ceil(Math.hypot(a.x-b.x,a.y-b.y)/4));
+ for(let i=1;i<=n;i++)
+  if(!canWalk(a.x+(b.x-a.x)*i/n,a.y+(b.y-a.y)*i/n))return false;
+ return true;
+}
+function prewarm(canWalk,floor=0){
+ const found=navigation.get(floor);
+ if(found&&found.canWalk===canWalk)return found;
  const cells=new Map();
  for(const [u,v,r,b] of window.AlleyStudyMap.logic.walkable)
-  for(let x=Math.floor(u);x<Math.ceil(r);x++)for(let y=Math.floor(v);y<Math.ceil(b);y++){
-   const p={x:(x+.5)*radius,y:(y+.5)*radius,gx:x,gy:y};
-   if(canWalk(p.x,p.y))cells.set(key(x,y),p);
+  for(let x=Math.floor(u);x<Math.ceil(r);x++)
+   for(let y=Math.floor(v);y<Math.ceil(b);y++){
+    const p={x:(x+.5)*NAV_TILE,y:(y+.5)*NAV_TILE,gx:x,gy:y};
+    if(canWalk(p.x,p.y))cells.set(key(x,y),p);
+   }
+ // Precompute obstacle-safe edges. A click now only solves an A* traversal
+ // through already verified neighbors; it does not redo collision sampling.
+ for(const p of cells.values()){
+  p.links=[];
+  for(const [dx,dy] of dirs){
+   const other=cells.get(key(p.gx+dx,p.gy+dy));
+   if(other&&lineClear(p,other,canWalk))p.links.push(other);
   }
- const nearest=p=>[...cells.values()].sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))
-  .filter(q=>clear(p,q)).slice(0,6);
- const startNodes=nearest(from),endNodes=nearest(goal);
- if(!startNodes.length||!endNodes.length)return null;
- const targetKeys=new Set(endNodes.map(p=>key(p.gx,p.gy))),frontier=[],prev=new Map(),dist=new Map();
- for(const node of startNodes){
-  const id=key(node.gx,node.gy),g=Math.hypot(from.x-node.x,from.y-node.y);
-  if(g<(dist.get(id)??Infinity)){dist.set(id,g);prev.set(id,null);frontier.push({node,g});}
+ }
+ const graph={cells,nodes:[...cells.values()],canWalk};
+ navigation.set(floor,graph);
+ return graph;
+}
+function path(from,target,canWalk){
+ const floor=window.AlleyVertical?.state.floor??0,
+  {nodes}=prewarm(canWalk,floor);
+ const goal={x:target.x,y:target.y};
+ if(!canWalk(goal.x,goal.y))return null;
+ if(lineClear(from,goal,canWalk))return {goal,steps:[goal]};
+ // Only test the closest few candidates, not every reachable tile against
+ // both origin and destination on every right click.
+ const closest=p=>nodes.map(q=>({node:q,d:(q.x-p.x)**2+(q.y-p.y)**2}))
+  .sort((a,b)=>a.d-b.d).slice(0,40)
+  .filter(q=>lineClear(p,q.node,canWalk)).slice(0,6).map(q=>q.node);
+ const starts=closest(from),ends=closest(goal);
+ if(!starts.length||!ends.length)return null;
+ const goalIds=new Set(ends.map(p=>key(p.gx,p.gy))),
+  open=[],dist=new Map(),prev=new Map();
+ const heuristic=p=>Math.hypot(goal.x-p.x,goal.y-p.y);
+ const push=(node,g)=>{
+  const id=key(node.gx,node.gy);
+  if(g>=(dist.get(id)??Infinity))return;
+  dist.set(id,g);open.push({node,id,g,f:g+heuristic(node)});
+ };
+ for(const node of starts){
+  prev.set(key(node.gx,node.gy),null);
+  push(node,Math.hypot(node.x-from.x,node.y-from.y));
  }
  let found=null;
- while(frontier.length){
-  frontier.sort((a,b)=>a.g-b.g);
-  const {node,g}=frontier.shift(),id=key(node.gx,node.gy);
-  if(g>dist.get(id)+1e-6)continue;
-  if(targetKeys.has(id)){found=id;break;}
-  for(const [dx,dy] of dirs){
-   const k=key(node.gx+dx,node.gy+dy),other=cells.get(k);
-   if(!other||!clear(node,other))continue;
-   const score=g+radius;if(score>=(dist.get(k)??Infinity))continue;
-   dist.set(k,score);prev.set(k,id);frontier.push({node:other,g:score});
+ while(open.length){
+  // For a small ten-room navmesh a linear minimum extraction is cheaper
+  // than sorting the entire frontier on every expanded node.
+  let best=0;
+  for(let i=1;i<open.length;i++)if(open[i].f<open[best].f)best=i;
+  const current=open.splice(best,1)[0];
+  if(current.g>(dist.get(current.id)??Infinity)+1e-6)continue;
+  if(goalIds.has(current.id)){found=current.id;break;}
+  for(const other of current.node.links){
+   const id=key(other.gx,other.gy),g=current.g+NAV_TILE;
+   if(g>=(dist.get(id)??Infinity))continue;
+   prev.set(id,current.id);push(other,g);
   }
  }
  if(!found)return null;
- const ordered=[];
- for(let at=found;at;at=prev.get(at))ordered.push(cells.get(at));
+ const graph=navigation.get(floor).cells,ordered=[];
+ for(let id=found;id!=null;id=prev.get(id))ordered.push(graph.get(id));
  ordered.reverse();
  const points=[from,...ordered,goal],steps=[];
  let i=0;
  while(i<points.length-1){
   let far=i+1;
-  for(let j=points.length-1;j>far;j--)if(clear(points[i],points[j])){far=j;break;}
+  for(let j=points.length-1;j>far;j--)
+   if(lineClear(points[i],points[j],canWalk)){far=j;break;}
   steps.push({x:points[far].x,y:points[far].y});i=far;
  }
  return {goal,steps};
@@ -368,7 +403,7 @@ const generator={
  enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors,walls,containsGround,
  stairs:stairs?[stairs]:[],materials,metadata,seal:null,
  extend,blocked,areaAt,renderFloor,renderWall,
- renderSeal(){},renderProp(){},unlock(){},isUnlocked(){return true;},path
+ renderSeal(){},renderProp(){},unlock(){},isUnlocked(){return true;},path,prewarm
 };
 generator.extend(window.AlleyStudyMap);
 window.AlleyGenerator=generator;
