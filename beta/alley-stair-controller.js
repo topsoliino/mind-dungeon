@@ -6,6 +6,25 @@ const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 function controller({plan,state,nav,length,speeds,curving}){
  const H=plan.height,stairs=[...plan.steps,...plan.landings];
+ const rise=H/plan.steps.length;
+ const gates=[
+  {floor:0,at:plan.bottom,out:norm(plan.bottom.x-plan.path[0].x,
+   plan.bottom.y-plan.path[0].y)},
+  {floor:1,at:plan.top,out:norm(plan.top.x-plan.path.at(-1).x,
+   plan.top.y-plan.path.at(-1).y)}
+ ];
+ function atExit(ride,gate,inputX,inputY,manual){
+  const delta={x:ride.x-gate.at.x,y:ride.y-gate.at.y},
+   along=delta.x*gate.out.x+delta.y*gate.out.y,
+   lateral=Math.abs(delta.x*gate.out.y-delta.y*gate.out.x);
+  const corridor=lateral<plan.width/2+.18&&along>-.72&&along<.8;
+  const height=gate.floor===1?state.z>=H-rise*.65:state.z<=rise*.65;
+  const pressed=inputX*gate.out.x+inputY*gate.out.y>.24;
+  const click=ride.exitTarget===gate.floor;
+  const enteredHere=ride.entry===(gate.floor?'top':'bottom');
+  return corridor&&height&&(click||manual&&pressed)&&
+   (!enteredHere||ride.leftEntry||click||ride.traveled>.9);
+ }
  function gate(up){return up?plan.bottom:plan.top;}
  function board(actor,up=true,target=null){
   if(state.stairRide||state.transition||state.pending||state.floor!==(up?0:1))return false;
@@ -15,7 +34,7 @@ function controller({plan,state,nav,length,speeds,curving}){
   if(!origin)return false;
   const ride={x:origin.x,y:origin.y,s:up?0:length,dir:up?1:-1,
    lateral:0,gait:0,target:null,path:null,entry:up?'bottom':'top',
-   traveled:0,leftEntry:false};
+   traveled:0,leftEntry:false,exitTarget:null};
   state.stairRide=ride;state.z=up?0:H;
   actor.x=ride.x*48;actor.y=ride.y*48;actor.moving=false;
   if(target&&!aim(target)){
@@ -26,7 +45,7 @@ function controller({plan,state,nav,length,speeds,curving}){
  function aim(target){
   const ride=state.stairRide;
   if(!ride)return false;
-  if(!target){ride.path=null;ride.target=null;return true;}
+  if(!target){ride.path=null;ride.target=null;ride.exitTarget=null;return true;}
   const piece=target.part??target;
   let point=target.point??piece.center;
   if(!point&&piece.corners){
@@ -44,7 +63,7 @@ function controller({plan,state,nav,length,speeds,curving}){
   if(!goal)return false;
   const path=nav.route({x:ride.x,y:ride.y},goal);
   if(!path)return false;
-  ride.target=goal;ride.path=path;return true;
+  ride.target=goal;ride.path=path;ride.exitTarget=isHead?1:isFoot?0:null;return true;
  }
  function enter(actor,dx,dy){
   if(state.stairRide||state.transition||state.pending||!dx&&!dy)return false;
@@ -58,7 +77,7 @@ function controller({plan,state,nav,length,speeds,curving}){
   const ride=state.stairRide;
   if(!ride)return false;
   const manual=Math.hypot(dx,dy)>.12;
-  if(manual){ride.path=null;ride.target=null;}
+  if(manual){ride.path=null;ride.target=null;ride.exitTarget=null;}
   else if(ride.path){
    while(ride.path.length&&distance(ride.path[0],ride)<.065)ride.path.shift();
    if(!ride.path.length){ride.path=null;ride.target=null;}
@@ -105,26 +124,16 @@ function controller({plan,state,nav,length,speeds,curving}){
   if(!manual&&ride.path&&distance(ride,ride.target)<.075){
    ride.target=null;ride.path=null;
   }
-  // Only leave through a gate when moving toward it. Merely standing in
-  // its proximity after a sideways dodge must not terminate the stair ride.
-  const into=(gate)=>(gate.x-old.x)*(ride.x-old.x)+
-   (gate.y-old.y)*(ride.y-old.y)>1e-5;
-  // A click toward another tread must never be mistaken for a request
-  // to leave via the nearby entrance, even if the safe A* route briefly
-  // passes through that entrance's trigger circle.
-  const permitsExit=gate=>!ride.target||distance(ride.target,gate)<.35;
-  const atHead=state.z>=H-.35&&distance(ride,plan.top)<.32&&
-   into(plan.top)&&permitsExit(plan.top);
-  const atFoot=state.z<=.35&&distance(ride,plan.bottom)<.32&&
-   into(plan.bottom)&&permitsExit(plan.bottom);
-  if(ride.traveled>.07&&
-   (atHead&&(ride.entry==='bottom'||ride.leftEntry)||
-    atFoot&&(ride.entry==='top'||ride.leftEntry))){
-   const floor=atHead?1:0,exit=atHead?plan.top:plan.bottom;
-   state.floor=floor;state.z=floor?H:0;
-   actor.x=exit.x*48;actor.y=exit.y*48;actor.moving=false;
-   state.stairRide=null;
-   return {completed:true,floor};
+  // Finish when the intended motion reaches the full-width landing portal.
+  // A held movement key works even when the boundary collider stops the actor.
+  if(ride.traveled>.04){
+   const portal=gates.find(gate=>atExit(ride,gate,dx,dy,manual));
+   if(portal){
+    state.floor=portal.floor;state.z=portal.floor?H:0;
+    actor.x=portal.at.x*48;actor.y=portal.at.y*48;actor.moving=false;
+    state.stairRide=null;
+    return {completed:true,floor:portal.floor};
+   }
   }
   return {completed:false,floor:state.floor,z:state.z,
    along:ride.s,total:length,position:{x:ride.x,y:ride.y}};
