@@ -413,7 +413,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/"rat.blend"),compress=True)
 # Pose batching: 1 render per animation, not 32 x frames individual renders.
 scene.render.engine="CYCLES"
 scene.cycles.samples=18
-scene.cycles.use_denoising=True
+scene.cycles.use_denoising=False
 scene.render.film_transparent=True
 scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="WEBP"
