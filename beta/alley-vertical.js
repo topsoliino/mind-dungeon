@@ -176,9 +176,16 @@ function overStair(u,v,r=0){
 function blocksGround(u,v,r=0){
  if(!overStair(u,v,r))return false;
  const entry=plan.bottom;
- // The approach apron remains floor 0. All other directions to the
- // stair ribbon are solid boundaries, not invisible fallthroughs.
  return distance(entry,{x:u,y:v})>.58+r*.65;
+}
+// Pick actual visible isometric tread surfaces, not their misleading
+// flat-ground cursor projections. This lets right-click target a flight.
+function pickStair(screen,iso){
+ for(const part of [...plan.steps,...plan.landings].slice().reverse()){
+  const poly=part.corners.map(p=>iso.toView(p.x*48,p.y*48,part.z));
+  if(insideConvex(screen,poly))return part;
+ }
+ return null;
 }
 function walkStairs(progress){
  let left=totalLength*clamp(progress);
@@ -436,7 +443,7 @@ function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
 }
 const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
  connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
- overStair,blocksGround,speedOnStair,stairSpeed:STAIR_SPEED,
+ overStair,blocksGround,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
  boardStairs,tryEnterStairs,advanceStairs};
 window.AlleyVertical=api;
 })();
