@@ -33,13 +33,13 @@ def mat(name, color, roughness=.83):
     shader.inputs["Roughness"].default_value = roughness
     return m
 
-fur = mat("Smoky umber fur", (.18, .125, .112))
-fur_light = mat("Fur highlights", (.31, .224, .186))
-belly = mat("Dusty grey belly", (.39, .33, .275))
-skin = mat("Mauve pink skin, paws and tail", (.47, .224, .244))
-ear = mat("Inner ears", (.68, .354, .385))
+fur = mat("Warm dark umber fur", (.255, .145, .105))
+fur_light = mat("Copper brown fur highlights", (.44, .275, .19))
+belly = mat("Warm grey belly", (.49, .385, .295))
+skin = mat("Russet pink paws and tail", (.61, .29, .30))
+ear = mat("Rose inner ears", (.78, .395, .39))
 eye = mat("Black glass eyes", (.012, .008, .014), .22)
-nose = mat("Dark wet nose", (.18, .061, .087), .27)
+nose = mat("Dark wet nose", (.225, .065, .084), .27)
 teeth = mat("Small ivory incisors", (.77, .69, .50))
 whisker = mat("Pale whiskers", (.56, .48, .44))
 
