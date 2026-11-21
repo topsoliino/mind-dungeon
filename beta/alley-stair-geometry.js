@@ -189,7 +189,14 @@ function select(generator){
  }
  const upper=new Set(room.cells.map(p=>K(...p)));
  for(const cell of avoid)upper.delete(cell);
- upper.add(K(Math.floor(chosen.top.x),Math.floor(chosen.top.y)));
+ // Guarantee a guardian-radius landing apron. Low stair holes may otherwise
+ // carve a neighbouring cell immediately beside a helical top-out point.
+ const tx=Math.floor(chosen.top.x),ty=Math.floor(chosen.top.y);
+ const occupied=new Set(room.cells.map(([x,y])=>K(x,y)));
+ for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+  const x=tx+dx,y=ty+dy;
+  if(occupied.has(K(x,y)))upper.add(K(x,y));
+ }
  // Ensure the upstairs exit physically meets the deck and can walk further.
  const topCell=[Math.floor(chosen.top.x),Math.floor(chosen.top.y)],
    neighbors=[[1,0],[-1,0],[0,1],[0,-1]]
