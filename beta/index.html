@@ -39,6 +39,7 @@ const iso=window.DungeonIsometric,alley=isometricTest?iso.create():null;
 let alleyRoute=null,alleyMove=null,alleyMarker=null,alleyRoll=null,alleyZoom=1,guardian=null;
 let alleySwing=null,alleyQueuedLight=null,alleyHit=null,alleyChest=null,alleyNextLight='down',alleyGait=0,alleyGaitBlend=0;
 let alleySneaking=false,alleyGaitMode='run',alleyItemWalkUntil=0;
+const alleyVertical=alley?.vertical?.enabled?alley.vertical:null;
 const guardianArt=window.DungeonGuardian;
 const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>{guardian=data;}).catch(error=>{
  console.warn('Mind Dungeon · Isometrische Gasse',error);
@@ -1787,7 +1788,7 @@ let breakDebris=[];
 let impactBursts=[],heldAttack=null,combatClock=0,consumeMove=null,vault=null;
 function isConsuming(){return Boolean(consumeMove||authorityMode&&consumePose(authorityOwn?.pose));}
 function startAttack(input,canVault=false){
- if(bossIntro()||modalType||paused||mdNavigatingToNewCharacter||heroFallProgress()>=0||vault||alleyHit||alleyChest||player.wallRecoil||player.attack>0||player.dash>0||heldAttack||isConsuming()||save.consumeQueue.length)return;
+ if(bossIntro()||modalType||paused||alleyVertical?.state.pending||alleyVertical?.state.transition||mdNavigatingToNewCharacter||heroFallProgress()>=0||vault||alleyHit||alleyChest||player.wallRecoil||player.attack>0||player.dash>0||heldAttack||isConsuming()||save.consumeQueue.length)return;
  const jumping=canVault&&tryVault();
  if(authorityMode){
   if(canVault){
@@ -1956,7 +1957,7 @@ function shockWater(origin,impact,split,amount,owner){
  }
 }
 function canStrike(){
- return !modalType&&Boolean(save.equipment.weapon)&&!paused&&!mdNavigatingToNewCharacter&&
+ return !alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&Boolean(save.equipment.weapon)&&!paused&&!mdNavigatingToNewCharacter&&
   !vault&&!alleyHit&&!alleyChest&&!player.wallRecoil&&player.dash<=0&&!consumeMove&&!save.consumeQueue.length;
 }
 function requestAlleyLight(target=null){
@@ -2242,14 +2243,36 @@ function finishAlleyApproach(){
  if(Math.hypot(goal.x-player.x,goal.y-player.y)>.05)return;
  alleyRoute.shift();
  if(alleyRoute.length)return;
- alleyRoute=null;aimMode='keyboard';player.dir=alley.chestFacing;
+ alleyRoute=null;aimMode='keyboard';
+ if(alleyVertical?.state.pending){
+  const task=alleyVertical.state.pending;
+  alleyVertical.state.pending=null;
+  alleyVertical.state.transition={...task,age:0,duration:task.connector.duration};
+  player.dir=task.connector.face;alleyMove=alleyMarker=null;
+  player.attack=player.dash=0;clearHeldAttack();return;
+ }
+ player.dir=alley.chestFacing;
  const animation=guardian?.atlas.interactions.chest;
  if(animation)alleyChest={...animation,elapsed:0};
  else openChest(0);
 }
+function approachAlleyVertical(){
+ if(!alleyVertical)return false;
+ const state=alleyVertical.state;
+ if(state.pending||state.transition)return true;
+ const target=alleyVertical.nearby(player,state.floor,145);
+ if(!target){tell('Keine Leiter oder Treppe in Reichweite.');return true;}
+ const route=alley.routeTo(player,target.approach);
+ if(!route){tell('Leiter oder Treppe nicht erreichbar.');return true;}
+ state.pending={connector:target,up:state.floor===0};
+ alleyMove=alleyMarker=null;alleyRoute=route.steps.slice();
+ if(!alleyRoute.length)alleyRoute=[{x:player.x,y:player.y}];
+ finishAlleyApproach();
+ return true;
+}
 function interact(){if(bossIntro()||modalType||paused||vault||isConsuming()||heroFallProgress()>=0||mdNavigatingToNewCharacter)return;
 if(alley){
- if(generationMode)return;
+ if(generationMode){approachAlleyVertical();return;}
  if(near?.kind==='soul'&&!alleyHit&&!alleyChest){claimSoul(near.orb);return;}
  if(near?.kind==='iso-archive'){
   const question=selectQuestion(0)||questions[0];
@@ -2390,7 +2413,7 @@ function facePoint(target){
 }
 function faceMouse(){facePoint(mouseWorld());}
 function nextAlleyMove(){
- if(!alleyMove||alleyRoute||alleyHit||alleyChest||alleySwing||heldAttack||player.dash>0)return null;
+ if(alleyVertical?.state.transition||!alleyMove||alleyRoute||alleyHit||alleyChest||alleySwing||heldAttack||player.dash>0)return null;
  if(!alleyMove.steps){
   const route=alley.routeTo(player,alleyMove.target);
   if(!route){
@@ -2415,14 +2438,14 @@ window.addEventListener('pointermove',e=>{
  if(!alley)faceMouse();
 });
 window.addEventListener('pointerdown',e=>{
- if(alley&&e.pointerType==='mouse'&&e.button===2&&!modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,button')){
+ if(alley&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&e.pointerType==='mouse'&&e.button===2&&!modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,button')){
   e.preventDefault();
   mouse={x:e.clientX,y:e.clientY};aimMode='mouse';
   alleyRoute=alleyQueuedLight=null;
   alleyMove={target:mouseWorld(),steps:null};
   return;
  }
- if(e.pointerType==='mouse'&&e.button===0&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
+ if(e.pointerType==='mouse'&&e.button===0&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
   setControllerPrompts(false);controllerTarget=null;aimMode='mouse';
   if(alley){
    mouse={x:e.clientX,y:e.clientY};
@@ -2484,6 +2507,19 @@ function startAlleyHit(damage,impactAngle){
  alleyHit={clip,pushAngle,elapsed:0,distance:0};
 }
 function updateAlleyActions(dt){
+ if(alleyVertical?.state.transition){
+  const state=alleyVertical.state,task=state.transition;
+  task.age=Math.min(task.duration,task.age+dt);
+  const pose=alleyVertical.pose(task.connector,task.up,task.age/task.duration);
+  player.x=pose.x;player.y=pose.y;player.dir=pose.angle;
+  state.z=pose.z;player.moving=false;
+  if(task.age>=task.duration){
+   state.floor=task.up?1:0;state.z=state.floor?alleyVertical.height:0;
+   const final=task.up?task.connector.top:task.connector.bottom;
+   player.x=final.x*48;player.y=final.y*48;state.transition=null;
+   tell(state.floor?'Obergeschoss erreicht · E zum Abstieg':'Erdgeschoss erreicht');
+  }
+ }
  if(alleyHit){
   const reaction=guardian.atlas.knockback[alleyHit.clip];
   alleyHit.elapsed=Math.min(reaction.duration,alleyHit.elapsed+dt);
