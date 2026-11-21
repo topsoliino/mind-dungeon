@@ -18,7 +18,7 @@ scene = bpy.context.scene
 V = Vector
 PI = math.pi
 VIEWS = 32
-CELL = 96
+CELL = 128
 SHEETS = {
     "idle": 8, "run": 10, "stalk": 10, "jump": 12,
     "bite": 9, "combo": 14, "dodge": 10, "dodge-left": 10, "death": 14
@@ -41,7 +41,16 @@ ear = mat("Rose inner ears", (.78, .395, .39))
 eye = mat("Black glass eyes", (.012, .008, .014), .22)
 nose = mat("Dark wet nose", (.225, .065, .084), .27)
 teeth = mat("Small ivory incisors", (.77, .69, .50))
-whisker = mat("Pale whiskers", (.56, .48, .44))
+whisker = mat("Pale whiskers", (.67, .58, .48))
+fur_shadow = mat("Dense charcoal underfur", (.13, .105, .12))
+fur_coat = mat("Dark matted dorsal coat", (.205, .14, .135))
+fur_gold = mat("Sparse warm guard hairs", (.53, .335, .22))
+ear_shadow = mat("Inner ear folds", (.39, .19, .20))
+claw = mat("Hard ivory claws", (.69, .61, .47))
+hide = mat("Weathered saddle-brown leather", (.20, .115, .074))
+brass = mat("Found dungeon brass", (.53, .33, .12))
+patch = mat("Ragged muted red cloth", (.34, .10, .12))
+tail_ring = mat("Tail joint dark folds", (.35, .16, .17))
 
 joints = {}
 parts = []
@@ -56,7 +65,7 @@ def add_part(obj, name, bone, material):
     return obj
 
 def oval(name, bone, pos, scale, material, segments=12):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=8, location=pos)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=12, location=pos)
     o = bpy.context.object
     o.scale = scale
     return add_part(o, name, bone, material)
@@ -64,7 +73,7 @@ def oval(name, bone, pos, scale, material, segments=12):
 def rod(name, bone, start, end, radius, material, tip=None):
     a, b = V(start), V(end)
     bpy.ops.mesh.primitive_cone_add(
-        vertices=8, radius1=radius, radius2=radius if tip is None else tip,
+        vertices=10, radius1=radius, radius2=radius if tip is None else tip,
         depth=(b-a).length, location=(a+b)*.5)
     o = bpy.context.object
     o.rotation_euler = (b-a).to_track_quat("Z", "Y").to_euler()
@@ -130,6 +139,120 @@ for i in range(6):
     b = a+V((0, .19, -.026 if i>0 else .004))
     rod("Tapered tail", "Tail"+str(i), a, b, .062-i*.008, skin,
         max(.012, .053-i*.008))
+
+
+# Production-model detailing pass: rat anatomy, fur silhouette, expression.
+# Each strand/tuft is a real weighted Blender mesh, not a painted 2D overlay.
+def triangle(name,bone,points,material):
+    mesh=bpy.data.meshes.new(name)
+    mesh.from_pydata(points, [], [(0,1,2),(2,1,0)])
+    mesh.update()
+    o=bpy.data.objects.new(name,mesh)
+    scene.collection.objects.link(o)
+    add_part(o,name,bone,material)
+
+# Broad dark dorsal stripe, fur layering and natural shoulders/haunches.
+oval("Dense dark uppercoat", "Root",(0,.12,.59),(.275,.43,.116),fur_coat,20)
+oval("Rump underfur", "Root",(0,.37,.345),(.29,.29,.238),fur)
+oval("Cream chin and muzzle patch", "Head",(0,-.755,.315),
+     (.137,.135,.077),belly,20)
+for sign in (-1,1):
+    side="L" if sign>0 else "R"
+    oval("Sculpted cheek pad", "Head",(sign*.174,-.657,.365),
+         (.112,.149,.120),fur_light,18)
+    oval("Sculpted eye socket", "Head",(sign*.177,-.717,.478),
+         (.051,.047,.050),fur_shadow,16)
+    oval("Glass eye iris", "Head",(sign*.181,-.754,.488),
+         (.032,.026,.032),eye,20)
+    oval("Eye catchlight", "Head",(sign*.17,-.778,.507),
+         (.009,.009,.012),teeth,12)
+    oval("Thick ear edge", "Ear"+side,(sign*.198,-.542,.611),
+         (.125,.048,.151),fur,16)
+    oval("Fleshy folded ear interior", "Ear"+side,
+         (sign*.198,-.574,.618),(.087,.023,.102),ear,16)
+    oval("Dark ear fold", "Ear"+side,
+         (sign*.19,-.596,.575),(.041,.010,.029),ear_shadow)
+    oval("Raised nasal whisker root", "Nose",
+         (sign*.065,-.853,.329),(.036,.040,.030),fur_light)
+    for k in range(5):
+        level=k-2
+        rod("Fine curved whisker", "Nose",
+            (sign*.054,-.875,.341+level*.016),
+            (sign*(.34+abs(level)*.024),-.80+abs(level)*.024,
+             .328+level*.053),.0031,whisker,.0007)
+    # Cheek ruff silhouette: directional triangular locks, not a smooth egg.
+    for k in range(8):
+        yy=-.73+k*.045
+        zz=.385+.045*math.sin(k*1.6)
+        x=sign*(.18+.012*math.cos(k*1.7))
+        triangle("Swept cheek fur tuft", "Head",[
+            (x,yy,zz+.032),(x,yy+.055,zz-.015),
+            (sign*(.305+.035*(k%3)/3),yy+.075,zz-.027)
+        ],fur_light if k%3 else fur_shadow)
+    # Distinct black claws and webbing between paws.
+    for front,paw in ((True,"FrontPaw"+side),(False,"HindPaw"+side)):
+        pos=joints[paw][0]
+        for i in range(3):
+            x=pos.x+(i-1)*.039
+            y=pos.y+(-.125 if front else .127)
+            rod("Sharp ivory paw claw",paw,(x,y,.032),
+                (x+sign*.007,y+(-.038 if front else .038),.012),
+                .010,claw,.0005)
+
+# Layered guard hairs across the rump with two warm and dark values.
+# Tufts follow the body root; no random geometry flashing between frames.
+for row in range(10):
+    y=-.29+row*.108
+    width=.15+.12*max(0,1-abs(y-.07)/.61)
+    height=.58+.045*math.cos((y-.12)*2.5)
+    for col in range(7):
+        t=(col-3)/3
+        x=t*width
+        z=height-.025*t*t
+        seed=(row*23+col*17)%7
+        spike=.045+seed*.006
+        triangle("Individual coarse guard fur","Root",[
+            (x-.022,y,z-.022),(x+.027,y,z-.015),
+            (x+.010,y+spike,z+.016)
+        ],fur_gold if seed==0 else fur_shadow if seed==2 else fur_coat)
+
+# The long tail has rings, creases and an organic silhouette.
+for i in range(6):
+    p=joints["Tail"+str(i)][0]
+    rod("Tail annular skin fold","Tail"+str(i),
+        p+V((0,.019,0)),p+V((0,.038,0)),
+        .062-i*.008+.004,tail_ring,
+        .060-i*.008+.003)
+    for n in (-1,1):
+        triangle("Tail scar","Tail"+str(i),[
+            (n*(.049-i*.006),p.y+.055,p.z),
+            (n*(.052-i*.006),p.y+.073,p.z+.012),
+            (n*(.049-i*.006),p.y+.089,p.z-.008)
+        ],skin)
+
+# Worn scavenger harness: two straps, brass buckles and a tiny torn patch.
+# This provides a strong visual identity without obscuring rat anatomy.
+for side in (-1,1):
+    rod("Back harness strap","Root",
+        (side*.241,-.13,.49),(side*.232,.17,.51),.027,hide,.023)
+    oval("Harness brass eyelet","Root",
+         (side*.230,-.105,.514),(.024,.019,.018),brass)
+rod("Harness dorsal cross strap","Root",
+    (-.243,-.035,.540),(.243,-.035,.540),.025,hide,.025)
+oval("Harness centre buckle","Root",(0,-.055,.616),
+     (.054,.028,.020),brass,16)
+# Small torn cloth panel that makes the silhouette identifiable in combat.
+triangle("Red scrap shoulder fabric","Root",[
+    (-.105,-.14,.605),(.115,-.16,.605),
+    (.030,.17,.673)
+],patch)
+triangle("Scrap torn trailing hem","Root",[
+    (-.07,.19,.641),(.086,.18,.653),
+    (-.057,.38,.599)
+],patch)
+
+# More expressive animation curves: independent ear flicks, snout twitching
+# and raised hackles. These details read during both idle and locomotion.
 
 arm = bpy.data.armatures.new("Small rat armature")
 rig = bpy.data.objects.new("Rat rig • editable", arm)
@@ -289,17 +412,17 @@ bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/"rat.blend"),compress=True)
 
 # Pose batching: 1 render per animation, not 32 x frames individual renders.
 scene.render.engine="CYCLES"
-scene.cycles.samples=8
-scene.cycles.use_denoising=False
+scene.cycles.samples=18
+scene.cycles.use_denoising=True
 scene.render.film_transparent=True
 scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="WEBP"
 scene.render.image_settings.color_mode="RGBA"
-scene.render.image_settings.quality=87
+scene.render.image_settings.quality=96
 scene.world=bpy.data.worlds.new("Rat studio ambient")
 scene.world.use_nodes=True
 scene.world.node_tree.nodes["Background"].inputs[0].default_value=(.64,.66,.73,1)
-scene.world.node_tree.nodes["Background"].inputs[1].default_value=.75
+scene.world.node_tree.nodes["Background"].inputs[1].default_value=.51
 camera_data=bpy.data.cameras.new("Atlas orthographic")
 camera=bpy.data.objects.new("Atlas camera",camera_data)
 scene.collection.objects.link(camera)
@@ -308,8 +431,8 @@ camera_data.clip_end=300
 camera.location=(0,0,45)
 scene.camera=camera
 for name, color, power, direction in [
-    ("Warm key",(1,.79,.63),2.6,(.35,-.65,1)),
-    ("Blue rim",(.55,.70,1),2.1,(-.8,.5,.8))
+    ("Warm key",(1,.84,.69),2.8,(.35,-.65,1)),
+    ("Blue rim",(.55,.70,1),1.3,(-.8,.5,.8))
 ]:
     light=bpy.data.lights.new(name,"SUN")
     light.energy=power
@@ -324,7 +447,7 @@ def rot(x=0,y=0,z=0):
 pitch=math.atan(1/math.sqrt(2))
 view=rot(pitch-PI/2)
 all_mats=list(body.data.materials)
-world_cell=4.0  # ample clearance for long tail and sideways hops
+world_cell=3.7  # tighter framing while preserving the tail and evasive leap
 for clip,count in SHEETS.items():
     verts=[]
     faces=[]
