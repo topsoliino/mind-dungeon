@@ -220,8 +220,7 @@ function createLayers({project,polygon,line,cacheObject}){
   // Guardrails follow the real stringer, including a turn or curved helix.
   // No rail crosses the landing as an impossible diagonal chord.
   const profiles=[];
-  if(plan.kind.startsWith('spiral')){
-   const c=plan.posts[0].p,r=plan.cfg.outer*.99;
+  if(plan.kind.startsWith('spiral')||plan.kind==='curved'){
    const vertices=plan.steps.map(step=>step.corners[1]).concat(plan.steps.at(-1).corners[2]);
    profiles.push(vertices.map((p,i)=>({p,z:HEIGHT*i/(vertices.length-1)+28})));
   }else{
@@ -283,8 +282,10 @@ function createLayers({project,polygon,line,cacheObject}){
  });
  return [
   {kind:'upper-deck',image:slab,depth:4000,level:1},
-  {kind:'stairs-3d',image:stairsImage,depth:5000,level:0},
-  {kind:'ladder-3d',image:ladderImage,depth:5100,level:0},
+  {kind:'stairs-3d',image:stairsImage,
+   depth:project(plan.bottom.x,plan.bottom.y)[1]+.25,level:0},
+  {kind:'ladder-3d',image:ladderImage,
+   depth:project(ladder.bottom.x,ladder.bottom.y)[1]+.25,level:0},
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
  ];
 }
