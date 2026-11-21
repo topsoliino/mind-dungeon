@@ -2588,7 +2588,7 @@ window.addEventListener('pointermove',e=>{
 window.addEventListener('pointerdown',e=>{
  if(alley&&!alleyVertical?.state.transition&&
   (e.pointerType==='mouse'&&e.button===2||e.pointerType==='touch'&&e.button===0)&&
-  !modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,button')){
+  !modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,#iso-generator-tools,button')){
   e.preventDefault();
   mouse={x:e.clientX,y:e.clientY};aimMode='mouse';
   alleyRoute=alleyQueuedLight=null;
@@ -2606,7 +2606,7 @@ window.addEventListener('pointerdown',e=>{
    alleyVertical?.state.floor?alleyVertical.height:0),steps:null};
   return;
  }
- if(e.pointerType==='mouse'&&e.button===0&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
+ if(e.pointerType==='mouse'&&e.button===0&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,#iso-generator-tools,button')){
   setControllerPrompts(false);controllerTarget=null;aimMode='mouse';
   if(alley){
    mouse={x:e.clientX,y:e.clientY};
