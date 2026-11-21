@@ -2627,13 +2627,47 @@ document.querySelectorAll('[data-key]').forEach(b=>{
  b.onpointerdown=e=>{if(modalType)return;e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId);};
  b.onpointerup=b.onpointercancel=()=>keys[key]=false;
 });
+function mobileAttackTarget(){
+ if(!alley||alleyVertical?.state.z>35)return null;
+ let best=null,dist=122;
+ for(const e of enemies){
+  if(e.hp<=0||e.fall)continue;
+  const d=Math.hypot(e.x-player.x,e.y-player.y);
+  if(d<dist&&!gateLineBlocked(player.x,player.y,e.x,e.y)){best=e;dist=d;}
+ }
+ return best;
+}
+function toggleMobileSneak(){
+ if(!alley||paused||modalType)return;
+ const crouch=!alleySneaking;
+ if(!crouch&&alleyVertical?.state.floor===0&&!alleyVertical?.state.stairRide&&
+  alleyVertical.blocksGround(player.x/48,player.y/48,actorRadius(player)/48,false)){
+  tell('Zu wenig Kopffreiheit zum Aufstehen.');return;
+ }
+ alleySneaking=crouch;
+ if(alleyVertical)alleyVertical.state.crouching=crouch;
+ $('#mobileSneak').setAttribute('aria-pressed',String(crouch));
+}
 $('#mobileInteract').onclick=interact;
 $('#mobileNav').onclick=()=>{if(!paused&&!modalType)navigationMenu();};
+$('#mobileSneak').onclick=toggleMobileSneak;
+$('#mobileRoll').onclick=()=>{
+ if(paused||modalType||player.dash>0)return;
+ if(alley){
+  const dir=movementInput();
+  alleyRoll=Math.hypot(dir.x,dir.y)>.10?Math.atan2(dir.y,dir.x):player.dir;
+  alleyRoute=alleyMove=alleyMarker=null;
+ }else controllerDash=true;
+};
 $('#attack').onpointerdown=e=>{
- e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);
- if(alley)requestAlleyLight();
+ e.preventDefault();e.stopPropagation();
+ if(paused||modalType)return;
+ e.currentTarget.setPointerCapture?.(e.pointerId);
+ if(alley)requestAlleyLight(mobileAttackTarget());
  else startAttack(e.pointerId);
 };
+$('#attack').onpointerup=e=>{if(!alley)releaseAttack(e.pointerId);};
+$('#attack').onpointercancel=e=>{if(!alley&&heldAttack?.input===e.pointerId)clearHeldAttack();};
 const rubbleProps=furniture.filter(p=>p.type==='rubble'||p.type==='roof-rubble');
 let footstepDistance=32, stepCount=0, ambienceClock=0;
 function playFootstep(oldX,oldY) {
