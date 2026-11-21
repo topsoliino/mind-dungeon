@@ -378,9 +378,9 @@ function prewarm(canWalk,floor=0){
  navigation.set(floor,graph);
  return graph;
 }
-function path(from,target,canWalk){
+function path(from,target,canWalk,floorOverride=null){
  const stairState=window.AlleyVertical?.state,
-  floor=stairState?.floor===1?1:stairState?.crouching?'0-crouch':0,
+  floor=floorOverride??(stairState?.floor===1?1:stairState?.crouching?'0-crouch':0),
   {nodes}=prewarm(canWalk,floor);
  const goal={x:target.x,y:target.y};
  if(!canWalk(goal.x,goal.y))return null;
