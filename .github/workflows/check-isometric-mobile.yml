@@ -1,0 +1,23 @@
+name: Isometric mobile touch controls regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/check-isometric-mobile.yml
+      - beta/dungeon-touch.js
+      - beta/index.html
+      - tools/check-isometric-mobile-touch.cjs
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-touch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check multi-touch joystick and isometric input wiring
+        run: node tools/check-isometric-mobile-touch.cjs
