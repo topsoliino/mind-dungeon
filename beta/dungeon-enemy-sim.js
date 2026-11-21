@@ -54,6 +54,9 @@ function moveEnemy(e,dx,dy){
 }
 function aimEnemy(e,angle){e.angle=angle;e.facing=angle;}
 function updateEnemy(e,dt){
+ // Floor-aware sight/memory handles guards before legacy 2D encounter logic.
+ // It also cancels attacks while climbing or separated by an OG slab.
+ if(api.alleyEnemyPursuit?.update(e,player,dt,combatClock,moveEnemy))return;
  const labRat=e.bossRole==='rat'&&regionAt(player.x,player.y)===floor.bossArena?.id;
  if(!e.veilPhase&&!labRat&&!enemyEncounterReady(e)){
   e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.emerge=Math.max(0,(e.emerge||0)-dt);
@@ -741,11 +744,13 @@ function fireBolt(e,type){
   const x=e.x+dx*lead,y=e.y+dy*lead;
   const gravity=240,z=40,targetTime=Math.max(.14,Math.hypot(e.target.x-x,e.target.y-y)/speed);
   const vz=(24-z)/targetTime+.5*gravity*targetTime;
-  state.bolts.push({x,y,z,vz,gravity,angle:e.angle,speed,type,
+  state.bolts.push({x,y,z:z+(e.alleyZ||0),vz,gravity,angle:e.angle,speed,type,
+    alleyFloor:e.alleyFloor??0,
    life:(vz+Math.sqrt(vz*vz+2*gravity*z))/gravity,origin:origin(e,'Pfeil')});
   return;
  }
- state.bolts.push({x:e.x,y:e.y,angle:e.angle,speed,life:1.23,type:e.type===FROST_CROSSBOW?'frost-crossbow':type,
+ state.bolts.push({x:e.x,y:e.y,angle:e.angle,speed,life:1.23,alleyFloor:e.alleyFloor??0,
+   type:e.type===FROST_CROSSBOW?'frost-crossbow':type,
   origin:origin(e,e.type===FROST_CROSSBOW?'Frostbolzen':type==='bow'?'Pfeil':'Armbrustbolzen')});
 }
 function updateBolts(dt){
@@ -781,7 +786,9 @@ function updateBolts(dt){
     p.audioPassed=true;
     soundWorld('bolt_fly',p,{group:'projectile-pass',cooldown:.09,priority:2,rate:p.type==='trap'?1.19:1});
    }
-   const target=coopActors().find(hero=>hero.dash<=0&&Math.hypot(p.x-hero.x,p.y-hero.y)<13&&
+   const target=coopActors().find(hero=>hero.dash<=0&&
+     (!api.alleyEnemyPursuit||p.alleyFloor===api.alleyEnemyPursuit.heroFloor())&&
+     Math.hypot(p.x-hero.x,p.y-hero.y)<13&&
     (!p.gravity||(p.z>=api.arrowTargetHeight(hero)&&p.z<=api.arrowTargetHeight(hero)+52)));
    if(target){
     const damage=p.type==='trap'?10:p.type==='bow'?11:16;
