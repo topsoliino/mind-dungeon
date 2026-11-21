@@ -29,17 +29,18 @@ jobs:
       - name: Install Blender for authoring and exporting genuine armature keys
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
           blender -b --version | head -2
+          PYTHONPATH=/usr/lib/python3/dist-packages blender -b --python-expr "import numpy; print('Blender numpy:', numpy.__version__)"
 
       - name: Bake two ladder takes onto the original Guardian rig
         run: |
-          blender -b beta/art/player-study/guardian.blend \
+          PYTHONPATH=/usr/lib/python3/dist-packages blender -b beta/art/player-study/guardian.blend \
             -P tools/add-guardian-ladder-animations.py
 
       - name: Export real GLB armature timeline for Three.js
         run: |
-          blender -b beta/art/player-study/guardian.blend \
+          PYTHONPATH=/usr/lib/python3/dist-packages blender -b beta/art/player-study/guardian.blend \
             -P tools/export-guardian-web.py -- \
             beta/art/player-study/guardian-rig.glb.gz
 
