@@ -56,8 +56,8 @@ for(let seed=0;seed<120;seed++){
 }
 assert(slabs>4000,'upper floor must be a real collection of level cells');
 const html=read('index.html');
-assert(html.includes('src="beta/alley-vertical.js?v=1"'));
-assert(html.indexOf('alley-vertical.js?v=1')<html.indexOf('alley-study.js?v=9'),
+assert(html.includes('src="beta/alley-vertical.js?v=2"'));
+assert(html.indexOf('alley-vertical.js?v=2')<html.indexOf('alley-study.js?v=9'),
  'vertical geometry must be available before art construction');
 assert(html.includes("approachAlleyVertical()"),'E must trigger ladder/stairs approach');
 assert(html.includes("state.transition={...task"),'interaction must initiate a timed climb');
