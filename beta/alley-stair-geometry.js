@@ -45,18 +45,24 @@ function buildTemplate(kind){
   const middle=w/2;
   addFlight(vec(middle,h-.92),vec(middle,.96),0,H,cfg.steps,cfg.width);
  }else if(kind==='quarter'){
-  const a=vec(1.55,6.87),corner=vec(1.55,1.78),b=vec(6.9,1.78);
-  addFlight(a,corner,0,H/2,7,cfg.width);
-  const half=1.06;
-  landings.push({corners:[vec(corner.x-half,corner.y-half),vec(corner.x+half,corner.y-half),
-   vec(corner.x+half,corner.y+half),vec(corner.x-half,corner.y+half)],z:H/2});
-  addFlight(corner,b,H/2,H,7,cfg.width);
+  // Every flight ends at the edge of a single load-bearing landing.
+  const a=vec(1.55,6.87),entry=vec(1.55,2.65);
+  const corner=vec(1.55,1.65),exit=vec(2.65,1.65),b=vec(6.9,1.65);
+  addFlight(a,entry,0,H/2,7,cfg.width);
+  landings.push({corners:[vec(.55,.65),vec(2.65,.65),
+   vec(2.65,2.65),vec(.55,2.65)],z:H/2});
+  path.push({...corner,z:H/2},{...exit,z:H/2});
+  addFlight(exit,b,H/2,H,7,cfg.width);
  }else if(kind==='switchback'){
-  const a=vec(1.65,7.73),corner=vec(1.65,1.58),bend=vec(6.15,1.58),b=vec(6.15,7.73);
-  addFlight(a,corner,0,H/2,8,cfg.width);
-  landings.push({corners:[vec(.75,.65),vec(7.05,.65),vec(7.05,2.49),vec(.75,2.49)],z:H/2});
-  path.push({...bend,z:H/2});
-  addFlight(bend,b,H/2,H,8,cfg.width);
+  // Both flights meet the same flat landing edge at y=3.32.
+  const a=vec(1.65,7.75),leftLip=vec(1.65,3.32);
+  const leftInside=vec(1.65,2.38),rightInside=vec(6.15,2.38);
+  const rightLip=vec(6.15,3.32),b=vec(6.15,7.75);
+  addFlight(a,leftLip,0,H/2,8,cfg.width);
+  landings.push({corners:[vec(.75,1.45),vec(7.05,1.45),
+   vec(7.05,3.32),vec(.75,3.32)],z:H/2});
+  path.push({...leftInside,z:H/2},{...rightInside,z:H/2},{...rightLip,z:H/2});
+  addFlight(rightLip,b,H/2,H,8,cfg.width);
  }else{
   const wide=kind==='spiral-wide',curved=kind==='curved';
   const center=vec(w/2,h/2),r0=cfg.inner,r1=cfg.outer,walk=(r0+r1)/2;
@@ -81,11 +87,18 @@ function buildTemplate(kind){
  const first=path[0],last=path.at(-1);
  let entry,exit;
  if(kind.startsWith('spiral')||kind==='curved'){
+  // Exit is tangential to the final tread. Radial exit pointed sideways
+  // into an impossible upper half of the curved staircase.
   const center=vec(w/2,h/2);
-  const from=norm(first.x-center.x,first.y-center.y),
-   to=norm(last.x-center.x,last.y-center.y);
-  entry=vec(first.x+from.x*.70,first.y+from.y*.70);
-  exit=vec(last.x+to.x*.78,last.y+to.y*.78);
+  const firstRad=norm(first.x-center.x,first.y-center.y),
+   lastRad=norm(last.x-center.x,last.y-center.y);
+  const inTangent=vec(-firstRad.y,firstRad.x);
+  const outTangent=vec(-lastRad.y,lastRad.x);
+  entry=vec(first.x-inTangent.x*.45,first.y-inTangent.y*.45);
+  exit=vec(last.x+outTangent.x*.55,last.y+outTangent.y*.55);
+  const lastStep=steps.at(-1),a=lastStep.corners[3],b=lastStep.corners[2];
+  const shifted=p=>vec(p.x+outTangent.x*.55,p.y+outTangent.y*.55);
+  landings.push({corners:[a,b,shifted(b),shifted(a)],z:H,top:true});
  }else{
   const startDirection=norm(path[1].x-first.x,path[1].y-first.y);
   const endDirection=norm(last.x-path.at(-2).x,last.y-path.at(-2).y);
