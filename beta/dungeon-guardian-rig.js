@@ -30,7 +30,7 @@ function visibleParts(clip,progress,armed){
  return visible;
 }
 
-export async function loadRig(url){
+export async function loadRig(url,clips={}){
  const renderer=new WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});
  try{
   renderer.setSize(renderSize,renderSize,false);
@@ -45,6 +45,12 @@ export async function loadRig(url){
   const model=compressed?await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer():bytes;
   const gltf=await new GLTFLoader().parseAsync(model,'');
   if(gltf.animations.length!==1)throw new Error('Die Animationsspur des Wächters fehlt.');
+  const ladderUp=clips['climb-up'],ladderDown=clips['climb-down'];
+  // Keep compatibility with the old GLB until the Blender-derived asset
+  // is deployed. Never add procedural rotation on top of a baked ladder pose.
+  const bakedLadder=Boolean(ladderUp&&ladderDown&&
+   gltf.animations[0].duration >=
+   (ladderDown[0]+ladderDown[1]-1)/frameRate-.06);
 
   const scene=new Scene();
   const pivot=new Group();
@@ -130,8 +136,11 @@ export async function loadRig(url){
     for(const node of attachments)node.visible=visible.has(node.userData.guardian_part);
     action.paused=false;
     action.enabled=true;
-    mixer.setTime((start+clamp(progress)*(count-1))/frameRate);
-    if(clip==='climb-up'||clip==='climb-down')climbingPose(clip,clamp(progress));
+    const fallbackLadder=lightClip(clip)&&!bakedLadder;
+    const [playingStart,playingCount]=fallbackLadder?
+     (clips.idle??[0,4]):[start,count];
+    mixer.setTime((playingStart+clamp(progress)*(playingCount-1))/frameRate);
+    if(fallbackLadder)climbingPose(clip,clamp(progress));
     if(transition){
      transition.elapsed+=dt;
      const t=clamp(transition.elapsed/transition.duration),weight=t*t*(3-2*t);
