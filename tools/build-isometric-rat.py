@@ -492,7 +492,7 @@ for clip,count in SHEETS.items():
         for row in range(VIEWS):
             spin=view@rot(z=row*2*PI/VIEWS)
             origin=V(((col+.5-count/2)*world_cell,
-                      (VIEWS/2-.5-row)*world_cell-.26*world_cell,0))
+                      (VIEWS/2-.5-row)*world_cell-.15*world_cell,0))
             offset=len(verts)
             verts.extend(spin@v+origin for v in coords)
             faces.extend(tuple(offset+k for k in poly) for poly in polys)
