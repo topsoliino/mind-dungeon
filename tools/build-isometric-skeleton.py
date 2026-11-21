@@ -13,6 +13,13 @@ out.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.context.preferences.filepaths.save_version = 0
 scene = bpy.context.scene
+# Consistent game-palette color management: AgX/Filmic desaturates dark
+# creatures compared with the high-contrast guardian's silver/red materials.
+scene.view_settings.view_transform = 'Standard'
+try:
+    scene.view_settings.look = 'Medium High Contrast'
+except TypeError:
+    scene.view_settings.look = 'Medium High Contrast' if 'Medium High Contrast' in scene.view_settings.bl_rna.properties['look'].enum_items.keys() else 'None'
 V = Vector
 pi = math.pi
 FACINGS = 32  # 360 degrees, independent baked 3D views; NO translucent view crossfades.
