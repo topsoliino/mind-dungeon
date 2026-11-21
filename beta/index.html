@@ -4318,8 +4318,13 @@ function drawCanvasCharacter(sprite,actor,lift,fall=null,alpha=1){
 function alleyGuardianPose(){
  if(alleyVertical?.state.transition){
   const task=alleyVertical.state.transition;
+  const ratio=task.age/task.duration;
+  // One two-foot gait cycle per two risers, not a single slow walk cycle
+  // stretched across a whole 12–17-step flight.
+  const cadence=task.connector.kind==='stairs'?
+   (ratio*(alleyVertical.plan.length/2))%1:ratio;
   return {clip:task.connector.kind==='ladder'?(task.up?'climb-up':'climb-down'):'walk',
-   progress:task.age/task.duration,angle:player.dir,hideWeapon:true};
+   progress:cadence,angle:player.dir,hideWeapon:true};
  }
  if(alleyHit)return {clip:alleyHit.clip,progress:alleyHit.elapsed/guardian.atlas.knockback[alleyHit.clip].duration,angle:player.dir};
  if(player.dash>0)return {clip:'roll',progress:1-player.dash/player.dashDuration,angle:Math.atan2(player.dashY,player.dashX)};
