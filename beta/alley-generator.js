@@ -346,7 +346,8 @@ function prewarm(canWalk,floor=0){
  return graph;
 }
 function path(from,target,canWalk){
- const floor=window.AlleyVertical?.state.floor??0,
+ const stairState=window.AlleyVertical?.state,
+  floor=stairState?.floor===1?1:stairState?.crouching?'0-crouch':0,
   {nodes}=prewarm(canWalk,floor);
  const goal={x:target.x,y:target.y};
  if(!canWalk(goal.x,goal.y))return null;
