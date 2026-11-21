@@ -44,13 +44,20 @@
   ];
   const frontAngle=(map.stations.chest.front-1)*Math.PI/4;
   const goal={x:chest.x+Math.cos(frontAngle)*(.43*tile+radius),y:chest.y+Math.sin(frontAngle)*(.43*tile+radius)};
-  function walkable(x,y,r=radius,includeProps=true){
-   // Upper-level physics belongs to its own slab; lower-level partitions must
-   // not turn into invisible obstacles on the mezzanine.
-   if(vertical?.state.floor===1)return vertical.insideTop(x/tile,y/tile,r/tile)&&
-    !vertical.blocksTop(x/tile,y/tile,r/tile);
+  function walkableOnFloor(x,y,floor=0,r=radius,includeProps=true){
+   // Upper-floor slabs themselves are authoritative colliders. In seed 4148
+   // a duplicate stair-overlap test rejected ~20 visibly painted deck cells.
+   if(floor===1)return Boolean(vertical?.insideTop(x/tile,y/tile,r/tile));
    return groundWalkable(x,y,r,includeProps);
   }
+  function walkable(x,y,r=radius,includeProps=true){
+   return walkableOnFloor(x,y,vertical?.state.floor===1?1:0,r,includeProps);
+  }
+  const groundRouteWalk=(x,y)=>walkableOnFloor(x,y,0);
+  const upperRouteWalk=(x,y)=>walkableOnFloor(x,y,1);
+  const crouchRouteWalk=(x,y)=>walkableOnFloor(x,y,0);
+  const floorPredicate=floor=>floor===1?upperRouteWalk:
+   floor==='0-crouch'?crouchRouteWalk:groundRouteWalk;
   function groundWalkable(x,y,r=radius,includeProps=true){
    // Stair treads are physical geometry, not ordinary ground. The only
    // accessible gaps into the ribbon are the guarded foot and head.
@@ -73,23 +80,31 @@
    ...props.flatMap(({point,half:[hw,hh]})=>
     [-1,1].flatMap(sx=>[-1,1].map(sy=>({x:point.x+sx*(hw*tile+pad),y:point.y+sy*(hh*tile+pad)}))))
   ].filter(({x,y})=>walkable(x,y));
-  function nearestWalkable(goal){
-   if(walkable(goal.x,goal.y))return goal;
-   // A click just inside a wall or prop may land next to its footprint.
+  function nearestWalkable(goal,canWalk=walkable){
+   if(canWalk(goal.x,goal.y))return goal;
    for(let radius=4;radius<=36;radius+=4){
     for(let i=0;i<24;i++){
-     const angle=i*Math.PI/12,x=goal.x+Math.cos(angle)*radius,y=goal.y+Math.sin(angle)*radius;
-     if(walkable(x,y))return {x,y};
+     const angle=i*Math.PI/12,x=goal.x+Math.cos(angle)*radius,
+      y=goal.y+Math.sin(angle)*radius;
+     if(canWalk(x,y))return {x,y};
     }
    }
    return null;
   }
-  function routeTo(start,target){
-   const goal=nearestWalkable(target);
+  function routeToFloor(start,target,floor=vertical?.state.floor===1?1:0){
+   const canWalk=floorPredicate(floor),goal=nearestWalkable(target,canWalk);
    if(!goal)return null;
-   if(procedural)return route.path(start,goal,walkable);
+   if(procedural)return route.path(start,goal,canWalk,floor);
    const steps=shortestRoute(start,goal,waypoints,clearSegment);
    return steps?{goal,steps}:null;
+  }
+  function routeTo(start,target){
+   return routeToFloor(start,target,vertical?.state.floor===1?1:
+    vertical?.state.crouching?'0-crouch':0);
+  }
+  function clearLineOnFloor(x,y,endX,endY,floor){
+   return pointBetween({x,y},{x:endX,y:endY},
+    (px,py)=>walkableOnFloor(px,py,floor,0,false));
   }
   function canInteract(actor){
    if(procedural)return false;
@@ -193,10 +208,10 @@
    try{
     for(const floor of [0,1]){
      vertical.state.floor=floor;vertical.state.crouching=false;
-     route.prewarm(walkable,floor);
+     route.prewarm(floorPredicate(floor),floor);
     }
     vertical.state.floor=0;vertical.state.crouching=true;
-    route.prewarm(walkable,'0-crouch');
+    route.prewarm(crouchRouteWalk,'0-crouch');
    }finally{
     vertical.state.floor=originalFloor;vertical.state.crouching=oldCrouch;
    }
@@ -205,7 +220,8 @@
   const lab=map.stations.lab?unit(map.stations.lab.at):spawn;
   const nearStation=(actor,target)=>Math.hypot(actor.x-target.x,actor.y-target.y)<82&&
    pointBetween(actor,target,(x,y)=>walkable(x,y,0,false));
-  return {spawn,chest,archer,knowledge,lab,walkable,groundWalkable,clearLine,canInteract,routeTo,cameraOrigin,addLayers,refreshLayers,drawLayers,
+  return {spawn,chest,archer,knowledge,lab,walkable,walkableOnFloor,groundWalkable,
+   clearLine,clearLineOnFloor,canInteract,routeTo,routeToFloor,cameraOrigin,addLayers,refreshLayers,drawLayers,
    vertical,
    enemies:{archive:(map.encounter.archive??[]).map(unit),lab:(map.encounter.lab??[]).map(unit)},
    archiveUnlocked:()=>route.isUnlocked(),unlockArchive:()=>route.unlock(),
