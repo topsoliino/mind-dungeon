@@ -324,7 +324,7 @@ def rot(x=0,y=0,z=0):
 pitch=math.atan(1/math.sqrt(2))
 view=rot(pitch-PI/2)
 all_mats=list(body.data.materials)
-world_cell=2.50
+world_cell=4.0  # ample clearance for long tail and sideways hops
 for clip,count in SHEETS.items():
     verts=[]
     faces=[]
