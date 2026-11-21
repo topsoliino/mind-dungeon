@@ -10,8 +10,9 @@ window.AlleySkeleton=(()=>{
     image.src='beta/art/skeleton/'+key+'.webp?v='+assetVersion;
     try{
      await image.decode();
-     if(image.height!==32*cell||
-        image.width<cell||image.width%cell)
+     const textureCell=image.height/32;
+     if(![96,128].includes(textureCell)||
+        image.width<textureCell||image.width%textureCell)
       throw new Error('Ungültige Sprite-Abmessungen '+image.width+'×'+image.height);
      sheets.set(key,image);
     }catch(error){
@@ -35,14 +36,16 @@ window.AlleySkeleton=(()=>{
   }
   const key=e.skeleton+'-'+clip,image=sheets.get(key);
   if(!image)return null;
-  const count=image.width/cell,col=Math.max(0,Math.min(count-1,Math.floor(t*count)));
+  const textureCell=image.height/32;
+  const count=image.width/textureCell,col=Math.max(0,Math.min(count-1,Math.floor(t*count)));
   const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
   // The atlas is baked camera-relatively: row zero looks toward the viewer,
   // while row two faces right in the projected scene.
   const views=image.height/cell;
   const row=((Math.round(views/8-facing*views/turn)%views)+views)%views;
   const p=iso.toView(e.x,e.y,e.alleyZ||0),size=140*e.size;
-  return {image,key:'skeleton-'+key,frame:row+'-'+col,sx:col*cell,sy:row*cell,w:cell,h:cell,
+  return {image,key:'skeleton-'+key,frame:row+'-'+col,sx:col*textureCell,sy:row*textureCell,
+   w:textureCell,h:textureCell,
    width:size,height:size,x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.765,
    alpha:deathAge===null?1:Math.min(1,Math.max(0,(2.6-deathAge)/.5))};
  }
