@@ -48,7 +48,7 @@ for(const kind of ['switchback','curved']){
   mouse,false,20,noop,actor,noop);
  const inputSource=cut('function movementInput(){','function setControllerPrompts(');
  const readInput=new Function('keys','alley','generationMode','iso','noMovement',
-  'controllerMove',inputSource+';return movementInput();');
+  'controllerMove','const touch={read:()=>({x:0,y:0})};\n'+inputSource+';return movementInput();');
  for(const [key,screenX,screenY] of [['KeyW',0,-1],['KeyD',1,0],['ArrowLeft',-1,0]]){
   const delta=readInput({[key]:true},alley,true,iso,{x:0,y:0},{x:0,y:0});
   const origin=iso.toView(0,0),end=iso.toView(delta.x,delta.y);
