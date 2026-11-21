@@ -435,7 +435,7 @@ function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
   along:ride.s,total:totalLength,incline};
 }
 const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
- connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,
+ connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
  overStair,blocksGround,speedOnStair,stairSpeed:STAIR_SPEED,
  boardStairs,tryEnterStairs,advanceStairs};
 window.AlleyVertical=api;
