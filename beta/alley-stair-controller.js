@@ -67,13 +67,22 @@ function controller({plan,state,nav,length,speeds,curving}){
   const magnitude=Math.hypot(dx,dy),old={x:ride.x,y:ride.y};
   if(magnitude>1e-6){
    dx/=magnitude;dy/=magnitude;
-   const forward={x:ride.x+dx*.09,y:ride.y+dy*.09},
-    trial=nav.surface(forward,state.z),
-    dz=trial?trial.z-state.z:0;
-   const factor=options?.rolling?1:
-    Math.abs(dz)<.035?speeds.landing:
-    dz>0?(curving?speeds.curvedUp:speeds.straightUp):
-    (curving?speeds.curvedDown:speeds.straightDown);
+   // Decompose input into movement along and across the actual local tread,
+   // without constraining position to its former centreline. On flat platforms
+   // every direction uses the ordinary landing speed.
+   const current=nav.surface(ride,state.z);
+   let factor=speeds.landing;
+   if(current?.part.kind==='tread'){
+    const start=current.part.start,end=current.part.end,
+     a={x:(start[0].x+start[1].x)/2,y:(start[0].y+start[1].y)/2},
+     b={x:(end[0].x+end[1].x)/2,y:(end[0].y+end[1].y)/2},
+     axis=norm(b.x-a.x,b.y-a.y),along=dx*axis.x+dy*axis.y,
+     across=dx*(-axis.y)+dy*axis.x,
+     forwardSpeed=along>=0?(curving?speeds.curvedUp:speeds.straightUp):
+      (curving?speeds.curvedDown:speeds.straightDown);
+    factor=Math.hypot(along*forwardSpeed,across*speeds.across);
+   }
+   if(options?.rolling)factor=1;
    let step=(Math.max(0,worldSpeed)/48)*Math.min(.05,dt)*factor;
    if(!manual&&ride.path)step=Math.min(step,distance(ride.path[0],ride));
    const next=nav.move(old,dx*step,dy*step);
