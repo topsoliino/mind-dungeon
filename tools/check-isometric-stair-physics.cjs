@@ -5,13 +5,15 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const path=require('node:path'),read=p=>fs.readFileSync(path.join(__dirname,'../beta',p),'utf8');
 const map=read('alley-study-map.js'),gen=read('alley-generator.js'),
- grammar=read('alley-stair-geometry.js'),vertical=read('alley-vertical.js');
+ grammar=read('alley-stair-geometry.js'),navmesh=read('alley-stair-navigation.js'),
+ controller=read('alley-stair-controller.js'),vertical=read('alley-vertical.js');
 function create(seed,style=''){
  const window={location:{search:'?szene=gasse&modus=generator&seed='+seed+
   (style?'&treppe='+style:'')}};
  const context={window,URLSearchParams};
  vm.runInNewContext(map,context);vm.runInNewContext(gen,context);
- vm.runInNewContext(grammar,context);vm.runInNewContext(vertical,context);
+ vm.runInNewContext(grammar,context);vm.runInNewContext(navmesh,context);
+ vm.runInNewContext(controller,context);vm.runInNewContext(vertical,context);
  return window.AlleyVertical;
 }
 const near=(a,b,epsilon=1e-5)=>Math.abs(a-b)<epsilon;
@@ -86,12 +88,21 @@ for(let seed=0;seed<120;seed++){
  const entry=p.bottom,first=p.path[0];
  const dx=first.x-entry.x,dy=first.y-entry.y,d=Math.hypot(dx,dy);
  for(let i=0;i<12;i++)v.advanceStairs(actor,1/60,180,dx/d,dy/d);
- assert(ride.s>origin+.05,'input-driven stairs must move with forward input');
- assert(ride.targetS===null,'movement input overrides an automatic click target');
- for(let i=0;i<150;i++)v.advanceStairs(actor,1/60,180,1,0);
+ assert(Math.hypot(actor.x/48-entry.x,actor.y/48-entry.y)>.08,
+  'input-driven stairs must move freely across their entrance apron');
+ assert(ride.path===null,'movement input overrides an automatic click route');
+ for(let i=0;i<150;i++){
+  v.advanceStairs(actor,1/60,180,1,0);
+  assert(v.navigation.canStand({x:actor.x/48,y:actor.y/48}),
+   'free movement stays within the protected real stair footprint');
+ }
  assert(ride.s>=0&&ride.s<=v.stairLength);
- assert(Math.abs(ride.lateral)<=Math.max(0,p.width/2-.44)+1e-6,
-  'no unrestricted lateral motion over the stair edge');
+ // Rolls have greater displacement but may not tunnel across a cliff edge.
+ for(let i=0;i<15;i++){
+  v.advanceStairs(actor,1/60,500,0,1,{rolling:true});
+  assert(v.navigation.canStand({x:actor.x/48,y:actor.y/48}),
+   'a stair dodge must remain within the collision-safe tread polygon');
+ }
  s.stairRide=null;s.floor=0;s.z=0;
 }
 assert.equal(seen.size,8,'all eight stair families have physical traversal');
@@ -116,14 +127,25 @@ const uFlight=create(4,'switchback'),uActor={x:uFlight.plan.bottom.x*48,
  y:uFlight.plan.bottom.y*48,dir:0};
 assert(uFlight.boardStairs(uActor,true));
 assert(uFlight.aimStairs(uFlight.plan.landings[0]));
-const midTarget=uFlight.state.stairRide.targetS;
-assert(Number.isFinite(midTarget)&&midTarget>0&&midTarget<uFlight.stairLength);
+const midTarget=uFlight.state.stairRide.target;
+assert(midTarget&&Number.isFinite(midTarget.x)&&Number.isFinite(midTarget.y));
 let platformFrames=0;
-while(uFlight.state.stairRide?.targetS!==null&&platformFrames++<1200)
+while(uFlight.state.stairRide?.path&&platformFrames++<1200)
  uFlight.advanceStairs(uActor,1/60,180);
 assert(platformFrames<1200&&uFlight.state.stairRide,
  'clicking a plateau stops there rather than finishing the staircase');
 assert(near(uFlight.state.z,66,1e-2),'mid-platform elevation remains flat');
+const plateauStart={x:uActor.x/48,y:uActor.y/48};
+const platformDirection=uFlight.plan.path[3],nextPoint=uFlight.plan.path[4],
+ dxPlatform=nextPoint.x-platformDirection.x,dyPlatform=nextPoint.y-platformDirection.y,
+ dPlatform=Math.hypot(dxPlatform,dyPlatform)||1;
+for(let i=0;i<35;i++){
+ uFlight.advanceStairs(uActor,1/60,180,dxPlatform/dPlatform,dyPlatform/dPlatform);
+ assert(uFlight.navigation.canStand({x:uActor.x/48,y:uActor.y/48}),
+  'a player walking across the wide U-platform cannot leave its supported area');
+}
+assert(Math.hypot(uActor.x/48-plateauStart.x,uActor.y/48-plateauStart.y)>.25,
+ 'the U-platform must admit free movement beyond its original centerline');
 const curved=create(7,'curved').plan;
  assert(curved.cfg.open,'curved flight must have an open underside');
 const prev=curved.path.at(-2),crest=curved.path.at(-1),exit=curved.top;
@@ -132,4 +154,4 @@ const a=Math.atan2(crest.y-prev.y,crest.x-prev.x),
 assert(Math.cos(a-b)>.94,
  'curved stair must leave the last rising tread tangentially, not radially');
 assert(curved.landings.some(l=>l.top),'curved stair ends on real flat cap');
-console.log('120 stair levels: 8 types, real U-landing contact, tangent curved crest, guarded sides, calibrated stair speeds and continuous two-way physics OK');
+console.log('120 levels: free stair navigation, two-way click routes, plateau movement and safe dodge/roll, eight stair families OK');
