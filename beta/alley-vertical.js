@@ -30,9 +30,11 @@ for(const [u,v] of room.cells){
    distance:Math.hypot(u+.5-stairCenter[0],v+.5-stairCenter[1])});
  }
 }
+const preferred=['north','west','east','south'];
+const rotated=preferred.slice(generator.seed%4).concat(preferred.slice(0,generator.seed%4));
 candidates.sort((a,b)=>{
- const weight=d=>d.wall==='north'?3:d.wall==='west'?2:d.wall==='east'?1:0;
- return weight(b)-weight(a)||b.distance-a.distance||a.cell[1]-b.cell[1];
+ const score=d=>4-rotated.indexOf(d.wall);
+ return score(b)-score(a)||b.distance-a.distance||a.cell[1]-b.cell[1];
 });
 const ladder={...candidates[0],id:'wall-ladder',kind:'ladder',height:HEIGHT};
 if(!ladder?.bottom)throw Error('No structurally connected wall for ladder');
