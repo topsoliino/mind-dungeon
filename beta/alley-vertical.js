@@ -165,18 +165,21 @@ function insideConvex(p,points){
  }
  return true;
 }
+const stairSurfaces=plan.steps.concat(plan.landings);
+const intersectsStair=(part,p,r)=>insideConvex(p,part.corners)||r>0&&
+ part.corners.some((a,i)=>distanceEdge(p,a,part.corners[(i+1)%part.corners.length])<=r);
 function overStair(u,v,r=0){
- const p={x:u,y:v},pieces=plan.steps.concat(plan.landings);
- return pieces.some(piece=>{
-  const vertices=piece.corners;
-  return insideConvex(p,vertices)||r>0&&vertices.some((a,i)=>
-   distanceEdge(p,a,vertices[(i+1)%vertices.length])<=r);
- });
+ const p={x:u,y:v};
+ return stairSurfaces.some(part=>intersectsStair(part,p,r));
 }
+// Closed stairs obstruct the ground. Open construction allows passage only
+// where the underside has standing clearance; no falls are enabled yet.
+const HEAD_CLEARANCE=92,SLAB_THICKNESS=13;
 function blocksGround(u,v,r=0){
- if(!overStair(u,v,r))return false;
- const entry=plan.bottom;
- return distance(entry,{x:u,y:v})>.58+r*.65;
+ const p={x:u,y:v};
+ if(distance(plan.bottom,p)<=.58+r*.65)return false;
+ return stairSurfaces.some(part=>intersectsStair(part,p,r)&&
+  (!plan.cfg.open||(part.prev??part.z)-SLAB_THICKNESS<HEAD_CLEARANCE));
 }
 // Upstairs XY footprints can overlap lower stair treads. Only the head gate
 // permits entry: the remaining sides are solid while fall physics is disabled.
@@ -187,7 +190,8 @@ function blocksTop(u,v,r=0){
 // Pick actual visible isometric tread surfaces, not their misleading
 // flat-ground cursor projections. This lets right-click target a flight.
 function pickStair(screen,iso){
- for(const part of [...plan.steps,...plan.landings].slice().reverse()){
+ for(let i=stairSurfaces.length-1;i>=0;i--){
+  const part=stairSurfaces[i];
   const poly=part.corners.map(p=>iso.toView(p.x*48,p.y*48,part.z));
   if(insideConvex(screen,poly))return part;
  }
@@ -389,61 +393,90 @@ function createLayers({project,polygon,line,cacheObject}){
  ];
 }
 const state={floor:0,z:0,transition:null,pending:null,stairRide:null};
-function boardStairs(actor,up=true,auto=true){
+// Clicks target a 3D point on the stair centreline. Explicit foot/head
+// positions are exact endpoints, so a click can finish a floor transition.
+function targetAlongStairs(part){
+ const p=part.center??part,h=Number.isFinite(part.prev)?(part.prev+part.z)/2:(part.z??0);
+ if(distance(p,plan.top)<.08&&h>=HEIGHT-1)return totalLength;
+ if(distance(p,plan.bottom)<.08&&h<=1)return 0;
+ let best=Infinity,at=0,passed=0;
+ for(let i=0;i<lengths.length;i++){
+  const a=stairPath[i],b=stairPath[i+1],dx=b.x-a.x,dy=b.y-a.y,
+   dz=(b.z-a.z)/24;
+  const fraction=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy+(h-a.z)/24*dz)/
+   Math.max(1e-8,dx*dx+dy*dy+dz*dz));
+  const err=(p.x-a.x-dx*fraction)**2+(p.y-a.y-dy*fraction)**2+
+   ((h-a.z)/24-dz*fraction)**2;
+  if(err<best){best=err;at=passed+lengths[i]*fraction;}
+  passed+=lengths[i];
+ }
+ return Math.max(0,Math.min(totalLength,at));
+}
+function boardStairs(actor,up=true,target=null){
  if(state.stairRide||state.transition||state.pending||state.floor!==(up?0:1))return false;
  const gate=up?plan.bottom:plan.top;
  if(Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y)>.72)return false;
- state.stairRide={s:up?0:totalLength,lateral:0,dir:up?1:-1,auto,up};
+ state.stairRide={s:up?0:totalLength,lateral:0,dir:up?1:-1,
+  targetS:target==null?null:typeof target==='number'?
+   Math.max(0,Math.min(totalLength,target)):targetAlongStairs(target),gait:0};
  state.z=up?0:HEIGHT;
- actor.x=gate.x*48;actor.y=gate.y*48;
+ actor.x=gate.x*48;actor.y=gate.y*48;actor.moving=false;
+ return true;
+}
+function aimStairs(part){
+ if(!state.stairRide)return false;
+ state.stairRide.targetS=part==null?null:targetAlongStairs(part);
  return true;
 }
 function tryEnterStairs(actor,dx,dy){
- if(state.stairRide||state.transition||state.pending)return false;
- if(!dx&&!dy)return false;
+ if(state.stairRide||state.transition||state.pending||!dx&&!dy)return false;
  const up=state.floor===0,gate=up?plan.bottom:plan.top;
- const distanceGate=Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y);
- if(distanceGate>.61)return false;
+ if(Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y)>.61)return false;
  const a=up?stairPath[0]:stairPath.at(-1),
-  b=up?stairPath[1]:stairPath.at(-2);
- const tangent={x:b.x-a.x,y:b.y-a.y},norm=Math.hypot(tangent.x,tangent.y)||1;
- const toward=(dx*tangent.x+dy*tangent.y)/norm;
- if(toward<.38)return false;
- // Walk-on entry is input-controlled; E and stair clicks still auto-traverse.
- return boardStairs(actor,up,false);
+  b=up?stairPath[1]:stairPath.at(-2),t=norm(b.x-a.x,b.y-a.y);
+ if(dx*t.x+dy*t.y<.38)return false;
+ return boardStairs(actor,up);
 }
 function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
  const ride=state.stairRide;
  if(!ride)return false;
  const {a,b}=segmentAt(ride.s),t=norm(b.x-a.x,b.y-a.y);
- // Inputs are projected onto the local stair tangent. The lateral component
- // may shift the hero inside the guarded stair width, but never outside.
- const dot=inputX*t.x+inputY*t.y;
- const across=inputX*(-t.y)+inputY*t.x;
- if(Math.abs(dot)>.12){
-  ride.auto=false;ride.dir=Math.sign(dot);
+ const dot=inputX*t.x+inputY*t.y,across=inputX*(-t.y)+inputY*t.x;
+ const manual=Math.hypot(inputX,inputY)>.15;
+ if(manual)ride.targetS=null;
+ let sign=0,amount=0;
+ if(manual&&Math.abs(dot)>.12){sign=Math.sign(dot);amount=Math.min(1,Math.abs(dot));}
+ else if(!manual&&ride.targetS!==null){
+  const delta=ride.targetS-ride.s;
+  if(Math.abs(delta)>1e-6){sign=Math.sign(delta);amount=1;}
+  else ride.targetS=null;
  }
- const sign=ride.auto?ride.dir:Math.abs(dot)>.12?Math.sign(dot):0;
+ if(sign)ride.dir=sign;
  const incline=speedOnStair(ride.s,sign||ride.dir);
- const travel=(worldSpeed/48)*dt*incline*(ride.auto?1:Math.abs(dot));
+ let travel=(worldSpeed/48)*Math.min(.05,dt)*incline*amount;
+ if(!manual&&ride.targetS!==null)travel=Math.min(travel,Math.abs(ride.targetS-ride.s));
+ const oldS=ride.s,oldL=ride.lateral;
  ride.s=Math.max(0,Math.min(totalLength,ride.s+travel*sign));
  const maxLateral=Math.max(0,plan.width/2-.29-.15);
  ride.lateral=Math.min(maxLateral,Math.max(-maxLateral,
-  ride.lateral+(worldSpeed/48)*dt*STAIR_SPEED.across*across));
- const center=walkStairs(ride.s/totalLength);
- const d=segmentAt(ride.s),dir=norm(d.b.x-d.a.x,d.b.y-d.a.y);
- actor.x=(center.x-dir.y*ride.lateral)*48;
- actor.y=(center.y+dir.x*ride.lateral)*48;
+  ride.lateral+(worldSpeed/48)*Math.min(.05,dt)*STAIR_SPEED.across*across));
+ if(!manual&&ride.targetS!==null&&Math.abs(ride.s-ride.targetS)<1e-6)
+  ride.targetS=null;
+ const center=walkStairs(ride.s/totalLength),d=segmentAt(ride.s);
+ const forward=norm(d.b.x-d.a.x,d.b.y-d.a.y);
+ actor.x=(center.x-forward.y*ride.lateral)*48;
+ actor.y=(center.y+forward.x*ride.lateral)*48;
  actor.dir=center.face+(ride.dir<0?Math.PI:0);
- actor.moveAngle=actor.dir;actor.moving=Boolean(sign||Math.abs(across)>.01);
+ actor.moveAngle=actor.dir;
+ actor.moving=Math.abs(ride.s-oldS)>1e-6||Math.abs(ride.lateral-oldL)>1e-6;
+ ride.gait+=Math.hypot(ride.s-oldS,ride.lateral-oldL)*2;
  state.z=center.z;
- if(ride.s>=totalLength-1e-5||ride.s<=1e-5&&ride.dir<0){
-  state.floor=ride.s>=totalLength-1e-5?1:0;
-  state.z=state.floor?HEIGHT:0;
+ if(ride.dir>0&&ride.s>=totalLength-1e-6||
+    ride.dir<0&&ride.s<=1e-6){
+  state.floor=ride.s>=totalLength-1e-6?1:0;state.z=state.floor?HEIGHT:0;
   const exit=state.floor?plan.top:plan.bottom;
   actor.x=exit.x*48;actor.y=exit.y*48;actor.moving=false;
-  state.stairRide=null;
-  return {completed:true,floor:state.floor};
+  state.stairRide=null;return {completed:true,floor:state.floor};
  }
  return {completed:false,floor:state.floor,z:state.z,
   along:ride.s,total:totalLength,incline};
@@ -451,6 +484,6 @@ function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
 const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
  connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
  overStair,blocksGround,blocksTop,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
- boardStairs,tryEnterStairs,advanceStairs};
+ boardStairs,aimStairs,targetAlongStairs,tryEnterStairs,advanceStairs};
 window.AlleyVertical=api;
 })();
