@@ -110,6 +110,20 @@ assert(u.steps[7].end.every(onLandingEdge)&&u.steps[8].start.every(onLandingEdge
  'U stair flights must contact the same solid landing perimeter after rotation');
 assert(near(u.path[2].z,66)&&near(u.path[3].z,66)&&near(u.path[4].z,66),
  'the U turn must remain at a constant mid-landing elevation');
+// Clicking a genuine intermediate platform must target its polygon center
+// without NaN coordinates, and stop at a constant-height part of the U turn.
+const uFlight=create(4,'switchback'),uActor={x:uFlight.plan.bottom.x*48,
+ y:uFlight.plan.bottom.y*48,dir:0};
+assert(uFlight.boardStairs(uActor,true));
+assert(uFlight.aimStairs(uFlight.plan.landings[0]));
+const midTarget=uFlight.state.stairRide.targetS;
+assert(Number.isFinite(midTarget)&&midTarget>0&&midTarget<uFlight.stairLength);
+let platformFrames=0;
+while(uFlight.state.stairRide?.targetS!==null&&platformFrames++<1200)
+ uFlight.advanceStairs(uActor,1/60,180);
+assert(platformFrames<1200&&uFlight.state.stairRide,
+ 'clicking a plateau stops there rather than finishing the staircase');
+assert(near(uFlight.state.z,66,1e-2),'mid-platform elevation remains flat');
 const curved=create(7,'curved').plan;
  assert(curved.cfg.open,'curved flight must have an open underside');
 const prev=curved.path.at(-2),crest=curved.path.at(-1),exit=curved.top;
