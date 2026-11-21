@@ -235,17 +235,19 @@
     block(ctx,[u-.13,v-.13,r+.13,b+.13],0,['#272635','#272635','#39394b','#20212f']);
    }
   };
-  const underlay=bitmap(drawUnderlay);
+  const underlay=generatorMode?null:bitmap(drawUnderlay);
   let seed=71129;
   const random=()=>{
    seed=(Math.imul(1664525,seed)+1013904223)>>>0;
    return seed/4294967296;
   };
-  const floor=bitmap(ctx=>{
+  const drawFloor=ctx=>{
+   seed=71129;
    for(const surface of ground)paving(ctx,surface,random);
    route?.renderFloor(ctx,routePainter);
-  });
-  const detail=bitmap(ctx=>drawDetails(ctx,groundDetails));
+  };
+  const floor=generatorMode?null:bitmap(drawFloor);
+  const detail=generatorMode?null:bitmap(ctx=>drawDetails(ctx,groundDetails));
   const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>facadeArt.building(ctx,home))}));
   const gateway=cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
   // A long wall spans many projected depth values. Split its RENDERING into
@@ -272,16 +274,19 @@
    draw(ctx);
   };
   facadeArt.onReady(()=>{
-   const backdropContext=underlay.getContext('2d');
-   backdropContext.clearRect(0,0,width,height);
-   drawUnderlay(backdropContext);
+   if(!generatorMode){
+    const backdropContext=underlay.getContext('2d');
+    backdropContext.clearRect(0,0,width,height);
+    drawUnderlay(backdropContext);
+   }
    homes.forEach(home=>redrawImage(home.image,ctx=>facadeArt.building(ctx,home)));
    redrawImage(gateway,ctx=>facadeArt.arch(ctx,gate));
-   // Refresh immutable GPU-sized copies after asynchronous facade textures load.
-   for(const {canvas,source,x,y} of chunkCache){
+   // Re-render only the cached background tiles when facade atlases load.
+   // Ground, light and stair geometry remain fixed and never need rebaking.
+   for(const {canvas,draw,x,y} of chunkCache){
     const ctx=canvas.getContext('2d');
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(source,-x,-y);
+    ctx.resetTransform();ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.translate(-x,-y);draw(ctx);
    }
    for(const listener of artListeners)listener();
   });
@@ -349,10 +354,18 @@
   const archPanel=structureInfo(gateway,gate.area,gate.height);
   const sealPanel=labSeal?structureInfo(labSeal,route.seal,88):null;
   function drawGround(ctx,time){
-   if(enabled('background'))ctx.drawImage(underlay,0,0);
-   if(enabled('ground'))ctx.drawImage(floor,0,0);
-   if(enabled('details'))ctx.drawImage(detail,0,0);
-   if(enabled('ground'))drawGroundLight(ctx,time);
+   if(generatorMode){
+    const paint=parts=>{for(const part of parts)ctx.drawImage(part.canvas,part.x,part.y);};
+    if(enabled('background'))paint(bakedGround[0]);
+    if(enabled('ground'))paint(bakedGround[1]);
+    if(enabled('details'))paint(bakedGround[2]);
+    if(enabled('ground'))paint(bakedGround[3]);
+   }else{
+    if(enabled('background'))ctx.drawImage(underlay,0,0);
+    if(enabled('ground'))ctx.drawImage(floor,0,0);
+    if(enabled('details'))ctx.drawImage(detail,0,0);
+    if(enabled('ground'))drawGroundLight(ctx,time);
+   }
   }
   function drawGroundLight(ctx,time){
    if(enabled('light')){
@@ -429,17 +442,31 @@
    marker(spawn,'#79ddce');marker(barrel,'#ff9a81');
    for(const point of Object.values(stations))marker(point.at,'#f4c176');
   }
-  const chunks=(source,depth)=>{
+  const chunks=(draw,depth,rebake=false)=>{
    const maxSize=1536,out=[];
    for(let y=0;y<height;y+=maxSize)for(let x=0;x<width;x+=maxSize){
     const canvas=document.createElement('canvas');
     canvas.width=Math.min(maxSize,width-x);canvas.height=Math.min(maxSize,height-y);
-    canvas.getContext('2d').drawImage(source,-x,-y);
-    chunkCache.push({canvas,source,x,y});
+    const ctx=canvas.getContext('2d');ctx.translate(-x,-y);draw(ctx);
+    if(rebake)chunkCache.push({canvas,draw,x,y});
     out.push({canvas,x,y,depth});
    }
    return out;
   };
+  const bakedGround=generatorMode?[
+   chunks(drawUnderlay,-4,true),
+   chunks(drawFloor,-3),
+   chunks(ctx=>drawDetails(ctx,groundDetails),-2),
+   chunks(ctx=>drawGroundLight(ctx,0),-1)
+  ]:[
+   [{canvas:underlay,x:0,y:0,depth:-4}],
+   [{canvas:floor,x:0,y:0,depth:-3}],
+   [{canvas:detail,x:0,y:0,depth:-2}],
+   [{canvas:bitmap(ctx=>drawGroundLight(ctx,0)),x:0,y:0,depth:-1}]
+  ];
+  const bakedOverlays=generatorMode?
+   chunks(ctx=>drawOverlays(ctx,0),height+1):
+   [{canvas:bitmap(ctx=>drawOverlays(ctx,0)),x:0,y:0,depth:height+1}];
   function drawProp(ctx,prop,vault,units){
    const [u,v]=unproject(prop.x,prop.y);
    if(prop.kind==='chest')drawChest(ctx,u,v,prop.completed);
@@ -451,16 +478,9 @@
    barrel:position(...barrel),waypoints:waypoints.map(point=>position(...point)),
    blocked,blockedGround,clearSegment,drawGround,drawProp,architecture,drawOverlays,drawLogic,structures,
    verticalLayers:()=>verticalImages,
-   groundLayers:()=>{
-    const layers=[underlay,floor,detail,bitmap(ctx=>drawGroundLight(ctx,0))];
-    return generatorMode?layers.flatMap((canvas,i)=>chunks(canvas,-4+i)):
-     layers.map((canvas,i)=>({canvas,x:0,y:0,depth:-4+i}));
-   },
+   groundLayers:()=>bakedGround.flat(),
    onArtReady:listener=>artListeners.push(listener),
-   overlayLayers:()=>{
-    const canvas=bitmap(ctx=>drawOverlays(ctx,0));
-    return generatorMode?chunks(canvas,height+1):[{canvas,x:0,y:0,depth:height+1}];
-   },
+   overlayLayers:()=>bakedOverlays,
    overlayLayer:()=>bitmap(ctx=>drawOverlays(ctx,0))};
  }
  window.AlleyStudy={create,shortestRoute,project,unproject,width,height,footOffset};
