@@ -77,8 +77,9 @@ for(let seed=0;seed<expected.length;seed++){
  assert(atCrest[0].visible&&atCrest[0].alpha>0&&atCrest[0].alpha<1);
  v.state.stairRide=null;
  for(const step of v.plan.steps){
-  const projected=iso.toView(step.center.x*48,step.center.y*48,step.z);
-  assert(v.pickStair(projected,iso),
+  const projected=window.DungeonIsometric.toView(
+   step.center.x*48,step.center.y*48,step.z);
+  assert(v.pickStair(projected,window.DungeonIsometric),
    'isometric right-click hit-test should resolve visible treads');
  }
  v.state.floor=0;v.state.transition=null;v.state.z=0;
