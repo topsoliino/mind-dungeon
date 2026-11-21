@@ -9,7 +9,7 @@
   const [px,py]=project(x/tile,y/tile,z);
   return {x:px,y:py};
  };
- const toWorld=(x,y)=>unit(unproject(x,y-footOffset));
+ const toWorld=(x,y,z=0)=>unit(unproject(x,y+z-footOffset));
  const atOrigin=toView(0,0);
  function viewAngle(angle) {
   const point=toView(Math.cos(angle),Math.sin(angle));
