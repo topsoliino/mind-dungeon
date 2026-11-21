@@ -109,8 +109,14 @@ function controller({plan,state,nav,length,speeds,curving}){
   // its proximity after a sideways dodge must not terminate the stair ride.
   const into=(gate)=>(gate.x-old.x)*(ride.x-old.x)+
    (gate.y-old.y)*(ride.y-old.y)>1e-5;
-  const atHead=state.z>=H-.35&&distance(ride,plan.top)<.32&&into(plan.top);
-  const atFoot=state.z<=.35&&distance(ride,plan.bottom)<.32&&into(plan.bottom);
+  // A click toward another tread must never be mistaken for a request
+  // to leave via the nearby entrance, even if the safe A* route briefly
+  // passes through that entrance's trigger circle.
+  const permitsExit=gate=>!ride.target||distance(ride.target,gate)<.35;
+  const atHead=state.z>=H-.35&&distance(ride,plan.top)<.32&&
+   into(plan.top)&&permitsExit(plan.top);
+  const atFoot=state.z<=.35&&distance(ride,plan.bottom)<.32&&
+   into(plan.bottom)&&permitsExit(plan.bottom);
   if(ride.traveled>.07&&
    (atHead&&(ride.entry==='bottom'||ride.leftEntry)||
     atFoot&&(ride.entry==='top'||ride.leftEntry))){
