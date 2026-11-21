@@ -3282,7 +3282,10 @@ function moveActor(actor,dx,dy,knockback=false,origin){
   if(alley){
    const floor=hero?(alleyVertical?.state.floor??0):(actor.alleyFloor??0);
    // Collide each actor with its OWN storey, not the hero's current level.
-   if(alley.walkableOnFloor(x,y,floor,radius)){actor.x=x;actor.y=y;}
+   if(alley.walkableOnFloor(x,y,floor,radius)&&
+      (hero||!enemySameFloor(actor)||clearsActor(actor,x,y,player))){
+    actor.x=x;actor.y=y;
+   }
    return;
   }
   const route=world.floorStep(actor,x,y,radius,hero,canFall||flying);
