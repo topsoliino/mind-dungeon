@@ -115,10 +115,19 @@
   function layers(player,opened){
    const {x,y}=toView(player.x,player.y);
    const buildings=art.structures(x,y-footOffset).map(({image,depth,alpha})=>({...image,depth:depth+footOffset,alpha}));
+   // A level is a VISIBILITY GROUP, not a mostly transparent overlay.
+   // Upper floors and upper-only fixtures are entirely hidden below. They
+   // fade in near the last top-out frames (never before the landing).
+   const crossing=vertical?.state.transition;
+   const liftProgress=crossing?crossing.age/crossing.duration:0;
+   const reveal=crossing?
+    (crossing.up?Math.max(0,Math.min(1,(liftProgress-.84)/.16)):
+     Math.max(0,Math.min(1,(.18-liftProgress)/.18))):
+    (vertical?.state.floor===1?1:0);
    const verticalObjects=upperArchitecture.map(part=>{
-    const isDeck=part.kind==='upper-deck';
-    const alpha=isDeck&&vertical?.state.floor===0&&vertical.playerInChamber(player)?.24:1;
-    return {...part.image,depth:part.depth,alpha};
+    const visible=part.level===0||reveal>0;
+    const alpha=part.level===1?reveal:1;
+    return {...part.image,depth:part.depth,alpha,visible};
    });
    return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),
     ...verticalObjects,...atmosphere];

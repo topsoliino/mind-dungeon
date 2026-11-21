@@ -1,72 +1,101 @@
 (() => {
 'use strict';
-const generator=window.AlleyGenerator;
-if(!generator?.enabled||!generator.stairs?.length){
+const generator=window.AlleyGenerator,grammar=window.AlleyStairGeometry;
+if(!generator?.enabled||!generator.stairs?.length||!grammar){
  window.AlleyVertical={enabled:false};return;
 }
-const HEIGHT=132,STEPS=9;
-const room=generator.rooms[generator.stairs[0].roomId],stairs=generator.stairs[0];
-const [su,sv,sr,sb]=stairs.area;
+const HEIGHT=grammar.height,projected=grammar.select(generator),room=projected.room;
 const key=(u,v)=>u+','+v;
 const occupied=new Set(room.cells.map(p=>key(...p)));
 const contains=(u,v)=>occupied.has(key(Math.floor(u),Math.floor(v)));
-const stairCenter=[(su+sr)/2,(sv+sb)/2];
-const base={x:stairCenter[0],y:sb-.47};
-const summit={x:stairCenter[0],y:sv+.40};
+const plan=projected;
+const stairs=generator.stairs[0];
+stairs.roomId=room.id;
+stairs.area=plan.region;
+stairs.variant=plan.kind;
+stairs.steps=plan.length;
+stairs.levelFrom=0;stairs.levelTo=1;
+generator.metadata.stairs=generator.stairs;
+generator.metadata.stairVariant=plan.kind;
+generator.metadata.stairTitle=plan.style;
+room.plannedUse='Treppenraum';
 const directions=[{id:'north',dx:0,dy:-1},{id:'west',dx:-1,dy:0},
  {id:'east',dx:1,dy:0},{id:'south',dx:0,dy:1}];
+const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const candidates=[];
 for(const [u,v] of room.cells){
  for(const dir of directions){
   if(occupied.has(key(u+dir.dx,v+dir.dy)))continue;
   const inward={x:u+.5-dir.dx,y:v+.5-dir.dy};
   if(!contains(inward.x,inward.y))continue;
-  if(Math.hypot(u+.5-stairCenter[0],v+.5-stairCenter[1])<2.8)continue;
+  const bottom={x:u+.5,y:v+.5};
+  if(distance(bottom,plan.bottom)<3||distance(bottom,plan.top)<2.2)continue;
+  if(u>=stairs.area[0]-1&&u<=stairs.area[2]+1&&
+   v>=stairs.area[1]-1&&v<=stairs.area[3]+1)continue;
   candidates.push({wall:dir.id,dx:dir.dx,dy:dir.dy,cell:[u,v],
-   bottom:{x:u+.5,y:v+.5},top:inward,
-   // For non-wall-start orientations, place the ladder on the correct interior
-   // side of the load-bearing outside wall, never free-standing.
-   face:Math.atan2(dir.dy,dir.dx),
-   distance:Math.hypot(u+.5-stairCenter[0],v+.5-stairCenter[1])});
+   bottom,top:inward,face:Math.atan2(dir.dy,dir.dx),
+   distance:distance(bottom,plan.bottom)});
+ }
+}
+if(!candidates.length){
+ for(const [u,v] of room.cells)for(const dir of directions){
+  if(occupied.has(key(u+dir.dx,v+dir.dy)))continue;
+  const top={x:u+.5-dir.dx,y:v+.5-dir.dy},bottom={x:u+.5,y:v+.5};
+  if(!contains(top.x,top.y)||distance(bottom,plan.bottom)<2.2)continue;
+  candidates.push({wall:dir.id,dx:dir.dx,dy:dir.dy,cell:[u,v],bottom,top,
+   face:Math.atan2(dir.dy,dir.dx),distance:distance(bottom,plan.bottom)});
  }
 }
 const preferred=['north','west','east','south'];
 const rotated=preferred.slice(generator.seed%4).concat(preferred.slice(0,generator.seed%4));
-candidates.sort((a,b)=>{
- const score=d=>4-rotated.indexOf(d.wall);
- return score(b)-score(a)||b.distance-a.distance||a.cell[1]-b.cell[1];
-});
-const ladder={...candidates[0],id:'wall-ladder',kind:'ladder',height:HEIGHT};
-if(!ladder?.bottom)throw Error('No structurally connected wall for ladder');
-// The loft covers this chamber, but two explicit voids expose the lower
-// stairwell and ladder shaft. Clear tiles of the upper level remain walkable.
-const upper=new Set(room.cells.map(p=>key(...p)));
-for(let v=sv+1;v<sb;v++)for(let u=su;u<sr;u++)upper.delete(key(u,v));
-upper.delete(key(...ladder.cell));
-const upperConnected=()=>{
- const start=key(Math.floor(summit.x),Math.floor(summit.y));
- if(!upper.has(start))return false;
- const queue=[start],seen=new Set(queue);
+// Upper-floor access is an architectural prerequisite, not a decor afterthought.
+const upper=plan.upper;
+const connectedFromTop=()=>{
+ const start=key(Math.floor(plan.top.x),Math.floor(plan.top.y)),visited=new Set([start]),queue=[start];
  for(let i=0;i<queue.length;i++){
   const [u,v]=queue[i].split(',').map(Number);
   for(const [du,dv] of [[1,0],[-1,0],[0,1],[0,-1]]){
    const n=key(u+du,v+dv);
-   if(upper.has(n)&&!seen.has(n)){queue.push(n);seen.add(n);}
+   if(upper.has(n)&&!visited.has(n)){visited.add(n);queue.push(n);}
   }
  }
- return upper.has(key(Math.floor(ladder.top.x),Math.floor(ladder.top.y)))&&seen.size>=upper.size*.72;
+ return visited;
 };
-if(!upperConnected()){
- // A mezzanine cannot contain unreachable architectural islands. Bridge the
- // two shafts rather than inventing disconnected upper walkways.
- for(const [u,v] of room.cells)upper.add(key(u,v));
- upper.delete(key(...ladder.cell));
-}
+const upperReachable=connectedFromTop();
+candidates.sort((a,b)=>{
+ const aConnected=Number(upperReachable.has(key(Math.floor(a.top.x),Math.floor(a.top.y))));
+ const bConnected=Number(upperReachable.has(key(Math.floor(b.top.x),Math.floor(b.top.y))));
+ if(bConnected!==aConnected)return bConnected-aConnected;
+ const score=c=>4-rotated.indexOf(c.wall);
+ return score(b)-score(a)||b.distance-a.distance||a.cell[1]-b.cell[1];
+});
+// A ladder opening may not sever the upstairs walkable region. Validate the
+// removal of its actual hatch cell, not merely its initial room membership.
+const staysConnected=c=>{
+ const blocked=key(...c.cell),start=key(Math.floor(plan.top.x),Math.floor(plan.top.y)),
+  goal=key(Math.floor(c.top.x),Math.floor(c.top.y));
+ if(!upper.has(start)||!upper.has(goal)||start===blocked||goal===blocked)return false;
+ const visited=new Set([start]),queue=[start];
+ for(let i=0;i<queue.length;i++){
+  const [u,v]=queue[i].split(',').map(Number);
+  for(const [du,dv] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const n=key(u+du,v+dv);
+   if(n!==blocked&&upper.has(n)&&!visited.has(n)){visited.add(n);queue.push(n);}
+  }
+ }
+ return visited.has(goal);
+};
+const picked=candidates.find(staysConnected)??candidates.find(c=>
+ upperReachable.has(key(Math.floor(c.top.x),Math.floor(c.top.y))))??candidates[0];
+const ladder={...picked,id:'wall-ladder',kind:'ladder',height:HEIGHT};
+if(!ladder?.bottom)throw Error('Could not place a wall-anchored ladder in the upper chamber');
+if(staysConnected(ladder))upper.delete(key(...ladder.cell));
+upper.add(key(Math.floor(ladder.top.x),Math.floor(ladder.top.y)));
 const stairsConnector={
  id:'stone-stairs',kind:'stairs',floorFrom:0,floorTo:1,
- bottom:base,top:summit,
- face:Math.atan2(summit.y-base.y,summit.x-base.x),
- duration:2.45
+ bottom:plan.bottom,top:plan.top,
+ face:Math.atan2(plan.path[1].y-plan.path[0].y,plan.path[1].x-plan.path[0].x),
+ duration:Math.max(2.1,plan.length*.19),variant:plan.kind
 };
 const ladderConnector={
  id:'wall-ladder',kind:'ladder',floorFrom:0,floorTo:1,
@@ -78,77 +107,166 @@ const bounds=room.cells.reduce(([u,v,r,b],[x,y])=>
  [Infinity,Infinity,-Infinity,-Infinity]);
 const insideTop=(u,v,r=0)=>[[u-r,v],[u+r,v],[u,v-r],[u,v+r]]
  .every(([x,y])=>upper.has(key(Math.floor(x),Math.floor(y))));
-const playerInChamber=(p)=>contains(p.x/48,p.y/48);
+const playerInChamber=actor=>contains(actor.x/48,actor.y/48);
 function nearby(actor,floor=0,maxDist=110){
  const point={x:actor.x/48,y:actor.y/48};
  return connectors.map(connector=>{
   const target=floor===0?connector.bottom:connector.top;
-  const distance=Math.hypot(target.x-point.x,target.y-point.y)*48;
-  return {...connector,distance,approach:{x:target.x*48,y:target.y*48}};
+  const dist=distance(target,point)*48;
+  return {...connector,distance:dist,approach:{x:target.x*48,y:target.y*48}};
  }).filter(item=>item.distance<=maxDist&&
   (floor===0||insideTop(item.top.x,item.top.y,.20)))
  .sort((a,b)=>a.distance-b.distance)[0]||null;
 }
 const clamp=t=>Math.max(0,Math.min(1,t)),smooth=t=>t*t*(3-2*t);
-function pose(connector,up,t){
- const p=clamp(t),from=up?connector.bottom:connector.top,to=up?connector.top:connector.bottom;
- // Short anticipation and settling, long central climb.
- const phase=smooth(clamp((p-.11)/.78));
- const z=HEIGHT*(up?phase:1-phase);
- const x=(from.x+(to.x-from.x)*phase)*48;
- const y=(from.y+(to.y-from.y)*phase)*48;
- return {x,y,z,progress:p,floor:up?(phase>=.97?1:0):(phase>=.97?0:1),
-  angle:connector.kind==='ladder'?connector.face:(up?connector.face:connector.face+Math.PI),
-  clip:connector.kind==='ladder'?(up?'climb-up':'climb-down'):
-   (up?'walk':'walk'),
-  // 0...1: lips / landing used by separate 3D guardian climb rig.
-  landing:p>.84?clamp((p-.84)/.16):0};
+const stairPath=[
+ {...plan.bottom,z:0},...plan.path,{...plan.top,z:HEIGHT}
+];
+const lengths=stairPath.slice(1).map((point,i)=>
+ distance(point,stairPath[i]));
+const totalLength=lengths.reduce((a,b)=>a+b,0);
+function walkStairs(progress){
+ let left=totalLength*clamp(progress);
+ for(let i=0;i<lengths.length;i++){
+  const d=lengths[i],a=stairPath[i],b=stairPath[i+1];
+  if(left>d&&i<lengths.length-1){left-=d;continue;}
+  const t=clamp(left/Math.max(d,.0001));
+  const heading=(p,q)=>Math.atan2(q.y-p.y,q.x-p.x);
+  const blend=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*smooth(t);
+  let face=heading(a,b);
+  // Turn the torso over the landing instead of snapping its orientation at
+  // the exact corner. The geometry remains fixed; only the facing blends.
+  if(t<.2&&i>0)face=blend(heading(stairPath[i-1],a),face,.5+.5*t/.2);
+  else if(t>.8&&i<lengths.length-1)
+   face=blend(face,heading(b,stairPath[i+2]),.5*(t-.8)/.2);
+  return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,face};
+ }
+ return {...stairPath.at(-1),face:stairsConnector.face};
 }
-function createLayers({project,polygon,line,block,cacheObject}){
- const groundSet=upper;
- const slab=cacheObject(bounds,HEIGHT+25,ctx=>{
-  const cellColor=['#69798a','#728191','#606e7d','#718694'];
-  for(const id of groundSet){
-   const [u,v]=id.split(',').map(Number),idx=Math.abs((u*23+v*41)%4);
+function pose(connector,up,t){
+ const p=clamp(t),phase=smooth(clamp((p-.09)/.82));
+ let current;
+ if(connector.kind==='stairs'){
+  current=walkStairs(up?phase:1-phase);
+ }else{
+  const from=up?connector.bottom:connector.top,to=up?connector.top:connector.bottom;
+  current={x:from.x+(to.x-from.x)*phase,y:from.y+(to.y-from.y)*phase,
+   z:HEIGHT*(up?phase:1-phase),face:connector.face};
+ }
+ return {x:current.x*48,y:current.y*48,z:current.z,progress:p,
+  floor:up?(phase>=.97?1:0):(phase>=.97?0:1),
+  angle:connector.kind==='ladder'?connector.face:
+   current.face+(up?0:Math.PI),
+  clip:connector.kind==='ladder'?(up?'climb-up':'climb-down'):'walk',
+  landing:p>.82?clamp((p-.82)/.18):0};
+}
+function createLayers({project,polygon,line,cacheObject}){
+ const slab=cacheObject(bounds,HEIGHT+34,ctx=>{
+  const palette=['#687787','#728494','#677785','#788c99'];
+  // The upper floor consists of genuine Z-elevated tiles. The cutout matches
+  // the actual stair shaft instead of a fictitious hole in a rectangle.
+  for(const str of upper){
+   const [u,v]=str.split(',').map(Number);
+   const id=Math.abs((u*23+v*41)%4);
    polygon(ctx,[project(u,v,HEIGHT),project(u+1,v,HEIGHT),
-    project(u+1,v+1,HEIGHT),project(u,v+1,HEIGHT)],cellColor[idx],'#9faeb7');
-   // Edges are real slab thickness, not flat stickers, so a lower floor
-   // disappears behind the upper plate when standing elsewhere.
-   if(!groundSet.has(key(u+1,v)))
+    project(u+1,v+1,HEIGHT),project(u,v+1,HEIGHT)],
+    palette[id],'#96a8b4');
+   if(!upper.has(key(u+1,v)))
     polygon(ctx,[project(u+1,v,HEIGHT),project(u+1,v+1,HEIGHT),
-     project(u+1,v+1,HEIGHT-18),project(u+1,v,HEIGHT-18)],'#465562','#879cab');
-   if(!groundSet.has(key(u,v+1)))
+     project(u+1,v+1,HEIGHT-17),project(u+1,v,HEIGHT-17)],'#435464','#7b90a0');
+   if(!upper.has(key(u,v+1)))
     polygon(ctx,[project(u,v+1,HEIGHT),project(u+1,v+1,HEIGHT),
-     project(u+1,v+1,HEIGHT-18),project(u,v+1,HEIGHT-18)],'#3c4b5a','#718393');
+     project(u+1,v+1,HEIGHT-17),project(u,v+1,HEIGHT-17)],'#394c5b','#748896');
   }
-  // Dedicated walkway edge visually anchors the upper-level interior.
-  const [u,v,r,b]=bounds;
-  line(ctx,[project(u,v,HEIGHT+3),project(r,v,HEIGHT+3)],'#bfd0ce',3);
  });
- const stairsImage=cacheObject(stairs.area,HEIGHT+54,ctx=>{
-  const [u,v,r,b]=stairs.area;
-  // Actual isometric solid treads; each rises to a different Z value.
-  for(let i=0;i<STEPS;i++){
-   const a=sb-(i+1)*(sb-sv)/STEPS,bb=sb-i*(sb-sv)/STEPS;
-   const elevation=(i+1)*HEIGHT/STEPS;
-   block(ctx,[u,a,r,bb],elevation,
-    i%2?['#5d6475','#7b8392','#9e9fac','#3c4455']:
-      ['#606a79','#858f9e','#9ca6b0','#434b5a']);
-   line(ctx,[project(u,a,elevation),project(r,a,elevation)],'#c3bec0',2);
-  }
-  for(const side of [u+.06,r-.06]){
-   for(let i=0;i<=3;i++){
-    const v=sb-(sb-sv)*i/3,z=HEIGHT*i/3+13;
-    line(ctx,[project(side,v,z),project(side,v,z+28)],'#a7a9aa',3);
+ const stairsImage=cacheObject(stairs.area,HEIGHT+58,ctx=>{
+  // The landing is a structural member of the staircase, not a decorative
+  // rectangle painted on top of all other steps. It shares the depth painter.
+  const pieces=plan.steps.map((s,i)=>({...s,index:i,kind:'step'}))
+   .concat(plan.landings.map(l=>({
+    ...l,kind:'landing',center:l.corners.reduce((a,p)=>({
+     x:a.x+p.x/l.corners.length,y:a.y+p.y/l.corners.length}),{x:0,y:0})
+   })));
+  pieces.sort((a,b)=>project(a.center.x,a.center.y,a.z)[1]-
+   project(b.center.x,b.center.y,b.z)[1]);
+  const palettes={
+   top:['#939eaf','#98a3b0'],riser:'#555f70',left:'#485565',
+   right:'#647384',line:'#d9ced0'
+  };
+  for(const part of pieces){
+   if(part.kind==='landing'){
+    const ps=part.corners.map(p=>project(p.x,p.y,part.z));
+    for(let i=0;i<4;i++){
+     const a=part.corners[i],b=part.corners[(i+1)%4];
+     if(i%2===0)polygon(ctx,[project(a.x,a.y,0),project(b.x,b.y,0),
+      project(b.x,b.y,part.z),project(a.x,a.y,part.z)],
+      '#586475','#424e5d');
+    }
+    polygon(ctx,ps,'#939ca8','#ced2d6');
+    continue;
    }
-   line(ctx,[project(side,sb,15+28),project(side,sv,HEIGHT+13+28)],'#c2babb',3);
+   const [a,b,c,d]=part.corners,z=part.z,prev=part.prev;
+   const base=p=>project(p.x,p.y,0);
+   const top=p=>project(p.x,p.y,z);
+   const low=p=>project(p.x,p.y,prev);
+   polygon(ctx,[base(a),base(d),top(d),top(a)],palettes.left,'#343d4b');
+   polygon(ctx,[base(b),base(c),top(c),top(b)],palettes.right,'#3e4654');
+   // Exact one-riser-high vertical face, with a constant tread depth.
+   polygon(ctx,[low(a),low(b),top(b),top(a)],palettes.riser,'#424a57');
+   polygon(ctx,[top(a),top(b),top(c),top(d)],
+    palettes.top[part.index%2],'#d1c9ca');
+   line(ctx,[top(a),top(b)],palettes.line,1.8);
+  }
+  for(const post of plan.posts){
+   const p=post.p,r=post.radius;
+   // Continuous spindle at the true geometric centre of the helical steps.
+   const footprint=[{x:p.x-r,y:p.y-r},{x:p.x+r,y:p.y-r},
+    {x:p.x+r,y:p.y+r},{x:p.x-r,y:p.y+r}];
+   for(let i=0;i<4;i++){
+    const a=footprint[i],b=footprint[(i+1)%4];
+    if(i%2===0)polygon(ctx,[project(a.x,a.y,0),project(b.x,b.y,0),
+     project(b.x,b.y,post.z1),project(a.x,a.y,post.z1)],
+     '#5c6776','#a9aebb');
+   }
+   polygon(ctx,footprint.map(v=>project(v.x,v.y,post.z1)),'#929dac','#d4c0a6');
+  }
+  // Guardrails follow the real stringer, including a turn or curved helix.
+  // No rail crosses the landing as an impossible diagonal chord.
+  const profiles=[];
+  if(plan.kind.startsWith('spiral')||plan.kind==='curved'){
+   const vertices=plan.steps.map(step=>step.corners[1]).concat(plan.steps.at(-1).corners[2]);
+   profiles.push(vertices.map((p,i)=>({p,z:HEIGHT*i/(vertices.length-1)+28})));
+  }else{
+   for(const segment of (()=>{const all=[],start=plan.path[0];
+    for(let i=0;i<plan.path.length-1;i++){
+     const a=plan.path[i],b=plan.path[i+1];
+     if(Math.abs(b.z-a.z)<.001)continue;
+     all.push([a,b]);
+    }return all;})()){
+    for(const side of [-1,1]){
+     const [a,b]=segment,v={x:b.x-a.x,y:b.y-a.y},d=Math.hypot(v.x,v.y)||1,
+       n={x:-v.y/d*plan.width*.50,y:v.x/d*plan.width*.50};
+     profiles.push([a,b].map(point=>({p:{x:point.x+n.x,y:point.y+n.y},z:point.z+28})));
+    }
+   }
+  }
+  for(const prof of profiles){
+   if(prof.length<2)continue;
+   for(const [i,x] of prof.entries()){
+    if(i%3===0||i===prof.length-1){
+     const bottom=x.z-28;
+     line(ctx,[project(x.p.x,x.p.y,bottom),project(x.p.x,x.p.y,x.z)],
+      '#757986',3.2);
+    }
+   }
+   line(ctx,prof.map(x=>project(x.p.x,x.p.y,x.z)),'#9caab2',3);
   }
  });
- const ladderArea=ladder.wall==='north'||ladder.wall==='south'?
-  [ladder.cell[0]+.15,ladder.cell[1]-.12,ladder.cell[0]+.85,ladder.cell[1]+1.12]:
-  [ladder.cell[0]-.12,ladder.cell[1]+.15,ladder.cell[0]+1.12,ladder.cell[1]+.85];
+ const cell=ladder.cell,ladderArea=ladder.wall==='north'||ladder.wall==='south'?
+  [cell[0]+.15,cell[1]-.12,cell[0]+.85,cell[1]+1.12]:
+  [cell[0]-.12,cell[1]+.15,cell[0]+1.12,cell[1]+.85];
  const ladderImage=cacheObject(ladderArea,HEIGHT+52,ctx=>{
-  const [u,v]=ladder.cell;
+  const [u,v]=cell;
   const along=ladder.dx?[[u+(ladder.dx>0?1-.12:.12),v+.24],
    [u+(ladder.dx>0?1-.12:.12),v+.76]]:
    [[u+.24,v+(ladder.dy>0?1-.12:.12)],
@@ -163,19 +281,29 @@ function createLayers({project,polygon,line,block,cacheObject}){
    line(ctx,along.map(p=>project(...p,z)),'#352f35',7);
    line(ctx,along.map(p=>project(...p,z)),'#bda47b',4);
   }
-  // Continuous top grip posts rise above the upper platform.
-  for(const rail of along){
+  for(const rail of along)
    line(ctx,[project(...rail,HEIGHT+18),project(...rail,HEIGHT+40)],'#b08a58',4);
-  }
+ });
+ // Separate upper-only details. They MUST NOT leak into the ground-floor view.
+ const upperLanding=cacheObject(stairs.area,HEIGHT+40,ctx=>{
+  const top=plan.top,delta=.38,pts=[
+   {x:top.x-delta,y:top.y-delta},{x:top.x+delta,y:top.y-delta},
+   {x:top.x+delta,y:top.y+delta},{x:top.x-delta,y:top.y+delta}
+  ];
+  polygon(ctx,pts.map(p=>project(p.x,p.y,HEIGHT+2)),'#8eabba','#d6cfc0');
+  line(ctx,[project(top.x-.3,top.y,HEIGHT+4),project(top.x+.3,top.y,HEIGHT+4)],'#e1d3b8',2);
  });
  return [
   {kind:'upper-deck',image:slab,depth:4000,level:1},
-  {kind:'stairs-3d',image:stairsImage,depth:5000,level:0},
-  {kind:'ladder-3d',image:ladderImage,depth:5100,level:0}
+  {kind:'stairs-3d',image:stairsImage,
+   depth:project(plan.bottom.x,plan.bottom.y)[1]+.25,level:0},
+  {kind:'ladder-3d',image:ladderImage,
+   depth:project(ladder.bottom.x,ladder.bottom.y)[1]+.25,level:0},
+  {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
  ];
 }
 const state={floor:0,z:0,transition:null,pending:null};
-const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,ladder,upper,connectors,state,
- insideTop,playerInChamber,nearby,pose,createLayers};
+const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
+ connectors,state,insideTop,playerInChamber,nearby,pose,createLayers};
 window.AlleyVertical=api;
 })();
