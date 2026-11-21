@@ -17,7 +17,8 @@ const ref={
  'quarter':{w:8,h:8,width:1.7,steps:14,title:'Viertelgewendelte Treppe mit Podest'},
  'switchback':{w:8,h:9,width:1.7,steps:16,title:'U-Treppe mit Zwischenpodest'},
  'spiral-tight':{w:6,h:6,inner:.64,outer:2.42,steps:13,title:'Enge Wendeltreppe'},
- 'spiral-wide':{w:9,h:9,inner:1.05,outer:3.75,steps:17,title:'Weite Wendeltreppe'}
+ 'spiral-wide':{w:9,h:9,inner:1.05,outer:3.75,steps:17,title:'Weite Wendeltreppe'},
+ 'curved':{w:9,h:9,inner:2.05,outer:3.7,steps:12,title:'Geschwungene Freitreppe'}
 };
 const styles=Object.keys(ref);
 function buildTemplate(kind){
@@ -57,10 +58,10 @@ function buildTemplate(kind){
   path.push({...bend,z:H/2});
   addFlight(bend,b,H/2,H,8,cfg.width);
  }else{
-  const wide=kind==='spiral-wide';
+  const wide=kind==='spiral-wide',curved=kind==='curved';
   const center=vec(w/2,h/2),r0=cfg.inner,r1=cfg.outer,walk=(r0+r1)/2;
-  const arc=wide?Math.PI*1.67:Math.PI*1.63;
-  const start=wide?-.65:-.8; // One continuous turning direction.
+  const arc=curved?Math.PI*.64:(wide?Math.PI*1.67:Math.PI*1.63);
+  const start=curved?-.35:(wide?-.65:-.8); // One continuous turning direction.
   const polar=(angle,r)=>vec(center.x+Math.cos(angle)*r,center.y+Math.sin(angle)*r);
   const low=polar(start,walk),high=polar(start+arc,walk);
   path.push({...low,z:0});
@@ -75,11 +76,11 @@ function buildTemplate(kind){
    path.push({...pt,z:top});
   }
   // A real central spindle, rather than triangular stairs around a hole.
-  posts.push({p:center,radius:r0*.65,z0:0,z1:H+22});
+  if(!curved)posts.push({p:center,radius:r0*.65,z0:0,z1:H+22});
  }
  const first=path[0],last=path.at(-1);
  let entry,exit;
- if(kind.startsWith('spiral')){
+ if(kind.startsWith('spiral')||kind==='curved'){
   const center=vec(w/2,h/2);
   const from=norm(first.x-center.x,first.y-center.y),
    to=norm(last.x-center.x,last.y-center.y);
@@ -116,7 +117,8 @@ function transform(template,origin,rotation){
   length:template.steps.length};
 }
 function select(generator){
- const preferred=styles[generator.seed%styles.length],
+ const asked=new URLSearchParams(window.location.search).get('treppe');
+ const preferred=styles.includes(asked)?asked:styles[generator.seed%styles.length],
   order=[preferred,...styles.filter(s=>s!==preferred)];
  const viable=[];
  for(const style of order){
