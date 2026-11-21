@@ -10,6 +10,10 @@ on:
       - beta/alley-stair-geometry.js
       - beta/alley-stair-navigation.js
       - beta/alley-stair-controller.js
+      - beta/alley-generator.js
+      - beta/dungeon-isometric.js
+      - beta/alley-enemy-pursuit.js
+      - tools/check-isometric-multifloor.cjs
       - beta/index.html
       - tools/check-isometric-ladder-contact.cjs
       - tools/check-isometric-upper-floor-clicks.cjs
@@ -31,6 +35,8 @@ jobs:
         run: node tools/check-isometric-ladder-contact.cjs
       - name: Check upper-floor clicks and 400 stair exits
         run: node tools/check-isometric-upper-floor-clicks.cjs
+      - name: Seed 4148 full OG navigation and multi-floor guard search
+        run: node tools/check-isometric-multifloor.cjs
       - name: Preserve existing stair click-intent behavior
         run: node tools/check-isometric-stair-click-intent.cjs
       - name: Check two-way traversal and landing geometry
