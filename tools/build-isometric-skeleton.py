@@ -369,28 +369,58 @@ def sample(clip,t):
     swing=math.sin(t*2*pi); cycle=math.cos(t*2*pi)
     local={n:Matrix.Identity(4) for n in joints}
     run=clip=='run'; shoot=clip=='shoot'
-    local['Pelvis']=Matrix.Translation((.022*swing if run else 0,0,.044*abs(cycle) if run else .012*swing))
-    local['Chest']=rotation(.15 if run else .028*swing,0,.12*swing if run else .03*swing)
-    local['Skull']=rotation(-.07 if run else -.025*swing,0,-.045*swing)
+    # A guarded humanoid gait: unequal counter-swing of shield and saber,
+    # weight shifts through pelvis and an offset head scanning the chamber.
+    breath=.5+.5*math.sin(2*pi*t)
+    local['Pelvis']=Matrix.Translation((.043*swing if run else .011*swing,
+        -.026*cycle if run else 0,
+        .065*abs(cycle) if run else .008*math.sin(2*pi*t)))
+    local['Chest']=rotation(.22 if run else .025*swing,0,
+        .115*swing if run else .031*swing)
+    local['Skull']=rotation(-.11 if run else -.023*swing,0,
+        -.065*swing if run else .028*math.sin(2*pi*t*.62))
     for side,sign in [('R',1),('L',-1)]:
         stride=sign*swing
-        local['Thigh'+side]=rotation(.68*stride if run else .025*sign)
-        local['Shin'+side]=rotation(.67*max(0,-stride) if run else .07)
-        local['Foot'+side]=rotation(-.35*stride if run else 0)
-        local['Arm'+side]=rotation(-.45*stride-.19 if run else -.17+.055*sign*swing,.05*sign)
-        local['Forearm'+side]=rotation(-.48 if run else -.36)
+        local['Thigh'+side]=rotation(.72*stride if run else .018*sign)
+        local['Shin'+side]=rotation(.78*max(0,-stride) if run else .055)
+        local['Foot'+side]=rotation(-.41*stride if run else -.012*swing)
+        guard=side=='L'
+        local['Arm'+side]=rotation(
+            (-.29*stride-.36 if guard else -.60*stride-.20) if run else
+            (-.34+.028*swing if guard else -.24+.05*sign*swing),
+            (.14 if guard else -.08)*sign)
+        local['Forearm'+side]=rotation(-.71 if guard else -.43,
+            .12 if guard else -.08)
     if clip=='strike':
-        wind=ease(t/.48);cut=ease((t-.48)/.20);back=ease((t-.70)/.30)
-        local['Chest']=rotation(.08+.25*cut*(1-back),0,-.65*wind+1.55*cut-.9*back)
-        local['ArmR']=rotation(-.45-2.10*wind+1.86*cut+.24*back,-.67*wind+.82*cut-.15*back)
-        local['ForearmR']=rotation(-.70-.50*wind+1.06*cut-.56*back)
+        # Three unmistakable phases: crouched anticipation, a real crossed
+        # shoulder/hip slash with a forward weight transfer, then recovery.
+        wind=ease(t/.46);cut=ease((t-.46)/.19);back=ease((t-.69)/.31)
+        lunge=math.sin(pi*ease((t-.41)/.38))
+        local['Pelvis']=Matrix.Translation((-.034*wind+.058*cut,
+            -.12*max(0,lunge),-.083*wind+.13*max(0,lunge)))
+        local['Chest']=rotation(.08+.34*cut*(1-back),.085*wind,
+            -.56*wind+1.36*cut-.77*back)
+        local['Skull']=rotation(-.04-.17*cut+.15*back,0,-.09*wind+.08*cut)
+        local['ArmR']=rotation(-.45-2.09*wind+1.88*cut+.20*back,
+            -.71*wind+.89*cut-.15*back)
+        local['ForearmR']=rotation(-.61-.62*wind+1.16*cut-.58*back)
+        local['ArmL']=rotation(-.55-.22*wind+.15*cut,0,.13*wind-.13*cut)
+        local['ForearmL']=rotation(-.87-.12*wind+.16*cut)
+        local['ThighL']=rotation(-.22*wind+.27*cut)
+        local['ThighR']=rotation(.19*wind-.25*cut)
+        local['ShinL']=rotation(.23*wind-.17*cut)
+        local['ShinR']=rotation(.17*wind+.12*cut)
     # Lower bow hand in locomotion, shoulder-high at full draw. Solve both
     # two-link arms to keep the drawing fingers on the nock.
     desired={}
     for n,(p,parent) in joints.items():
         desired[n]=(desired[parent]@orig[parent].inverted() if parent else Matrix.Identity(4))@orig[n]@local[n]
     if shoot:
-        draw=ease(t/.58); release=ease((t-.62)/.09);lower=ease((t-.76)/.24)
+        # Bow is an articulated held object: left arm stabilizes its rise,
+        # right fingers draw, breath holds, then a fast release and follow-through.
+        draw=ease(t/.54); release=ease((t-.62)/.07);lower=ease((t-.78)/.22)
+        local['Chest']=rotation(.04-.08*draw+.13*release,0,-.16*draw+.12*release)
+        local['Skull']=rotation(-.08*draw,0,-.09*draw+.06*release)
         level=draw*(1-lower)
         left=V((.19,-.16-.28*level,1.14+.30*level))
         nock=left+V((0,.085+.38*draw*(1-release),0))
