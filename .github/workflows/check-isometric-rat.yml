@@ -26,6 +26,8 @@ jobs:
         run: node tools/check-isometric-rat-sprites.cjs
       - name: Test actual double-bite combat, leap and sideways dodge
         run: node tools/check-isometric-rat-combat.cjs
+      - name: Verify cautious rodent standoff, circling and post-bite retreats
+        run: node tools/check-isometric-rat-behavior.cjs
       - name: Preserve existing skeleton combat
         run: node tools/check-isometric-skeleton.cjs
       - uses: actions/setup-python@v5
