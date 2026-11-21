@@ -118,9 +118,13 @@ function updateEnemy(e,dt){
     e.ratHits=i+1;
     if(!clear||d>spec.range+15||Math.cos(angle-e.angle)<.48||
        gateLineBlocked(e.x,e.y,player.x,player.y))continue;
-    const amount=combo?5:7;
-    if(!strikeCover(e,amount)&&damageActive(origin(e,combo?'Doppelbiss':'Biss'),amount,{physical:1}))
-     bleedActive(e,31);
+    const amount=combo?(i===0?4:5):7;
+    if(!strikeCover(e,amount)&&damageActive(origin(e,combo?'Doppelbiss':'Biss'),amount,{physical:1})){
+     // The normal .75 s hero i-frame would silently nullify bite #2.
+     // A combo's first contact grants a shorter .31 s reaction window.
+     if(combo&&i===0)player.inv=Math.min(player.inv||0,.31);
+     if(!combo||i===contacts.length-1)bleedActive(e,31);
+    }
    }
    e.runAttack=Math.max(0,e.runAttack-dt);
    if(!e.runAttack)recover(e,spec.recovery);
