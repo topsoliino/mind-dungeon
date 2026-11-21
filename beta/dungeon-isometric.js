@@ -49,6 +49,9 @@
    // not turn into invisible obstacles on the mezzanine.
    if(vertical?.state.floor===1)return vertical.insideTop(x/tile,y/tile,r/tile)&&
     !vertical.blocksTop(x/tile,y/tile,r/tile);
+   return groundWalkable(x,y,r,includeProps);
+  }
+  function groundWalkable(x,y,r=radius,includeProps=true){
    // Stair treads are physical geometry, not ordinary ground. The only
    // accessible gaps into the ribbon are the guarded foot and head.
    if(vertical?.blocksGround(x/tile,y/tile,r/tile))return false;
@@ -202,7 +205,7 @@
   const lab=map.stations.lab?unit(map.stations.lab.at):spawn;
   const nearStation=(actor,target)=>Math.hypot(actor.x-target.x,actor.y-target.y)<82&&
    pointBetween(actor,target,(x,y)=>walkable(x,y,0,false));
-  return {spawn,chest,archer,knowledge,lab,walkable,clearLine,canInteract,routeTo,cameraOrigin,addLayers,refreshLayers,drawLayers,
+  return {spawn,chest,archer,knowledge,lab,walkable,groundWalkable,clearLine,canInteract,routeTo,cameraOrigin,addLayers,refreshLayers,drawLayers,
    vertical,
    enemies:{archive:(map.encounter.archive??[]).map(unit),lab:(map.encounter.lab??[]).map(unit)},
    archiveUnlocked:()=>route.isUnlocked(),unlockArchive:()=>route.unlock(),

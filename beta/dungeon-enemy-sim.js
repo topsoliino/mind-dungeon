@@ -90,7 +90,7 @@ function updateEnemy(e,dt){
   e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
  }
  const clear=line&&e.aggro>0;
- if(e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&e.type!==EAGLE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0)&&!furnitureBetween(e.x,e.y,player.x,player.y))damageActive(origin(e,'Nahkampftreffer'),9+(e.boss?5:0),items.foeAttack[e.type]);
+ if(!e.skeleton&&e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&e.type!==EAGLE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0)&&!furnitureBetween(e.x,e.y,player.x,player.y))damageActive(origin(e,'Nahkampftreffer'),9+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.runAttack>0){
   if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'||spec.id==='eagle'){advanceRush(e,spec,dt,angle);return;}
   if(['web','frost','bow','crossbow','electrode','rat-bite'].includes(spec.id)){
@@ -102,7 +102,7 @@ function updateEnemy(e,dt){
   if(!e.struck&&e.runAttack<e.runDuration*.52){
    e.struck=true;
    const facing=Math.cos(angle-e.angle)>.55;
-   if(clear&&d<117&&facing&&!strikeCover(e,19)&&damageActive(origin(e,'Sensenhieb'),19,{physical:.65,dark:.35})&&player.inv<1){
+   if(clear&&d<(e.skeleton?63:117)&&facing&&!strikeCover(e,19)&&damageActive(origin(e,e.skeleton?'Säbelhieb':'Sensenhieb'),19,{physical:.65,dark:.35})&&player.inv<1){
     if((player.bleedCooldown||0)<=0){player.bleedCooldown=3;damageActive(origin(e,'Blutverlust'),api.maxHP(player)*.07,{bleed:1},true);}
    }
   }
@@ -117,7 +117,7 @@ function updateEnemy(e,dt){
   return;
  }
  if(!e.aggro)return;
- if(clear&&e.attack<=0&&d<spec.range&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
+ if(clear&&e.attack<=0&&d<(e.skeleton==='sabre'?60:spec.range)&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
   e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
   if(windupCue[spec.id])soundWorld(windupCue[spec.id],e,{priority:2,cooldown:.18,gain:.77});
   if(spec.id==='frost'){
@@ -309,7 +309,7 @@ function pursue(e,dt,speed,clear,goal=player){
   const tile=Math.floor(goal.y/TILE)*W+Math.floor(goal.x/TILE);
   e.routeDelay=(e.routeDelay||0)-dt;
   if(e.routeGoal!==tile||e.routeDelay<=0||e.route&&Math.hypot(e.x-e.route.x,e.y-e.route.y)<5){
-   e.route=findStep(e,goal,radius);e.routeGoal=tile;e.routeDelay=e.route ? .34 : .55;
+   e.route=e.skeleton&&api.skeletonRoute?api.skeletonRoute(e,goal):findStep(e,goal,radius);e.routeGoal=tile;e.routeDelay=e.route ? .34 : .55;
   }
   if(!e.route)return;
   target=e.route;
@@ -548,6 +548,16 @@ function nearestLion(e){
 function fireBolt(e,type){
  soundWorld(type==='bow'?'bow_release':'crossbow_release',e,{gain:.86,priority:2,cooldown:.08});
  const speed=type==='bow'?330:445;
+ if(e.skeleton==='bow'){
+  const dx=Math.cos(e.angle),dy=Math.sin(e.angle);
+  const lead=api.arrowGroundClear(e.x+dx*12,e.y+dy*12)?12:0;
+  const x=e.x+dx*lead,y=e.y+dy*lead;
+  const gravity=240,z=40,targetTime=Math.max(.14,Math.hypot(e.target.x-x,e.target.y-y)/speed);
+  const vz=(24-z)/targetTime+.5*gravity*targetTime;
+  state.bolts.push({x,y,z,vz,gravity,angle:e.angle,speed,type,
+   life:(vz+Math.sqrt(vz*vz+2*gravity*z))/gravity,origin:origin(e,'Pfeil')});
+  return;
+ }
  state.bolts.push({x:e.x,y:e.y,angle:e.angle,speed,life:1.23,type:e.type===FROST_CROSSBOW?'frost-crossbow':type,
   origin:origin(e,e.type===FROST_CROSSBOW?'Frostbolzen':type==='bow'?'Pfeil':'Armbrustbolzen')});
 }
@@ -561,14 +571,18 @@ function updateBolts(dt){
    p.approach-=elapsed;flightTime-=elapsed;
    if(flightTime<=0)return true;
   }
-  const travel=p.speed*Math.min(flightTime,p.life);
+  const elapsed=Math.min(flightTime,p.life),travel=p.speed*elapsed;
   p.life-=flightTime;
   const dx=Math.cos(p.angle)*travel,dy=Math.sin(p.angle)*travel;
   const steps=Math.max(1,Math.ceil(travel/5));
   for(let i=0;i<steps;i++){
    const x=p.x+dx/steps,y=p.y+dy/steps;
    const approaching=p.type==='trap'&&(p.angle===0?x<p.entryX:x>p.entryX);
-   if(!approaching&&(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||floor.doorAt(x,y)))return false;
+   if(p.gravity){
+    if(!api.arrowGroundClear(x,y))return false;
+    const step=elapsed/steps;
+    p.z+=p.vz*step-.5*p.gravity*step*step;p.vz-=p.gravity*step;
+   }else if(!approaching&&(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||floor.doorAt(x,y)))return false;
    const prop=!approaching&&furnitureAt(x,y,2);
    if(prop){
     hitFurniture?.(prop,p.type==='bow'?11:p.type==='trap'?10:16,p.angle);
@@ -580,7 +594,8 @@ function updateBolts(dt){
     p.audioPassed=true;
     soundWorld('bolt_fly',p,{group:'projectile-pass',cooldown:.09,priority:2,rate:p.type==='trap'?1.19:1});
    }
-   const target=coopActors().find(hero=>hero.dash<=0&&Math.hypot(p.x-hero.x,p.y-hero.y)<13);
+   const target=coopActors().find(hero=>hero.dash<=0&&Math.hypot(p.x-hero.x,p.y-hero.y)<13&&
+    (!p.gravity||(p.z>=api.arrowTargetHeight(hero)&&p.z<=api.arrowTargetHeight(hero)+52)));
    if(target){
     const damage=p.type==='trap'?10:p.type==='bow'?11:16;
     const split=p.type==='trap'?{physical:.70,poison:.30}:p.type==='crossbow'?{physical:.75,dark:.25}:p.type==='frost-crossbow'?{frost:1}:{physical:1};
