@@ -17,7 +17,10 @@ function controller({plan,state,nav,length,speeds,curving}){
   const delta={x:ride.x-gate.at.x,y:ride.y-gate.at.y},
    along=delta.x*gate.out.x+delta.y*gate.out.y,
    lateral=Math.abs(delta.x*gate.out.y-delta.y*gate.out.x);
-  const corridor=lateral<plan.width/2+.18&&along>-.72&&along<.8;
+  // Reaching within almost a whole cell of the portal was causing the
+  // floor switch to teleport the Guardian 35–50 pixels to the gate centre.
+  // Keep broad lateral freedom, but complete only at the actual landing lip.
+  const corridor=lateral<plan.width/2+.18&&along>-.12&&along<.8;
   const height=gate.floor===1?state.z>=H-rise*.65:state.z<=rise*.65;
   const pressed=inputX*gate.out.x+inputY*gate.out.y>.24;
   const click=ride.exitTarget===gate.floor;
@@ -157,7 +160,10 @@ function controller({plan,state,nav,length,speeds,curving}){
    const portal=gates.find(gate=>atExit(ride,gate,dx,dy,manual));
    if(portal){
     state.floor=portal.floor;state.z=portal.floor?H:0;
-    actor.x=portal.at.x*48;actor.y=portal.at.y*48;actor.moving=false;
+    // Change the navigable floor WITHOUT moving XY. The actor has already
+    // reached this physical portal by normal collision-checked locomotion.
+    // Do not snap off-centre players onto a hidden centreline.
+    actor.moving=false;
     state.stairRide=null;
     return {completed:true,floor:portal.floor};
    }
