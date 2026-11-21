@@ -1,0 +1,27 @@
+name: Multi-floor pathing and guard memory regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/check-isometric-multifloor.yml
+      - beta/alley-enemy-pursuit.js
+      - beta/dungeon-isometric.js
+      - beta/alley-stair-geometry.js
+      - beta/alley-generator.js
+      - beta/dungeon-enemy-sim.js
+      - beta/index.html
+      - tools/check-isometric-multifloor.cjs
+
+permissions:
+  contents: read
+
+jobs:
+  multifloor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seed 4148 - all upper slabs, tracking, last seen search and real combat
+        run: node tools/check-isometric-multifloor.cjs
