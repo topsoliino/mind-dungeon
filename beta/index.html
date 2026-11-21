@@ -2263,6 +2263,25 @@ function finishAlleyApproach(){
  if(animation)alleyChest={...animation,elapsed:0};
  else openChest(0);
 }
+function approachClickStairs(){
+ if(!alleyVertical||alleyVertical.state.pending||alleyVertical.state.transition||
+  alleyVertical.state.stairRide)return false;
+ const view=renderedView??cam,zoom=view.zoom||1;
+ const screen={x:view.x+cw/2+(mouse.x-cw/2)/zoom,
+  y:view.y+ch/2+(mouse.y-ch/2)/zoom};
+ if(!alleyVertical.pickStair(screen,iso))return false;
+ const up=alleyVertical.state.floor===0;
+ const stairs=alleyVertical.connectors.find(o=>o.kind==='stairs');
+ if(!stairs)return false;
+ const goal=up?stairs.bottom:stairs.top;
+ const route=alley.routeTo(player,{x:goal.x*48,y:goal.y*48});
+ if(!route){tell('Treppenfuß oder oberes Podest ist versperrt.');return true;}
+ alleyVertical.state.pending={connector:stairs,up};
+ alleyMove=alleyMarker=alleyQueuedLight=null;
+ alleyRoute=route.steps.slice();
+ if(!alleyRoute.length)alleyRoute=[{x:player.x,y:player.y}];
+ finishAlleyApproach();return true;
+}
 function approachAlleyVertical(){
  if(!alleyVertical)return false;
  const state=alleyVertical.state;
@@ -2456,6 +2475,7 @@ window.addEventListener('pointerdown',e=>{
   e.preventDefault();
   mouse={x:e.clientX,y:e.clientY};aimMode='mouse';
   alleyRoute=alleyQueuedLight=null;
+  if(approachClickStairs())return;
   alleyMove={target:mouseWorld(),steps:null};
   return;
  }
