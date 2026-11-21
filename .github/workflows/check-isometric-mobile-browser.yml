@@ -1,0 +1,39 @@
+name: Mobile browser visual smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/check-isometric-mobile-browser.yml
+      - tools/check-isometric-mobile-browser.cjs
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Chromium and Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Serve the same root paths as GitHub Pages
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/mobile-http.log 2>&1 &
+      - name: Exercise the actual game with iPhone-sized touchscreen
+        run: node tools/check-isometric-mobile-browser.cjs
+      - name: Attach real browser screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-isometric-browser-screenshot
+          path: mobile-isometric-preview.png
+          if-no-files-found: ignore
+          retention-days: 5
