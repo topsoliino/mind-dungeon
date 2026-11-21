@@ -1061,17 +1061,29 @@ function finishTrial(passed,restoring=false,index=trial?.index??trialIndex){
 }
 const keys={};let mouse={x:0,y:0},aimMode='keyboard';let near=null;const $=q=>document.querySelector(q);
 const controller=window.DungeonController.create();
+document.body.classList.toggle('mobile-iso',Boolean(alley));
+document.body.classList.toggle('touch-force',new URLSearchParams(location.search).get('touch')==='1');
+const touch=window.DungeonTouch.create({
+ surface:document.getElementById('mobile-stick'),
+ thumb:document.getElementById('mobile-stick-thumb'),
+ enabled:()=>!paused&&!modalType&&!document.hidden
+});
 const noMovement={x:0,y:0};
 let controllerMove=noMovement,controllerDash=false,controllerInUse=false,controllerTarget=null,vaultInput=null;
 let controllerMoveSuppressed=false;
 function movementInput(){
- const x=Number(Boolean(keys.KeyD||keys.ArrowRight))-Number(Boolean(keys.KeyA||keys.ArrowLeft));
- const y=Number(Boolean(keys.KeyS||keys.ArrowDown))-Number(Boolean(keys.KeyW||keys.ArrowUp));
+ const kx=Number(Boolean(keys.KeyD||keys.ArrowRight))-Number(Boolean(keys.KeyA||keys.ArrowLeft));
+ const ky=Number(Boolean(keys.KeyS||keys.ArrowDown))-Number(Boolean(keys.KeyW||keys.ArrowUp));
+ const stick=touch.read();
+ const x=kx||ky?kx:stick.x,y=kx||ky?ky:stick.y;
  if(alley){
-  if(!generationMode||(!x&&!y))return noMovement;
+  if((!generationMode&&!stick.x&&!stick.y)||(!x&&!y))return noMovement;
+  // Joystick axes are screen-relative like WASD; map through the actual
+  // isometric camera projection to walk naturally in every direction.
   const origin=iso.toWorld(0,0),point=iso.toWorld(x,y);
   const dx=point.x-origin.x,dy=point.y-origin.y,length=Math.hypot(dx,dy);
-  return {x:dx/length,y:dy/length};
+  const intensity=Math.min(1,Math.hypot(x,y));
+  return length?{x:dx/length*intensity,y:dy/length*intensity}:noMovement;
  }
  return x||y?{x,y}:controllerMove;
 }
@@ -1134,6 +1146,8 @@ let conversation=null;
 let renderedView=null,dialogueView=null;
 const gameMusicScene=()=>!atTitle&&world.inSanctuary(player.x,player.y)?'shrine':null;
 function show(content,type='menu'){
+ touch.reset();
+ document.body.classList.remove('mobile-playing');
  if(alley){alleyRoute=alleyMove=alleyMarker=alleyRoll=alleySwing=alleyQueuedLight=alleyChest=null;player.attack=0;}
  if(type!=='dialogue')endConversation();
  unmountTitleGlow?.();unmountTitleGlow=null;
@@ -1174,6 +1188,7 @@ function close(){
  audio?.setPaused(false);
  audio?.setMusicScene(gameMusicScene());
  paused=false;modalType='';pending=null;$('#modalWrap').style.display='none';$('#modalWrap').dataset.screen='';
+ if(alley)document.body.classList.add('mobile-playing');
  $('#hud').hidden=false;$('#xpHud').hidden=false;$('#wallet').hidden=false;updateWallet();updateQuickBar();
  if(coopRoom)updateCoopAltars();
  if(queuedAltar!==null){
@@ -2531,6 +2546,7 @@ window.addEventListener('keydown',e=>{
 });
 window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')releaseAttack('keyboard');});
 window.addEventListener('blur',()=>{
+ touch.reset();
  for(const key in keys)keys[key]=false;
  alleyMove=alleyMarker=alleyRoll=alleyQueuedLight=null;
  clearHeldAttack();cancelController();
@@ -2564,13 +2580,15 @@ function nextAlleyMove(){
  return null;
 }
 window.addEventListener('pointermove',e=>{
- if(modalType||e.target.closest?.('#modalWrap'))return;
+ if(e.pointerType==='touch'||modalType||e.target.closest?.('#modalWrap,#mobile'))return;
  setControllerPrompts(false);controllerTarget=null;
  mouse.x=e.clientX;mouse.y=e.clientY;aimMode='mouse';
  if(!alley)faceMouse();
 });
 window.addEventListener('pointerdown',e=>{
- if(alley&&!alleyVertical?.state.transition&&e.pointerType==='mouse'&&e.button===2&&!modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,button')){
+ if(alley&&!alleyVertical?.state.transition&&
+  (e.pointerType==='mouse'&&e.button===2||e.pointerType==='touch'&&e.button===0)&&
+  !modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,button')){
   e.preventDefault();
   mouse={x:e.clientX,y:e.clientY};aimMode='mouse';
   alleyRoute=alleyQueuedLight=null;
@@ -3042,7 +3060,9 @@ if(alley){
   ' · '+window.AlleyGenerator.metadata.stairTitle+' · Seed '+window.AlleyGenerator.seed:
   save.isoLabDone?'Route geschafft · Protokoll gesichert':
   (alley.archiveUnlocked()?'Labor betreten und Versuch abschließen':'Archiv finden · Wissenssiegel öffnen');
- const hint=generationMode?'Rechtsklick: zum sichtbaren Boden · Türkis: Aufgang zum Obergeschoss · Violett: offene U-Unterführung (Strg) · WASD: Rennen/Steuern · E: Einstieg/Stopp · Alt+Rechtsklick auf der Treppe: Erdgeschoss':
+ const hint=matchMedia('(pointer:coarse)').matches?
+   'Stick bewegen · Welt antippen: Ziel setzen · ⚔ Angriff · ↷ Rolle · E Leiter/Treppe':
+   generationMode?'Rechtsklick: zum sichtbaren Boden · Türkis: Aufgang zum Obergeschoss · Violett: offene U-Unterführung (Strg) · WASD: Rennen/Steuern · E: Einstieg/Stopp · Alt+Rechtsklick auf der Treppe: Erdgeschoss':
   'Strg Schleichen'+(alleySneaking?' (an)':'')+' · Rechtsklick Laufen · Umschalt Rolle · E Untersuchen';
  if($('#alley-help').textContent!==hint)$('#alley-help').textContent=hint;
 }else{
@@ -3053,7 +3073,7 @@ $('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+([1,2].includes
 }
 if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
 const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=alleyRoute?'Zur Truhe …':interactionHint(near);
-prompt.hidden=!hint||Boolean(modalType);$('#mobileInteract').hidden=!hint||Boolean(modalType)||Boolean(alleyRoute);if(hint){
+prompt.hidden=!hint||Boolean(modalType);$('#mobileInteract').hidden=alley?Boolean(modalType):!hint||Boolean(modalType)||Boolean(alleyRoute);if(hint){
  const text=alleyRoute?hint:(controllerInUse?'[ A ] ':matchMedia('(pointer:coarse)').matches?'':'[ E ] ')+hint;
  if(prompt.textContent!==text)prompt.textContent=text;
 }
@@ -6243,6 +6263,8 @@ function finishLoading(){
   itemHint.textContent='Y Essen · Q Trank';
   heavyHint.after(itemHint);
   $('#dpad').style.display='none';
+  if(matchMedia('(pointer:coarse)').matches||document.body.classList.contains('touch-force'))
+   tell('Handy: Stick bewegen · ⚔ Angriff · ↷ Rolle · E Leiter/Treppe · Welt antippen zum Laufen');
  }
  if(generationMode)window.AlleyGeneratorUI?.mount({generator:window.AlleyGenerator,player:()=>player,iso});
  if(alley)tell(generationMode?'Generator-Test · 10 verbundene Räume · Seed '+window.AlleyGenerator.seed:
