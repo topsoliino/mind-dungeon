@@ -1,0 +1,61 @@
+name: Bake Blender Guardian ladder animations
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bake-guardian-ladders.yml
+      - tools/add-guardian-ladder-animations.py
+      - tools/check-guardian-ladder-rig-assets.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: guardian-ladder-bake
+  cancel-in-progress: false
+
+jobs:
+  blender-ladder:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out real Blender source rig
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install Blender for authoring and exporting genuine armature keys
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender -b --version | head -2
+
+      - name: Bake two ladder takes onto the original Guardian rig
+        run: |
+          blender -b beta/art/player-study/guardian.blend \
+            -P tools/add-guardian-ladder-animations.py
+
+      - name: Export real GLB armature timeline for Three.js
+        run: |
+          blender -b beta/art/player-study/guardian.blend \
+            -P tools/export-guardian-web.py -- \
+            beta/art/player-study/guardian-rig.glb.gz
+
+      - name: Verify exact frames and actual animated GLB channels
+        run: python3 tools/check-guardian-ladder-rig-assets.py
+
+      - name: Store editable Blender source and game-ready exports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add beta/art/player-study/guardian.blend \
+                  beta/art/player-study/guardian-rig.glb.gz \
+                  beta/art/player-study/guardian-frames.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Blender: bake and export Guardian climb-up/down on actual armature"
+            git push
+          else
+            echo "All baked ladder assets were already current."
+          fi
