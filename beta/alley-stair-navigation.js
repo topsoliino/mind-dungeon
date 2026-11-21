@@ -26,7 +26,10 @@ function make(plan){
   y0:Math.min(...p.corners.map(v=>v.y)),y1:Math.max(...p.corners.map(v=>v.y))
  }}));
  function inPoly(p,obj){
-  const {bounds:b,corners:pts}=obj;
+  const pts=obj.corners,b=obj.bounds??{
+   x0:Math.min(...pts.map(v=>v.x)),x1:Math.max(...pts.map(v=>v.x)),
+   y0:Math.min(...pts.map(v=>v.y)),y1:Math.max(...pts.map(v=>v.y))
+  };
   if(p.x<b.x0-EPS||p.x>b.x1+EPS||p.y<b.y0-EPS||p.y>b.y1+EPS)return false;
   let positive=false,negative=false;
   for(let i=0;i<pts.length;i++){
