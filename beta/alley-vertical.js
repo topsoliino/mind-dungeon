@@ -125,7 +125,7 @@ function createLayers({project,polygon,line,block,cacheObject}){
   const [u,v,r,b]=bounds;
   line(ctx,[project(u,v,HEIGHT+3),project(r,v,HEIGHT+3)],'#bfd0ce',3);
  });
- const stairsImage=cacheObject(stairs.area,HEIGHT+12,ctx=>{
+ const stairsImage=cacheObject(stairs.area,HEIGHT+54,ctx=>{
   const [u,v,r,b]=stairs.area;
   // Actual isometric solid treads; each rises to a different Z value.
   for(let i=0;i<STEPS;i++){
@@ -147,7 +147,7 @@ function createLayers({project,polygon,line,block,cacheObject}){
  const ladderArea=ladder.wall==='north'||ladder.wall==='south'?
   [ladder.cell[0]+.15,ladder.cell[1]-.12,ladder.cell[0]+.85,ladder.cell[1]+1.12]:
   [ladder.cell[0]-.12,ladder.cell[1]+.15,ladder.cell[0]+1.12,ladder.cell[1]+.85];
- const ladderImage=cacheObject(ladderArea,HEIGHT+18,ctx=>{
+ const ladderImage=cacheObject(ladderArea,HEIGHT+52,ctx=>{
   const [u,v]=ladder.cell;
   const along=ladder.dx?[[u+(ladder.dx>0?1-.12:.12),v+.24],
    [u+(ladder.dx>0?1-.12:.12),v+.76]]:
