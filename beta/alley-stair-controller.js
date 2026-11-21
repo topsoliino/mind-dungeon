@@ -227,7 +227,7 @@ function controller({plan,state,nav,length,speeds,curving}){
     }
     const legal=nav.legalTarget(point,piece);
     if(!legal)continue;
-    best=score;chosen={part:piece,point:legal,z};
+    best=score;chosen={part:piece,point:legal,z,face:i===0?'top':'side'};
    }
    // Guardrails belong to the corresponding tread as well. They sit roughly
    // 27 projected pixels above its sides, outside the ordinary top-face halo.
@@ -242,7 +242,7 @@ function controller({plan,state,nav,length,speeds,curving}){
      const score=420-gap*7;
      if(score<=best)continue;
      const goal=nav.legalTarget(piece.center,piece);
-     if(goal){chosen={part:piece,point:goal,z};best=score;}
+     if(goal){chosen={part:piece,point:goal,z,face:'rail'};best=score;}
     }
    }
   }
