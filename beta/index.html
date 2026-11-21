@@ -1788,7 +1788,7 @@ let breakDebris=[];
 let impactBursts=[],heldAttack=null,combatClock=0,consumeMove=null,vault=null;
 function isConsuming(){return Boolean(consumeMove||authorityMode&&consumePose(authorityOwn?.pose));}
 function startAttack(input,canVault=false){
- if(bossIntro()||modalType||paused||alleyVertical?.state.pending||alleyVertical?.state.transition||mdNavigatingToNewCharacter||heroFallProgress()>=0||vault||alleyHit||alleyChest||player.wallRecoil||player.attack>0||player.dash>0||heldAttack||isConsuming()||save.consumeQueue.length)return;
+ if(bossIntro()||modalType||paused||alleyVertical?.state.stairRide||alleyVertical?.state.pending||alleyVertical?.state.transition||mdNavigatingToNewCharacter||heroFallProgress()>=0||vault||alleyHit||alleyChest||player.wallRecoil||player.attack>0||player.dash>0||heldAttack||isConsuming()||save.consumeQueue.length)return;
  const jumping=canVault&&tryVault();
  if(authorityMode){
   if(canVault){
@@ -1957,7 +1957,7 @@ function shockWater(origin,impact,split,amount,owner){
  }
 }
 function canStrike(){
- return !alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&Boolean(save.equipment.weapon)&&!paused&&!mdNavigatingToNewCharacter&&
+ return !alleyVertical?.state.stairRide&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&Boolean(save.equipment.weapon)&&!paused&&!mdNavigatingToNewCharacter&&
   !vault&&!alleyHit&&!alleyChest&&!player.wallRecoil&&player.dash<=0&&!consumeMove&&!save.consumeQueue.length;
 }
 function requestAlleyLight(target=null){
@@ -2247,8 +2247,15 @@ function finishAlleyApproach(){
  if(alleyVertical?.state.pending){
   const task=alleyVertical.state.pending;
   alleyVertical.state.pending=null;
-  alleyVertical.state.transition={...task,age:0,duration:task.connector.duration};
-  player.dir=task.connector.face;alleyMove=alleyMarker=null;
+  if(task.connector.kind==='stairs'){
+   if(!alleyVertical.boardStairs(player,task.up,true)){
+    tell('Treppenbeginn nicht erreichbar.');
+   }else player.dir=task.up?task.connector.face:task.connector.face+Math.PI;
+  }else{
+   alleyVertical.state.transition={...task,age:0,duration:task.connector.duration};
+   player.dir=task.connector.face;
+  }
+  alleyMove=alleyMarker=null;
   player.attack=player.dash=0;clearHeldAttack();return;
  }
  player.dir=alley.chestFacing;
@@ -2260,6 +2267,10 @@ function approachAlleyVertical(){
  if(!alleyVertical)return false;
  const state=alleyVertical.state;
  if(state.pending||state.transition)return true;
+ if(state.stairRide){
+  // Reversing on E retains the same physical stair constraints.
+  state.stairRide.dir*=-1;state.stairRide.auto=true;return true;
+ }
  if(player.attack>0||player.dash>0||heldAttack||alleyHit||alleyChest||isConsuming()){
   tell('Erst die aktuelle Aktion beenden, dann E an der Leiter oder Treppe drücken.');return true;
  }
@@ -2441,14 +2452,14 @@ window.addEventListener('pointermove',e=>{
  if(!alley)faceMouse();
 });
 window.addEventListener('pointerdown',e=>{
- if(alley&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&e.pointerType==='mouse'&&e.button===2&&!modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,button')){
+ if(alley&&!alleyVertical?.state.stairRide&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&e.pointerType==='mouse'&&e.button===2&&!modalType&&!paused&&!e.target.closest?.('#modalWrap,#mobile,button')){
   e.preventDefault();
   mouse={x:e.clientX,y:e.clientY};aimMode='mouse';
   alleyRoute=alleyQueuedLight=null;
   alleyMove={target:mouseWorld(),steps:null};
   return;
  }
- if(e.pointerType==='mouse'&&e.button===0&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
+ if(e.pointerType==='mouse'&&e.button===0&&!alleyVertical?.state.stairRide&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
   setControllerPrompts(false);controllerTarget=null;aimMode='mouse';
   if(alley){
    mouse={x:e.clientX,y:e.clientY};
@@ -2510,6 +2521,13 @@ function startAlleyHit(damage,impactAngle){
  alleyHit={clip,pushAngle,elapsed:0,distance:0};
 }
 function updateAlleyActions(dt){
+ if(alleyVertical?.state.stairRide){
+  const input=movementInput(),load=equipmentLoad();
+  const flatSpeed=player.speed*brewBonus.speed*load.move*
+   mythicArmorMove()*(1.42*.70);
+  const result=alleyVertical.advanceStairs(player,dt,flatSpeed,input.x,input.y);
+  if(result?.completed)tell(result.floor?'Obergeschoss erreicht':'Erdgeschoss erreicht');
+ }
  if(alleyVertical?.state.transition){
   const state=alleyVertical.state,task=state.transition;
   task.age=Math.min(task.duration,task.age+dt);
@@ -2596,10 +2614,11 @@ function update(dt){
  player.webSlow=Math.max(0,(player.webSlow||0)-dt);player.grabSlow=Math.max(0,(player.grabSlow||0)-dt);
  shake=Math.max(0,shake-dt*18);
  const {x:inputX,y:inputY}=movementInput();
- const length=alleyHit||alleyChest||alleyVertical?.state.transition?0:Math.hypot(inputX,inputY);
+ const length=alleyHit||alleyChest||alleyVertical?.state.stairRide||alleyVertical?.state.transition?0:Math.hypot(inputX,inputY);
  if(alleyRoute&&(length||controllerDash||player.attack>0||player.dash>0))alleyRoute=null;
  finishAlleyApproach();
- const next=alleyVertical?.state.transition?null:alleyRoute?.[0]??nextAlleyMove();
+ const next=alleyVertical?.state.stairRide||alleyVertical?.state.transition?
+   null:alleyRoute?.[0]??nextAlleyMove();
  const routeX=next?next.x-player.x:0,routeY=next?next.y-player.y:0;
  const routeDistance=Math.hypot(routeX,routeY);
  let dx=next?routeX/routeDistance:length?inputX/Math.max(1,length):0;
@@ -2607,7 +2626,14 @@ function update(dt){
  const step=controllerDash,rollAngle=alleyRoll;
  alleyRoll=null;
  if(!authorityMode)controllerDash=false;
- if(!vault&&!alleyHit&&!alleyChest&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!player.wallRecoil&&!isConsuming()&&player.dashCooldown<=0&&
+ if(alleyVertical&&!alleyVertical.state.stairRide&&
+  !alleyVertical.state.pending&&!alleyVertical.state.transition&&
+  !player.attack&&!player.dash&&(dx||dy)&&
+  alleyVertical.tryEnterStairs(player,dx,dy)){
+  alleyRoute=alleyMove=alleyMarker=null;
+  dx=dy=0;
+ }
+ if(!vault&&!alleyHit&&!alleyChest&&!alleyVertical?.state.stairRide&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!player.wallRecoil&&!isConsuming()&&player.dashCooldown<=0&&
   (alley?rollAngle!==null:step||length&&(keys.ShiftLeft||keys.ShiftRight))&&spendStamina(dashCost())){
   clearHeldAttack();
   if(alley){alleyRoute=alleyMove=alleyMarker=alleySwing=alleyQueuedLight=null;player.attack=0;}
@@ -2625,9 +2651,9 @@ function update(dt){
   alleyGaitMode=walking?'walk':alleySneaking?'sneak':'run';
  }
  if(player.wallRecoil>wallRecoilSeconds-.13||authorityMode&&!authorityConnected){dx=0;dy=0;}
- player.moving=false;
+ player.moving=Boolean(alleyVertical?.state.stairRide&&player.moving);
  if(vault)advanceVault(dt);
- else if(dx||dy){
+ else if((dx||dy)&&!alleyVertical?.state.stairRide){
   player.back=dy<0;player.moveAngle=Math.atan2(dy,dx);
   moveClock+=dt;
   if(moveClock>.09){moveClock=0;dust.push({x:player.x+rand(-7,7),y:player.y+14,life:.5});}
@@ -4193,7 +4219,7 @@ function characterFrame(bank,look,armor,actor,{pose,falling,heading,air,dashTime
 }
 function alleyActor(){
  const z=alleyVertical?.state.z??0,point=iso.toView(player.x,player.y,z);
- const raised=alleyVertical&&(alleyVertical.state.floor===1||alleyVertical.state.transition);
+ const raised=alleyVertical&&(alleyVertical.state.floor===1||alleyVertical.state.transition||alleyVertical.state.stairRide);
  return {...player,...point,renderDepth:raised?7000+point.y:point.y,
   dir:iso.viewAngle(player.dir),moveAngle:iso.viewAngle(player.moveAngle),
   recoilAngle:Number.isFinite(player.recoilAngle)?iso.viewAngle(player.recoilAngle):undefined};
@@ -4316,6 +4342,11 @@ function drawCanvasCharacter(sprite,actor,lift,fall=null,alpha=1){
  s.restore();
 }
 function alleyGuardianPose(){
+ if(alleyVertical?.state.stairRide){
+  const flight=alleyVertical.state.stairRide;
+  return {clip:'walk',progress:((flight.s/alleyVertical.stairLength)*
+   alleyVertical.plan.length/2)%1,angle:player.dir,hideWeapon:true};
+ }
  if(alleyVertical?.state.transition){
   const task=alleyVertical.state.transition;
   const ratio=task.age/task.duration;
