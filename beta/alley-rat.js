@@ -1,7 +1,7 @@
 // Blender-baked small rat: editable armature, 32 independent 3D views/animation.
 window.AlleyRat=(()=>{
  'use strict';
- const CELL=96,VIEWS=32,TAU=Math.PI*2,VERSION=2;
+ const CELL=128,VIEWS=32,TAU=Math.PI*2,VERSION=3;
  const files=['idle','run','stalk','jump','bite','combo','dodge','dodge-left','death'];
  const sheets=new Map();
  const DEATH_SECONDS=1.15;
@@ -49,25 +49,20 @@ window.AlleyRat=(()=>{
   const cols=image.width/CELL,col=Math.min(cols-1,Math.floor(t*cols));
   const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
   const exact=wrap(VIEWS/8-facing*VIEWS/TAU,VIEWS);
-  const row=Math.floor(exact);
+  const row=wrap(Math.round(exact),VIEWS);
   const p=iso.toView(e.x,e.y,e.alleyZ||0);
-  const alpha=deathAge===null?(e.hit>0?.75:1):clamp((2.6-deathAge)/.55);
+  const alpha=deathAge===null?1:clamp((2.6-deathAge)/.55);
   return {image,key:'rat-'+clip,frame:row+'-'+col,sx:col*CELL,sy:row*CELL,
-   w:CELL,h:CELL,width:103*(e.size||1),height:103*(e.size||1),
+   w:CELL,h:CELL,width:128*(e.size||1),height:128*(e.size||1),
    x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.76,alpha};
  }
  function sprites(e,iso,rules,deathAge=null){
-  const base=sprite(e,iso,rules,deathAge);
-  if(!base)return [];
-  const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
-  const exact=wrap(VIEWS/8-facing*VIEWS/TAU,VIEWS);
-  const low=Math.floor(exact),w=exact-low;
-  if(w<.02||w>.98)return [base];
-  return [
-   {...base,sy:low*CELL,frame:low+'-'+base.sx/CELL,alpha:base.alpha*(1-w)},
-   {...base,sy:wrap(low+1,VIEWS)*CELL,frame:wrap(low+1,VIEWS)+'-'+base.sx/CELL,
-    alpha:base.alpha*w,depth:base.depth+.0001}
-  ];
+  // OPAQUE nearest-facing 3D model. The previous weighted pair rendered
+  // two individually semi-transparent complete rats, making the stone floor
+  // show through both bodies in the screenshot. Thirty-two facings already
+  // provide 11.25-degree coverage without translucent ghosting.
+  const view=sprite(e,iso,rules,deathAge);
+  return view?[view]:[];
  }
  function encounters(generator,alley,occupied=[]){
   const rooms=(generator.rooms||[]).filter(r=>r.kind==='raum'&&r.id!==0&&r.cells?.length);
