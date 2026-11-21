@@ -173,36 +173,42 @@ function createLayers({project,polygon,line,cacheObject}){
   }
  });
  const stairsImage=cacheObject(stairs.area,HEIGHT+58,ctx=>{
-  const sorted=plan.steps.slice().sort((a,b)=>{
-   const p=a.center,q=b.center;
-   return project(p.x,p.y,a.z)[1]-project(q.x,q.y,b.z)[1];
-  });
+  // The landing is a structural member of the staircase, not a decorative
+  // rectangle painted on top of all other steps. It shares the depth painter.
+  const pieces=plan.steps.map((s,i)=>({...s,index:i,kind:'step'}))
+   .concat(plan.landings.map(l=>({
+    ...l,kind:'landing',center:l.corners.reduce((a,p)=>({
+     x:a.x+p.x/l.corners.length,y:a.y+p.y/l.corners.length}),{x:0,y:0})
+   })));
+  pieces.sort((a,b)=>project(a.center.x,a.center.y,a.z)[1]-
+   project(b.center.x,b.center.y,b.z)[1]);
   const palettes={
    top:['#939eaf','#98a3b0'],riser:'#555f70',left:'#485565',
    right:'#647384',line:'#d9ced0'
   };
-  for(const step of sorted){
-   const [a,b,c,d]=step.corners,z=step.z,prev=step.prev;
+  for(const part of pieces){
+   if(part.kind==='landing'){
+    const ps=part.corners.map(p=>project(p.x,p.y,part.z));
+    for(let i=0;i<4;i++){
+     const a=part.corners[i],b=part.corners[(i+1)%4];
+     if(i%2===0)polygon(ctx,[project(a.x,a.y,0),project(b.x,b.y,0),
+      project(b.x,b.y,part.z),project(a.x,a.y,part.z)],
+      '#586475','#424e5d');
+    }
+    polygon(ctx,ps,'#939ca8','#ced2d6');
+    continue;
+   }
+   const [a,b,c,d]=part.corners,z=part.z,prev=part.prev;
    const base=p=>project(p.x,p.y,0);
    const top=p=>project(p.x,p.y,z);
    const low=p=>project(p.x,p.y,prev);
-   // Structural, load-bearing side cheeks are below the horizontal treads.
    polygon(ctx,[base(a),base(d),top(d),top(a)],palettes.left,'#343d4b');
    polygon(ctx,[base(b),base(c),top(c),top(b)],palettes.right,'#3e4654');
-   // The single riser is precisely one step high, not an arbitrary tall wall.
+   // Exact one-riser-high vertical face, with a constant tread depth.
    polygon(ctx,[low(a),low(b),top(b),top(a)],palettes.riser,'#424a57');
    polygon(ctx,[top(a),top(b),top(c),top(d)],
-    palettes.top[Math.round(z*2)%2],'#d1c9ca');
+    palettes.top[part.index%2],'#d1c9ca');
    line(ctx,[top(a),top(b)],palettes.line,1.8);
-  }
-  for(const land of plan.landings){
-   const ps=land.corners.map(p=>project(p.x,p.y,land.z));
-   polygon(ctx,ps,'#939ca8','#ced2d6');
-   for(let i=0;i<4;i++){
-    const a=land.corners[i],b=land.corners[(i+1)%4];
-    if(i%2===0)polygon(ctx,[project(a.x,a.y,0),project(b.x,b.y,0),
-     project(b.x,b.y,land.z),project(a.x,a.y,land.z)],'#586475','#424e5d');
-   }
   }
   for(const post of plan.posts){
    const p=post.p,r=post.radius;
