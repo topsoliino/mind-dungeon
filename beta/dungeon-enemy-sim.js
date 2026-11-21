@@ -220,6 +220,10 @@ function updateRat(e,dt,spec,d,angle,clear){
   e.ratPreferred=96+36*ratRoll();
  if(!e.ratState)ratState(e,d<=spec.range+7?'commit':'watch',.18,.55);
  e.ratStateTime=Math.max(0,(e.ratStateTime||0)-dt);
+ // A timid rat must still eventually decide to attack if it has been
+ // circling within reach for several seconds.
+ e.ratReadiness=e.attack<=0&&d<e.ratPreferred+42?
+  Math.min(4,(e.ratReadiness||0)+dt):0;
  if(!clear){
   e.ratStalking=e.aggro>0;
   if(e.aggro>0&&d>e.ratPreferred+24)
@@ -234,10 +238,13 @@ function updateRat(e,dt,spec,d,angle,clear){
  }
  // An opening hop stops near the standoff ring, rather than at the player.
  if(d>105&&d<155&&e.ratJumpCooldown<=0&&!e.ratDidOpeningHop){
-  const duration=.32;
-  const speed=Math.max(60,Math.min(155,(d-e.ratPreferred*.92)/duration));
-  ratHop(e,'jump',angle,speed,duration,'watch');
-  e.ratDidOpeningHop=true;e.ratJumpCooldown=3.1;return;
+  e.ratDidOpeningHop=true;
+  if(ratRoll()>.40){
+   const duration=.32;
+   const speed=Math.max(60,Math.min(155,(d-e.ratPreferred*.92)/duration));
+   ratHop(e,'jump',angle,speed,duration,'watch');
+   e.ratJumpCooldown=3.1;return;
+  }
  }
  if(e.ratState==='commit'){
   if(e.attack>0){ratState(e,'watch',.26,.60);return;}
@@ -245,6 +252,7 @@ function updateRat(e,dt,spec,d,angle,clear){
    // Last sniff/anticipation is readable before the charge is committed.
    if(e.ratStateTime>0)return;
    e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
+   e.ratReadiness=0;
    ratState(e,'watch',.4,.9);
    return;
   }
@@ -289,7 +297,8 @@ function updateRat(e,dt,spec,d,angle,clear){
   ratState(e,'commit',.10,.24);return;
  }
  const choice=ratRoll();
- if(e.attack<=0&&d<e.ratPreferred+26&&choice<.35){
+ if(e.attack<=0&&d<e.ratPreferred+26&&
+    (choice<.35||e.ratReadiness>=3.2)){
   ratState(e,'commit',.08,.3);
  }else if(choice<.69){
   e.ratCircleSign=ratRoll()<.5?-1:1;
