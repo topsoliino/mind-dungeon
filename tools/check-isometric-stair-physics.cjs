@@ -38,7 +38,10 @@ for(let seed=0;seed<120;seed++){
  const center=p.path[Math.floor(p.path.length/2)];
  assert(!v.boardStairs({x:center.x*48,y:center.y*48},true),
   'cannot enter halfway up the staircase');
- assert(v.boardStairs(actor,true,true),'bottom stair gate must accept ascent');
+ assert(v.boardStairs(actor,true),'bottom stair gate must accept entry');
+ for(let j=0;j<12;j++)v.advanceStairs(actor,1/60,180);
+ assert(near(s.stairRide.s,0),'entry must not automatically climb a single step');
+ assert(v.aimStairs({center:p.top,z:132}),'the selected stair-head target must be reachable');
  assert(!v.boardStairs(actor,true),'cannot board an occupied staircase');
  let last=-1,frames=0;
  while(s.stairRide&&frames<1000){
@@ -54,7 +57,10 @@ for(let seed=0;seed<120;seed++){
   'cannot board the downstairs entrance from the upper floor');
  assert(!v.boardStairs({x:p.bottom.x*48,y:p.bottom.y*48},false),
   'cannot descend from the wrong entry');
- assert(v.boardStairs(actor,false,true),'upper stair gate must accept descent');
+ assert(v.boardStairs(actor,false),'upper stair gate must accept descent');
+ for(let j=0;j<12;j++)v.advanceStairs(actor,1/60,180);
+ assert(near(s.stairRide.s,v.stairLength),'descent must not start without a target or movement');
+ assert(v.aimStairs({center:p.bottom,z:0}));
  last=133;frames=0;
  while(s.stairRide&&frames<1000){
   v.advanceStairs(actor,1/60,180);
@@ -65,10 +71,15 @@ for(let seed=0;seed<120;seed++){
  assert(near(actor.x,p.bottom.x*48)&&near(actor.y,p.bottom.y*48));
  assert(near(s.z,0));
  const internal=p.path[Math.floor(p.path.length/2)];
- assert(v.blocksGround(internal.x,internal.y,.29),
-  'the interior of the physical stair is not a normal walkable floor');
+ assert(v.blocksGround(p.steps[0].center.x,p.steps[0].center.y,0),
+  'the low underside is always solid');
+ if(p.cfg.open)assert(p.steps.some(step=>step.prev-13>=92&&
+   !v.blocksGround(step.center.x,step.center.y,0)),
+   'open upper treads admit a guardian underneath');
+ else assert(v.blocksGround(internal.x,internal.y,.29),
+  'a closed stair is a solid collider');
  // Side push stays within guard rails even when applied for many frames.
- assert(v.boardStairs(actor,true,false));
+ assert(v.boardStairs(actor,true));
  const ride=s.stairRide,origin=ride.s;
  for(let i=0;i<12;i++)v.advanceStairs(actor,1/60,180,0,0);
  assert(near(ride.s,origin),'input-driven stairs must stop without input');
@@ -76,6 +87,7 @@ for(let seed=0;seed<120;seed++){
  const dx=first.x-entry.x,dy=first.y-entry.y,d=Math.hypot(dx,dy);
  for(let i=0;i<12;i++)v.advanceStairs(actor,1/60,180,dx/d,dy/d);
  assert(ride.s>origin+.05,'input-driven stairs must move with forward input');
+ assert(ride.targetS===null,'movement input overrides an automatic click target');
  for(let i=0;i<150;i++)v.advanceStairs(actor,1/60,180,1,0);
  assert(ride.s>=0&&ride.s<=v.stairLength);
  assert(Math.abs(ride.lateral)<=Math.max(0,p.width/2-.44)+1e-6,
@@ -99,6 +111,7 @@ assert(u.steps[7].end.every(onLandingEdge)&&u.steps[8].start.every(onLandingEdge
 assert(near(u.path[2].z,66)&&near(u.path[3].z,66)&&near(u.path[4].z,66),
  'the U turn must remain at a constant mid-landing elevation');
 const curved=create(7,'curved').plan;
+ assert(curved.cfg.open,'curved flight must have an open underside');
 const prev=curved.path.at(-2),crest=curved.path.at(-1),exit=curved.top;
 const a=Math.atan2(crest.y-prev.y,crest.x-prev.x),
  b=Math.atan2(exit.y-crest.y,exit.x-crest.x);
