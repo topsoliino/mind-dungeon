@@ -167,6 +167,16 @@
     ctx.globalAlpha=1;
    }
   }
+  // Bake both floor navigation graphs during scene loading, with the same
+  // walkable/collision function that runtime right-click movement uses.
+  if(procedural&&vertical&&typeof route.prewarm==='function'){
+   const originalFloor=vertical.state.floor;
+   try{
+    for(const floor of [0,1]){
+     vertical.state.floor=floor;route.prewarm(walkable,floor);
+    }
+   }finally{vertical.state.floor=originalFloor;}
+  }
   const knowledge=map.stations.knowledge?unit(map.stations.knowledge.at):spawn;
   const lab=map.stations.lab?unit(map.stations.lab.at):spawn;
   const nearStation=(actor,target)=>Math.hypot(actor.x-target.x,actor.y-target.y)<82&&
