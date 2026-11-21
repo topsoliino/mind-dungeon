@@ -183,7 +183,8 @@ function createLayers({project,polygon,line,cacheObject}){
   // The landing is a structural member of the staircase, not a decorative
   // rectangle painted on top of all other steps. It shares the depth painter.
   const pieces=plan.steps.map((s,i)=>({...s,index:i,kind:'step'}))
-   .concat(plan.landings.map(l=>({
+   // Top landings are 1st-floor objects and drawn in the upper-only layer.
+   .concat(plan.landings.filter(l=>!l.top).map(l=>({
     ...l,kind:'landing',center:l.corners.reduce((a,p)=>({
      x:a.x+p.x/l.corners.length,y:a.y+p.y/l.corners.length}),{x:0,y:0})
    })));
@@ -196,22 +197,33 @@ function createLayers({project,polygon,line,cacheObject}){
   for(const part of pieces){
    if(part.kind==='landing'){
     const ps=part.corners.map(p=>project(p.x,p.y,part.z));
+    // One continuous stone slab, only 13 px thick. The previous giant
+    // rectangular side faces concealed the connecting upper flight.
     for(let i=0;i<4;i++){
      const a=part.corners[i],b=part.corners[(i+1)%4];
-     if(i%2===0)polygon(ctx,[project(a.x,a.y,0),project(b.x,b.y,0),
-      project(b.x,b.y,part.z),project(a.x,a.y,part.z)],
-      '#586475','#424e5d');
+     if(i%2===0)polygon(ctx,[project(a.x,a.y,part.z-13),
+      project(b.x,b.y,part.z-13),project(b.x,b.y,part.z),
+      project(a.x,a.y,part.z)],'#586475','#424e5d');
+    }
+    // Four discrete supporting posts: the landing is load-bearing, not
+    // a wall that completely obstructs the isometric view beneath it.
+    if(part.z>20)for(const corner of part.corners){
+     const x=corner.x,y=corner.y,r=.09;
+     polygon(ctx,[project(x-r,y,0),project(x+r,y,0),
+      project(x+r,y,part.z-13),project(x-r,y,part.z-13)],
+      '#677483','#4a5765');
     }
     polygon(ctx,ps,'#939ca8','#ced2d6');
     continue;
    }
    const [a,b,c,d]=part.corners,z=part.z,prev=part.prev;
-   const base=p=>project(p.x,p.y,0);
    const top=p=>project(p.x,p.y,z);
    const low=p=>project(p.x,p.y,prev);
-   polygon(ctx,[base(a),base(d),top(d),top(a)],palettes.left,'#343d4b');
-   polygon(ctx,[base(b),base(c),top(c),top(b)],palettes.right,'#3e4654');
-   // Exact one-riser-high vertical face, with a constant tread depth.
+   const under=p=>project(p.x,p.y,Math.max(0,z-13));
+   // Shallow load-bearing stair stringers, not per-step towers built
+   // from floor zero up: those produced the isolated blocks in the screenshot.
+   polygon(ctx,[under(a),under(d),top(d),top(a)],palettes.left,'#343d4b');
+   polygon(ctx,[under(b),under(c),top(c),top(b)],palettes.right,'#3e4654');
    polygon(ctx,[low(a),low(b),top(b),top(a)],palettes.riser,'#424a57');
    polygon(ctx,[top(a),top(b),top(c),top(d)],
     palettes.top[part.index%2],'#d1c9ca');
@@ -286,12 +298,18 @@ function createLayers({project,polygon,line,cacheObject}){
  });
  // Separate upper-only details. They MUST NOT leak into the ground-floor view.
  const upperLanding=cacheObject(stairs.area,HEIGHT+40,ctx=>{
-  const top=plan.top,delta=.38,pts=[
+  // The final curved tread connects to this real horizontal landing only
+  // once the upper story is shown. It follows the final tread tangent.
+  const top=plan.top,delta=.38;
+  const caps=plan.landings.filter(l=>l.top);
+  const plates=caps.length?caps.map(l=>l.corners):[[
    {x:top.x-delta,y:top.y-delta},{x:top.x+delta,y:top.y-delta},
    {x:top.x+delta,y:top.y+delta},{x:top.x-delta,y:top.y+delta}
-  ];
-  polygon(ctx,pts.map(p=>project(p.x,p.y,HEIGHT+2)),'#8eabba','#d6cfc0');
-  line(ctx,[project(top.x-.3,top.y,HEIGHT+4),project(top.x+.3,top.y,HEIGHT+4)],'#e1d3b8',2);
+  ]];
+  for(const pts of plates)polygon(ctx,pts.map(p=>project(p.x,p.y,HEIGHT)),
+   '#8eabba','#d6cfc0');
+  line(ctx,[project(top.x-.3,top.y,HEIGHT+3),project(top.x+.3,top.y,HEIGHT+3)],
+   '#e1d3b8',2);
  });
  return [
   {kind:'upper-deck',image:slab,depth:4000,level:1},
