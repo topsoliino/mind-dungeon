@@ -26,11 +26,29 @@ function controller({plan,state,nav,length,speeds,curving}){
    (!enteredHere||ride.leftEntry||click||ride.traveled>.9);
  }
  function gate(up){return up?plan.bottom:plan.top;}
+ function entranceFrame(up){
+  const entry=gate(up),lip=up?plan.path[0]:plan.path.at(-1),
+   out=norm(entry.x-lip.x,entry.y-lip.y);
+  return {entry,out,side:{x:-out.y,y:out.x}};
+ }
+ function entrancePosition(at,up){
+  const frame=entranceFrame(up),d={x:at.x-frame.entry.x,y:at.y-frame.entry.y},
+   along=d.x*frame.out.x+d.y*frame.out.y,
+   sideways=d.x*frame.side.x+d.y*frame.side.y;
+  return {frame,along,sideways,
+   allowed:along>=-.76&&along<=.92&&Math.abs(sideways)<=plan.width*.5+.18};
+ }
  function board(actor,up=true,target=null){
   if(state.stairRide||state.transition||state.pending||state.floor!==(up?0:1))return false;
-  const entry=gate(up);
-  if(distance({x:actor.x/48,y:actor.y/48},entry)>.72)return false;
-  const origin=nav.legalTarget(entry);
+  const where={x:actor.x/48,y:actor.y/48},
+   approach=entrancePosition(where,up);
+  if(!approach.allowed)return false;
+  const {frame,sideways}=approach,
+   safeSide=clamp(sideways,-plan.width*.5+nav.RADIUS+.02,
+    plan.width*.5-nav.RADIUS-.02);
+  const landing={x:frame.entry.x+frame.side.x*safeSide,
+   y:frame.entry.y+frame.side.y*safeSide};
+  const origin=nav.legalTarget(landing);
   if(!origin)return false;
   const ride={x:origin.x,y:origin.y,s:up?0:length,dir:up?1:-1,
    lateral:0,gait:0,target:null,path:null,entry:up?'bottom':'top',
@@ -67,11 +85,11 @@ function controller({plan,state,nav,length,speeds,curving}){
  }
  function enter(actor,dx,dy){
   if(state.stairRide||state.transition||state.pending||!dx&&!dy)return false;
-  const up=state.floor===0,entry=gate(up);
-  if(distance({x:actor.x/48,y:actor.y/48},entry)>.61)return false;
-  const seq=up?plan.path:[...plan.path].reverse(),
-   dir=norm(seq[1].x-seq[0].x,seq[1].y-seq[0].y);
-  return dx*dir.x+dy*dir.y>.32&&board(actor,up);
+  const up=state.floor===0,approach=entrancePosition(
+   {x:actor.x/48,y:actor.y/48},up);
+  if(!approach.allowed)return false;
+  const inward=-(dx*approach.frame.out.x+dy*approach.frame.out.y);
+  return inward>.28&&board(actor,up);
  }
  function advance(actor,dt,worldSpeed,dx=0,dy=0,options=null){
   const ride=state.stairRide;
