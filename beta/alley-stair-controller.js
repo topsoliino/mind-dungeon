@@ -42,7 +42,10 @@ function controller({plan,state,nav,length,speeds,curving}){
   if(state.stairRide||state.transition||state.pending||state.floor!==(up?0:1))return false;
   const where={x:actor.x/48,y:actor.y/48},
    approach=entrancePosition(where,up);
-  if(!approach.allowed)return false;
+  // Helical flights can project the ground entrance almost directly below
+  // the upper landing. XY proximity alone must NEVER board the wrong portal.
+  if(!approach.allowed||
+   distance(where,gate(!up))+.02<distance(where,gate(up)))return false;
   const {frame,sideways}=approach,
    safeSide=clamp(sideways,-plan.width*.5+nav.RADIUS+.02,
     plan.width*.5-nav.RADIUS-.02);
