@@ -73,6 +73,40 @@ export async function loadRig(url){
   gltf.scene.getObjectByName(track.name.slice(0,track.name.lastIndexOf('.')))
  ).filter(Boolean))];
  const lightClip=clip=>clip==='down'||clip==='up';
+ // Two independent 3D climb actions on the actual Blender armature.
+ const climbBones=Object.fromEntries(['Hips','Chest','Head','Arm.L','Arm.R',
+  'Forearm.L','Forearm.R','Glove.L','Glove.R','Thigh.L','Thigh.R',
+  'Shin.L','Shin.R','Boot.L','Boot.R','Mantle']
+  .map(name=>[name,gltf.scene.getObjectByName(name)]));
+ const ease=t=>{t=clamp(t);return t*t*(3-2*t);};
+ const climbingPose=(clip,t)=>{
+  const up=clip==='climb-up',phase=6*Math.PI*t+(up?0:Math.PI);
+  const stride=ease(t/.16)*(1-ease((t-.85)/.15));
+  const grip=ease(t/.095)*(1-ease((t-.91)/.09));
+  const left=Math.sin(phase),right=-left;
+  const rotate=(name,x=0,y=0,z=0)=>{
+   const bone=climbBones[name];if(!bone)return;
+   bone.rotation.x+=x;bone.rotation.y+=y;bone.rotation.z+=z;
+  };
+  rotate('Hips',-.07*grip,0,.035*left*stride);
+  rotate('Chest',-.20*grip,.03*left*stride,.05*left*stride);
+  rotate('Head',.10*grip);
+  rotate('Arm.L',-1.3*grip-.33*left*stride,0,-.14*grip);
+  rotate('Arm.R',-1.3*grip-.33*right*stride,0,.14*grip);
+  rotate('Forearm.L',-.46*grip+.28*left*stride);
+  rotate('Forearm.R',-.46*grip+.28*right*stride);
+  rotate('Glove.L',-.12*grip);rotate('Glove.R',-.12*grip);
+  rotate('Thigh.L',.23*grip-.47*left*stride);
+  rotate('Thigh.R',.23*grip-.47*right*stride);
+  rotate('Shin.L',-.32*grip-.26*right*stride);
+  rotate('Shin.R',-.32*grip-.26*left*stride);
+  rotate('Boot.L',.19*grip);rotate('Boot.R',.19*grip);
+  rotate('Mantle',.1*Math.sin(phase+Math.PI/2)*stride);
+  const lip=ease((t-.83)/.15);
+  if(up){rotate('Arm.L',.56*lip);rotate('Arm.R',.56*lip);rotate('Chest',-.18*lip);}
+  else{rotate('Hips',.12*lip);rotate('Thigh.L',-.1*lip);rotate('Thigh.R',-.1*lip);}
+ };
+
  let yaw=null,previousTime=null,previousPose='',previousClip=null,transition=null;
   return {
    canvas,displaySize,ground,
@@ -97,6 +131,7 @@ export async function loadRig(url){
     action.paused=false;
     action.enabled=true;
     mixer.setTime((start+clamp(progress)*(count-1))/frameRate);
+    if(clip==='climb-up'||clip==='climb-down')climbingPose(clip,clamp(progress));
     if(transition){
      transition.elapsed+=dt;
      const t=clamp(transition.elapsed/transition.duration),weight=t*t*(3-2*t);
