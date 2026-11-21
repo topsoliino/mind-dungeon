@@ -38,11 +38,40 @@ function mount({generator:g,player,iso}){
   Object.assign(b.style,{padding:'5px 8px',color:'#f4e8da',background:'#4c5566',
    border:'1px solid #948c8b',borderRadius:'5px',cursor:'pointer'});
  const body=panel.querySelector('#iso-gen-body'),toggle=panel.querySelector('#iso-gen-toggle');
- toggle.onclick=()=>{
-  const open=body.style.display==='none';body.style.display=open?'':'none';
-  toggle.textContent=open?'Karte −':'Karte +';
+ const title=panel.querySelector('#iso-gen-level');
+ const compact=()=>window.matchMedia('(pointer:coarse)').matches||
+  window.innerWidth<620||new URLSearchParams(window.location.search).get('touch')==='1';
+ let mapOpen=true;
+ function setOpen(open){
+  mapOpen=open;
+  const mobile=compact();
+  panel.classList.toggle('iso-gen-mobile',mobile);
+  panel.classList.toggle('iso-gen-open',open);
+  body.style.display=open?'':'none';
+  title.style.display=mobile&&!open?'none':'';
+  toggle.textContent=open?'Karte −':mobile?'▤ Karte':'Karte +';
   toggle.setAttribute('aria-expanded',String(open));
- };
+  toggle.setAttribute('aria-label',open?'Generator-Karte schließen':'Generator-Karte öffnen');
+  if(mobile){
+   Object.assign(panel.style,{
+    left:'auto',right:'10px',top:'calc(66px + env(safe-area-inset-top, 0px))',
+    bottom:'auto',width:open?'min(312px, calc(100vw - 20px))':'auto',
+    maxHeight:'min(72dvh, calc(100vh - 85px))',overflowY:'auto',
+    padding:open?'10px':'5px'
+   });
+  }else{
+   Object.assign(panel.style,{
+    left:'14px',right:'auto',top:'auto',bottom:'14px',width:'306px',
+    maxHeight:'none',overflowY:'visible',padding:'11px'
+   });
+  }
+ }
+ toggle.onclick=()=>setOpen(!mapOpen);
+ setOpen(!compact());
+ window.addEventListener('resize',()=>{
+  const wasMobile=panel.classList.contains('iso-gen-mobile');
+  if(wasMobile!==compact())setOpen(!compact());
+ });
  const styleSelect=panel.querySelector('#iso-gen-stair-style');
  if(styleSelect){
   styleSelect.value=g.metadata.stairVariant;
