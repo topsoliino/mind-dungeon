@@ -26,6 +26,13 @@ for(let seed=0;seed<120;seed++){
  assert.equal(v.stairSpeed.curvedDown,.86);
  assert.equal(v.stairSpeed.landing,.95);
  assert.equal(v.stairSpeed.across,.58);
+ const midway=p.steps[Math.floor(p.steps.length/2)].center;
+ assert(v.blocksTop(midway.x,midway.y,.29),
+  'an upper-floor walker cannot enter the stair from its flank');
+ assert(!v.blocksTop(p.top.x,p.top.y,.29),
+  'the upstairs stair-head gate remains accessible');
+ assert(v.insideTop(p.top.x,p.top.y,.29),
+  'the stair head must rest on a traversable upper landing');
  // Entry is only legal within .72 grid cells of the explicit foot or head.
  const actor={x:p.bottom.x*48,y:p.bottom.y*48,dir:0};
  const center=p.path[Math.floor(p.path.length/2)];
@@ -43,6 +50,8 @@ for(let seed=0;seed<120;seed++){
  assert(frames<1000&&s.floor===1&&!s.stairRide,'ascent reaches upper story');
  assert(near(s.z,132));
  assert(near(actor.x,p.top.x*48)&&near(actor.y,p.top.y*48));
+ assert(!v.boardStairs({x:p.bottom.x*48,y:p.bottom.y*48},true),
+  'cannot board the downstairs entrance from the upper floor');
  assert(!v.boardStairs({x:p.bottom.x*48,y:p.bottom.y*48},false),
   'cannot descend from the wrong entry');
  assert(v.boardStairs(actor,false,true),'upper stair gate must accept descent');
@@ -61,6 +70,12 @@ for(let seed=0;seed<120;seed++){
  // Side push stays within guard rails even when applied for many frames.
  assert(v.boardStairs(actor,true,false));
  const ride=s.stairRide,origin=ride.s;
+ for(let i=0;i<12;i++)v.advanceStairs(actor,1/60,180,0,0);
+ assert(near(ride.s,origin),'input-driven stairs must stop without input');
+ const entry=p.bottom,first=p.path[0];
+ const dx=first.x-entry.x,dy=first.y-entry.y,d=Math.hypot(dx,dy);
+ for(let i=0;i<12;i++)v.advanceStairs(actor,1/60,180,dx/d,dy/d);
+ assert(ride.s>origin+.05,'input-driven stairs must move with forward input');
  for(let i=0;i<150;i++)v.advanceStairs(actor,1/60,180,1,0);
  assert(ride.s>=0&&ride.s<=v.stairLength);
  assert(Math.abs(ride.lateral)<=Math.max(0,p.width/2-.44)+1e-6,
