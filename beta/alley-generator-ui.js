@@ -49,7 +49,7 @@ function mount({generator:g,player,iso}){
   styleSelect.onchange=()=>{
    const url=new URL(window.location.href);
    url.searchParams.set('treppe',styleSelect.value);
-   url.searchParams.set('v','5');
+   url.searchParams.set('v','19');
    window.location.assign(url.href);
   };
  }
@@ -58,7 +58,7 @@ function mount({generator:g,player,iso}){
   const n=Math.max(0,Math.min(4294967295,Math.floor(Number(v)||0)));
   const url=new URL(window.location.href);
   url.searchParams.set('szene','gasse');url.searchParams.set('modus','generator');
-  url.searchParams.set('seed',String(n));window.location.assign(url.href);
+  url.searchParams.set('seed',String(n));url.searchParams.set('v','19');window.location.assign(url.href);
  }
  panel.querySelector('#iso-gen-apply').onclick=()=>setSeed(field.value);
  panel.querySelector('#iso-gen-new').onclick=()=>setSeed((g.requestedSeed+1)>>>0);
