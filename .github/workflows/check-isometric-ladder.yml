@@ -1,0 +1,34 @@
+name: Guardian physical ladder contact and floor-exit regressions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/check-isometric-ladder.yml
+      - beta/alley-vertical.js
+      - beta/alley-stair-geometry.js
+      - beta/alley-stair-navigation.js
+      - beta/alley-stair-controller.js
+      - tools/check-isometric-ladder-contact.cjs
+      - tools/check-isometric-vertical.cjs
+      - tools/check-isometric-stair-render.cjs
+      - tools/check-isometric-stair-exits.cjs
+
+permissions:
+  contents: read
+
+jobs:
+  ladder-contact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guardian stays on painted ladder rails across 200 seeds
+        run: node tools/check-isometric-ladder-contact.cjs
+      - name: Check two-way traversal and landing geometry
+        run: node tools/check-isometric-vertical.cjs
+      - name: Check stair and ladder rendering plus floor paths
+        run: node tools/check-isometric-stair-render.cjs
+      - name: Check all normal stair exits
+        run: node tools/check-isometric-stair-exits.cjs
