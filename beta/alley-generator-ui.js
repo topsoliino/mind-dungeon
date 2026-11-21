@@ -22,7 +22,7 @@ function mount({generator:g,player,iso}){
   '<div id="iso-gen-body"><canvas id="iso-gen-map" width="576" height="360" '+
   'aria-label="Isometrischer Grundriss und Spielerposition" style="width:100%;height:180px;'+
   'display:block;border:1px solid #75869c66;border-radius:6px;background:#111827"></canvas>'+
-  '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Standort · Gelb = Tür · ↑ Treppe · L Leiter</div>'+
+  '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Held · Türkis: OG-Ziel · Violett: Kriechpassage (Strg) · L Leiter</div>'+
   '<div style="margin-top:8px"><label for="iso-gen-stair-style">Treppentyp</label>'+
   '<select id="iso-gen-stair-style" style="width:100%;padding:6px;margin-top:3px;'+
   'background:#101725;color:#eee;border:1px solid #8190a1;border-radius:4px">'+
@@ -116,7 +116,17 @@ function mount({generator:g,player,iso}){
     poly(land.corners.map(p=>xy(p.x,p.y)),'#8fa4b0','#d2e8f4');
    const top=xy(vertical.plan.top.x,vertical.plan.top.y);
    ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillStyle='#fcf1cb';
-   ctx.fillText('↑',top[0],top[1]+5);
+   ctx.fillText('OG',top[0],top[1]+5);
+   if(vertical.plan.kind==='switchback'){
+    const landing=vertical.plan.landings.find(l=>!l.top);
+    if(landing){
+     const p=landing.corners.reduce((a,b)=>({x:a.x+b.x/landing.corners.length,
+      y:a.y+b.y/landing.corners.length}),{x:0,y:0});
+     const under=xy(p.x,p.y);
+     ctx.beginPath();ctx.arc(under[0],under[1],6,0,Math.PI*2);
+     ctx.fillStyle='#b48cff';ctx.fill();ctx.strokeStyle='#fff';ctx.stroke();
+    }
+   }
   }else for(const stair of g.stairs){
    const [u,v,r,b]=stair.area;poly(quad(u,v,r,b),'#437c96','#d2e8f4');
   }
