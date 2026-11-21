@@ -41,9 +41,9 @@ window.AlleySkeleton=(()=>{
   // while row two faces right in the projected scene.
   const views=image.height/cell;
   const row=((Math.round(views/8-facing*views/turn)%views)+views)%views;
-  const p=iso.toView(e.x,e.y),size=110*e.size;
+  const p=iso.toView(e.x,e.y,e.alleyZ||0),size=110*e.size;
   return {image,key:'skeleton-'+key,frame:row+'-'+col,sx:col*cell,sy:row*cell,w:cell,h:cell,
-   width:size,height:size,x:p.x,y:p.y,depth:p.y,originX:.5,originY:.765,
+   width:size,height:size,x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.765,
    alpha:deathAge===null?1:Math.min(1,Math.max(0,(2.6-deathAge)/.5))};
  }
  function sprites(e,iso,rules,deathAge=null){
