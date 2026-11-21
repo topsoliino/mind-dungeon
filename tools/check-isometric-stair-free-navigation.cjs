@@ -81,7 +81,7 @@ for(let seed=0;seed<32;seed++){
   v.advanceStairs(actor,1/60,180);
  assert(frames<1400&&v.state.floor===0,'descent must reach ground floor');
 }
-assert.equal(kinds.size,8,'the fixture must exercise all eight stair families');
+assert.equal(kinds.size,9,'the fixture must exercise all nine stair families');
 const u=make(4,'switchback'),hero={x:u.plan.bottom.x*48,y:u.plan.bottom.y*48};
 assert(u.boardStairs(hero,true,u.plan.landings[0]));
 let frames=0;
@@ -89,4 +89,4 @@ while(u.state.stairRide?.path&&frames++<1200)
  u.advanceStairs(hero,1/60,180);
 assert(frames<1200&&u.state.stairRide&&Math.abs(u.state.z-66)<.1,
  'the U-platform is a walkable horizontal surface, not an automatic transition');
-console.log('32 levels: all eight stair families, every tread/riser click, radius-safe free XY movement, rolling, plateau and two-way routes OK');
+console.log('32 levels: all nine stair families, every tread/riser click, radius-safe free XY movement, rolling, plateau and two-way routes OK');
