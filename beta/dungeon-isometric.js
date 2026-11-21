@@ -120,8 +120,10 @@
    // fade in near the last top-out frames (never before the landing).
    const crossing=vertical?.state.transition;
    const liftProgress=crossing?.age/crossing.duration??0;
-   const reveal=vertical?.state.floor===1?1:
-    crossing?.up?Math.max(0,Math.min(1,(liftProgress-.84)/.16)):0;
+   const reveal=crossing?
+    (crossing.up?Math.max(0,Math.min(1,(liftProgress-.84)/.16)):
+     Math.max(0,Math.min(1,(.18-liftProgress)/.18))):
+    (vertical?.state.floor===1?1:0);
    const verticalObjects=upperArchitecture.map(part=>{
     const visible=part.level===0||reveal>0;
     const alpha=part.level===1?reveal:1;
