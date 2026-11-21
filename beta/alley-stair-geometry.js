@@ -15,7 +15,8 @@ const ref={
  'straight-wide':{w:5,h:8,width:2.85,steps:12,title:'Breite gerade Treppe'},
  'grand':{w:6,h:11,width:3.35,steps:16,open:true,title:'Weite Prachttreppe'},
  'quarter':{w:8,h:8,width:1.7,steps:14,title:'Viertelgewendelte Treppe mit Podest'},
- 'switchback':{w:8,h:9,width:1.7,steps:16,open:true,title:'U-Treppe mit Zwischenpodest'},
+ 'switchback':{w:8,h:9,width:1.7,steps:16,open:true,title:'Offene U-Treppe mit Zwischenpodest'},
+ 'switchback-closed':{w:8,h:9,width:1.7,steps:16,open:false,title:'U-Treppe mit geschlossenem Unterbau'},
  'spiral-tight':{w:6,h:6,inner:.64,outer:2.42,steps:13,title:'Enge Wendeltreppe'},
  'spiral-wide':{w:9,h:9,inner:1.05,outer:3.75,steps:17,title:'Weite Wendeltreppe'},
  'curved':{w:9,h:9,inner:2.05,outer:3.7,steps:12,open:true,title:'Geschwungene Freitreppe'}
@@ -53,7 +54,7 @@ function buildTemplate(kind){
    vec(2.65,2.65),vec(.55,2.65)],z:H/2});
   path.push({...corner,z:H/2},{...exit,z:H/2});
   addFlight(exit,b,H/2,H,7,cfg.width);
- }else if(kind==='switchback'){
+ }else if(kind==='switchback'||kind==='switchback-closed'){
   // Both flights meet the same flat landing edge at y=3.32.
   const a=vec(1.65,7.75),leftLip=vec(1.65,3.32);
   const leftInside=vec(1.65,2.38),rightInside=vec(6.15,2.38);
@@ -190,7 +191,12 @@ function candidateAccessible(generator,model){
 }
 function select(generator){
  const asked=new URLSearchParams(window.location.search).get('treppe');
- const preferred=styles.includes(asked)?asked:styles[generator.seed%styles.length],
+ // Preserve the original seed->stair family mapping while allowing the
+ // closed U-form to appear occasionally in ordinary generated levels.
+ const originalStyles=styles.filter(s=>s!=='switchback-closed');
+ const preferred=styles.includes(asked)?asked:
+  generator.seed%13===8?'switchback-closed':
+  originalStyles[generator.seed%originalStyles.length],
   order=[preferred,...styles.filter(s=>s!==preferred)];
  const viable=[];
  for(const style of order){
