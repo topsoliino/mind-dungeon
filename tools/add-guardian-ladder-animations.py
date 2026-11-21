@@ -31,7 +31,7 @@ RUNG_GAP = .30
 builder_spec = importlib.util.spec_from_file_location(
     'guardian_pose_helpers', ROOT / 'tools' / 'build-player-sprite-study.py')
 builder = importlib.util.module_from_spec(builder_spec)
-builder_spec.loader.exec_module(builder_spec)
+builder_spec.loader.exec_module(builder)
 
 rig = bpy.data.objects.get('Guardian rig')
 if rig is None or rig.type != 'ARMATURE':
