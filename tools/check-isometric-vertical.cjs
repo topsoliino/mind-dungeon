@@ -94,8 +94,8 @@ for(const style of kinds.keys()){
 }
 const html=read('index.html');
 assert(html.includes('alley-stair-geometry.js?v=3'));
-assert(html.indexOf('alley-stair-geometry.js?v=3')<html.indexOf('alley-vertical.js?v=7'));
-assert(html.indexOf('alley-vertical.js?v=7')<html.indexOf('alley-study.js?v=10'));
+assert(html.indexOf('alley-stair-geometry.js?v=3')<html.indexOf('alley-vertical.js?v=8'));
+assert(html.indexOf('alley-vertical.js?v=8')<html.indexOf('alley-study.js?v=10'));
 assert(html.includes('state.floor=task.up?1:0'));
 assert(html.includes("state.z=pose.z"));
 console.log('200 levels passed: 8 staircase types, 4 ladder orientations, identical riser heights, connected landings and 2-way rig transitions.');
