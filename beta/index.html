@@ -37,6 +37,7 @@ const generationMode=isometricTest&&Boolean(window.AlleyGenerator?.enabled);
 const testRun=bossTest||isometricTest;
 const iso=window.DungeonIsometric,alley=isometricTest?iso.create():null;
 let alleyRoute=null,alleyMove=null,alleyMarker=null,alleyRoll=null,alleyZoom=1,guardian=null;
+let alleyStairFloorGoal=null; // deferred ground route after descending the physical stairs
 let alleySwing=null,alleyQueuedLight=null,alleyHit=null,alleyChest=null,alleyNextLight='down',alleyGait=0,alleyGaitBlend=0;
 let alleySneaking=false,alleyGaitMode='run',alleyItemWalkUntil=0;
 const alleyVertical=alley?.vertical?.enabled?alley.vertical:null;
@@ -2263,13 +2264,62 @@ function finishAlleyApproach(){
  if(animation)alleyChest={...animation,elapsed:0};
  else openChest(0);
 }
+function alleyClickScreen(){
+ const view=renderedView??cam,zoom=view.zoom||1;
+ return {x:view.x+cw/2+(mouse.x-cw/2)/zoom,
+  y:view.y+ch/2+(mouse.y-ch/2)/zoom};
+}
+function alleyUpperExitMark(){
+ if(!alleyVertical?.enabled)return null;
+ const at=alleyVertical.plan.top,center=iso.toView(at.x*48,at.y*48,alleyVertical.height);
+ return {at,center};
+}
+function alleyUnderpassMark(){
+ if(!alleyVertical?.enabled||alleyVertical.plan.kind!=='switchback')return null;
+ const landing=alleyVertical.plan.landings.find(l=>!l.top);
+ if(!landing)return null;
+ const p=landing.corners.reduce((sum,q)=>({x:sum.x+q.x/landing.corners.length,
+  y:sum.y+q.y/landing.corners.length}),{x:0,y:0});
+ return {at:p,center:iso.toView(p.x*48,p.y*48,0)};
+}
+function alleyMarkHit(screen,mark,r=19){
+ return mark&&Math.hypot(screen.x-mark.center.x,screen.y-mark.center.y)<=r;
+}
+function aimAlleyStairFloor(screen){
+ const ride=alleyVertical?.state.stairRide;
+ if(!ride)return false;
+ const target=iso.toWorld(screen.x,screen.y,0),floor=alleyVertical.state.floor;
+ let route=null;
+ try{
+  // On stairs state.floor still denotes the entry floor; check the real
+  // downstairs collision graph rather than the hero's elevated foot plane.
+  alleyVertical.state.floor=0;
+  route=alley.routeTo({x:alleyVertical.plan.bottom.x*48,
+   y:alleyVertical.plan.bottom.y*48},target);
+ }finally{alleyVertical.state.floor=floor;}
+ if(!route)return false;
+ if(!alleyVertical.aimStairs({point:alleyVertical.plan.bottom,part:alleyVertical.plan.bottom}))
+  return false;
+ alleyStairFloorGoal={floor:0,target:route.goal};
+ alleyMarker={point:route.goal,until:frame+3,valid:true};
+ return true;
+}
 function approachClickStairs(){
  if(!alleyVertical||alleyVertical.state.transition)return false;
- const view=renderedView??cam,zoom=view.zoom||1;
- const screen={x:view.x+cw/2+(mouse.x-cw/2)/zoom,
-  y:view.y+ch/2+(mouse.y-ch/2)/zoom};
- const part=alleyVertical.pickStair(screen,iso);
+ const screen=alleyClickScreen(),top=alleyUpperExitMark(),
+  under=alleyUnderpassMark();
+ // Show the exit even while the upstairs slab is deliberately hidden. Its
+ // world-space marker is a real hit target, not an invisible floor shortcut.
+ const upper=alleyMarkHit(screen,top);
+ if(alleyVertical.state.floor===0&&!alleyVertical.state.stairRide&&
+  alleyMarkHit(screen,under,16)){
+  if(!alleySneaking){tell('Offene U-Treppe: mit Strg ducken und unter dem Podest hindurchlaufen.');return true;}
+  alleyMove={target:{x:under.at.x*48,y:under.at.y*48},steps:null};return true;
+ }
+ const part=upper?{part:{top:true},point:alleyVertical.plan.top}:
+  alleyVertical.pickStair(screen,iso);
  if(!part)return false;
+ alleyStairFloorGoal=null;
  if(alleyVertical.state.stairRide)return alleyVertical.aimStairs(part);
  const up=alleyVertical.state.floor===0;
  const stairs=alleyVertical.connectors.find(o=>o.kind==='stairs');
@@ -2483,10 +2533,18 @@ window.addEventListener('pointerdown',e=>{
   e.preventDefault();
   mouse={x:e.clientX,y:e.clientY};aimMode='mouse';
   alleyRoute=alleyQueuedLight=null;
+  // Alt forces the ground-floor projection under elevated architecture.
+  // Otherwise try the physically visible treads and upstairs exit marker.
   if(!e.altKey&&approachClickStairs())return;
-  if(alleyVertical?.state.stairRide)return;
+  if(alleyVertical?.state.stairRide){
+   const screen=alleyClickScreen();
+   if(aimAlleyStairFloor(screen))return;
+   tell('Kein erreichbarer Erdgeschossboden an dieser Stelle.');return;
+  }
+  alleyStairFloorGoal=null;
   if(alleyVertical?.state.pending)alleyVertical.state.pending=null;
-  alleyMove={target:mouseWorld(),steps:null};
+  alleyMove={target:iso.toWorld(alleyClickScreen().x,alleyClickScreen().y,
+   alleyVertical?.state.floor?alleyVertical.height:0),steps:null};
   return;
  }
  if(e.pointerType==='mouse'&&e.button===0&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
@@ -2554,15 +2612,34 @@ function updateAlleyActions(dt){
  if(alleyVertical?.state.stairRide){
   const rolling=player.dash>0,input=rolling?
    {x:player.dashX,y:player.dashY}:movementInput(),load=equipmentLoad();
+  const running=!rolling&&!alleySneaking&&!consumeMove&&!heldAttack&&
+   !alleySwing&&!alleyHit&&!alleyChest;
   const actionSpeed=alleySneaking?.45:
    consumeMove?(consumeMove.it.kind==='food'?items.foodMove:items.potionMove):
    (heldAttack||alleySwing)?0.64:1.42*.70;
   const flatSpeed=player.speed*brewBonus.speed*load.move*mythicArmorMove()*
    (rolling?(player.dashSpeed??load.dashSpeed):actionSpeed),
    beforeX=player.x,beforeY=player.y;
-  const result=alleyVertical.advanceStairs(player,dt,flatSpeed,input.x,input.y,{rolling});
-  if(player.moving)playFootstep(beforeX,beforeY);
-  if(result?.completed)tell(result.floor?'Obergeschoss erreicht':'Erdgeschoss erreicht');
+  const result=alleyVertical.advanceStairs(player,dt,flatSpeed,input.x,input.y,{rolling,running});
+  if(Math.hypot(input.x,input.y)>.12)alleyStairFloorGoal=null;
+  if(player.moving){
+   const run=running?1:0;
+   alleyGaitBlend+=(run-alleyGaitBlend)*Math.min(1,dt*8);
+   const cadence=alleySneaking?.37:.56-.07*alleyGaitBlend;
+   alleyGait+=Math.hypot(player.x-beforeX,player.y-beforeY)/
+    Math.max(.01,player.speed*cadence);
+   playFootstep(beforeX,beforeY);
+  }
+  if(result?.completed){
+   if(alleyStairFloorGoal?.floor===result.floor){
+    // Only after the real portal transition route along the destination
+    // floor; do not ask the stair navmesh to travel on flat ground.
+    alleyMove={target:alleyStairFloorGoal.target,steps:null};
+    alleyMarker={point:alleyStairFloorGoal.target,until:Infinity,valid:true};
+   }
+   alleyStairFloorGoal=null;
+   tell(result.floor?'Obergeschoss erreicht':'Erdgeschoss erreicht');
+  }
  }
  if(alleyVertical?.state.transition){
   const state=alleyVertical.state,task=state.transition;
@@ -2918,7 +2995,7 @@ if(alley){
   'Greybox · '+window.AlleyGenerator.metadata.rooms+' Räume · '+(alleyVertical?.state.floor?'Obergeschoss':'Erdgeschoss')+' · Seed '+window.AlleyGenerator.seed:
   save.isoLabDone?'Route geschafft · Protokoll gesichert':
   (alley.archiveUnlocked()?'Labor betreten und Versuch abschließen':'Archiv finden · Wissenssiegel öffnen');
- const hint=generationMode?'Rechtsklick: Treppenziel · WASD: frei gehen & Etage verlassen · Umschalt: Rolle · Linksklick: Angriff · Strg: unter offene U-Podeste ducken · E: Einstieg/Stopp':
+ const hint=generationMode?'Rechtsklick auf Boden: nach unten über Treppe · Türkis: Aufgang zum Obergeschoss · Violett: offene U-Unterführung (Strg) · WASD: Rennen/Steuern · E: Einstieg/Stopp':
   'Strg Schleichen'+(alleySneaking?' (an)':'')+' · Rechtsklick Laufen · Umschalt Rolle · E Untersuchen';
  if($('#alley-help').textContent!==hint)$('#alley-help').textContent=hint;
 }else{
@@ -4401,10 +4478,13 @@ function alleyGuardianPose(){
   return {clip:player.moving?clip+'-walk':clip,progress:consumeMove.age/consumeMove.length,angle:player.dir,hideWeapon:true};
  }
  if(alleyVertical?.state.stairRide){
-  const flight=alleyVertical.state.stairRide;
+  // Reuse the exact same locomotion blend as on the flat ground. Stairs
+  // determine height and collision, not a forced "walk" animation.
+  const clips=['walk','gait-one','gait-two','sprint'];
   const clip=alleySneaking?(player.moving?'sneak':'crouch-idle'):
-   player.moving?'walk':'idle';
-  return {clip,progress:player.moving?flight.gait%1:(frame%1.3)/1.3,angle:player.dir};
+   player.moving?clips[Math.round(alleyGaitBlend*3)]:'idle';
+  return {clip,progress:player.moving?alleyGait%1:(frame%1.3)/1.3,
+   angle:player.moveAngle??player.dir};
  }
  if(player.moving){
   const clips=['walk','gait-one','gait-two','sprint'];
@@ -4499,6 +4579,21 @@ function alleyTrace(start,end){
  return points;
 }
 function drawAlleyHudEffects(dot,bar){
+ if(generationMode&&alleyVertical?.enabled&&alleyVertical.state.floor===0){
+  const top=alleyUpperExitMark();
+  if(top){
+   const pulse=.70+.16*Math.sin(frame*3.4);
+   dot(top.center.x,top.center.y,16,'#5fe6d6',pulse*.25);
+   dot(top.center.x,top.center.y,7,'#8cfced',pulse);
+   dot(top.center.x,top.center.y-8,3,'#f1fff1',pulse);
+  }
+  const under=alleyUnderpassMark();
+  if(under){
+   const pulse=.64+.2*Math.sin(frame*2.5);
+   dot(under.center.x,under.center.y,13,'#c29afa',pulse*.3);
+   dot(under.center.x,under.center.y,5,'#b48cff',pulse);
+  }
+ }
  for(const particle of particles){
   const point=iso.toView(particle.x,particle.y);
   dot(point.x,point.y,particle.r,particle.c,Math.min(1,particle.life/.5));
