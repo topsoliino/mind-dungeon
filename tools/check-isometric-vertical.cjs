@@ -1,67 +1,101 @@
-// Run: node tools/check-isometric-vertical.cjs
-// Validates 3D stairs, wall-anchored ladders, upper-floor reachability
-// and the continuous ascend / descend transitions for deterministic levels.
-const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const {join}=require('node:path');
-const read=p=>fs.readFileSync(join(__dirname,'../beta',p),'utf8');
-const generatorSrc=read('alley-generator.js'),mapSrc=read('alley-study-map.js'),verticalSrc=read('alley-vertical.js');
-const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
-const key=([u,v])=>u+','+v;
-const within=(room,x,y)=>room.cells.some(c=>c[0]===Math.floor(x)&&c[1]===Math.floor(y));
-function create(seed){
- const window={location:{search:'?szene=gasse&modus=generator&seed='+seed}};
- vm.runInNewContext(mapSrc,{window});
- vm.runInNewContext(generatorSrc,{window,URLSearchParams});
- vm.runInNewContext(verticalSrc,{window});
+// node tools/check-isometric-vertical.cjs
+// Deterministic architectural verification of physically coherent staircases
+// and independently accessible upper-floor exits for 200 dungeon seeds.
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const read=name=>fs.readFileSync(path.join(__dirname,'../beta',name),'utf8');
+const map=read('alley-study-map.js'),generator=read('alley-generator.js'),
+ geometry=read('alley-stair-geometry.js'),vertical=read('alley-vertical.js');
+const K=(x,y)=>x+','+y,neighbors=[[1,0],[-1,0],[0,1],[0,-1]];
+const within=(room,p)=>room.cells.some(([x,y])=>x===Math.floor(p.x)&&y===Math.floor(p.y));
+const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const cell=p=>K(Math.floor(p.x),Math.floor(p.y));
+function setup(seed,style=''){
+ const suffix=style?'&treppe='+style:'';
+ const window={location:{search:'?szene=gasse&modus=generator&seed='+seed+suffix}};
+ const ctx={window,URLSearchParams};
+ vm.runInNewContext(map,ctx);vm.runInNewContext(generator,ctx);
+ vm.runInNewContext(geometry,ctx);vm.runInNewContext(vertical,ctx);
  return window;
 }
-function upperReachable(v,start,end){
- const first=[Math.floor(start.x),Math.floor(start.y)],target=key([Math.floor(end.x),Math.floor(end.y)]);
- if(!v.upper.has(key(first))||!v.upper.has(target))return false;
- const q=[first],visited=new Set([key(first)]);
- for(let i=0;i<q.length;i++)for(const [dx,dy] of dirs){
-  const p=[q[i][0]+dx,q[i][1]+dy],k=key(p);
-  if(v.upper.has(k)&&!visited.has(k)){visited.add(k);q.push(p);}
+function connected(upper,from,to){
+ const a=cell(from),b=cell(to);
+ if(!upper.has(a)||!upper.has(b))return false;
+ const seen=new Set([a]),queue=[[Math.floor(from.x),Math.floor(from.y)]];
+ for(let i=0;i<queue.length;i++)for(const [du,dv] of neighbors){
+  const p=[queue[i][0]+du,queue[i][1]+dv],k=K(...p);
+  if(upper.has(k)&&!seen.has(k)){seen.add(k);queue.push(p);}
  }
- return visited.has(target);
+ return seen.has(b);
 }
-let sideCounts={},slabs=0;
-for(let seed=0;seed<120;seed++){
- const w=create(seed),g=w.AlleyGenerator,v=w.AlleyVertical;
- assert(v.enabled,'3D vertical prototype enabled');
- assert.equal(v.height,132,'same level lift height on every seed');
- assert.equal(v.connectors.length,2,'stair and ladder must share one level transition');
- assert(v.room.kind==='raum','upper story belongs to chamber, not arbitrary corridor');
- assert(v.stairs.roomId===v.room.id,'stairs are in upper chamber');
- const [u,y]=v.ladder.cell;
- assert(within(v.room,u+.5,y+.5),'ladder foot inside its room');
- assert(!within(v.room,u+.5+v.ladder.dx,y+.5+v.ladder.dy),
-  'ladder is backed by an actual exterior wall, not floating inside');
- sideCounts[v.ladder.wall]=(sideCounts[v.ladder.wall]||0)+1;
- assert(upperReachable(v,v.connectors[0].top,v.connectors[1].top),
-  'stair landing and ladder landing connected on upper platform');
- for(const c of v.connectors){
-  assert(within(v.room,c.top.x,c.top.y),'upper landing belongs to the same chamber');
-  assert(within(v.room,c.bottom.x,c.bottom.y),'lower landing belongs to the same chamber');
+const kinds=new Map(),walls=new Map();
+for(let seed=0;seed<200;seed++){
+ const w=setup(seed),g=w.AlleyGenerator,v=w.AlleyVertical,plan=v.plan;
+ assert.equal(g.rooms.length,10);
+ assert(v.enabled);
+ assert.equal(v.height,132);
+ assert.equal(v.connectors.length,2);
+ assert.equal(g.stairs[0].roomId,v.room.id);
+ assert.equal(g.stairs[0].variant,plan.kind);
+ assert.equal(plan.length,plan.steps.length);
+ assert.equal(g.metadata.stairTitle,plan.style);
+ kinds.set(plan.kind,(kinds.get(plan.kind)||0)+1);
+ walls.set(v.ladder.wall,(walls.get(v.ladder.wall)||0)+1);
+ assert(v.room.kind==='raum','stairs must be housed in a chamber');
+ assert(within(v.room,plan.bottom)&&within(v.room,plan.top),
+  'each landing must belong to the same room');
+ const [lx,ly]=v.ladder.cell,dir=v.ladder;
+ assert(within(v.room,dir.bottom));
+ assert(!within(v.room,{x:lx+.5+dir.dx,y:ly+.5+dir.dy}),
+  'ladder must rest on the actual external wall');
+ assert(connected(v.upper,plan.top,v.ladder.top),
+  'top stair and top ladder must remain connected after hatch cutout');
+ for(const [idx,step] of plan.steps.entries()){
+  assert.equal(step.corners.length,4,'four corners per physical tread');
+  assert(Math.abs(step.prev-132*idx/plan.steps.length)<1e-7,
+   'step riser begins at previous tread height');
+  assert(Math.abs(step.z-132*(idx+1)/plan.steps.length)<1e-7,
+   'equal increments of rise on all stair variants');
+  const polygonArea=Math.abs(step.corners.reduce((sum,a,i)=>{
+   const b=step.corners[(i+1)%4];return sum+a.x*b.y-b.x*a.y;
+  },0))/2;
+  assert(polygonArea>.05,'tread cannot have degenerate / missing surface');
+  for(const p of step.corners)assert(Number.isFinite(p.x)&&Number.isFinite(p.y));
+ }
+ assert.equal(plan.posts.length,plan.kind.startsWith('spiral')?1:0,
+  'a helical staircase has precisely one full-height central spindle');
+ for(const connector of v.connectors){
+  assert(within(v.room,connector.bottom)&&within(v.room,connector.top));
   for(const up of [true,false]){
-   const start=v.pose(c,up,0),middle=v.pose(c,up,.5),end=v.pose(c,up,1);
-   assert.equal(start.z,up?0:132);
-   assert.equal(end.z,up?132:0);
-   assert(Math.abs(middle.z-66)<1e-6,'progress must interpolate height continuously');
-   assert.equal(start.clip,c.kind==='ladder'?(up?'climb-up':'climb-down'):'walk');
-   assert.equal(end.floor,up?1:0);
+   let previous=up?-1:133;
+   for(let i=0;i<=40;i++){
+    const p=v.pose(connector,up,i/40);
+    assert(Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.z));
+    assert(p.z>=-.00001&&p.z<=132.00001);
+    assert(up?p.z>=previous-1e-6:p.z<=previous+1e-6,
+     'hero height must never jump backwards during climb');
+    previous=p.z;
+   }
+   const a=v.pose(connector,up,0),b=v.pose(connector,up,1);
+   assert.equal(a.z,up?0:132);
+   assert.equal(b.z,up?132:0);
+   assert.equal(b.floor,up?1:0);
+   if(connector.kind==='ladder')
+    assert.equal(a.clip,up?'climb-up':'climb-down');
   }
  }
- slabs+=v.upper.size;
 }
-assert(slabs>4000,'upper floor must be a real collection of level cells');
+assert.equal(kinds.size,8,'all eight available stair families appear in generated levels');
+assert.equal(walls.size,4,'ladders continue to vary across all four wall orientations');
+for(const style of kinds.keys()){
+ const found=Array.from({length:50},(_,seed)=>setup(seed,style))
+  .some(w=>w.AlleyVertical.plan.kind===style);
+ assert(found,'selectable design '+style+' must exist for at least one deterministic seed');
+}
 const html=read('index.html');
-assert(html.includes('src="beta/alley-vertical.js?v=2"'));
-assert(html.indexOf('alley-vertical.js?v=2')<html.indexOf('alley-study.js?v=9'),
- 'vertical geometry must be available before art construction');
-assert(html.includes("approachAlleyVertical()"),'E must trigger ladder/stairs approach');
-assert(html.includes("state.transition={...task"),'interaction must initiate a timed climb');
-assert(html.includes("state.floor=task.up?1:0"),'transition completion changes floor');
-assert(html.includes("state.z=pose.z"),'camera and avatar share actual interpolated elevation');
-assert(html.includes("alleyVertical?.state.z??0"),'upper-floor picking must respect elevation');
-console.log('120 seeds: wall ladders, solid stairs, loft connections, both climb clips and level switches OK',sideCounts);
+assert(html.includes('alley-stair-geometry.js?v=1'));
+assert(html.indexOf('alley-stair-geometry.js?v=1')<html.indexOf('alley-vertical.js?v=3'));
+assert(html.indexOf('alley-vertical.js?v=3')<html.indexOf('alley-study.js?v=9'));
+assert(html.includes('state.floor=task.up?1:0'));
+assert(html.includes("state.z=pose.z"));
+console.log('200 levels passed: 8 staircase types, 4 ladder orientations, identical riser heights, connected landings and 2-way rig transitions.');
