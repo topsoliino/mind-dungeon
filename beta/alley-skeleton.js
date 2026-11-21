@@ -1,7 +1,7 @@
-// Eight baked Blender views per clip. Both isometric renderers use the same frame.
+// Blender-exported 360-degree directional atlases with continuous view interpolation.
 window.AlleySkeleton=(()=>{
  'use strict';
- const sheets=new Map(),cell=96,deathDuration=.78,assetVersion=2;
+ const sheets=new Map(),cell=96,deathDuration=.78,assetVersion=3,turn=Math.PI*2;
  async function load(){
   sheets.clear();
   await Promise.all(['sabre','bow'].flatMap(kit=>
@@ -10,7 +10,8 @@ window.AlleySkeleton=(()=>{
     image.src='beta/art/skeleton/'+key+'.webp?v='+assetVersion;
     try{
      await image.decode();
-     if(image.height!==8*cell||image.width<cell||image.width%cell)
+     if(image.height%cell||image.height<8*cell||image.height>64*cell||
+        image.width<cell||image.width%cell)
       throw new Error('Ungültige Sprite-Abmessungen '+image.width+'×'+image.height);
      sheets.set(key,image);
     }catch(error){
@@ -38,11 +39,29 @@ window.AlleySkeleton=(()=>{
   const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
   // The atlas is baked camera-relatively: row zero looks toward the viewer,
   // while row two faces right in the projected scene.
-  const row=(Math.round(1-facing/(Math.PI/4))%8+8)%8;
+  const views=image.height/cell;
+  const row=((Math.round(views/8-facing*views/turn)%views)+views)%views;
   const p=iso.toView(e.x,e.y),size=110*e.size;
   return {image,key:'skeleton-'+key,frame:row+'-'+col,sx:col*cell,sy:row*cell,w:cell,h:cell,
    width:size,height:size,x:p.x,y:p.y,depth:p.y,originX:.5,originY:.765,
    alpha:deathAge===null?(e.hit>0?.72:1):Math.min(1,Math.max(0,(2.6-deathAge)/.5))};
+ }
+ function sprites(e,iso,rules,deathAge=null){
+  const base=sprite(e,iso,rules,deathAge);
+  if(!base)return [];
+  const views=base.image.height/cell;
+  const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
+  // Preserve the native 3D camera-relative direction. Cross-fade between
+  // adjacent Blender renders, including the 360° -> 0° wraparound.
+  const exact=((views/8-facing*views/turn)%views+views)%views;
+  const low=Math.floor(exact),weight=exact-low;
+  if(weight<.02||weight>.98)return [base];
+  const first={...base,sy:low*cell,frame:low+'-'+base.sx/cell,
+   alpha:base.alpha*(1-weight)};
+  const upper=(low+1)%views;
+  const second={...base,sy:upper*cell,frame:upper+'-'+base.sx/cell,
+   alpha:base.alpha*weight,depth:base.depth+.0001};
+  return [first,second];
  }
  function encounters(generator,alley){
   const rooms=(generator.rooms||[]).filter(r=>r.kind==='raum'&&r.cells?.length);
@@ -66,5 +85,5 @@ window.AlleySkeleton=(()=>{
   }
   return encounters;
  }
- return {load,sprite,encounters};
+ return {load,sprite,sprites,encounters};
 })();
