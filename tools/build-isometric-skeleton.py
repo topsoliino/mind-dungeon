@@ -1,5 +1,5 @@
 """Run from repository root: blender -b -t 4 -P tools/build-isometric-skeleton.py.
-Build the editable rig, then render its poses into eight transparent directional sheets.
+Build a detailed editable undead warrior rig and render eight solid, antialiased 3D animation atlases.
 Each sheet has animation time along X and camera-relative facing along Y.
 """
 import math
@@ -15,7 +15,8 @@ bpy.context.preferences.filepaths.save_version = 0
 scene = bpy.context.scene
 V = Vector
 pi = math.pi
-FACINGS = 32  # 360 degrees, one baked view every 11.25°; runtime blends between views.
+FACINGS = 32  # 360 degrees, independent baked 3D views; NO translucent view crossfades.
+PIXELS = 128
 def material(name, color, metal=0):
     m = bpy.data.materials.new(name)
     m.diffuse_color = (*color, 1)
@@ -23,16 +24,24 @@ def material(name, color, metal=0):
     node = m.node_tree.nodes.get('Principled BSDF')
     node.inputs['Base Color'].default_value = (*color,1)
     node.inputs['Metallic'].default_value = metal
-    node.inputs['Roughness'].default_value = .79
+    node.inputs['Roughness'].default_value = .75
     return m
-ivory = material('Weathered ivory', (.52,.43,.32))
-edge = material('Pale worn bone', (.69,.61,.48))
+ivory = material('Weathered ivory', (.59,.51,.395))
+edge = material('Pale worn bone', (.78,.71,.55))
 dark = material('Deep sockets', (.024,.018,.021))
 teal = material('Faded petrol cloth', (.055,.15,.16))
 bronze = material('Hammered bronze', (.44,.25,.085), .35)
-steel = material('Blue iron', (.30,.40,.45), .5)
+steel = material('Forged charcoal steel', (.29,.39,.43), .64)
 leather = material('Oxblood leather', (.19,.069,.034))
 wood = material('Yew', (.34,.155,.052))
+aged = material('Bone shadows and age lines', (.31,.265,.225))
+weathered = material('Oxidized armor plate', (.25,.31,.36), .42)
+trim = material('Polished battered brass', (.64,.42,.16), .6)
+cloth_light = material('Worn teal cloth highlights', (.12,.25,.24))
+cloth_shadow = material('Tattered teal underskirt', (.042,.088,.115))
+iron_dark = material('Dark recesses between armor plates', (.073,.075,.09), .28)
+sabre_edge = material('Sharpened steel cutting edge', (.67,.77,.79), .77)
+scar = material('Bone fracture stains', (.20,.19,.175))
 parts = []
 joints = {}
 def joint(name, pos, parent=None):
@@ -42,13 +51,13 @@ def part(obj, name, bone, mat, kit='both'):
     obj.data.materials.append(mat)
     parts.append((obj,bone,kit))
 def oval(name,bone,p,scale,mat=ivory,kit='both'):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=10,ring_count=6,location=p)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16,ring_count=10,location=p)
     obj=bpy.context.object
     obj.scale=scale
     part(obj,name,bone,mat,kit)
 def rod(name,bone,a,b,r,r2=None,mat=ivory,kit='both'):
     a,b=V(a),V(b)
-    bpy.ops.mesh.primitive_cone_add(vertices=7,radius1=r,radius2=r if r2 is None else r2,
+    bpy.ops.mesh.primitive_cone_add(vertices=12,radius1=r,radius2=r if r2 is None else r2,
                                    depth=(b-a).length,location=(a+b)/2)
     obj=bpy.context.object
     obj.rotation_euler=(b-a).to_track_quat('Z','Y').to_euler()
@@ -132,6 +141,198 @@ joint('Arrow',at(bow,(0,.085,0)),'HandL')
 rod('Nocked arrow','Arrow',at(bow,(0,.085,0)),at(bow,(0,-.56,0)),.011,mat=wood,kit='bow')
 rod('Broadhead','Arrow',at(bow,(0,-.53,0)),at(bow,(0,-.62,0)),.031,0,steel,'bow')
 
+
+# ---------------------------------------------------------------------------
+# Production art pass: silhouettes, layered materials and real equipment.
+# The hero is a finished plated knight; this enemy should have a comparably
+# finished readable silhouette, but retain visible *anatomical* bones.
+# All accessories bind to existing rig bones and are baked into all 32 views.
+# ---------------------------------------------------------------------------
+def shape(name,bone,vertices,faces,mat,kit='both'):
+    mesh=bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj=bpy.data.objects.new(name,mesh)
+    scene.collection.objects.link(obj)
+    part(obj,name,bone,mat,kit)
+    return obj
+
+def badge(name,bone,at_point,r,material,kit='both'):
+    oval(name,bone,at_point,(r,r*.43,r),material,kit)
+
+def cuff(bone,at_point,rad,length,material):
+    # Polished cap over bare forearm/shin: plates have dark gaps underneath.
+    p=V(at_point)
+    oval('Ancient cuff',bone,p,(rad,rad*.72,length),weathered)
+    oval('Cuff rim',bone,p+V((0,0,length*.72)),(rad*1.09,rad*.80,.018),trim)
+    oval('Cuff lower rim',bone,p-V((0,0,length*.72)),(rad*1.09,rad*.80,.018),aged)
+
+# Scalp fracture grooves and drilled dark shadow recesses make the head
+# genuinely read as a skull, not as a white sphere with two black dots.
+for side,sign in [('L',1),('R',-1)]:
+    rod('Cranial crack','Skull',(sign*.041,-.116,1.832),
+        (sign*.094,-.096,1.782),.005,.003,scar)
+    rod('Cranial crack branch','Skull',(sign*.081,-.108,1.79),
+        (sign*.115,-.075,1.76),.003,.002,scar)
+    oval('Deep temple hollow','Skull',(sign*.134,-.082,1.68),
+         (.020,.014,.061),aged)
+    oval('Heavy cheek arch','Skull',(sign*.109,-.116,1.67),
+         (.045,.020,.027),edge)
+    # Individual rows of molars stay visible in the mouth opening.
+    for tooth in range(3):
+        oval('Molar','Skull',(sign*(.070+tooth*.016),-.143,1.592),
+             (.010,.013,.016),edge)
+    # Iron greaves and fastened leather shin guards: separate, readable plates.
+    cuff('Shin'+side,(sign*.14,-.014,.35),.052,.095,weathered)
+    rod('Leg guard fastener','Shin'+side,(sign*.098,-.083,.40),
+        (sign*.183,-.074,.40),.014,mat=leather)
+    oval('Worn boot cap','Foot'+side,(sign*.14,-.07,.094),
+         (.089,.129,.043),weathered)
+    oval('Gold boot rivet','Foot'+side,(sign*.14,-.16,.106),
+         (.016,.011,.017),trim)
+    cuff('Forearm'+side,(sign*.32,-.001,1.099),.061,.096,weathered)
+    oval('Forearm brass pin','Forearm'+side,(sign*.32,-.080,1.112),
+         (.020,.010,.021),trim)
+    # Layered asymmetric shoulder guards contrast against the exposed ribs.
+    oval('Leather shoulder underpad','Arm'+side,(sign*.245,.0,1.475),
+         (.130,.125,.082),leather)
+    oval('Broken plate shoulder guard','Arm'+side,(sign*.265,-.008,1.51),
+         (.147,.116,.075),weathered if side=='R' else bronze)
+    oval('Forged shoulder rim','Arm'+side,(sign*.335,-.028,1.505),
+         (.024,.098,.053),trim)
+    for rivet in (-1,0,1):
+        oval('Pauldron rivet','Arm'+side,
+             (sign*(.265+rivet*.037),-.113,1.52),
+             (.011,.009,.012),trim)
+
+# Shoulder-to-hip harness, buckles and a broken pectoral armor plaque.
+# The rib cage is deliberately visible between these fixtures.
+rod('Diagonal leather band','Chest',(-.18,-.110,1.43),
+    (.16,-.114,1.04),.034,mat=leather)
+rod('Band bright seam','Chest',(-.18,-.143,1.42),
+    (.15,-.144,1.05),.010,mat=trim)
+oval('Sunken breast plate','Chest',(-.02,-.126,1.34),
+     (.080,.033,.125),weathered)
+oval('Tarnished chest crest','Chest',(-.018,-.162,1.34),
+     (.040,.012,.058),bronze)
+for x,z in ((-.127,1.13),(.11,1.23),(.057,1.09)):
+    oval('Harness rivet','Chest',(x,-.144,z),(.019,.014,.019),trim)
+for x in (-.15,-.06,.03,.12):
+    oval('Belt bronze stud','Pelvis',(x,-.108,.975),(.016,.012,.014),trim)
+
+# A high-density, ragged cloth skirt in two asymmetrical strips; no smooth
+# single triangle 'cape'. The hem is broken and soiled; its colors echo
+# the hero's red tabard in a colder, undead palette.
+shape('Tattered tabard front','Pelvis',[
+    (-.155,-.114,.95),(.14,-.114,.95),
+    (-.19,-.13,.67),(.12,-.14,.69),
+    (-.13,-.16,.55),(.070,-.16,.58),
+    (-.20,-.18,.47),(.040,-.18,.54),
+],[(0,1,3,2),(2,3,5,4),(4,5,7,6)],teal)
+shape('Torn tabard inner seam','Pelvis',[
+    (-.02,-.162,.94),(.015,-.165,.94),
+    (-.025,-.169,.53),(.01,-.18,.56),
+],[(0,1,3,2)],cloth_light)
+shape('Hanging sidecloth left','Pelvis',[
+    (.13,.02,.955),(.17,.11,.95),
+    (.15,.085,.63),(.19,.055,.57),
+    (.12,.08,.45),(.15,.14,.49),
+],[(0,1,3,2),(2,3,5,4)],cloth_shadow)
+shape('Hanging sidecloth right','Pelvis',[
+    (-.15,.045,.96),(-.185,.12,.95),
+    (-.20,.11,.68),(-.19,.16,.64),
+    (-.235,.11,.51),(-.185,.16,.55),
+],[(0,1,3,2),(2,3,5,4)],teal)
+
+# A dimensional saber blade, not a flat strip disappearing edge-on.
+# Widen the silhouette at its middle, form a swept tip and sharpen both
+# surfaces with real polygon thickness and a bright edge.
+def forged_sabre():
+    spine=[(0,-.020,.09),(.015,-.030,.23),(.021,-.047,.46),
+           (.045,-.080,.65),(.087,-.142,.84)]
+    cutting=[(.029,.031,.09),(.038,.032,.23),(.040,.023,.46),
+             (.027,-.016,.65),(.087,-.142,.84)]
+    z=.013
+    points=[]
+    for a,b in zip(spine,cutting):
+        points.extend([
+            at(grip,(a[0],a[1]-z,a[2])),
+            at(grip,(a[0],a[1]+z,a[2])),
+            at(grip,(b[0],b[1]-z*.35,b[2])),
+            at(grip,(b[0],b[1]+z*.35,b[2])),
+        ])
+    faces=[]
+    for i in range(len(spine)-1):
+        k=i*4
+        faces.extend([(k,k+4,k+6,k+2),
+                      (k+1,k+3,k+7,k+5),
+                      (k,k+1,k+5,k+4),
+                      (k+2,k+6,k+7,k+3)])
+    shape('Forged swept saber blade','HandR',points,faces,steel,'sabre')
+    for i in range(4):
+        a=at(grip,cutting[i]);b=at(grip,cutting[i+1])
+        rod('Ground saber cutting edge','HandR',a,b,.007,.004,sabre_edge,'sabre')
+    rod('Saber fuller groove','HandR',at(grip,(0,-.047,.18)),
+        at(grip,(.034,-.095,.64)),.008,.006,iron_dark,'sabre')
+    oval('Bronze pommel','HandR',at(grip,(0,0,-.17)),
+         (.042,.041,.048),trim,'sabre')
+    oval('Saber crossguard rivet','HandR',at(grip,(0,-.045,.09)),
+         (.028,.019,.029),trim,'sabre')
+
+# Hide the original wafer-thin falchion mesh: the new 3D forged version has
+# proper highlights in every facing and will never disappear edge-on.
+parts[:]=[(o,b,k) for (o,b,k) in parts if o.name not in
+         ('Curved falchion','Ground bevel')]
+for obj in list(bpy.data.objects):
+    if obj.name in ('Curved falchion','Ground bevel'):
+        bpy.data.objects.remove(obj,do_unlink=True)
+forged_sabre()
+
+# A proper round steel-and-leather buckler, fixed to the LEFT forearm.
+# It is a weapon prop in the same loadout collection (not ghostly/transparent).
+shield=(.34,-.15,1.16)
+oval('Buckler timber core','ForearmL',shield,(.218,.052,.251),wood,'sabre')
+oval('Buckler iron face','ForearmL',(.34,-.204,1.16),
+     (.204,.031,.237),weathered,'sabre')
+oval('Buckler central boss','ForearmL',(.34,-.248,1.16),
+     (.073,.047,.069),trim,'sabre')
+for side in (-1,1):
+    rod('Buckler vertical rim','ForearmL',
+        (.34+side*.202,-.215,.99),(.34+side*.202,-.215,1.31),
+        .014,.012,trim,'sabre')
+    rod('Buckler radial pattern','ForearmL',
+        (.34,-.237,1.16),(.34+side*.148,-.230,1.04),
+        .012,.010,bronze,'sabre')
+    rod('Buckler upper ray','ForearmL',
+        (.34,-.236,1.16),(.34+side*.11,-.230,1.27),
+        .012,.009,bronze,'sabre')
+for z in (1.02,1.30):
+    rod('Buckler horizontal rim','ForearmL',
+        (.19,-.213,z),(.49,-.213,z),.013,.011,trim,'sabre')
+for x,z in ((.19,1.14),(.49,1.14),(.34,1.01),(.34,1.31)):
+    oval('Buckler brass rivet','ForearmL',(x,-.235,z),
+         (.017,.012,.017),trim,'sabre')
+
+# Archer identity: quiver silhouette, bound arrowheads and fletching.
+oval('Quiver leather tube','Chest',(.17,.115,1.21),
+     (.084,.075,.235),leather,'bow')
+oval('Quiver bronze rim','Chest',(.17,.117,1.425),
+     (.09,.079,.026),trim,'bow')
+for i in range(4):
+    x=.12+i*.035
+    rod('Quivered arrow','Chest',(x,.119,1.34),
+        (x,.119,1.59+i*.027),.007,.006,wood,'bow')
+    shape('Arrow fletching','Chest',[
+        (x-.025,.119,1.51+i*.027),(x+.025,.119,1.51+i*.027),
+        (x,.119,1.60+i*.027)
+    ],[(0,1,2)],teal,'bow')
+rod('Bow decorative grip','HandL',at(bow,(0,-.05,-.115)),
+    at(bow,(0,-.05,.115)),.025,.021,leather,'bow')
+for z in (-.31,.31):
+    oval('Bow metal tip wrap','HandL',at(bow,(0,.00,z)),
+         (.035,.037,.045),trim,'bow')
+
+
 arm=bpy.data.armatures.new('Ossuary skeleton')
 rig=bpy.data.objects.new('Skeleton rig',arm);scene.collection.objects.link(rig)
 bpy.context.view_layer.objects.active=rig
@@ -145,7 +346,7 @@ bpy.context.view_layer.update()
 groups={}
 for obj,bone,kit in parts:
     world=obj.matrix_world.copy()
-    if kit=='sabre':
+    if kit=='sabre' and bone=='HandR':
         world=Matrix.Translation(grip)@Matrix.Rotation(1.34,4,'X')@Matrix.Translation(-grip)@world
     obj.data.transform(world);obj.matrix_world=Matrix.Identity(4)
     group=obj.vertex_groups.new(name=bone);group.add(list(range(len(obj.data.vertices))),1,'REPLACE')
@@ -238,22 +439,22 @@ bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);bpy.context.vi
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'skeleton.blend'),compress=True)
 # Batch evaluated Blender geometry into an orthographic contact sheet so one
 # Cycles render covers every facing and sample of a clip.
-scene.render.engine='CYCLES';scene.cycles.samples=8;scene.cycles.use_denoising=False
+scene.render.engine='CYCLES';scene.cycles.samples=18;scene.cycles.use_denoising=True
 scene.render.image_settings.file_format='WEBP';scene.render.image_settings.color_mode='RGBA'
-scene.render.image_settings.quality=88
+scene.render.image_settings.quality=96
 scene.render.film_transparent=True;scene.render.resolution_percentage=100
 scene.world=bpy.data.worlds.new('Ambient skylight');scene.world.use_nodes=True
 scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.55,.60,.66,1)
-scene.world.node_tree.nodes['Background'].inputs[1].default_value=.53
+scene.world.node_tree.nodes['Background'].inputs[1].default_value=.49
 camdata=bpy.data.cameras.new('Atlas orthographic');cam=bpy.data.objects.new('Atlas camera',camdata);scene.collection.objects.link(cam);scene.camera=cam
 camdata.type='ORTHO';camdata.clip_end=300;cam.location=(0,0,20)
-for name,color,power,direction in [('Key', (1,.83,.67),2.15,(.4,-.7,1)),('Rim',(.55,.72,1),.85,(-1,.6,.4))]:
+for name,color,power,direction in [('Key', (1,.88,.76),2.7,(.4,-.7,1)),('Rim',(.56,.72,1),1.15,(-1,.6,.4))]:
     light=bpy.data.lights.new(name,'SUN');light.energy=power;light.color=color;light.angle=.4
     obj=bpy.data.objects.new(name,light);scene.collection.objects.link(obj)
     obj.rotation_euler=(-V(direction)).to_track_quat('-Z','Y').to_euler()
 for obj in meshes.values():obj.hide_render=True;obj.hide_viewport=False
 mats=list(dict.fromkeys(m for ob in meshes.values() for m in ob.data.materials))
-pitch=math.atan(1/math.sqrt(2));view=rotation(pitch-pi/2);cell=2.95
+pitch=math.atan(1/math.sqrt(2));view=rotation(pitch-pi/2);cell=3.35
 for kit in ('sabre','bow'):
     for clip in ('idle','run','shoot' if kit=='bow' else 'strike','death'):
         count=clips[clip];verts=[];faces=[];indices=[]
@@ -279,7 +480,7 @@ for kit in ('sabre','bow'):
         for m in mats:data.materials.append(m)
         data.polygons.foreach_set('material_index',indices)
         batch=bpy.data.objects.new('Pose batch',data);scene.collection.objects.link(batch)
-        scene.render.resolution_x=count*96;scene.render.resolution_y=FACINGS*96
+        scene.render.resolution_x=count*PIXELS;scene.render.resolution_y=FACINGS*PIXELS
         camdata.ortho_scale=max(count,FACINGS)*cell
         scene.render.filepath=str(out/(kit+'-'+clip+'.webp'))
         bpy.ops.render.render(write_still=True)
