@@ -771,9 +771,10 @@ function updateBolts(dt){
    const x=p.x+dx/steps,y=p.y+dy/steps;
    const approaching=p.type==='trap'&&(p.angle===0?x<p.entryX:x>p.entryX);
    if(p.gravity){
-    if(!api.arrowGroundClear(x,y))return false;
+    if(!api.arrowGroundClear(x,y,p.alleyFloor??0))return false;
     const step=elapsed/steps;
     p.z+=p.vz*step-.5*p.gravity*step*step;p.vz-=p.gravity*step;
+    if(api.alleyEnemyPursuit&&p.z<(p.alleyFloor??0)*132)return false;
    }else if(!approaching&&(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||floor.doorAt(x,y)))return false;
    const prop=!approaching&&furnitureAt(x,y,2);
    if(prop){
