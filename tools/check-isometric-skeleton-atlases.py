@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 ASSETS=Path(__file__).resolve().parent.parent/'beta'/'art'/'skeleton'
-CELL=96
+CELL=128
 CLIPS={'idle':6,'run':10,'strike':10,'shoot':10,'death':10}
 blend=(ASSETS/'skeleton.blend').read_bytes()
 # Blender optionally compresses its .blend stream with Zstandard (0x28B52FFD).
@@ -34,7 +34,7 @@ for kit in ('sabre','bow'):
                     alpha=frame.getchannel('A')
                     bounds=alpha.getbbox()
                     assert bounds is not None, f'{filepath}: empty view {row}, frame {i}'
-                    assert bounds[0]>0 and bounds[2]<CELL, f'{filepath}: horizontal clipping in view {row}, frame {i}'
+                    assert bounds[0]>0 and bounds[2]<CELL and bounds[1]>0 and bounds[3]<CELL, f'{filepath}: atlas clipping in view {row}, frame {i}'
                 if clip!='idle':
                     # In particular, the death rig must really break into a
                     # new pose rather than merely reusing the standing sprite.
