@@ -4444,7 +4444,7 @@ function drawAlleyCanvas(){
   s.stroke();s.globalAlpha=1;
  })});
  if(!guardian){
-  layers.push({depth:actor.renderDepth??actor.y,draw:()=>drawCanvasCharacter(localSprite(undefined,actor),actor,lift,null,alpha)});
+  layers.push({depth:actor.renderDepth??actor.y,draw:()=>drawCanvasCharacter(localSprite(undefined,actor),actor,0,null,alpha)});
   if(!isConsuming()&&save.equipment.weapon){
    const pose=weaponPose();
    layers.push({depth:pose.depth,draw:()=>drawCanvasWeapon(pose,alpha)});
@@ -4624,9 +4624,11 @@ class DungeonScene extends Phaser.Scene{
    const view=gameCameraView(dt),actor=alleyActor();
    this.cameras.main.setZoom(view.zoom).setScroll(view.x,view.y);
    this.hero.setVisible(!guardian);
-   if(!guardian&&alleyVertical?.state.floor===1)this.hero.setDepth(actor.renderDepth);
    this.weapon.setVisible(!guardian&&!isConsuming()&&Boolean(save.equipment.weapon));
-   if(!guardian)this.drawCharacter(this.hero,localSprite(this.textures,actor),actor,alleyVertical?.state.z??vault?.lift??0,false,null,heroAlpha());
+   if(!guardian){
+    this.drawCharacter(this.hero,localSprite(this.textures,actor),actor,0,false,null,heroAlpha());
+    this.hero.setDepth(actor.renderDepth??actor.y);
+   }
    if(this.weapon.visible)this.drawWeapon(this.weapon,weaponPose(),this.weaponClip,heroAlpha());
    alley.refreshLayers(this.alleyLayers,player,save.opened.includes(0));
    const sprites=alleySprites(actor);
