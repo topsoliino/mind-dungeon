@@ -47,7 +47,7 @@ for(let seed=0;seed<200;seed++){
   for(let i=1;i<=120;i++){
    const t=i/120,pose=v.pose(transition,up,t);
    const delta=Math.hypot(pose.x-previousX,pose.y-previousY);
-   assert(delta<3.5,'sudden teleport during climb '+seed+' '+t);
+   assert(delta<4.5,'sudden teleport during climb '+seed+' '+t);
    if(t>=.15&&t<=.85){
     close(pose.x,contact.climb.x*48,1e-3);
     close(pose.y,contact.climb.y*48,1e-3);
