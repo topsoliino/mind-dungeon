@@ -1,0 +1,39 @@
+name: Skeleton combat and Blender-sprite regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/check-isometric-skeleton.yml
+      - beta/alley-skeleton.js
+      - beta/dungeon-enemy-sim.js
+      - beta/dungeon-enemies.js
+      - beta/art/skeleton/**
+      - tools/build-isometric-skeleton.py
+      - tools/check-isometric-skeleton.cjs
+      - tools/check-isometric-skeleton-sprites.cjs
+      - tools/check-isometric-skeleton-atlases.py
+
+permissions:
+  contents: read
+
+jobs:
+  skeleton-regressions:
+    name: Skeleton combat and sprite validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify combat, collision, arrow flight and retreat
+        run: node tools/check-isometric-skeleton.cjs
+      - name: Verify skeleton render selection and deterministic dungeon spawns
+        run: node tools/check-isometric-skeleton-sprites.cjs
+      - name: Set up asset inspection
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install lightweight image inspector
+        run: python -m pip install --disable-pip-version-check Pillow
+      - name: Validate Blender-rigged 8-way WebP sprite sheets
+        run: python tools/check-isometric-skeleton-atlases.py
