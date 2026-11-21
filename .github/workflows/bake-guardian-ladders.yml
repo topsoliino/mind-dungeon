@@ -35,12 +35,12 @@ jobs:
 
       - name: Bake two ladder takes onto the original Guardian rig
         run: |
-          PYTHONPATH=/usr/lib/python3/dist-packages blender -b beta/art/player-study/guardian.blend \
+          PYTHONPATH=/usr/lib/python3/dist-packages blender -b --python-exit-code 1 beta/art/player-study/guardian.blend \
             -P tools/add-guardian-ladder-animations.py
 
       - name: Export real GLB armature timeline for Three.js
         run: |
-          PYTHONPATH=/usr/lib/python3/dist-packages blender -b beta/art/player-study/guardian.blend \
+          PYTHONPATH=/usr/lib/python3/dist-packages blender -b --python-exit-code 1 beta/art/player-study/guardian.blend \
             -P tools/export-guardian-web.py -- \
             beta/art/player-study/guardian-rig.glb.gz
 
