@@ -187,6 +187,22 @@ function controller({plan,state,nav,length,speeds,curving}){
     if(!legal)continue;
     best=score;chosen={part:piece,point:legal,z};
    }
+   // Guardrails belong to the corresponding tread as well. They sit roughly
+   // 27 projected pixels above its sides, outside the ordinary top-face halo.
+   if(Number.isFinite(piece.prev)){
+    const [a,b,c,d]=pts,rails=plan.kind.startsWith('spiral')||
+     plan.kind==='curved'?[[b,c]]:[[a,d],[b,c]];
+    for(const [start,end] of rails){
+     const p=iso.toView(start.x*48,start.y*48,piece.prev+27),
+      q=iso.toView(end.x*48,end.y*48,piece.z+27),
+      gap=edgeDistance(screen,p,q);
+     if(gap>8)continue;
+     const score=420-gap*7;
+     if(score<=best)continue;
+     const goal=nav.legalTarget(piece.center,piece);
+     if(goal){chosen={part:piece,point:goal,z};best=score;}
+    }
+   }
   }
   return chosen;
  }
