@@ -8,16 +8,25 @@ function mount({generator:g,player,iso}){
   width:'306px',padding:'11px',borderRadius:'9px',background:'#171c2bec',
   border:'1px solid #a2a8b18c',color:'#e8e3d9',font:'12px/1.4 system-ui,sans-serif',
   boxShadow:'0 8px 28px #050915aa'});
+ const grammar=window.AlleyStairGeometry;
+ const stairOptions=(grammar?.styles||[]).map(id=>'<option value="'+id+'">'+
+  grammar.templates[id].title+'</option>').join('');
  panel.innerHTML=
   '<div style="display:flex;justify-content:space-between;align-items:center">'+
   '<strong id="iso-gen-level">GREYBOX · ERDGESCHOSS</strong><button id="iso-gen-toggle" aria-expanded="true">Karte −</button></div>'+
   '<div style="font-size:11px;color:#bac9d2;margin:6px 0">'+
   g.metadata.rooms+' Räume · '+g.metadata.corridors+' Gänge · '+g.metadata.doors+
-  ' Verbindungen · '+g.stairs.length+' Treppe · 1 Leiter</div>'+
+  ' Verbindungen · 1 Treppe · 1 Leiter</div>'+
+  '<div style="font-size:11px;color:#d9c7b0;margin-bottom:7px">'+
+  (g.metadata.stairTitle||'Treppenkonstruktion')+'</div>'+
   '<div id="iso-gen-body"><canvas id="iso-gen-map" width="576" height="360" '+
   'aria-label="Isometrischer Grundriss und Spielerposition" style="width:100%;height:180px;'+
   'display:block;border:1px solid #75869c66;border-radius:6px;background:#111827"></canvas>'+
   '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Standort · Gelb = Tür · ↑ Treppe · L Leiter</div>'+
+  '<div style="margin-top:8px"><label for="iso-gen-stair-style">Treppentyp</label>'+
+  '<select id="iso-gen-stair-style" style="width:100%;padding:6px;margin-top:3px;'+
+  'background:#101725;color:#eee;border:1px solid #8190a1;border-radius:4px">'+
+  stairOptions+'</select></div>'+
   '<div style="display:flex;gap:5px;align-items:center;margin-top:8px">'+
   '<label for="iso-gen-seed">Seed</label><input id="iso-gen-seed" type="number" min="0" step="1" '+
   'value="'+g.requestedSeed+'" style="width:100%;min-width:0;padding:5px;background:#101725;color:white;'+
@@ -34,6 +43,16 @@ function mount({generator:g,player,iso}){
   toggle.textContent=open?'Karte −':'Karte +';
   toggle.setAttribute('aria-expanded',String(open));
  };
+ const styleSelect=panel.querySelector('#iso-gen-stair-style');
+ if(styleSelect){
+  styleSelect.value=g.metadata.stairVariant;
+  styleSelect.onchange=()=>{
+   const url=new URL(window.location.href);
+   url.searchParams.set('treppe',styleSelect.value);
+   url.searchParams.set('v','5');
+   window.location.assign(url.href);
+  };
+ }
  const field=panel.querySelector('#iso-gen-seed');
  function setSeed(v){
   const n=Math.max(0,Math.min(4294967295,Math.floor(Number(v)||0)));
@@ -89,10 +108,17 @@ function mount({generator:g,player,iso}){
    const p=xy((a[0]+b[0]+1)/2,(a[1]+b[1]+1)/2);
    ctx.beginPath();ctx.arc(p[0],p[1],3.5,0,Math.PI*2);ctx.fillStyle='#f4d394';ctx.fill();
   }
-  for(const stair of g.stairs){
+  if(vertical?.enabled&&vertical.plan){
+   for(const step of vertical.plan.steps)
+    poly(step.corners.map(p=>xy(p.x,p.y)),
+     step.z>vertical.height*.5?'#7da7b6':'#436777','#9db6c4');
+   for(const land of vertical.plan.landings)
+    poly(land.corners.map(p=>xy(p.x,p.y)),'#8fa4b0','#d2e8f4');
+   const top=xy(vertical.plan.top.x,vertical.plan.top.y);
+   ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillStyle='#fcf1cb';
+   ctx.fillText('↑',top[0],top[1]+5);
+  }else for(const stair of g.stairs){
    const [u,v,r,b]=stair.area;poly(quad(u,v,r,b),'#437c96','#d2e8f4');
-   const p=xy((u+r)/2,(v+b)/2);ctx.font='bold 13px system-ui';ctx.textAlign='center';
-   ctx.fillStyle='white';ctx.fillText('↑',p[0],p[1]+5);
   }
   if(vertical?.enabled){
    const at=vertical.ladder.bottom,p=xy(at.x,at.y);
