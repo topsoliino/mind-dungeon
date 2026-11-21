@@ -1,6 +1,6 @@
 # Etappe 4a · Treppen, Leitern und Geschosssichtbarkeit
 
-**Test:** https://topsoliino.github.io/mind-dungeon/beta/?szene=gasse&modus=generator&seed=4147&v=18
+**Test:** https://topsoliino.github.io/mind-dungeon/beta/?szene=gasse&modus=generator&seed=4147&v=19
 
 ## Treppengrammatik (Greybox)
 
