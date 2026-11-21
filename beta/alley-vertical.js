@@ -178,6 +178,12 @@ function blocksGround(u,v,r=0){
  const entry=plan.bottom;
  return distance(entry,{x:u,y:v})>.58+r*.65;
 }
+// Upstairs XY footprints can overlap lower stair treads. Only the head gate
+// permits entry: the remaining sides are solid while fall physics is disabled.
+function blocksTop(u,v,r=0){
+ if(!overStair(u,v,r))return false;
+ return distance(plan.top,{x:u,y:v})>.58+r*.65;
+}
 // Pick actual visible isometric tread surfaces, not their misleading
 // flat-ground cursor projections. This lets right-click target a flight.
 function pickStair(screen,iso){
@@ -384,7 +390,7 @@ function createLayers({project,polygon,line,cacheObject}){
 }
 const state={floor:0,z:0,transition:null,pending:null,stairRide:null};
 function boardStairs(actor,up=true,auto=true){
- if(state.stairRide||state.transition||state.pending)return false;
+ if(state.stairRide||state.transition||state.pending||state.floor!==(up?0:1))return false;
  const gate=up?plan.bottom:plan.top;
  if(Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y)>.72)return false;
  state.stairRide={s:up?0:totalLength,lateral:0,dir:up?1:-1,auto,up};
@@ -403,7 +409,8 @@ function tryEnterStairs(actor,dx,dy){
  const tangent={x:b.x-a.x,y:b.y-a.y},norm=Math.hypot(tangent.x,tangent.y)||1;
  const toward=(dx*tangent.x+dy*tangent.y)/norm;
  if(toward<.38)return false;
- return boardStairs(actor,up,true);
+ // Walk-on entry is input-controlled; E and stair clicks still auto-traverse.
+ return boardStairs(actor,up,false);
 }
 function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
  const ride=state.stairRide;
@@ -443,7 +450,7 @@ function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
 }
 const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
  connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
- overStair,blocksGround,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
+ overStair,blocksGround,blocksTop,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
  boardStairs,tryEnterStairs,advanceStairs};
 window.AlleyVertical=api;
 })();
