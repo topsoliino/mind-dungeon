@@ -8,7 +8,7 @@ const source=fs.readFileSync(path.join(__dirname,'../beta/alley-skeleton.js'),'u
 const loaded=[];
 let missing=null;
 class ImageStub {
- constructor(){this.width=576;this.height=768;}
+ constructor(){this.width=576;this.height=3072;}
  async decode(){
   const key=this.src.match(/skeleton\/([^/]+)\.webp/)[1];
   if(key===missing)throw Error('Missing image fixture');
@@ -28,15 +28,15 @@ async function run(){
  const sword={x:100,y:100,skeleton:'sabre',type:1,size:1,phase:.4,moving:false,angle:0,hit:0,windup:0,runAttack:0,recover:0};
  let sprite=skeleton.sprite(sword,iso,rules);
  assert.equal(sprite.key,'skeleton-sabre-idle');
- assert.equal(sprite.frame,'1-1');
+ assert.equal(sprite.frame,'4-1');
  assert.equal(sprite.w,96);
  assert.equal(sprite.h,96);
  assert.equal(sprite.sx,96);
- assert.equal(sprite.sy,96);
+ assert.equal(sprite.sy,4*96);
  sword.windup=.59;
  sprite=skeleton.sprite(sword,iso,rules);
  assert.equal(sprite.key,'skeleton-sabre-strike');
- assert.equal(sprite.frame,'1-0');
+ assert.equal(sprite.frame,'4-0');
  sword.windup=0;sword.runDuration=.36;sword.runAttack=.36;
  sprite=skeleton.sprite(sword,iso,rules);
  assert.equal(sprite.key,'skeleton-sabre-strike');
@@ -45,8 +45,16 @@ async function run(){
  assert.equal(sprite.key,'skeleton-sabre-strike');
  for(let i=0;i<8;i++){
   sword.facing=i*Math.PI/4;
-  assert.equal(skeleton.sprite(sword,iso,rules).sy,((1-i+8)%8)*96);
+  assert.equal(skeleton.sprite(sword,iso,rules).sy,((4-4*i+32)%32)*96);
  }
+ // True 360° angle interpolation, not a hard jump between 8/32 compass bins.
+ sword.facing=Math.PI/64;
+ let layers=skeleton.sprites(sword,iso,rules);
+ assert.equal(layers.length,2);
+ assert.equal(layers[0].sy,3*96);
+ assert.equal(layers[1].sy,4*96);
+ assert(Math.abs(layers[0].alpha+.0+layers[1].alpha-.72)<1e-6);
+ assert(skeleton.sprites({...sword,facing:0},iso,rules).length===1);
  const archer={...sword,skeleton:'bow',type:0,windup:0,runAttack:0,recover:0,moving:true};
  sprite=skeleton.sprite(archer,iso,rules);
  assert.equal(sprite.key,'skeleton-bow-run');
@@ -72,6 +80,6 @@ async function run(){
  await skeleton.load();
  assert.equal(loaded.length,7);
  assert(warn.some(message=>message.includes('bow-shoot')));
- console.log('Skeleton: 8 Blender atlases, attack timing, 8 facings, death frames, sparse room spawns and fallback OK');
+ console.log('Skeleton: 8 Blender atlases, attack timing, 32 rendered facings with 360-degree interpolation, death frames, sparse spawns and fallback OK');
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
