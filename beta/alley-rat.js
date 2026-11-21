@@ -14,8 +14,9 @@ window.AlleyRat=(()=>{
    image.src='beta/art/rat/'+clip+'.webp?v='+VERSION;
    try{
     await image.decode();
-    if(image.height!==VIEWS*CELL||image.width<CELL||
-       image.width%CELL||!image.width)
+    const textureCell=image.height/VIEWS;
+    if(![96,128].includes(textureCell)||image.width<textureCell||
+       image.width%textureCell||!image.width)
      throw Error('Unexpected rat atlas size '+image.width+'x'+image.height);
     sheets.set(clip,image);
    }catch(error){
@@ -46,14 +47,15 @@ window.AlleyRat=(()=>{
   const {clip,t}=choose(e,rules,deathAge);
   const image=sheets.get(clip);
   if(!image)return null;
-  const cols=image.width/CELL,col=Math.min(cols-1,Math.floor(t*cols));
+  const textureCell=image.height/VIEWS;
+  const cols=image.width/textureCell,col=Math.min(cols-1,Math.floor(t*cols));
   const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
   const exact=wrap(VIEWS/8-facing*VIEWS/TAU,VIEWS);
   const row=wrap(Math.round(exact),VIEWS);
   const p=iso.toView(e.x,e.y,e.alleyZ||0);
   const alpha=deathAge===null?1:clamp((2.6-deathAge)/.55);
-  return {image,key:'rat-'+clip,frame:row+'-'+col,sx:col*CELL,sy:row*CELL,
-   w:CELL,h:CELL,width:128*(e.size||1),height:128*(e.size||1),
+  return {image,key:'rat-'+clip,frame:row+'-'+col,sx:col*textureCell,sy:row*textureCell,
+   w:textureCell,h:textureCell,width:128*(e.size||1),height:128*(e.size||1),
    x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.76,alpha};
  }
  function sprites(e,iso,rules,deathAge=null){
