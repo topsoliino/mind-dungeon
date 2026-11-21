@@ -47,13 +47,12 @@ async function run(){
   sword.facing=i*Math.PI/4;
   assert.equal(skeleton.sprite(sword,iso,rules).sy,((4-4*i+32)%32)*96);
  }
- // True 360° angle interpolation, not a hard jump between 8/32 compass bins.
+ // 32 independent 3D facings: nearest-view avoids translucent double skeletons.
  sword.facing=Math.PI/64;
  let layers=skeleton.sprites(sword,iso,rules);
- assert.equal(layers.length,2);
- assert.equal(layers[0].sy,3*96);
- assert.equal(layers[1].sy,4*96);
- assert(Math.abs(layers[0].alpha+layers[1].alpha-1)<1e-6);
+ assert.equal(layers.length,1);
+ assert.equal(layers[0].sy,4*96);
+ assert.equal(layers[0].alpha,1,'living skeleton must not be a ghost');
  assert(skeleton.sprites({...sword,facing:0},iso,rules).length===1);
  const archer={...sword,skeleton:'bow',type:0,windup:0,runAttack:0,recover:0,moving:true};
  sprite=skeleton.sprite(archer,iso,rules);
@@ -80,6 +79,6 @@ async function run(){
  await skeleton.load();
  assert.equal(loaded.length,7);
  assert(warn.some(message=>message.includes('bow-shoot')));
- console.log('Skeleton: 8 Blender atlases, attack timing, 32 rendered facings with 360-degree interpolation, death frames, sparse spawns and fallback OK');
+ console.log('Skeleton: 8 Blender atlases, attack timing, 32 opaque Blender facings without crossfade ghosting, death frames, sparse spawns and fallback OK');
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
