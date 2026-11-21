@@ -69,5 +69,28 @@ window.AlleyRat=(()=>{
     alpha:base.alpha*w,depth:base.depth+.0001}
   ];
  }
- return {load,sprite,sprites,choose,clips:files};
+ function encounters(generator,alley,occupied=[]){
+  const rooms=(generator.rooms||[]).filter(r=>r.kind==='raum'&&r.id!==0&&r.cells?.length);
+  const results=[];
+  for(const room of rooms){
+   if(room.id%2===0)continue; // occasional small enemies, not a swarm in every room
+   const cells=room.cells.slice().sort((a,b)=>{
+    const center=room.cells.reduce((s,p)=>[s[0]+p[0]/room.cells.length,s[1]+p[1]/room.cells.length],[0,0]);
+    return Math.hypot(a[0]-center[0],a[1]-center[1])-
+     Math.hypot(b[0]-center[0],b[1]-center[1]);
+   });
+   for(const [u,v] of cells){
+    const point={x:(u+.5)*48,y:(v+.5)*48};
+    if(Math.hypot(point.x-alley.spawn.x,point.y-alley.spawn.y)<168||
+       occupied.concat(results).some(p=>Math.hypot(p.x-point.x,p.y-point.y)<78)||
+       !alley.walkable(point.x,point.y,15)||
+       !alley.routeTo(alley.spawn,point))continue;
+    results.push({...point,roomId:room.id});
+    break;
+   }
+   if(results.length>=3)break;
+  }
+  return results;
+ }
+ return {load,sprite,sprites,choose,encounters,clips:files};
 })();
