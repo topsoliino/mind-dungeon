@@ -58,7 +58,7 @@ function updateEnemy(e,dt){
  if(!e.veilPhase&&!labRat&&!enemyEncounterReady(e)){
   e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.emerge=Math.max(0,(e.emerge||0)-dt);
   e.windup=0;e.runAttack=0;e.track=0;e.aggro=Math.max(0,(e.aggro||0)-dt);e.moving=false;
-  e.batMove=null;e.lionMove=null;e.dogMove=null;e.called=0;
+  e.batMove=null;e.lionMove=null;e.dogMove=null;e.ratMotion=null;e.called=0;
   return;
  }
  if(floor.layerAt(e.x,e.y)!==floor.layerAt(player.x,player.y)&&
@@ -90,8 +90,42 @@ function updateEnemy(e,dt){
   e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
  }
  const clear=line&&e.aggro>0;
+ if(e.type===RAT){
+  e.ratJumpCooldown=Math.max(0,(e.ratJumpCooldown||0)-dt);
+  e.ratDodgeCooldown=Math.max(0,(e.ratDodgeCooldown||0)-dt);
+  e.ratStalking=clear&&d>=105&&d<=225;
+  // Independent, collision-aware locomotion actions: forward leap or strafe.
+  if(e.ratMotion&&e.ratMotion.time>0){
+   const motion=e.ratMotion;
+   const direction=motion.name==='jump'?motion.angle:motion.angle+Math.PI*.5*(motion.name==='dodge-left'?-1:1);
+   const speed=motion.name==='jump'?185:158;
+   const remaining=Math.min(dt,motion.time);
+   moveEnemy(e,Math.cos(direction)*speed*remaining,Math.sin(direction)*speed*remaining);
+   e.facing=motion.angle; // keep the head on the hero while strafing
+   motion.time=Math.max(0,motion.time-dt);
+   if(motion.time===0)e.ratMotion=null;
+   return;
+  }
+ }
  if(!e.skeleton&&e.type!==SNAKE&&e.type!==RAT&&e.type!==ELECTRO_RAT&&e.type!==EAGLE&&clear&&nearActor(e,player,5)&&!(e.runAttack>0)&&!furnitureBetween(e.x,e.y,player.x,player.y))damageActive(origin(e,'Nahkampftreffer'),9+(e.boss?5:0),items.foeAttack[e.type]);
  if(e.runAttack>0){
+  if(e.type===RAT){
+   const combo=e.ratAttackClip==='combo',duration=e.runDuration||.42;
+   const elapsed=duration-e.runAttack,after=elapsed+dt;
+   const contacts=combo?[.10,.47]:[.17];
+   for(let i=e.ratHits||0;i<contacts.length;i++){
+    if(after<contacts[i])break;
+    e.ratHits=i+1;
+    if(!clear||d>spec.range+15||Math.cos(angle-e.angle)<.48||
+       gateLineBlocked(e.x,e.y,player.x,player.y))continue;
+    const amount=combo?5:7;
+    if(!strikeCover(e,amount)&&damageActive(origin(e,combo?'Doppelbiss':'Biss'),amount,{physical:1}))
+     bleedActive(e,31);
+   }
+   e.runAttack=Math.max(0,e.runAttack-dt);
+   if(!e.runAttack)recover(e,spec.recovery);
+   return;
+  }
   if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'||spec.id==='eagle'){advanceRush(e,spec,dt,angle);return;}
   if(['web','frost','bow','crossbow','electrode','rat-bite'].includes(spec.id)){
    e.runAttack=Math.max(0,e.runAttack-dt);
@@ -117,6 +151,23 @@ function updateEnemy(e,dt){
   return;
  }
  if(!e.aggro)return;
+ if(e.type===RAT&&!e.windup&&!e.recover&&!e.runAttack){
+  // Injury causes a sideways evasive hop, with its own 3D animation and cooldown.
+  if(clear&&e.hit>0&&d<170&&e.ratDodgeCooldown<=0){
+   const left=Math.sin(e.x*.07+e.phase*17)>0;
+   e.ratMotion={name:left?'dodge-left':'dodge',time:.32,duration:.32,angle};
+   e.ratDodgeCooldown=2.6;
+   aimEnemy(e,angle);
+   return;
+  }
+  // Leap toward the target but never teleport through walls or obstacles.
+  if(clear&&d>90&&d<150&&e.ratJumpCooldown<=0){
+   e.ratMotion={name:'jump',time:.43,duration:.43,angle};
+   e.ratJumpCooldown=3.3;
+   aimEnemy(e,angle);
+   return;
+  }
+ }
  if(clear&&e.attack<=0&&d<(e.skeleton==='sabre'?60:spec.range)&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
   e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
   if(windupCue[spec.id])soundWorld(windupCue[spec.id],e,{priority:2,cooldown:.18,gain:.77});
@@ -245,8 +296,17 @@ function updateDog(e,dt){
 }
 function executeEnemyAttack(e,spec){
  e.attack=(e.boss?2.25:2.85)-(save.floor-1)*.12;
- if(e.type===RAT||e.type===ELECTRO_RAT){
-  const electric=e.type===ELECTRO_RAT,amount=electric?16:7;
+ if(e.type===RAT){
+  // Distinct bite and double-bite actions, each with timed, avoidable contacts.
+  e.ratComboIndex=(e.ratComboIndex||0)+1;
+  const combo=e.ratComboIndex%3===0;
+  e.ratAttackClip=combo?'combo':'bite';
+  e.ratHits=0;
+  e.runDuration=e.runAttack=combo?.68:.42;
+  return;
+ }
+ if(e.type===ELECTRO_RAT){
+  const electric=true,amount=16;
   const split=electric?{physical:.3,lightning:.7}:{physical:1};
   const dx=player.x-e.x,dy=player.y-e.y;
   const hit=Math.hypot(dx,dy)<spec.range+11&&Math.cos(Math.atan2(dy,dx)-e.angle)>.5&&
