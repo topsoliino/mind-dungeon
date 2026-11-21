@@ -13,12 +13,12 @@ const interpolate=(a,b,t)=>vec(lerp(a.x,b.x,t),lerp(a.y,b.y,t));
 const ref={
  'straight-narrow':{w:3,h:8,width:1.45,steps:12,title:'Schmale gerade Treppe'},
  'straight-wide':{w:5,h:8,width:2.85,steps:12,title:'Breite gerade Treppe'},
- 'grand':{w:6,h:11,width:3.35,steps:16,title:'Weite Prachttreppe'},
+ 'grand':{w:6,h:11,width:3.35,steps:16,open:true,title:'Weite Prachttreppe'},
  'quarter':{w:8,h:8,width:1.7,steps:14,title:'Viertelgewendelte Treppe mit Podest'},
- 'switchback':{w:8,h:9,width:1.7,steps:16,title:'U-Treppe mit Zwischenpodest'},
+ 'switchback':{w:8,h:9,width:1.7,steps:16,open:true,title:'U-Treppe mit Zwischenpodest'},
  'spiral-tight':{w:6,h:6,inner:.64,outer:2.42,steps:13,title:'Enge Wendeltreppe'},
  'spiral-wide':{w:9,h:9,inner:1.05,outer:3.75,steps:17,title:'Weite Wendeltreppe'},
- 'curved':{w:9,h:9,inner:2.05,outer:3.7,steps:12,title:'Geschwungene Freitreppe'}
+ 'curved':{w:9,h:9,inner:2.05,outer:3.7,steps:12,open:true,title:'Geschwungene Freitreppe'}
 };
 const styles=Object.keys(ref);
 function buildTemplate(kind){
