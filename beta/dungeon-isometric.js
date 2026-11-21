@@ -150,11 +150,27 @@
    art.onArtReady(()=>images.forEach(image=>image.texture.refresh()));
    return images;
   }
+  // Layer canvases and structural depths never change once the seed is baked.
+  // Re-evaluate wall occlusion only after meaningful movement, floor changes
+  // or a visible portion of the upper-floor transition.
+  let lastLayerRefresh=null;
   function refreshLayers(images,player,opened){
+   const stair=vertical?.state.stairRide,cross=vertical?.state.transition;
+   const stage=stair?'stair':cross?'ladder':'floor';
+   const progress=stair?stair.s/Math.max(.001,vertical.stairLength):
+    cross?cross.age/Math.max(.001,cross.duration):0;
+   const floor=vertical?.state.floor??0;
+   const old=lastLayerRefresh;
+   if(old&&old.images===images&&old.opened===opened&&old.floor===floor&&
+    old.stage===stage&&Math.hypot(old.x-player.x,old.y-player.y)<9&&
+    Math.abs(old.progress-progress)<.025)return;
+   lastLayerRefresh={images,opened,floor,stage,progress,x:player.x,y:player.y};
    const current=layers(player,opened);
    images.forEach((image,i)=>{
     const {depth,alpha=1,visible=true}=current[i];
-    image.setDepth(depth).setAlpha(alpha).setVisible(visible);
+    if(image.depth!==depth)image.setDepth(depth);
+    if(image.alpha!==alpha)image.setAlpha(alpha);
+    if(image.visible!==visible)image.setVisible(visible);
    });
   }
   function drawLayers(ctx,player,opened,actors){
