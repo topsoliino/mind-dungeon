@@ -15,6 +15,7 @@ bpy.context.preferences.filepaths.save_version = 0
 scene = bpy.context.scene
 V = Vector
 pi = math.pi
+FACINGS = 32  # 360 degrees, one baked view every 11.25°; runtime blends between views.
 def material(name, color, metal=0):
     m = bpy.data.materials.new(name)
     m.diffuse_color = (*color, 1)
@@ -265,10 +266,12 @@ for kit in ('sabre','bow'):
                 coords=[v.co.copy() for v in mesh.vertices]
                 polys=[tuple(f.vertices) for f in mesh.polygons]
                 ids=[mats.index(mesh.materials[f.material_index].original) for f in mesh.polygons]
-                for row in range(8):
-                    # Row zero faces the camera, row two faces screen-right.
-                    transform=view@rotation(z=row*pi/4)
-                    origin=V(((i+.5-count/2)*cell,(3.5-row)*cell-.265*cell,0))
+                for row in range(FACINGS):
+                    # Row zero faces the camera. A quarter-turn is FACINGS/4.
+                    # Every row is a different evaluated 3D model, never a
+                    # flat 2D sprite rotation.
+                    transform=view@rotation(z=row*2*pi/FACINGS)
+                    origin=V(((i+.5-count/2)*cell,(FACINGS/2-.5-row)*cell-.265*cell,0))
                     offset=len(verts);verts.extend(transform@v+origin for v in coords)
                     faces.extend(tuple(offset+j for j in poly) for poly in polys);indices.extend(ids)
                 ev.to_mesh_clear()
@@ -276,8 +279,8 @@ for kit in ('sabre','bow'):
         for m in mats:data.materials.append(m)
         data.polygons.foreach_set('material_index',indices)
         batch=bpy.data.objects.new('Pose batch',data);scene.collection.objects.link(batch)
-        scene.render.resolution_x=count*96;scene.render.resolution_y=8*96
-        camdata.ortho_scale=max(count,8)*cell
+        scene.render.resolution_x=count*96;scene.render.resolution_y=FACINGS*96
+        camdata.ortho_scale=max(count,FACINGS)*cell
         scene.render.filepath=str(out/(kit+'-'+clip+'.webp'))
         bpy.ops.render.render(write_still=True)
         bpy.data.objects.remove(batch,do_unlink=True);bpy.data.meshes.remove(data)
