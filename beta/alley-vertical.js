@@ -95,7 +95,7 @@ function pose(connector,up,t){
  const z=HEIGHT*(up?phase:1-phase);
  const x=(from.x+(to.x-from.x)*phase)*48;
  const y=(from.y+(to.y-from.y)*phase)*48;
- return {x,y,z,progress:p,floor:up?(phase>=.97?1:0):(phase<=.03?0:1),
+ return {x,y,z,progress:p,floor:up?(phase>=.97?1:0):(phase>=.97?0:1),
   angle:connector.kind==='ladder'?connector.face:(up?connector.face:connector.face+Math.PI),
   clip:connector.kind==='ladder'?(up?'climb-up':'climb-down'):
    (up?'walk':'walk'),
