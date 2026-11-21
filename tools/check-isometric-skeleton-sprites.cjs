@@ -8,11 +8,11 @@ const source=fs.readFileSync(path.join(__dirname,'../beta/alley-skeleton.js'),'u
 const loaded=[];
 let missing=null;
 class ImageStub {
- constructor(){this.width=576;this.height=3072;}
+ constructor(){this.width=6*128;this.height=32*128;}
  async decode(){
   const key=this.src.match(/skeleton\/([^/]+)\.webp/)[1];
   if(key===missing)throw Error('Missing image fixture');
-  this.width=key.endsWith('idle')?576:960;
+  this.width=key.endsWith('idle')?6*128:10*128;
   loaded.push(key);
  }
 }
@@ -29,10 +29,10 @@ async function run(){
  let sprite=skeleton.sprite(sword,iso,rules);
  assert.equal(sprite.key,'skeleton-sabre-idle');
  assert.equal(sprite.frame,'4-1');
- assert.equal(sprite.w,96);
- assert.equal(sprite.h,96);
- assert.equal(sprite.sx,96);
- assert.equal(sprite.sy,4*96);
+ assert.equal(sprite.w,128);
+ assert.equal(sprite.h,128);
+ assert.equal(sprite.sx,128);
+ assert.equal(sprite.sy,4*128);
  sword.windup=.59;
  sprite=skeleton.sprite(sword,iso,rules);
  assert.equal(sprite.key,'skeleton-sabre-strike');
@@ -45,13 +45,13 @@ async function run(){
  assert.equal(sprite.key,'skeleton-sabre-strike');
  for(let i=0;i<8;i++){
   sword.facing=i*Math.PI/4;
-  assert.equal(skeleton.sprite(sword,iso,rules).sy,((4-4*i+32)%32)*96);
+  assert.equal(skeleton.sprite(sword,iso,rules).sy,((4-4*i+32)%32)*128);
  }
  // 32 independent 3D facings: nearest-view avoids translucent double skeletons.
  sword.facing=Math.PI/64;
  let layers=skeleton.sprites(sword,iso,rules);
  assert.equal(layers.length,1);
- assert.equal(layers[0].sy,4*96);
+ assert.equal(layers[0].sy,4*128);
  assert.equal(layers[0].alpha,1,'living skeleton must not be a ghost');
  assert(skeleton.sprites({...sword,facing:0},iso,rules).length===1);
  const archer={...sword,skeleton:'bow',type:0,windup:0,runAttack:0,recover:0,moving:true};
@@ -60,7 +60,7 @@ async function run(){
  archer.moving=false;archer.windup=.64;
  assert.equal(skeleton.sprite(archer,iso,rules).key,'skeleton-bow-shoot');
  assert.equal(skeleton.sprite(sword,iso,rules,0).key,'skeleton-sabre-death');
- assert.equal(skeleton.sprite(sword,iso,rules,.90).sx,9*96,'corpse holds final baked collapse');
+ assert.equal(skeleton.sprite(sword,iso,rules,.90).sx,9*128,'corpse holds final baked collapse');
  assert(skeleton.sprite(sword,iso,rules,2.5).alpha<.21,'corpse fades once collapsed');
  const rooms=Array.from({length:10},(_,i)=>({
   kind:'raum',id:i,cells:Array.from({length:4},(_,j)=>[i*5+j%2,j>>1])
