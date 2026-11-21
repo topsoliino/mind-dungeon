@@ -39,7 +39,7 @@ for(let seed=0;seed<expected.length;seed++){
   'seed '+seed+' should exercise a different geometrical stair style');
  const layers=art.verticalLayers();
  assert.equal(layers.length,4);
- assert.deepEqual(layers.map(x=>x.level),[1,0,0,1]);
+ assert.equal(JSON.stringify(layers.map(x=>x.level)),JSON.stringify([1,0,0,1]));
  assert(layers.every(o=>o.image.canvas.width>10&&o.image.canvas.height>10));
  assert(layers.every(o=>o.image.canvas.width<1600&&o.image.canvas.height<1600));
  const fakeScene={textures:{addCanvas:()=>({refresh:noop})},
@@ -58,9 +58,9 @@ for(let seed=0;seed<expected.length;seed++){
  const lower=view(0),upper=view(1),
   ascent=view(0,{up:true,age:3.65,duration:4}),
   descent=view(1,{up:false,age:1.1,duration:4});
- assert.deepEqual(lower.map(o=>o.visible),[false,true,true,false],
+ assert.equal(JSON.stringify(lower.map(o=>o.visible)),JSON.stringify([false,true,true,false]),
   'upper stairs/floor/ornaments must not leak into the first story');
- assert.deepEqual(upper.map(o=>o.visible),[true,true,true,true]);
+ assert.equal(JSON.stringify(upper.map(o=>o.visible)),JSON.stringify([true,true,true,true]));
  assert(ascent[0].visible&&ascent[0].alpha>0&&ascent[0].alpha<1);
  assert(!descent[0].visible&&!descent[3].visible);
  assert.equal(lower[1].depth,upper[1].depth,
