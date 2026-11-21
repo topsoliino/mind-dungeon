@@ -13,6 +13,7 @@ on:
       - beta/index.html
       - tools/check-isometric-ladder-contact.cjs
       - tools/check-isometric-upper-floor-clicks.cjs
+      - tools/check-isometric-stair-click-intent.cjs
       - tools/check-isometric-vertical.cjs
       - tools/check-isometric-stair-render.cjs
       - tools/check-isometric-stair-exits.cjs
