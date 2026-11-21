@@ -151,7 +151,9 @@ function controller({plan,state,nav,length,speeds,curving}){
   }
   // Finish when the intended motion reaches the full-width landing portal.
   // A held movement key works even when the boundary collider stops the actor.
-  if(ride.traveled>.04){
+  // A click back to the floor directly beneath the entrance must also work
+  // before the hero has moved a step; no roll or invisible detour required.
+  if(ride.traveled>.04||ride.exitTarget!==null){
    const portal=gates.find(gate=>atExit(ride,gate,dx,dy,manual));
    if(portal){
     state.floor=portal.floor;state.z=portal.floor?H:0;
