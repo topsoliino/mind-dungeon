@@ -2992,7 +2992,8 @@ $('#xpnum').textContent=String(save.xp).replace('.',',')+'/'+xpRequired()+' XP';
 if(alley){
  $('#zone').textContent=alley.zoneAt(player);
  $('#progress').textContent=generationMode?
-  'Greybox · '+window.AlleyGenerator.metadata.rooms+' Räume · '+(alleyVertical?.state.floor?'Obergeschoss':'Erdgeschoss')+' · Seed '+window.AlleyGenerator.seed:
+  'Greybox · '+window.AlleyGenerator.metadata.rooms+' Räume · '+(alleyVertical?.state.floor?'Obergeschoss':'Erdgeschoss')+
+  ' · '+window.AlleyGenerator.metadata.stairTitle+' · Seed '+window.AlleyGenerator.seed:
   save.isoLabDone?'Route geschafft · Protokoll gesichert':
   (alley.archiveUnlocked()?'Labor betreten und Versuch abschließen':'Archiv finden · Wissenssiegel öffnen');
  const hint=generationMode?'Rechtsklick auf Boden: nach unten über Treppe · Türkis: Aufgang zum Obergeschoss · Violett: offene U-Unterführung (Strg) · WASD: Rennen/Steuern · E: Einstieg/Stopp':
