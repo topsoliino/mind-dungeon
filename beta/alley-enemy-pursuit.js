@@ -55,8 +55,11 @@ window.AlleyEnemyPursuit=(()=>{
    }else e.alleyStuck=0;
    return true;
   }
-  function getPortal(e,targetFloor,target){
+  function getPortal(e,targetFloor,target,now){
    const from=ownFloor(e);
+   const memo=e.alleyPortalMemo;
+   if(memo&&memo.from===from&&memo.to===targetFloor&&now<memo.until)
+    return memo.choice;
    const choices=portals.map(connector=>{
     const entry=from===0?connector.bottom:connector.top,
      exit=from===0?connector.top:connector.bottom,
@@ -65,7 +68,11 @@ window.AlleyEnemyPursuit=(()=>{
     return {connector,entry:goal,exit:{x:exit.x*48,y:exit.y*48},
      route,cost:d(e,goal)+d(exit,target)};
    }).filter(q=>q.route).sort((a,b)=>a.cost-b.cost);
-   return choices[0]||null;
+   const choice=choices[0]||null;
+   // A* is relatively expensive; choose a connector roughly once/second,
+   // not two full path searches per enemy and every rendered frame.
+   e.alleyPortalMemo={from,to:targetFloor,choice,until:now+1.2};
+   return choice;
   }
   function climb(e,dt){
    const ride=e.alleyClimb;
@@ -143,7 +150,7 @@ window.AlleyEnemyPursuit=(()=>{
    if(ownFloor(e)!==target.floor){
     // Traverse the same physical connectors as the player, rather than
     // moving vertically through a ceiling at identical XY coordinates.
-    const portal=getPortal(e,target.floor,target);
+    const portal=getPortal(e,target.floor,target,now);
     if(!portal){
      e.alleyMode='return';
      if(returning){e.alleyMode='guard';e.alleyLastSeen=null;}
