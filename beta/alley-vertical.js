@@ -131,8 +131,15 @@ function walkStairs(progress){
   const d=lengths[i],a=stairPath[i],b=stairPath[i+1];
   if(left>d&&i<lengths.length-1){left-=d;continue;}
   const t=clamp(left/Math.max(d,.0001));
-  return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,
-   face:Math.atan2(b.y-a.y,b.x-a.x)};
+  const heading=(p,q)=>Math.atan2(q.y-p.y,q.x-p.x);
+  const blend=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*smooth(t);
+  let face=heading(a,b);
+  // Turn the torso over the landing instead of snapping its orientation at
+  // the exact corner. The geometry remains fixed; only the facing blends.
+  if(t<.2&&i>0)face=blend(heading(stairPath[i-1],a),face,.5+.5*t/.2);
+  else if(t>.8&&i<lengths.length-1)
+   face=blend(face,heading(b,stairPath[i+2]),.5*(t-.8)/.2);
+  return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,face};
  }
  return {...stairPath.at(-1),face:stairsConnector.face};
 }
