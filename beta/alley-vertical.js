@@ -60,7 +60,11 @@ function placeLadder(plan){
   for(const [u,v] of chamber.cells)for(const dir of directions){
    const cell=key(u,v),wall=key(u+dir.dx,v+dir.dy);
    if(openings.has(cell)||buildingCells.has(wall))continue;
-   const bottom={x:u+.5,y:v+.5},top={x:bottom.x-dir.dx,y:bottom.y-dir.dy};
+   // The top-out must be radius-safe INSIDE the adjacent upper-floor cell,
+   // but as close to the hatch lip as possible (not the distant tile centre).
+   const bottom={x:u+.5,y:v+.5},top={
+    x:bottom.x-dir.dx*.89,y:bottom.y-dir.dy*.89
+   };
    if(buildingCells.get(tile(top))!==chamber||!parent.has(tile(top))||
     generator.blocked(bottom.x,bottom.y,.3))continue;
    const preferred=(directions.indexOf(dir)+generator.seed)%4===0?1:0;
@@ -88,6 +92,25 @@ function placeLadder(plan){
 }
 const plan=grammar.select(generator,placeLadder),room=plan.room;
 const ladder=plan.ladder,upper=plan.upper;
+// Share ONE wall-space reference for ladder artwork and player root motion.
+// The wall rails sit .38 of a cell outward from the ladder-cell centre.
+// The Blender wrists reach a rail 0.36 model-units in front of the body:
+// a root .30 cells inside the wall keeps the hands on the visible rungs.
+const ladderWall={
+ x:ladder.cell[0]+.5+ladder.dx*.38,
+ y:ladder.cell[1]+.5+ladder.dy*.38
+};
+const ladderContact={
+ wall:ladderWall,
+ climb:{x:ladderWall.x-ladder.dx*.30,y:ladderWall.y-ladder.dy*.30},
+ rails:ladder.dx?[
+  {x:ladderWall.x,y:ladder.cell[1]+.24},
+  {x:ladderWall.x,y:ladder.cell[1]+.76}
+ ]:[
+  {x:ladder.cell[0]+.24,y:ladderWall.y},
+  {x:ladder.cell[0]+.76,y:ladderWall.y}
+ ]
+};
 const occupied=new Set(room.cells.map(p=>key(...p)));
 const contains=(u,v)=>occupied.has(key(Math.floor(u),Math.floor(v)));
 const stairs=generator.stairs[0];
@@ -208,17 +231,36 @@ function walkStairs(progress){
 }
 function pose(connector,up,t){
  const p=clamp(t),phase=smooth(clamp((p-.09)/.82));
- let current;
+ let current,travel=phase;
  if(connector.kind==='stairs'){
   current=walkStairs(up?phase:1-phase);
  }else{
   const from=up?connector.bottom:connector.top,to=up?connector.top:connector.bottom;
-  current={x:from.x+(to.x-from.x)*phase,y:from.y+(to.y-from.y)*phase,
-   z:HEIGHT*(up?phase:1-phase),face:connector.face};
+  const contact=ladderContact.climb;
+  // Do not lerp XY between bottom and top for the WHOLE climb: that makes
+  // the guardian drift diagonally away from the fixed wall-mounted ladder.
+  // The first/last 15% is a physical approach/top-out; the middle 70%
+  // climbs strictly in place on the rail contact line.
+  const mount=smooth(clamp(p/.15)),stepOff=smooth(clamp((p-.85)/.15));
+  travel=smooth(clamp((p-.15)/.70));
+  let x,y;
+  if(p<.15){
+   x=from.x+(contact.x-from.x)*mount;
+   y=from.y+(contact.y-from.y)*mount;
+  }else if(p<=.85){
+   x=contact.x;y=contact.y;
+  }else{
+   x=contact.x+(to.x-contact.x)*stepOff;
+   y=contact.y+(to.y-contact.y)*stepOff;
+  }
+  const z=HEIGHT*(up?travel:1-travel);
+  // Step backward away from the wall only after releasing both hands.
+  const exitTurn=smooth(clamp((p-.88)/.12));
+  current={x,y,z,face:connector.face+Math.PI*exitTurn};
  }
  return {x:current.x*48,y:current.y*48,z:current.z,progress:p,
-  floor:up?(phase>=.97?1:0):(phase>=.97?0:1),
-  angle:connector.kind==='ladder'?connector.face:
+  floor:up?(travel>=.97?1:0):(travel>=.97?0:1),
+  angle:connector.kind==='ladder'?current.face:
    current.face+(up?0:Math.PI),
   clip:connector.kind==='ladder'?(up?'climb-up':'climb-down'):'walk',
   landing:p>.82?clamp((p-.82)/.18):0};
@@ -351,10 +393,8 @@ function createLayers({project,polygon,line,cacheObject}){
   [cell[0]-.12,cell[1]+.15,cell[0]+1.12,cell[1]+.85];
  const ladderImage=cacheObject(ladderArea,HEIGHT+52,ctx=>{
   const [u,v]=cell;
-  const along=ladder.dx?[[u+(ladder.dx>0?1-.12:.12),v+.24],
-   [u+(ladder.dx>0?1-.12:.12),v+.76]]:
-   [[u+.24,v+(ladder.dy>0?1-.12:.12)],
-    [u+.76,v+(ladder.dy>0?1-.12:.12)]];
+  // Exactly the same rail coordinates as used to anchor the climber.
+  const along=ladderContact.rails.map(p=>[p.x,p.y]);
   for(const rail of along){
    line(ctx,[project(...rail,-4),project(...rail,HEIGHT+20)],'#2c2d3a',8);
    line(ctx,[project(...rail,-4),project(...rail,HEIGHT+20)],'#ad895d',4);
@@ -420,7 +460,7 @@ const aimStairs=part=>stairController.aim(part);
 const tryEnterStairs=(actor,dx,dy)=>stairController.enter(actor,dx,dy);
 const advanceStairs=(actor,dt,speed,dx=0,dy=0,options=null)=>
  stairController.advance(actor,dt,speed,dx,dy,options);
-const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
+const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,ladderContact,upper,
  connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
  navigation,
  overStair,blocksGround,blocksTop,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
