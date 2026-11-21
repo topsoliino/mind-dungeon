@@ -126,6 +126,14 @@ function updateEnemy(e,dt){
   }
   return;
  }
+ // Archers should not stand immobile while a swordsman closes the gap.
+ // Reposition only after the shot, not during the telegraphed draw/release.
+ if(e.skeleton==='bow'&&clear&&d<115&&e.attack>0){
+  const backward=Math.atan2(e.y-player.y,e.x-player.x);
+  const pace=Math.min((spec.speed+(e.boss?7:0))*dt*.85,Math.max(0,150-d));
+  moveEnemy(e,Math.cos(backward)*pace,Math.sin(backward)*pace);
+  return;
+ }
  if(nearActor(e,player,1)||clear&&(spec.id==='bow'||spec.id==='crossbow')&&d<spec.range*.72)return;
  const speed=(spec.speed+(e.boss?7:0))*(1+.075*(save.floor-1));
  pursue(e,dt,speed,clear);
