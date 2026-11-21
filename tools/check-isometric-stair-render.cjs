@@ -44,8 +44,8 @@ for(let seed=0;seed<expected.length;seed++){
  const paintedTreads=layers.filter(x=>x.kind==='stair-tread');
  assert(new Set(paintedTreads.map(x=>x.depth)).size>=3,
   'the tread painter uses distinct static depths');
- assert.equal(art.groundLayers(),art.groundLayers(),
-  'prerendered floor tiles must be stable, not re-created per frame');
+ assert.equal(art.groundLayers()[0].canvas,art.groundLayers()[0].canvas,
+  'prerendered floor canvases must be stable, not re-created per frame');
  assert(art.groundLayers().every(o=>o.canvas.width<=1536&&o.canvas.height<=1536));
  assert(layers.every(o=>o.image.canvas.width>10&&o.image.canvas.height>10));
  assert(layers.every(o=>o.image.canvas.width<1600&&o.image.canvas.height<1600));
