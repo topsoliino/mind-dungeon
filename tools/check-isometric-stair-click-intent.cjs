@@ -51,6 +51,16 @@ for(const kind of ['switchback','curved']){
  mouse.x=top.center.x;mouse.y=top.center.y;
  assert(ui.approachClickStairs(),'the upstairs exit marker must be clickable');
  assert.equal(vertical.state.stairRide.exitTarget,1,'marker targets upstairs');
+ // The exact same sprint clip, not the old forced stair-walk clip, must run
+ // while the guardian is actually on the stair surface.
+ const pose=new Function('alleyVertical','player','alleySneaking',
+  'alleyGaitBlend','alleyGait','frame','alleyHit','alleyChest','alleySwing',
+  'heldAttack','consumeMove','combatClock','alleyNextLight',
+  'alleyGaitMode','guardian','alley',`${poseSource}
+ return alleyGuardianPose();`)(vertical,{moving:true,dir:0,moveAngle:0,
+ dash:0},false,1,.32,10,null,null,null,null,null,0,'down','run',
+ {atlas:{knockback:{}}},alley);
+ assert.equal(pose.clip,'sprint','running stairs must use the real sprint rig');
  const ground=iso.toView(alley.spawn.x,alley.spawn.y,0);
  mouse.x=ground.x;mouse.y=ground.y;
  assert(!ui.approachClickStairs(),'floor click must not be misclassified as a tread');
@@ -66,16 +76,6 @@ for(const kind of ['switchback','curved']){
  assert(frames<1600&&vertical.state.floor===0,'must reach the ground portal');
  assert(alley.routeTo(actor,ui.floorGoal.target),
   'the remembered ground click must be reachable after exiting');
- const pose=new Function('alleyVertical','player','alleySneaking',
-  'alleyGaitBlend','alleyGait','frame','alleyHit','alleyChest','alleySwing',
-  'heldAttack','consumeMove','combatClock','alleyNextLight',
-  'alleyGaitMode','guardian','alley',`${poseSource}
- return alleyGuardianPose();`)(vertical,{moving:true,dir:0,moveAngle:0,
- dash:0},false,1,.32,10,null,null,null,null,null,0,'down','run',
- {atlas:{knockback:{}}},alley);
- // Exercise the sprint rig in an active stair ride, not on flat ground.
- assert(pose.clip==='sprint'||pose.clip==='walk',
-  'the active guardian pose must resolve a valid locomotion clip');
  result.push({kind,groundClicks:true,upstairsBeacon:true,frames});
 }
 assert(html.includes('if(aimAlleyStairFloor(screen))return;'),
