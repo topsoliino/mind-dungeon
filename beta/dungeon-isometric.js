@@ -32,6 +32,7 @@
  function create(){
   const scene=window.AlleyStudyMap,art=createArt(),map=scene.logic,route=window.AlleyRoute;
   const procedural=Boolean(window.AlleyGenerator?.enabled);
+  const vertical=procedural&&window.AlleyVertical?.enabled?window.AlleyVertical:null;
   const spawn=unit(map.spawn),chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
   // These are the same ground footprints as the neutral props in the art pass.
   const props=procedural?[]:[
@@ -44,6 +45,7 @@
   const frontAngle=(map.stations.chest.front-1)*Math.PI/4;
   const goal={x:chest.x+Math.cos(frontAngle)*(.43*tile+radius),y:chest.y+Math.sin(frontAngle)*(.43*tile+radius)};
   function walkable(x,y,r=radius,includeProps=true){
+   if(vertical?.state.floor===1&&!vertical.insideTop(x/tile,y/tile,r/tile))return false;
    if(art.blockedGround(x/tile,y/tile,r/tile))return false;
    return !includeProps||props.every(({point,half:[a,b]})=>{
     const dx=Math.max(0,Math.abs(x-point.x)-a*tile),dy=Math.max(0,Math.abs(y-point.y)-b*tile);
@@ -96,6 +98,7 @@
   // Large generated maps are sliced into <=1536px tiles for GPU portability.
   const ground=art.groundLayers();
   const atmosphere=art.overlayLayers();
+  const upperArchitecture=art.verticalLayers();
   const scenery=props.flatMap(({kind,point})=>{
    const {x,y}=toView(point.x,point.y),size=104;
    return (kind==='chest'?[false,true]:[false]).map(completed=>{
@@ -110,7 +113,13 @@
   function layers(player,opened){
    const {x,y}=toView(player.x,player.y);
    const buildings=art.structures(x,y-footOffset).map(({image,depth,alpha})=>({...image,depth:depth+footOffset,alpha}));
-   return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),...atmosphere];
+   const verticalObjects=upperArchitecture.map(part=>{
+    const isDeck=part.kind==='upper-deck';
+    const alpha=isDeck&&vertical?.state.floor===0&&vertical.playerInChamber(player)?.24:1;
+    return {...part.image,depth:part.depth,alpha};
+   });
+   return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),
+    ...verticalObjects,...atmosphere];
   }
   function addLayers(scene,player){
    const images=layers(player,false).map(({canvas,x,y,depth},index)=>{
@@ -143,6 +152,7 @@
   const nearStation=(actor,target)=>Math.hypot(actor.x-target.x,actor.y-target.y)<82&&
    pointBetween(actor,target,(x,y)=>walkable(x,y,0,false));
   return {spawn,chest,archer,knowledge,lab,walkable,clearLine,canInteract,routeTo,cameraOrigin,addLayers,refreshLayers,drawLayers,
+   vertical,
    enemies:{archive:(map.encounter.archive??[]).map(unit),lab:(map.encounter.lab??[]).map(unit)},
    archiveUnlocked:()=>route.isUnlocked(),unlockArchive:()=>route.unlock(),
    zoneAt:actor=>route.areaAt(actor.x/tile,actor.y/tile),
