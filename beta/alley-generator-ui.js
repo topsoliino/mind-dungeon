@@ -39,6 +39,7 @@ function mount({generator:g,player,iso}){
    border:'1px solid #948c8b',borderRadius:'5px',cursor:'pointer'});
  const body=panel.querySelector('#iso-gen-body'),toggle=panel.querySelector('#iso-gen-toggle');
  const title=panel.querySelector('#iso-gen-level');
+ const summaries=[panel.children[1],panel.children[2]];
  const compact=()=>window.matchMedia('(pointer:coarse)').matches||
   window.innerWidth<620||new URLSearchParams(window.location.search).get('touch')==='1';
  let mapOpen=true;
@@ -49,6 +50,7 @@ function mount({generator:g,player,iso}){
   panel.classList.toggle('iso-gen-open',open);
   body.style.display=open?'':'none';
   title.style.display=mobile&&!open?'none':'';
+  for(const node of summaries)node.style.display=mobile&&!open?'none':'';
   toggle.textContent=open?'Karte −':mobile?'▤ Karte':'Karte +';
   toggle.setAttribute('aria-expanded',String(open));
   toggle.setAttribute('aria-label',open?'Generator-Karte schließen':'Generator-Karte öffnen');
