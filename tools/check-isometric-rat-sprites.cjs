@@ -6,11 +6,11 @@ const source=fs.readFileSync('beta/alley-rat.js','utf8');
 const loaded=[];
 let missing=null;
 class ImageStub {
- constructor(){this.height=32*96;this.width=96*10;}
+ constructor(){this.height=32*128;this.width=128*10;}
  async decode(){
   const clip=this.src.match(/rat\/([^/]+)\.webp/)[1];
   if(clip===missing)throw Error('Missing fixture');
-  this.width=96*({idle:8,run:10,stalk:10,jump:12,bite:9,combo:14,
+  this.width=128*({idle:8,run:10,stalk:10,jump:12,bite:9,combo:14,
    dodge:10,'dodge-left':10,death:14})[clip];
   loaded.push(clip);
  }
@@ -28,7 +28,7 @@ async function test(){
  const e={type:13,x:100,y:120,phase:.1,angle:0,moving:false,size:.86,hit:0,
   windup:0,runAttack:0,recover:0};
  assert.equal(rat.sprite(e,iso,rules).key,'rat-idle');
- assert.equal(rat.sprite(e,iso,rules).width,103*.86,'larger rat silhouette');
+ assert.equal(rat.sprite(e,iso,rules).width,128*.86,'larger rat silhouette');
  e.moving=true;e.ratStalking=true;
  assert.equal(rat.sprite(e,iso,rules).key,'rat-stalk');
  e.ratStalking=false;
@@ -46,17 +46,17 @@ async function test(){
  assert.equal(rat.sprite(e,iso,rules).key,'rat-dodge-left');
  e.ratMotion=null;
  assert.equal(rat.sprite(e,iso,rules,0).key,'rat-death');
- assert.equal(rat.sprite(e,iso,rules,1.2).sx,13*96);
+ assert.equal(rat.sprite(e,iso,rules,1.2).sx,13*128);
  assert(rat.sprite(e,iso,rules,2.55).alpha<.1);
  assert.equal(rat.sprite({...e,type:14},iso,rules),null);
  for(let i=0;i<8;i++){
   e.facing=i*Math.PI/4;
-  assert.equal(rat.sprite(e,iso,rules).sy,((4-i*4+32)%32)*96);
+  assert.equal(rat.sprite(e,iso,rules).sy,((4-i*4+32)%32)*128);
  }
  e.facing=Math.PI/64;
  let pair=rat.sprites(e,iso,rules);
- assert.equal(pair.length,2);
- assert(Math.abs(pair[0].alpha+pair[1].alpha-1)<1e-8);
+ assert.equal(pair.length,1,'rat must no longer render two translucent models');
+ assert.equal(pair[0].alpha,1,'living rat should be fully opaque');
  const rooms=Array.from({length:10},(_,i)=>({id:i,kind:'raum',cells:[
   [i*6,1],[i*6+1,1],[i*6,2],[i*6+1,2]]}));
  const floor={spawn:{x:24,y:24},walkable:()=>true,routeTo:()=>({steps:[]})};
@@ -68,6 +68,6 @@ async function test(){
  await rat.load();
  assert.equal(loaded.length,8);
  assert(warnings.some(msg=>msg.includes('combo')));
- console.log('Rat browser adapter: 9 clips, 32 facings, interpolation, combat and procedural spawns OK');
+ console.log('Rat browser adapter: 9 clips, 32 fully opaque facings, combat and procedural spawns OK');
 }
 test().catch(err=>{console.error(err);process.exitCode=1;});
