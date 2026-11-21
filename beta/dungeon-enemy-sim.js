@@ -93,17 +93,17 @@ function updateEnemy(e,dt){
  if(e.type===RAT){
   e.ratJumpCooldown=Math.max(0,(e.ratJumpCooldown||0)-dt);
   e.ratDodgeCooldown=Math.max(0,(e.ratDodgeCooldown||0)-dt);
-  e.ratStalking=clear&&d>=105&&d<=225;
-  // Independent, collision-aware locomotion actions: forward leap or strafe.
-  if(e.ratMotion&&e.ratMotion.time>0){
-   const motion=e.ratMotion;
-   const direction=motion.name==='jump'?motion.angle:motion.angle+Math.PI*.5*(motion.name==='dodge-left'?-1:1);
-   const speed=motion.name==='jump'?185:158;
-   const remaining=Math.min(dt,motion.time);
-   moveEnemy(e,Math.cos(direction)*speed*remaining,Math.sin(direction)*speed*remaining);
-   e.facing=motion.angle; // keep the head on the hero while strafing
+  e.ratStalking=false;
+  // Travel only through moveActor: no jumps through room collision.
+  if(e.ratMotion?.time>0){
+   const motion=e.ratMotion,side=motion.name==='dodge-left'?-1:1;
+   const direction=motion.name==='jump'?motion.angle:
+    motion.angle+side*Math.PI*.5;
+   const step=(motion.speed??158)*Math.min(dt,motion.time);
+   moveEnemy(e,Math.cos(direction)*step,Math.sin(direction)*step);
+   e.facing=motion.name==='jump'?motion.angle:angle;
    motion.time=Math.max(0,motion.time-dt);
-   if(motion.time===0)e.ratMotion=null;
+   if(!motion.time)e.ratMotion=null;
    return;
   }
  }
@@ -127,7 +127,10 @@ function updateEnemy(e,dt){
     }
    }
    e.runAttack=Math.max(0,e.runAttack-dt);
-   if(!e.runAttack)recover(e,spec.recovery);
+   if(!e.runAttack){
+    recover(e,spec.recovery);
+    ratPostAttack(e,angle);
+   }
    return;
   }
   if(spec.id==='charge'||spec.id==='rift'||spec.id==='grab'||spec.id==='bite'||spec.id==='eagle'){advanceRush(e,spec,dt,angle);return;}
@@ -155,22 +158,9 @@ function updateEnemy(e,dt){
   return;
  }
  if(!e.aggro)return;
- if(e.type===RAT&&!e.windup&&!e.recover&&!e.runAttack){
-  // Injury causes a sideways evasive hop, with its own 3D animation and cooldown.
-  if(clear&&e.hit>0&&d<170&&e.ratDodgeCooldown<=0){
-   const left=Math.sin(e.x*.07+e.phase*17)>0;
-   e.ratMotion={name:left?'dodge-left':'dodge',time:.32,duration:.32,angle};
-   e.ratDodgeCooldown=2.6;
-   aimEnemy(e,angle);
-   return;
-  }
-  // Leap toward the target but never teleport through walls or obstacles.
-  if(clear&&d>90&&d<150&&e.ratJumpCooldown<=0){
-   e.ratMotion={name:'jump',time:.43,duration:.43,angle};
-   e.ratJumpCooldown=3.3;
-   aimEnemy(e,angle);
-   return;
-  }
+ if(e.type===RAT){
+  updateRat(e,dt,spec,d,angle,clear);
+  return;
  }
  if(clear&&e.attack<=0&&d<(e.skeleton==='sabre'?60:spec.range)&&(e.type!==SNAKE||!furnitureBlocked((e.x+player.x)/2,(e.y+player.y)/2,8))){
   e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
@@ -193,6 +183,122 @@ function updateEnemy(e,dt){
  const speed=(spec.speed+(e.boss?7:0))*(1+.075*(save.floor-1));
  pursue(e,dt,speed,clear);
 }
+
+// Cautious animal AI: preferred distance, orbiting, hesitation, short
+// commitment to a bite, and a variable retreat after each completed attack.
+const ratRoll=()=>Math.max(0,Math.min(.999999,rand(0,1)));
+function ratState(e,name,min,max=min){
+ e.ratState=name;e.ratStateTime=min+(max-min)*ratRoll();
+}
+function ratWalk(e,heading,speed,dt,look=heading){
+ const x=e.x,y=e.y;
+ moveEnemy(e,Math.cos(heading)*speed*dt,Math.sin(heading)*speed*dt);
+ aimEnemy(e,look);
+ return Math.hypot(e.x-x,e.y-y)>1;
+}
+function ratHop(e,name,angle,speed,duration,next='watch'){
+ e.ratMotion={name,time:duration,duration,angle,speed};
+ ratState(e,next,.34,.82);
+}
+function ratPostAttack(e,angle){
+ // A bite never triggers an immediate second attack outside the actual
+ // two-contact combo window; the cooldown continues during the retreat.
+ const choice=ratRoll();
+ if(choice<.44){
+  ratHop(e,'jump',angle+Math.PI,175,.28,'watch');
+ }else if(choice<.71){
+  ratState(e,'withdraw',.34,.62);
+ }else if(choice<.89){
+  const name=ratRoll()<.5?'dodge-left':'dodge';
+  ratHop(e,name,angle,165,.28,'circle');
+  e.ratCircleSign=name==='dodge-left'?-1:1;
+ }else ratState(e,'watch',.42,.84);
+ e.ratJumpCooldown=Math.max(e.ratJumpCooldown||0,1.1);
+}
+function updateRat(e,dt,spec,d,angle,clear){
+ if(!Number.isFinite(e.ratPreferred))
+  e.ratPreferred=96+36*ratRoll();
+ if(!e.ratState)ratState(e,d<=spec.range+7?'commit':'watch',.18,.55);
+ e.ratStateTime=Math.max(0,(e.ratStateTime||0)-dt);
+ if(!clear){
+  e.ratStalking=e.aggro>0;
+  if(e.aggro>0&&d>e.ratPreferred+24)
+   pursue(e,dt,spec.speed*.65,false);
+  return;
+ }
+ aimEnemy(e,angle);
+ if(e.hit>0&&d<170&&e.ratDodgeCooldown<=0){
+  ratHop(e,ratRoll()<.5?'dodge-left':'dodge',angle,160,.29,'watch');
+  e.ratDodgeCooldown=2.5;
+  return;
+ }
+ // An opening hop stops near the standoff ring, rather than at the player.
+ if(d>105&&d<155&&e.ratJumpCooldown<=0&&!e.ratDidOpeningHop){
+  const duration=.32;
+  const speed=Math.max(60,Math.min(155,(d-e.ratPreferred*.92)/duration));
+  ratHop(e,'jump',angle,speed,duration,'watch');
+  e.ratDidOpeningHop=true;e.ratJumpCooldown=3.1;return;
+ }
+ if(e.ratState==='commit'){
+  if(e.attack>0){ratState(e,'watch',.26,.60);return;}
+  if(d<=spec.range+7){
+   // Last sniff/anticipation is readable before the charge is committed.
+   if(e.ratStateTime>0)return;
+   e.windup=spec.windup;aimEnemy(e,angle);e.target={x:player.x,y:player.y};
+   ratState(e,'watch',.4,.9);
+   return;
+  }
+  e.ratStalking=d>spec.range+24;
+  ratWalk(e,angle,spec.speed*(d>90?.88:.69),dt);
+  return;
+ }
+ if(e.ratState==='withdraw'){
+  if(d<e.ratPreferred+12)
+   ratWalk(e,angle+Math.PI,spec.speed*.81,dt,angle);
+  if(e.ratStateTime<=0||d>e.ratPreferred+24)
+   ratState(e,'watch',.22,.7);
+  return;
+ }
+ if(e.ratState==='circle'){
+  const side=e.ratCircleSign||1;
+  const correction=d<e.ratPreferred-18?-.44:d>e.ratPreferred+18?.27:0;
+  ratWalk(e,angle+side*(Math.PI*.5+correction),
+   spec.speed*.51,dt,angle);
+  if(e.ratStateTime<=0)ratState(e,'watch',.24,.72);
+  return;
+ }
+ if(e.ratState==='stalk'){
+  e.ratStalking=true;
+  if(d>e.ratPreferred+5)ratWalk(e,angle,spec.speed*.54,dt);
+  if(d<=e.ratPreferred+5||e.ratStateTime<=0)
+   ratState(e,'watch',.3,.83);
+  return;
+ }
+ // Hold distance instead of running permanently to d=0.
+ if(d<e.ratPreferred-25&&e.attack>0)
+  ratWalk(e,angle+Math.PI,spec.speed*.46,dt,angle);
+ else if(d>e.ratPreferred+62){
+  e.ratStalking=true;
+  pursue(e,dt,spec.speed*.76,clear);
+ }else if(d>e.ratPreferred+18){
+  e.ratStalking=true;
+  ratWalk(e,angle,spec.speed*.43,dt);
+ }
+ if(e.ratStateTime>0)return;
+ if(e.attack<=0&&d<spec.range+8){
+  ratState(e,'commit',.10,.24);return;
+ }
+ const choice=ratRoll();
+ if(e.attack<=0&&d<e.ratPreferred+26&&choice<.35){
+  ratState(e,'commit',.08,.3);
+ }else if(choice<.69){
+  e.ratCircleSign=ratRoll()<.5?-1:1;
+  ratState(e,'circle',.30,.85);
+ }else if(choice<.86&&d>e.ratPreferred){
+  ratState(e,'stalk',.35,.9);
+ }else ratState(e,'watch',.24,.9);
+}
+
 function updateOrc(e,dt,sameLayer=true){
  const spec=enemyRules.attacks[e.type];
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
