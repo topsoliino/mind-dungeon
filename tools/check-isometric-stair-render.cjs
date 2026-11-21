@@ -38,8 +38,15 @@ for(let seed=0;seed<expected.length;seed++){
  assert.equal(v.plan.kind,expected[seed],
   'seed '+seed+' should exercise a different geometrical stair style');
  const layers=art.verticalLayers();
- assert.equal(layers.length,4);
- assert.equal(JSON.stringify(layers.map(x=>x.level)),JSON.stringify([1,0,0,1]));
+ assert(layers.length>=v.plan.steps.length+3);
+ assert.equal(layers.filter(x=>x.kind==='stair-tread').length,v.plan.steps.length);
+ assert.equal(layers.filter(x=>x.level===1).length,2);
+ const paintedTreads=layers.filter(x=>x.kind==='stair-tread');
+ assert(new Set(paintedTreads.map(x=>x.depth)).size>=3,
+  'the tread painter uses distinct static depths');
+ assert.equal(art.groundLayers(),art.groundLayers(),
+  'prerendered floor tiles must be stable, not re-created per frame');
+ assert(art.groundLayers().every(o=>o.canvas.width<=1536&&o.canvas.height<=1536));
  assert(layers.every(o=>o.image.canvas.width>10&&o.image.canvas.height>10));
  assert(layers.every(o=>o.image.canvas.width<1600&&o.image.canvas.height<1600));
  const fakeScene={textures:{addCanvas:()=>({refresh:noop})},
@@ -48,8 +55,8 @@ for(let seed=0;seed<expected.length;seed++){
    setAlpha(v){this.alpha=v;return this;},
    setVisible(v){this.visible=v;return this;}})}};
  const hero=iso.spawn,all=iso.addLayers(fakeScene,hero),overlays=art.overlayLayers().length;
- const last=all.slice(all.length-overlays-4,all.length-overlays);
- assert.equal(last.length,4);
+ const last=all.slice(all.length-overlays-layers.length,all.length-overlays);
+ assert.equal(last.length,layers.length);
  function view(floor,transition=null){
   v.state.floor=floor;v.state.transition=transition;
   iso.refreshLayers(all,hero,false);
@@ -58,13 +65,13 @@ for(let seed=0;seed<expected.length;seed++){
  const lower=view(0),upper=view(1),
   ascent=view(0,{up:true,age:3.65,duration:4}),
   descent=view(1,{up:false,age:1.1,duration:4});
- assert.equal(JSON.stringify(lower.map(o=>o.visible)),JSON.stringify([false,true,true,false]),
-  'upper stairs/floor/ornaments must not leak into the first story');
- assert.equal(JSON.stringify(upper.map(o=>o.visible)),JSON.stringify([true,true,true,true]));
+ assert(lower.every((o,i)=>o.visible===(layers[i].level===0)),
+  'upper-only geometry must remain invisible downstairs');
+ assert(upper.every(o=>o.visible),'all geometry must appear upstairs');
  assert(ascent[0].visible&&ascent[0].alpha>0&&ascent[0].alpha<1);
- assert(!descent[0].visible&&!descent[3].visible);
+ assert(!descent[0].visible&&!descent.at(-1).visible);
  assert.equal(lower[1].depth,upper[1].depth,
-  'lower staircase foot position must establish a stable depth order');
+  'prerendered first tread keeps a constant painter depth');
  // Show/hide the top layer according to the PHYSICAL progress of the stair
  // rider, never from the separate ladder cutscene timer.
  v.state.transition=null;
@@ -93,4 +100,4 @@ for(let seed=0;seed<expected.length;seed++){
  assert(iso.routeTo(feet(v.plan.top),feet(v.ladder.top)),
   'upper-story stairs and ladder must be connected by actual pathfinding');
 }
-console.log('Eight 3D stair styles render, keep immutable depth, hide upper floor downstairs, and have full two-way reachability.');
+console.log('Eight stair families: individual depth-sorted treads, baked floor tiles, hidden upper floor and two-way routes OK.');
