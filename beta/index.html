@@ -2544,8 +2544,9 @@ function updateAlleyActions(dt){
  if(alleyVertical?.state.stairRide){
   const input=movementInput(),load=equipmentLoad();
   const flatSpeed=player.speed*brewBonus.speed*load.move*
-   mythicArmorMove()*(1.42*.70);
+   mythicArmorMove()*(1.42*.70),beforeX=player.x,beforeY=player.y;
   const result=alleyVertical.advanceStairs(player,dt,flatSpeed,input.x,input.y);
+  if(player.moving)playFootstep(beforeX,beforeY);
   if(result?.completed)tell(result.floor?'Obergeschoss erreicht':'Erdgeschoss erreicht');
  }
  if(alleyVertical?.state.transition){
