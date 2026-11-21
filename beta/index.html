@@ -1788,7 +1788,7 @@ let breakDebris=[];
 let impactBursts=[],heldAttack=null,combatClock=0,consumeMove=null,vault=null;
 function isConsuming(){return Boolean(consumeMove||authorityMode&&consumePose(authorityOwn?.pose));}
 function startAttack(input,canVault=false){
- if(bossIntro()||modalType||paused||alleyVertical?.state.stairRide||alleyVertical?.state.pending||alleyVertical?.state.transition||mdNavigatingToNewCharacter||heroFallProgress()>=0||vault||alleyHit||alleyChest||player.wallRecoil||player.attack>0||player.dash>0||heldAttack||isConsuming()||save.consumeQueue.length)return;
+ if(bossIntro()||modalType||paused||alleyVertical?.state.pending||alleyVertical?.state.transition||mdNavigatingToNewCharacter||heroFallProgress()>=0||vault||alleyHit||alleyChest||player.wallRecoil||player.attack>0||player.dash>0||heldAttack||isConsuming()||save.consumeQueue.length)return;
  const jumping=canVault&&tryVault();
  if(authorityMode){
   if(canVault){
@@ -1957,7 +1957,7 @@ function shockWater(origin,impact,split,amount,owner){
  }
 }
 function canStrike(){
- return !alleyVertical?.state.stairRide&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&Boolean(save.equipment.weapon)&&!paused&&!mdNavigatingToNewCharacter&&
+ return !alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&Boolean(save.equipment.weapon)&&!paused&&!mdNavigatingToNewCharacter&&
   !vault&&!alleyHit&&!alleyChest&&!player.wallRecoil&&player.dash<=0&&!consumeMove&&!save.consumeQueue.length;
 }
 function requestAlleyLight(target=null){
@@ -2420,7 +2420,14 @@ window.addEventListener('keydown',e=>{
  if(e.code==='KeyF'&&!alley)aimMode='keyboard';
  if(alley&&(e.code==='ControlLeft'||e.code==='ControlRight')){
   e.preventDefault();
-  alleySneaking=!alleySneaking;
+  const crouch=!alleySneaking;
+  if(!crouch&&alleyVertical?.state.floor===0&&!alleyVertical?.state.stairRide&&
+   alleyVertical.blocksGround(player.x/48,player.y/48,actorRadius(player)/48,false)){
+   tell('Zu wenig Kopffreiheit zum Aufstehen – zuerst aus der Unterführung kriechen.');
+  }else{
+   alleySneaking=crouch;
+   if(alleyVertical)alleyVertical.state.crouching=crouch;
+  }
  }
  if(alley&&(e.code==='ShiftLeft'||e.code==='ShiftRight')){
   const point=mouseWorld();
@@ -2482,7 +2489,7 @@ window.addEventListener('pointerdown',e=>{
   alleyMove={target:mouseWorld(),steps:null};
   return;
  }
- if(e.pointerType==='mouse'&&e.button===0&&!alleyVertical?.state.stairRide&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
+ if(e.pointerType==='mouse'&&e.button===0&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!modalType&&!paused&&!e.target.closest?.('#hud,#right,#modalWrap,#mobile,button')){
   setControllerPrompts(false);controllerTarget=null;aimMode='mouse';
   if(alley){
    mouse={x:e.clientX,y:e.clientY};
@@ -2547,8 +2554,12 @@ function updateAlleyActions(dt){
  if(alleyVertical?.state.stairRide){
   const rolling=player.dash>0,input=rolling?
    {x:player.dashX,y:player.dashY}:movementInput(),load=equipmentLoad();
+  const actionSpeed=alleySneaking?.45:
+   consumeMove?(consumeMove.it.kind==='food'?items.foodMove:items.potionMove):
+   heldAttack||alleySwing?.64:1.42*.70;
   const flatSpeed=player.speed*brewBonus.speed*load.move*mythicArmorMove()*
-   (rolling?(player.dashSpeed??load.dashSpeed):1.42*.70),beforeX=player.x,beforeY=player.y;
+   (rolling?(player.dashSpeed??load.dashSpeed):actionSpeed),
+   beforeX=player.x,beforeY=player.y;
   const result=alleyVertical.advanceStairs(player,dt,flatSpeed,input.x,input.y,{rolling});
   if(player.moving)playFootstep(beforeX,beforeY);
   if(result?.completed)tell(result.floor?'Obergeschoss erreicht':'Erdgeschoss erreicht');
@@ -4370,13 +4381,6 @@ function drawCanvasCharacter(sprite,actor,lift,fall=null,alpha=1){
  s.restore();
 }
 function alleyGuardianPose(){
- if(alleyVertical?.state.stairRide){
-  const flight=alleyVertical.state.stairRide;
-  if(player.dash>0)return {clip:'roll',progress:1-player.dash/player.dashDuration,
-   angle:Math.atan2(player.dashY,player.dashX),hideWeapon:true};
-  return {clip:player.moving?'walk':'idle',progress:player.moving?flight.gait%1:(frame%1.3)/1.3,
-   angle:player.dir,hideWeapon:true};
- }
  if(alleyVertical?.state.transition){
   const task=alleyVertical.state.transition;
   const ratio=task.age/task.duration;
@@ -4395,6 +4399,12 @@ function alleyGuardianPose(){
  if(consumeMove){
   const clip=consumeMove.it.kind==='food'?'eat':'drink';
   return {clip:player.moving?clip+'-walk':clip,progress:consumeMove.age/consumeMove.length,angle:player.dir,hideWeapon:true};
+ }
+ if(alleyVertical?.state.stairRide){
+  const flight=alleyVertical.state.stairRide;
+  const clip=alleySneaking?(player.moving?'sneak':'crouch-idle'):
+   player.moving?'walk':'idle';
+  return {clip,progress:player.moving?flight.gait%1:(frame%1.3)/1.3,angle:player.dir};
  }
  if(player.moving){
   const clips=['walk','gait-one','gait-two','sprint'];
