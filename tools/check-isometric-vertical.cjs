@@ -97,8 +97,8 @@ for(const style of kinds.keys()){
 const html=read('index.html');
 assert(html.includes('alley-stair-geometry.js?v=3'));
 assert(html.indexOf('alley-stair-geometry.js?v=3')<html.indexOf('alley-stair-navigation.js?v=2'));
-assert(html.indexOf('alley-stair-navigation.js?v=2')<html.indexOf('alley-stair-controller.js?v=2'));
-assert(html.indexOf('alley-stair-controller.js?v=2')<html.indexOf('alley-vertical.js?v=9'));
+assert(html.indexOf('alley-stair-navigation.js?v=2')<html.indexOf('alley-stair-controller.js?v=3'));
+assert(html.indexOf('alley-stair-controller.js?v=3')<html.indexOf('alley-vertical.js?v=9'));
 assert(html.indexOf('alley-vertical.js?v=9')<html.indexOf('alley-study.js?v=10'));
 assert(html.includes('state.floor=task.up?1:0'));
 assert(html.includes("state.z=pose.z"));
