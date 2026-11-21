@@ -26,6 +26,12 @@ async function run(){
    assert(await page.locator(selector).isVisible(),selector+' should be visible during play');
   }
   assert.equal(await page.locator('#dpad').isVisible(),false);
+  assert.equal(await page.locator('#iso-gen-body').isVisible(),false,'generator map must start closed on phones');
+  assert(await page.locator('#iso-gen-toggle').isVisible(),'small map launcher must remain available');
+  await page.locator('#iso-gen-toggle').click();
+  assert(await page.locator('#iso-gen-body').isVisible(),'mobile map can be opened on demand');
+  await page.locator('#iso-gen-toggle').click();
+  assert.equal(await page.locator('#iso-gen-body').isVisible(),false,'map closes before gameplay');
   const rect=await page.locator('#mobile-stick').boundingBox();
   assert(rect.x>=0&&rect.x+rect.width<390,'movement thumb stays on screen');
   const attack=await page.locator('#attack').boundingBox();
