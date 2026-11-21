@@ -5,7 +5,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const read=name=>fs.readFileSync(path.join(__dirname,'../beta',name),'utf8');
 const map=read('alley-study-map.js'),generator=read('alley-generator.js'),
- geometry=read('alley-stair-geometry.js'),vertical=read('alley-vertical.js');
+ geometry=read('alley-stair-geometry.js'),navigation=read('alley-stair-navigation.js'),
+ controller=read('alley-stair-controller.js'),vertical=read('alley-vertical.js');
 const K=(x,y)=>x+','+y,neighbors=[[1,0],[-1,0],[0,1],[0,-1]];
 const within=(room,p)=>room.cells.some(([x,y])=>x===Math.floor(p.x)&&y===Math.floor(p.y));
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -15,7 +16,8 @@ function setup(seed,style=''){
  const window={location:{search:'?szene=gasse&modus=generator&seed='+seed+suffix}};
  const ctx={window,URLSearchParams};
  vm.runInNewContext(map,ctx);vm.runInNewContext(generator,ctx);
- vm.runInNewContext(geometry,ctx);vm.runInNewContext(vertical,ctx);
+ vm.runInNewContext(geometry,ctx);vm.runInNewContext(navigation,ctx);
+ vm.runInNewContext(controller,ctx);vm.runInNewContext(vertical,ctx);
  return window;
 }
 function connected(upper,from,to){
@@ -94,8 +96,10 @@ for(const style of kinds.keys()){
 }
 const html=read('index.html');
 assert(html.includes('alley-stair-geometry.js?v=3'));
-assert(html.indexOf('alley-stair-geometry.js?v=3')<html.indexOf('alley-vertical.js?v=8'));
-assert(html.indexOf('alley-vertical.js?v=8')<html.indexOf('alley-study.js?v=10'));
+assert(html.indexOf('alley-stair-geometry.js?v=3')<html.indexOf('alley-stair-navigation.js?v=2'));
+assert(html.indexOf('alley-stair-navigation.js?v=2')<html.indexOf('alley-stair-controller.js?v=2'));
+assert(html.indexOf('alley-stair-controller.js?v=2')<html.indexOf('alley-vertical.js?v=9'));
+assert(html.indexOf('alley-vertical.js?v=9')<html.indexOf('alley-study.js?v=10'));
 assert(html.includes('state.floor=task.up?1:0'));
 assert(html.includes("state.z=pose.z"));
 console.log('200 levels passed: 8 staircase types, 4 ladder orientations, identical riser heights, connected landings and 2-way rig transitions.');
