@@ -10,14 +10,14 @@ function mount({generator:g,player,iso}){
   boxShadow:'0 8px 28px #050915aa'});
  panel.innerHTML=
   '<div style="display:flex;justify-content:space-between;align-items:center">'+
-  '<strong>GREYBOX · EBENE 1</strong><button id="iso-gen-toggle" aria-expanded="true">Karte −</button></div>'+
+  '<strong id="iso-gen-level">GREYBOX · ERDGESCHOSS</strong><button id="iso-gen-toggle" aria-expanded="true">Karte −</button></div>'+
   '<div style="font-size:11px;color:#bac9d2;margin:6px 0">'+
   g.metadata.rooms+' Räume · '+g.metadata.corridors+' Gänge · '+g.metadata.doors+
-  ' Verbindungen · '+g.stairs.length+' Treppenreserve</div>'+
+  ' Verbindungen · '+g.stairs.length+' Treppe · 1 Leiter</div>'+
   '<div id="iso-gen-body"><canvas id="iso-gen-map" width="576" height="360" '+
   'aria-label="Isometrischer Grundriss und Spielerposition" style="width:100%;height:180px;'+
   'display:block;border:1px solid #75869c66;border-radius:6px;background:#111827"></canvas>'+
-  '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Standort · Gelb = Durchgang · ↑ Treppe</div>'+
+  '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Standort · Gelb = Tür · ↑ Treppe · L Leiter</div>'+
   '<div style="display:flex;gap:5px;align-items:center;margin-top:8px">'+
   '<label for="iso-gen-seed">Seed</label><input id="iso-gen-seed" type="number" min="0" step="1" '+
   'value="'+g.requestedSeed+'" style="width:100%;min-width:0;padding:5px;background:#101725;color:white;'+
@@ -64,12 +64,19 @@ function mount({generator:g,player,iso}){
   if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.3;ctx.stroke();}
  }
  const colors=['#687182','#617d87','#827487','#707e75'];
+ const vertical=window.AlleyVertical;
  function draw(){
   if(body.style.display==='none')return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   for(const [u,v,r,b] of alley)poly(quad(u,v,r,b),'#495461','#8e9da3');
   for(const room of g.rooms.slice(1))
    for(const [u,v] of room.cells)poly(quad(u,v,u+1,v+1),colors[room.id%4]);
+  if(vertical?.enabled&&vertical.state.floor===1){
+   for(const str of vertical.upper){
+    const [u,v]=str.split(',').map(Number);
+    poly(quad(u,v,u+1,v+1),'#528796','#a8e3e7');
+   }
+  }
   for(const wall of g.walls){
    const [u,v,r,b]=wall.area;
    const a=wall.axis==='u'?xy((u+r)/2,v):xy(u,(v+b)/2);
@@ -86,6 +93,15 @@ function mount({generator:g,player,iso}){
    const [u,v,r,b]=stair.area;poly(quad(u,v,r,b),'#437c96','#d2e8f4');
    const p=xy((u+r)/2,(v+b)/2);ctx.font='bold 13px system-ui';ctx.textAlign='center';
    ctx.fillStyle='white';ctx.fillText('↑',p[0],p[1]+5);
+  }
+  if(vertical?.enabled){
+   const at=vertical.ladder.bottom,p=xy(at.x,at.y);
+   ctx.beginPath();ctx.arc(p[0],p[1],6.5,0,Math.PI*2);
+   ctx.fillStyle='#d3ae73';ctx.fill();
+   ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#211a20';
+   ctx.fillText('L',p[0],p[1]+3.7);
+   panel.querySelector('#iso-gen-level').textContent=
+    'GREYBOX · '+(vertical.state.floor?'OBERGESCHOSS':'ERDGESCHOSS');
   }
   const hero=player(),dot=xy(hero.x/48,hero.y/48);
   ctx.beginPath();ctx.arc(dot[0],dot[1],5.6,0,Math.PI*2);ctx.fillStyle='#ed6384';ctx.fill();
