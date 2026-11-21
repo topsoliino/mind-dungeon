@@ -61,6 +61,8 @@ for(let seed=0;seed<16;seed++){
  assert.equal(cursor.alleyUpperFloorTarget(cursor.alleyClickScreen()),null);
  assert.equal(cursor.approachClickStairs(),false);
  v.state.floor=0;v.state.z=0;
+ // Ground-floor beacon test must begin at a real ground-floor position.
+ hero.x=alley.spawn.x;hero.y=alley.spawn.y;
  const beacon=iso.toView(v.plan.top.x*48,v.plan.top.y*48,v.height);
  mouse.x=beacon.x;mouse.y=beacon.y;
  assert(cursor.approachClickStairs(),'ground beacon must remain clickable');
