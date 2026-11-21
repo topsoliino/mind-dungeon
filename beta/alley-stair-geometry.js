@@ -235,7 +235,14 @@ function select(generator,placeLadder){
        dist(model.top,vec(c[0]+.5,c[1]+.5))))):4;
      const old=generator.stairs?.[0]?.roomId===room.id?1:0;
      const variety=((Math.imul(generator.seed+31,(x+53)*17+(y+43)*13+rotation*7)>>>0)%53)/53;
-     const score=Math.min(4,clearance)*2+old*2+variety;
+     // Prefer space around the stair and away from doors: fewer bottlenecks.
+     const free=room.cells.filter(([u,v])=>!blocksCandidate(model,u+.5,v+.5,.29));
+     const freeRatio=free.length/room.cells.length,extraCells=room.cells.length-W*L;
+     const nearTreads=doorCells.length?Math.min(...doorCells.map(([u,v])=>
+      Math.min(...model.steps.filter((_,i)=>i%2===0).map(step=>
+       dist(vec(u+.5,v+.5),step.center))))):5;
+     const score=Math.min(5,clearance)*3+old*1.5+variety+
+      Math.min(35,extraCells)*.55+freeRatio*18+Math.min(3,nearTreads)*3;
      viable.push({...model,room,score});
     }
    }
@@ -285,6 +292,20 @@ function withUpperDeck(chosen){
   const cells=room.cells.filter(([x,y])=>Math.abs(x-topCell[0])+Math.abs(y-topCell[1])===1);
   if(cells.length)upper.add(K(...cells[0]));
  }
+ // A rendered upper deck must have one connected footprint, not loose,
+ // inaccessible islands left behind by the stair-shaft carving.
+ const head=K(Math.floor(chosen.top.x),Math.floor(chosen.top.y));
+ const connected=new Set([head]),queue=[head];
+ for(let i=0;i<queue.length;i++){
+  const [x,y]=queue[i].split(',').map(Number);
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const cell=K(x+dx,y+dy);
+   if(upper.has(cell)&&!connected.has(cell)){
+    connected.add(cell);queue.push(cell);
+   }
+  }
+ }
+ for(const cell of upper)if(!connected.has(cell))upper.delete(cell);
  return {...chosen,upper};
 }
 window.AlleyStairGeometry={height:H,styles,templates:ref,make:buildTemplate,select};
