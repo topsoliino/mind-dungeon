@@ -1,0 +1,37 @@
+name: Rat combat and 32-view Blender atlas regressions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/check-isometric-rat.yml
+      - beta/alley-rat.js
+      - beta/dungeon-enemy-sim.js
+      - beta/index.html
+      - beta/art/rat/**
+      - tools/check-isometric-rat-*.cjs
+      - tools/check-isometric-rat-atlases.py
+
+permissions:
+  contents: read
+
+jobs:
+  rat-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test 3D animation clock and directional blending
+        run: node tools/check-isometric-rat-sprites.cjs
+      - name: Test actual double-bite combat, leap and sideways dodge
+        run: node tools/check-isometric-rat-combat.cjs
+      - name: Preserve existing skeleton combat
+        run: node tools/check-isometric-skeleton.cjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image inspector
+        run: python -m pip install --disable-pip-version-check Pillow
+      - name: Verify saved Blender rig and 32-view rat atlases
+        run: python tools/check-isometric-rat-atlases.py
