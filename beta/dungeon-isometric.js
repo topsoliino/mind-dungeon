@@ -186,12 +186,17 @@
   // Bake both floor navigation graphs during scene loading, with the same
   // walkable/collision function that runtime right-click movement uses.
   if(procedural&&vertical&&typeof route.prewarm==='function'){
-   const originalFloor=vertical.state.floor;
+   const originalFloor=vertical.state.floor,oldCrouch=vertical.state.crouching;
    try{
     for(const floor of [0,1]){
-     vertical.state.floor=floor;route.prewarm(walkable,floor);
+     vertical.state.floor=floor;vertical.state.crouching=false;
+     route.prewarm(walkable,floor);
     }
-   }finally{vertical.state.floor=originalFloor;}
+    vertical.state.floor=0;vertical.state.crouching=true;
+    route.prewarm(walkable,'0-crouch');
+   }finally{
+    vertical.state.floor=originalFloor;vertical.state.crouching=oldCrouch;
+   }
   }
   const knowledge=map.stations.knowledge?unit(map.stations.knowledge.at):spawn;
   const lab=map.stations.lab?unit(map.stations.lab.at):spawn;
