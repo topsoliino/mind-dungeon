@@ -50,11 +50,11 @@ window.AlleyRat=(()=>{
   const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
   const exact=wrap(VIEWS/8-facing*VIEWS/TAU,VIEWS);
   const row=Math.floor(exact);
-  const p=iso.toView(e.x,e.y);
+  const p=iso.toView(e.x,e.y,e.alleyZ||0);
   const alpha=deathAge===null?(e.hit>0?.75:1):clamp((2.6-deathAge)/.55);
   return {image,key:'rat-'+clip,frame:row+'-'+col,sx:col*CELL,sy:row*CELL,
    w:CELL,h:CELL,width:103*(e.size||1),height:103*(e.size||1),
-   x:p.x,y:p.y,depth:p.y,originX:.5,originY:.76,alpha};
+   x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.76,alpha};
  }
  function sprites(e,iso,rules,deathAge=null){
   const base=sprite(e,iso,rules,deathAge);
