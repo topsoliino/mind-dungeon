@@ -51,7 +51,7 @@ async function run(){
   await page.screenshot({path:'mobile-isometric-preview.png'});
   assert(offset.includes('translate(')&&offset!=='translate(-50%,-50%)','stick follows a finger');
   await page.mouse.up();
-  assert.equal(await page.locator('#mobile-stick-thumb').evaluate(e=>e.style.transform),'translate(-50%,-50%)');
+  assert.equal((await page.locator('#mobile-stick-thumb').evaluate(e=>e.style.transform)).replace(/\s+/g,''),'translate(-50%,-50%)');
   await page.locator('#attack').click();
   await page.locator('#mobileRoll').click();
   await page.locator('#mobileSneak').click();
