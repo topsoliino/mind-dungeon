@@ -45,7 +45,9 @@
   const frontAngle=(map.stations.chest.front-1)*Math.PI/4;
   const goal={x:chest.x+Math.cos(frontAngle)*(.43*tile+radius),y:chest.y+Math.sin(frontAngle)*(.43*tile+radius)};
   function walkable(x,y,r=radius,includeProps=true){
-   if(vertical?.state.floor===1&&!vertical.insideTop(x/tile,y/tile,r/tile))return false;
+   // Upper-level physics belongs to its own slab; lower-level partitions must
+   // not turn into invisible obstacles on the mezzanine.
+   if(vertical?.state.floor===1)return vertical.insideTop(x/tile,y/tile,r/tile);
    if(art.blockedGround(x/tile,y/tile,r/tile))return false;
    return !includeProps||props.every(({point,half:[a,b]})=>{
     const dx=Math.max(0,Math.abs(x-point.x)-a*tile),dy=Math.max(0,Math.abs(y-point.y)-b*tile);
