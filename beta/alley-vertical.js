@@ -22,6 +22,7 @@ room.plannedUse='Treppenraum';
 const directions=[{id:'north',dx:0,dy:-1},{id:'west',dx:-1,dy:0},
  {id:'east',dx:1,dy:0},{id:'south',dx:0,dy:1}];
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const norm=(x,y)=>{const length=Math.hypot(x,y)||1;return {x:x/length,y:y/length};};
 const candidates=[];
 for(const [u,v] of room.cells){
  for(const dir of directions){
