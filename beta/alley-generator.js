@@ -286,7 +286,7 @@ function renderFloor(ctx,{project,polygon,line}){
   polygon(ctx,[project(u-du,v-dv),project(u+du,v-dv),project(u+du,v+dv),project(u-du,v+dv)],
    '#ad9b8a87','#dcc8aa');
  }
- if(stairs){
+ if(stairs&&!window.AlleyVertical?.enabled){
   const [u,v,r,b]=stairs.area;
   polygon(ctx,[project(u,v),project(r,v),project(r,b),project(u,b)],'#4d5368','#b5b9c6');
   for(let i=0;i<7;i++){

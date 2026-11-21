@@ -83,6 +83,7 @@
  }
  const facadeArt=window.AlleyArchitecture.create({project,polygon,line});
  const route=window.AlleyRoute??null;
+ const vertical=generatorMode?window.AlleyVertical:null;
  const stone={
   basalt:{pitch:[.47,.29],colors:['#4e5363','#565c6e','#5d6272','#494e5f','#626674','#535565'],edge:'#7e849388'},
   court:{pitch:[.42,.43],colors:['#626577','#6e6e80','#7e7886','#696878','#737184'],edge:'#a69baa9c'},
@@ -261,6 +262,7 @@
   });
   const roomWalls=renderWalls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>route.renderWall(ctx,wall,routePainter))}));
   const labSeal=route?.seal?cacheObject(route.seal,88,ctx=>route.renderSeal(ctx,routePainter)):null;
+  const verticalImages=vertical?.enabled?vertical.createLayers({...routePainter,cacheObject}):[];
   const artListeners=[],chunkCache=[];
   const redrawImage=(image,draw)=>{
    const ctx=image.canvas.getContext('2d');
@@ -448,6 +450,7 @@
   return {spawn:position(...spawn),stations:Object.fromEntries(Object.entries(stations).map(([key,{at,front}])=>[key,{...position(...at),front}])),
    barrel:position(...barrel),waypoints:waypoints.map(point=>position(...point)),
    blocked,blockedGround,clearSegment,drawGround,drawProp,architecture,drawOverlays,drawLogic,structures,
+   verticalLayers:()=>verticalImages,
    groundLayers:()=>{
     const layers=[underlay,floor,detail,bitmap(ctx=>drawGroundLight(ctx,0))];
     return generatorMode?layers.flatMap((canvas,i)=>chunks(canvas,-4+i)):
