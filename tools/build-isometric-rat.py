@@ -145,7 +145,7 @@ for i in range(6):
 # Each strand/tuft is a real weighted Blender mesh, not a painted 2D overlay.
 def triangle(name,bone,points,material):
     mesh=bpy.data.meshes.new(name)
-    mesh.from_pydata(points, [], [(0,1,2),(2,1,0)])
+    mesh.from_pydata(points, [], [(0,1,2)])
     mesh.update()
     o=bpy.data.objects.new(name,mesh)
     scene.collection.objects.link(o)
@@ -204,7 +204,7 @@ for sign in (-1,1):
 for row in range(10):
     y=-.29+row*.108
     width=.15+.12*max(0,1-abs(y-.07)/.61)
-    height=.58+.045*math.cos((y-.12)*2.5)
+    height=.714+.03*math.cos((y-.12)*2.5)
     for col in range(7):
         t=(col-3)/3
         x=t*width
@@ -234,21 +234,21 @@ for i in range(6):
 # This provides a strong visual identity without obscuring rat anatomy.
 for side in (-1,1):
     rod("Back harness strap","Root",
-        (side*.241,-.13,.49),(side*.232,.17,.51),.027,hide,.023)
+        (side*.241,-.13,.58),(side*.232,.17,.585),.027,hide,.023)
     oval("Harness brass eyelet","Root",
-         (side*.230,-.105,.514),(.024,.019,.018),brass)
+         (side*.230,-.105,.614),(.024,.019,.018),brass)
 rod("Harness dorsal cross strap","Root",
-    (-.243,-.035,.540),(.243,-.035,.540),.025,hide,.025)
-oval("Harness centre buckle","Root",(0,-.055,.616),
+    (-.243,-.035,.712),(.243,-.035,.712),.025,hide,.025)
+oval("Harness centre buckle","Root",(0,-.055,.745),
      (.054,.028,.020),brass,16)
 # Small torn cloth panel that makes the silhouette identifiable in combat.
 triangle("Red scrap shoulder fabric","Root",[
-    (-.105,-.14,.605),(.115,-.16,.605),
-    (.030,.17,.673)
+    (-.105,-.14,.725),(.115,-.16,.725),
+    (.030,.17,.755)
 ],patch)
 triangle("Scrap torn trailing hem","Root",[
-    (-.07,.19,.641),(.086,.18,.653),
-    (-.057,.38,.599)
+    (-.07,.19,.73),(.086,.18,.735),
+    (-.057,.38,.685)
 ],patch)
 
 # More expressive animation curves: independent ear flicks, snout twitching
