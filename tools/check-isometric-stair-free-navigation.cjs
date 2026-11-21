@@ -69,6 +69,12 @@ for(let seed=0;seed<32;seed++){
   assert(nav.canStand(point(actor)),
    'a fast dodge must slide against a cliff edge instead of falling');
  }
+ // A roll directed back across the lower portal may legitimately return to
+ // the ground floor. Re-enter before the separate ascent regression.
+ if(!v.state.stairRide){
+  assert.equal(v.state.floor,0,'a roll may only exit through its own floor gate');
+  assert(v.boardStairs(actor,true),'after a roll the lower stair can be re-entered');
+ }
  assert(v.aimStairs({point:plan.top,part:plan.top}));
  frames=0;
  while(v.state.stairRide&&frames++<1400)
