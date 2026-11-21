@@ -105,8 +105,15 @@ for(let seed=0;seed<120;seed++){
  }
  s.stairRide=null;s.floor=0;s.z=0;
 }
-assert.equal(seen.size,8,'all eight stair families have physical traversal');
-const u=create(4,'switchback').plan;
+assert.equal(seen.size,9,'all nine stair families have physical traversal');
+const openU=create(4,'switchback'),closedU=create(4,'switchback-closed');
+assert(openU.plan.cfg.open&&!closedU.plan.cfg.open);
+const landing=openU.plan.landings[0],under={x:landing.corners.reduce((a,p)=>a+p.x,0)/4,
+ y:landing.corners.reduce((a,p)=>a+p.y,0)/4};
+assert(openU.blocksGround(under.x,under.y,.29,false),'standing is too tall under the open U landing');
+assert(!openU.blocksGround(under.x,under.y,.29,true),'crouching fits beneath the open U landing');
+assert(closedU.blocksGround(under.x,under.y,.29,true),'solid U landing is never traversable');
+const u=openU.plan;
 assert.equal(u.kind,'switchback');
 assert.equal(u.landings.length,1);
 const ledge=u.landings[0];
@@ -154,4 +161,4 @@ const a=Math.atan2(crest.y-prev.y,crest.x-prev.x),
 assert(Math.cos(a-b)>.94,
  'curved stair must leave the last rising tread tangentially, not radially');
 assert(curved.landings.some(l=>l.top),'curved stair ends on real flat cap');
-console.log('120 levels: free stair navigation, two-way click routes, plateau movement and safe dodge/roll, eight stair families OK');
+console.log('120 levels: free stair navigation, two-way click routes, plateau movement and safe dodge/roll, nine stair families OK');
