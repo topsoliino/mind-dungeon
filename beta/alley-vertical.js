@@ -371,7 +371,11 @@ const state={floor:0,z:0,transition:null,pending:null,stairRide:null};
 // Clicks target a 3D point on the stair centreline. Explicit foot/head
 // positions are exact endpoints, so a click can finish a floor transition.
 function targetAlongStairs(part){
- const p=part.center??part,h=Number.isFinite(part.prev)?(part.prev+part.z)/2:(part.z??0);
+ const p=part.center??(part.corners?
+  part.corners.reduce((sum,q)=>({x:sum.x+q.x/part.corners.length,
+   y:sum.y+q.y/part.corners.length}),{x:0,y:0}):part);
+ const h=Number.isFinite(part.prev)?(part.prev+part.z)/2:(part.z??0);
+ if(part.top)return totalLength;
  if(distance(p,plan.top)<.08&&h>=HEIGHT-1)return totalLength;
  if(distance(p,plan.bottom)<.08&&h<=1)return 0;
  let best=Infinity,at=0,passed=0;
