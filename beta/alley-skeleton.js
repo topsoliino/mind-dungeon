@@ -1,7 +1,7 @@
 // Blender-exported 360-degree directional atlases with continuous view interpolation.
 window.AlleySkeleton=(()=>{
  'use strict';
- const sheets=new Map(),cell=96,deathDuration=.78,assetVersion=4,turn=Math.PI*2;
+ const sheets=new Map(),cell=128,deathDuration=.78,assetVersion=5,turn=Math.PI*2;
  async function load(){
   sheets.clear();
   await Promise.all(['sabre','bow'].flatMap(kit=>
@@ -10,7 +10,7 @@ window.AlleySkeleton=(()=>{
     image.src='beta/art/skeleton/'+key+'.webp?v='+assetVersion;
     try{
      await image.decode();
-     if(image.height%cell||image.height<8*cell||image.height>64*cell||
+     if(image.height!==32*cell||
         image.width<cell||image.width%cell)
       throw new Error('Ungültige Sprite-Abmessungen '+image.width+'×'+image.height);
      sheets.set(key,image);
@@ -41,7 +41,7 @@ window.AlleySkeleton=(()=>{
   // while row two faces right in the projected scene.
   const views=image.height/cell;
   const row=((Math.round(views/8-facing*views/turn)%views)+views)%views;
-  const p=iso.toView(e.x,e.y,e.alleyZ||0),size=110*e.size;
+  const p=iso.toView(e.x,e.y,e.alleyZ||0),size=140*e.size;
   return {image,key:'skeleton-'+key,frame:row+'-'+col,sx:col*cell,sy:row*cell,w:cell,h:cell,
    width:size,height:size,x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.765,
    alpha:deathAge===null?1:Math.min(1,Math.max(0,(2.6-deathAge)/.5))};
