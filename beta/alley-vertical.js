@@ -176,11 +176,20 @@ function overStair(u,v,r=0){
 // Closed stairs obstruct the ground. Open construction allows passage only
 // where the underside has standing clearance; no falls are enabled yet.
 const HEAD_CLEARANCE=92,SLAB_THICKNESS=13;
-function blocksGround(u,v,r=0){
+const CROUCH_CLEARANCE=39;
+function blocksGround(u,v,r=0,crouching=state.crouching){
  const p={x:u,y:v};
  if(distance(plan.bottom,p)<=.58+r*.65)return false;
- return stairSurfaces.some(part=>intersectsStair(part,p,r)&&
-  (!plan.cfg.open||(part.prev??part.z)-SLAB_THICKNESS<HEAD_CLEARANCE));
+ const clearance=crouching?CROUCH_CLEARANCE:HEAD_CLEARANCE;
+ // Closed switchbacks have full-height infill, and support posts are never
+ // traversable even when the upper open platform clears the player's head.
+ if(stairSurfaces.some(part=>intersectsStair(part,p,r)&&
+  (!plan.cfg.open||(part.prev??part.z)-SLAB_THICKNESS<clearance)))return true;
+ if(plan.posts.some(post=>distance(post.p,p)<post.radius+r))return true;
+ if(plan.cfg.open)for(const landing of plan.landings.filter(l=>!l.top))
+  for(const corner of landing.corners)
+   if(distance(corner,p)<.085+r)return true;
+ return false;
 }
 // Upstairs XY footprints can overlap lower stair treads. Only the head gate
 // permits entry: the remaining sides are solid while fall physics is disabled.
@@ -361,7 +370,7 @@ function createLayers({project,polygon,line,cacheObject}){
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
  ];
 }
-const state={floor:0,z:0,transition:null,pending:null,stairRide:null};
+const state={floor:0,z:0,transition:null,pending:null,stairRide:null,crouching:false};
 // Clicks target a 3D point on the stair centreline. Explicit foot/head
 // positions are exact endpoints, so a click can finish a floor transition.
 function targetAlongStairs(part){
