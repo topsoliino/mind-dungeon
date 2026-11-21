@@ -125,6 +125,60 @@ const stairPath=[
 const lengths=stairPath.slice(1).map((point,i)=>
  distance(point,stairPath[i]));
 const totalLength=lengths.reduce((a,b)=>a+b,0);
+// Reuse the calibrated 2D staircase movement constraints: climb speeds
+// .68/.73, descent speeds .83/.86, lateral walking .58, landings .95.
+const STAIR_SPEED=Object.freeze({straightUp:.68,straightDown:.83,
+ curvedUp:.73,curvedDown:.86,across:.58,landing:.95});
+const curving=plan.kind.startsWith('spiral')||
+ ['quarter','switchback','curved'].includes(plan.kind);
+function segmentAt(distanceAlong){
+ let left=Math.max(0,Math.min(totalLength,distanceAlong));
+ for(let i=0;i<lengths.length;i++){
+  if(left>lengths[i]&&i<lengths.length-1){left-=lengths[i];continue;}
+  return {index:i,t:Math.max(0,Math.min(1,left/Math.max(.00001,lengths[i]))),
+   a:stairPath[i],b:stairPath[i+1]};
+ }
+ const i=lengths.length-1;
+ return {index:i,t:1,a:stairPath[i],b:stairPath[i+1]};
+}
+function speedOnStair(distanceAlong,sign){
+ const {a,b}=segmentAt(distanceAlong);
+ if(Math.abs(a.z-b.z)<.001)return STAIR_SPEED.landing;
+ return sign>0?
+  (curving?STAIR_SPEED.curvedUp:STAIR_SPEED.straightUp):
+  (curving?STAIR_SPEED.curvedDown:STAIR_SPEED.straightDown);
+}
+const between=(p,a,b)=>{
+ const dx=b.x-a.x,dy=b.y-a.y,n=dx*dx+dy*dy;
+ const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/Math.max(n,.00001)));
+ return {t,distance:Math.hypot(p.x-a.x-dx*t,p.y-a.y-dy*t)};
+};
+const distanceEdge=(p,a,b)=>between(p,a,b).distance;
+function insideConvex(p,points){
+ let positive=false,negative=false;
+ for(let i=0;i<points.length;i++){
+  const a=points[i],b=points[(i+1)%points.length];
+  const cross=(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
+  positive||=cross>1e-7;negative||=cross< -1e-7;
+  if(positive&&negative)return false;
+ }
+ return true;
+}
+function overStair(u,v,r=0){
+ const p={x:u,y:v},pieces=plan.steps.concat(plan.landings);
+ return pieces.some(piece=>{
+  const vertices=piece.corners;
+  return insideConvex(p,vertices)||r>0&&vertices.some((a,i)=>
+   distanceEdge(p,a,vertices[(i+1)%vertices.length])<=r);
+ });
+}
+function blocksGround(u,v,r=0){
+ if(!overStair(u,v,r))return false;
+ const entry=plan.bottom;
+ // The approach apron remains floor 0. All other directions to the
+ // stair ribbon are solid boundaries, not invisible fallthroughs.
+ return distance(entry,{x:u,y:v})>.58+r*.65;
+}
 function walkStairs(progress){
  let left=totalLength*clamp(progress);
  for(let i=0;i<lengths.length;i++){
@@ -320,8 +374,68 @@ function createLayers({project,polygon,line,cacheObject}){
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
  ];
 }
-const state={floor:0,z:0,transition:null,pending:null};
+const state={floor:0,z:0,transition:null,pending:null,stairRide:null};
+function boardStairs(actor,up=true,auto=true){
+ if(state.stairRide||state.transition||state.pending)return false;
+ const gate=up?plan.bottom:plan.top;
+ if(Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y)>.72)return false;
+ state.stairRide={s:up?0:totalLength,lateral:0,dir:up?1:-1,auto,up};
+ state.z=up?0:HEIGHT;
+ actor.x=gate.x*48;actor.y=gate.y*48;
+ return true;
+}
+function tryEnterStairs(actor,dx,dy){
+ if(state.stairRide||state.transition||state.pending)return false;
+ if(!dx&&!dy)return false;
+ const up=state.floor===0,gate=up?plan.bottom:plan.top;
+ const distanceGate=Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y);
+ if(distanceGate>.61)return false;
+ const a=up?stairPath[0]:stairPath.at(-1),
+  b=up?stairPath[1]:stairPath.at(-2);
+ const tangent={x:b.x-a.x,y:b.y-a.y},norm=Math.hypot(tangent.x,tangent.y)||1;
+ const toward=(dx*tangent.x+dy*tangent.y)/norm;
+ if(toward<.38)return false;
+ return boardStairs(actor,up,true);
+}
+function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
+ const ride=state.stairRide;
+ if(!ride)return false;
+ const {a,b}=segmentAt(ride.s),t=norm(b.x-a.x,b.y-a.y);
+ // Inputs are projected onto the local stair tangent. The lateral component
+ // may shift the hero inside the guarded stair width, but never outside.
+ const dot=inputX*t.x+inputY*t.y;
+ const across=inputX*(-t.y)+inputY*t.x;
+ if(Math.abs(dot)>.12){
+  ride.auto=false;ride.dir=Math.sign(dot);
+ }
+ const sign=ride.auto?ride.dir:Math.abs(dot)>.12?Math.sign(dot):0;
+ const incline=speedOnStair(ride.s,sign||ride.dir);
+ const travel=(worldSpeed/48)*dt*incline*(ride.auto?1:Math.abs(dot));
+ ride.s=Math.max(0,Math.min(totalLength,ride.s+travel*sign));
+ const maxLateral=Math.max(0,plan.width/2-.29-.15);
+ ride.lateral=Math.min(maxLateral,Math.max(-maxLateral,
+  ride.lateral+(worldSpeed/48)*dt*STAIR_SPEED.across*across));
+ const center=walkStairs(ride.s/totalLength);
+ const d=segmentAt(ride.s),dir=norm(d.b.x-d.a.x,d.b.y-d.a.y);
+ actor.x=(center.x-dir.y*ride.lateral)*48;
+ actor.y=(center.y+dir.x*ride.lateral)*48;
+ actor.dir=center.face+(ride.dir<0?Math.PI:0);
+ actor.moveAngle=actor.dir;actor.moving=Boolean(sign||Math.abs(across)>.01);
+ state.z=center.z;
+ if(ride.s>=totalLength-1e-5||ride.s<=1e-5&&ride.dir<0){
+  state.floor=ride.s>=totalLength-1e-5?1:0;
+  state.z=state.floor?HEIGHT:0;
+  const exit=state.floor?plan.top:plan.bottom;
+  actor.x=exit.x*48;actor.y=exit.y*48;actor.moving=false;
+  state.stairRide=null;
+  return {completed:true,floor:state.floor};
+ }
+ return {completed:false,floor:state.floor,z:state.z,
+  along:ride.s,total:totalLength,incline};
+}
 const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
- connectors,state,insideTop,playerInChamber,nearby,pose,createLayers};
+ connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,
+ overStair,blocksGround,speedOnStair,stairSpeed:STAIR_SPEED,
+ boardStairs,tryEnterStairs,advanceStairs};
 window.AlleyVertical=api;
 })();
