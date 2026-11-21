@@ -44,8 +44,9 @@ function controller({plan,state,nav,length,speeds,curving}){
    approach=entrancePosition(where,up);
   // Helical flights can project the ground entrance almost directly below
   // the upper landing. XY proximity alone must NEVER board the wrong portal.
-  if(!approach.allowed||
-   distance(where,gate(!up))+.02<distance(where,gate(up)))return false;
+  // Ignore the opposite portal's very centre: spiral stairheads may
+  // overlap in XY, but ordinary off-centre upper entry must remain possible.
+  if(!approach.allowed||distance(where,gate(!up))<.13)return false;
   const {frame,sideways}=approach,
    safeSide=clamp(sideways,-plan.width*.5+nav.RADIUS+.02,
     plan.width*.5-nav.RADIUS-.02);
