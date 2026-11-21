@@ -152,16 +152,41 @@ function blocksCandidate(model,u,v,r){
  return model.steps.concat(model.landings).some(part=>nearPolygon(p,part.corners,r));
 }
 function candidateAccessible(generator,model){
- const start=window.AlleyStudyMap.logic.spawn,TILE=48,R=.29;
- const destination={x:model.bottom.x*TILE,y:model.bottom.y*TILE};
- const walkable=(px,py)=>{
-  const u=px/TILE,v=py/TILE;
-  return [[u-R,v],[u+R,v],[u,v-R],[u,v+R]].every(([x,y])=>
-   generator.containsGround(x,y))&&
-   !generator.blocked(u,v,R)&&!blocksCandidate(model,u,v,R);
+ // Linear-time grid flood fill, not a full A* invocation for every possible
+ // position. This check happens before creating renderer art.
+ const start=window.AlleyStudyMap.logic.spawn,R=.29,goal=model.bottom;
+ const [a,b,c,d]=model.region;
+ const pointOK=(u,v)=>{
+  if(generator.blocked(u,v,R)||![[u-R,v],[u+R,v],[u,v-R],[u,v+R]]
+   .every(([x,y])=>generator.containsGround(x,y)))return false;
+  if(u>=a-R&&u<=c+R&&v>=b-R&&v<=d+R&&
+   blocksCandidate(model,u,v,R))return false;
+  return true;
  };
- return walkable(destination.x,destination.y)&&
-  Boolean(generator.path({x:start[0]*TILE,y:start[1]*TILE},destination,walkable));
+ if(!pointOK(goal.x,goal.y))return false;
+ const tiles=new Set();
+ for(const [x,y,r,b] of window.AlleyStudyMap.logic.walkable)
+  for(let u=Math.floor(x);u<Math.ceil(r);u++)
+   for(let v=Math.floor(y);v<Math.ceil(b);v++)tiles.add(K(u,v));
+ const sx=Math.floor(start[0]),sy=Math.floor(start[1]);
+ const begin=K(sx,sy),seen=new Set([begin]),queue=[[sx,sy]];
+ const segmentClear=(x,y,u,v)=>{
+  const dist=Math.hypot(u-x,v-y),n=Math.max(1,Math.ceil(dist/.14));
+  for(let i=1;i<=n;i++)if(!pointOK(x+(u-x)*i/n,y+(v-y)*i/n))return false;
+  return true;
+ };
+ for(let i=0;i<queue.length;i++){
+  const [u,v]=queue[i],x=u+.5,y=v+.5;
+  if(dist(vec(x,y),goal)<1.5&&segmentClear(x,y,goal.x,goal.y))
+   return true;
+  for(const [du,dv] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const nx=u+du,ny=v+dv,k=K(nx,ny);
+   if(seen.has(k)||!tiles.has(k)||!pointOK(nx+.5,ny+.5)||
+    !segmentClear(x,y,nx+.5,ny+.5))continue;
+   seen.add(k);queue.push([nx,ny]);
+  }
+ }
+ return false;
 }
 function select(generator){
  const asked=new URLSearchParams(window.location.search).get('treppe');
