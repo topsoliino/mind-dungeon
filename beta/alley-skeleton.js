@@ -3,6 +3,7 @@ window.AlleySkeleton=(()=>{
  'use strict';
  const sheets=new Map(),cell=96,deathDuration=.78,assetVersion=2;
  async function load(){
+  sheets.clear();
   await Promise.all(['sabre','bow'].flatMap(kit=>
    ['idle','run',kit==='bow'?'shoot':'strike','death'].map(async clip=>{
     const key=kit+'-'+clip,image=new Image();
