@@ -52,10 +52,12 @@ function fight(distance=35,comboIndex=2){
 }
 {
  const a=fight(35,2);
- for(let i=0;i<90;i++){
+ let escaped=false;
+ for(let i=0;i<200;i++){
   a.step();
-  if(a.hits.length===1){a.hero.x=160;break;}
+  if(a.hits.length===1){a.hero.x=160;escaped=true;break;}
  }
+ assert(escaped,'first rat bite must happen before testing second-hit dodge');
  for(let i=0;i<160;i++)a.step();
  assert.equal(a.hits.length,1,'moving out of reach dodges second bite');
 }
