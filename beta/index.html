@@ -2406,7 +2406,7 @@ window.addEventListener('blur',()=>{
 function mouseWorld(){
  const {x,y,zoom=1}=renderedView??cam;
  const mx=x+cw/2+(mouse.x-cw/2)/zoom,my=y+ch/2+(mouse.y-ch/2)/zoom;
- return alley?iso.toWorld(mx,my):{x:mx,y:my};
+ return alley?iso.toWorld(mx,my,alleyVertical?.state.z??0):{x:mx,y:my};
 }
 function facePoint(target){
  if(!alley||Math.hypot(target.x-player.x,target.y-player.y)>1)player.dir=Math.atan2(target.y-player.y,target.x-player.x);
@@ -2593,10 +2593,10 @@ function update(dt){
  player.webSlow=Math.max(0,(player.webSlow||0)-dt);player.grabSlow=Math.max(0,(player.grabSlow||0)-dt);
  shake=Math.max(0,shake-dt*18);
  const {x:inputX,y:inputY}=movementInput();
- const length=alleyHit||alleyChest?0:Math.hypot(inputX,inputY);
+ const length=alleyHit||alleyChest||alleyVertical?.state.transition?0:Math.hypot(inputX,inputY);
  if(alleyRoute&&(length||controllerDash||player.attack>0||player.dash>0))alleyRoute=null;
  finishAlleyApproach();
- const next=alleyRoute?.[0]??nextAlleyMove();
+ const next=alleyVertical?.state.transition?null:alleyRoute?.[0]??nextAlleyMove();
  const routeX=next?next.x-player.x:0,routeY=next?next.y-player.y:0;
  const routeDistance=Math.hypot(routeX,routeY);
  let dx=next?routeX/routeDistance:length?inputX/Math.max(1,length):0;
@@ -2604,7 +2604,7 @@ function update(dt){
  const step=controllerDash,rollAngle=alleyRoll;
  alleyRoll=null;
  if(!authorityMode)controllerDash=false;
- if(!vault&&!alleyHit&&!alleyChest&&!player.wallRecoil&&!isConsuming()&&player.dashCooldown<=0&&
+ if(!vault&&!alleyHit&&!alleyChest&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!player.wallRecoil&&!isConsuming()&&player.dashCooldown<=0&&
   (alley?rollAngle!==null:step||length&&(keys.ShiftLeft||keys.ShiftRight))&&spendStamina(dashCost())){
   clearHeldAttack();
   if(alley){alleyRoute=alleyMove=alleyMarker=alleySwing=alleyQueuedLight=null;player.attack=0;}
@@ -2635,7 +2635,7 @@ function update(dt){
   const strideSpeed=player.speed*brewBonus.speed*load.move*mythicArmorMove()*movementFactor*(player.dash>0?(player.dashSpeed??load.dashSpeed):1);
   const oldX=player.x,oldY=player.y;
   const distance=next&&player.dash<=0?Math.min(routeDistance,strideSpeed*dt):strideSpeed*dt;
-  const stride=world.stairMotion(player,dx*distance,dy*distance);
+  const stride=alley?{x:dx*distance,y:dy*distance}:world.stairMotion(player,dx*distance,dy*distance);
   if(!moveActor(player,stride.x,stride.y))return;
   player.moving=Math.hypot(player.x-oldX,player.y-oldY)>.1;
   if(player.moving)player.walk+=dt*(player.dash>0?23:(drinking?items.potionWalkRate:12)*Math.min(1,next?1:length));
@@ -2646,7 +2646,11 @@ function update(dt){
   }
   playFootstep(oldX,oldY);
   if(next&&!player.moving&&Math.hypot(next.x-player.x,next.y-player.y)>.05){
-   if(alleyRoute){alleyRoute=null;tell('Der Weg zur Truhe ist versperrt.');}
+   if(alleyRoute){
+    alleyRoute=null;
+    if(alleyVertical?.state.pending)alleyVertical.state.pending=null;
+    tell('Der Weg zur Interaktion ist versperrt.');
+   }
    if(alleyMove){alleyMove=null;alleyMarker.until=frame+.32;}
   }else finishAlleyApproach();
  }
@@ -2843,10 +2847,10 @@ $('#xpnum').textContent=String(save.xp).replace('.',',')+'/'+xpRequired()+' XP';
 if(alley){
  $('#zone').textContent=alley.zoneAt(player);
  $('#progress').textContent=generationMode?
-  'Greybox · '+window.AlleyGenerator.metadata.rooms+' Räume · '+window.AlleyGenerator.metadata.doors+' Türen · Seed '+window.AlleyGenerator.seed:
+  'Greybox · '+window.AlleyGenerator.metadata.rooms+' Räume · '+(alleyVertical?.state.floor?'Obergeschoss':'Erdgeschoss')+' · Seed '+window.AlleyGenerator.seed:
   save.isoLabDone?'Route geschafft · Protokoll gesichert':
   (alley.archiveUnlocked()?'Labor betreten und Versuch abschließen':'Archiv finden · Wissenssiegel öffnen');
- const hint=generationMode?'Rechtsklick: Laufziel · Strg: Schleichen · Mausrad: Zoom · Etagenkarte unten links':
+ const hint=generationMode?'Rechtsklick: Laufziel · E: Leiter oder Treppe · Mausrad: Zoom · Etagenkarte unten links':
   'Strg Schleichen'+(alleySneaking?' (an)':'')+' · Rechtsklick Laufen · Umschalt Rolle · E Untersuchen';
  if($('#alley-help').textContent!==hint)$('#alley-help').textContent=hint;
 }else{
@@ -2975,6 +2979,10 @@ function moveActor(actor,dx,dy,knockback=false,origin){
  const canFall=!flying&&(knockback||hero&&!hasRing('height'));
  const safe={x:actor.x,y:actor.y};
  const step=(x,y)=>{
+  if(alley&&hero){
+   if(alley.walkable(x,y,radius)){actor.x=x;actor.y=y;}
+   return;
+  }
   const route=world.floorStep(actor,x,y,radius,hero,canFall||flying);
   if(!route||flying&&wall(x,y)&&!world.towerAir(x,y))return;
   const next={x,y,underpass:route.underpass};
@@ -3265,7 +3273,7 @@ function gameCameraView(dt){
  }
  // Adding new rooms must not make the on-screen guardian appear smaller.
  const zoom=alley?Math.max(.85,Math.min(1.35,cw/1104,ch/624))*alleyZoom:1;
- const {x,y}=alley?alley.cameraOrigin(player,cw,ch,zoom,vault?.lift??0):{
+ const {x,y}=alley?alley.cameraOrigin(player,cw,ch,zoom,alleyVertical?.state.z??vault?.lift??0):{
   x:Math.max(0,Math.min(player.x-cw/2,W*TILE-cw)),
   y:Math.max(0,Math.min(player.y-(vault?.lift??0)-ch/2,H*TILE-ch))
  };
