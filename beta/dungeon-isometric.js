@@ -47,7 +47,8 @@
   function walkable(x,y,r=radius,includeProps=true){
    // Upper-level physics belongs to its own slab; lower-level partitions must
    // not turn into invisible obstacles on the mezzanine.
-   if(vertical?.state.floor===1)return vertical.insideTop(x/tile,y/tile,r/tile);
+   if(vertical?.state.floor===1)return vertical.insideTop(x/tile,y/tile,r/tile)&&
+    !vertical.blocksTop(x/tile,y/tile,r/tile);
    // Stair treads are physical geometry, not ordinary ground. The only
    // accessible gaps into the ribbon are the guarded foot and head.
    if(vertical?.blocksGround(x/tile,y/tile,r/tile))return false;
