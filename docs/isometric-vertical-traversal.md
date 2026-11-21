@@ -1,6 +1,6 @@
 # Etappe 4a · Treppen, Leitern und Geschosssichtbarkeit
 
-**Test:** https://topsoliino.github.io/mind-dungeon/beta/?szene=gasse&modus=generator&seed=4147&v=19
+**Test:** https://topsoliino.github.io/mind-dungeon/beta/?szene=gasse&modus=generator&seed=4147&v=20
 
 ## Treppengrammatik (Greybox)
 
@@ -51,6 +51,14 @@ Die Treppe wird als **zusammenhängendes 2,5D-Navigationsnetz aus Trittflächen,
 
 Die ursprüngliche 2D-Version erlaubt außerdem Unterführungen, Höhenkanten und später Stürze mit Schadensregeln. Die **später mögliche Absturz- und Knockback-Physik an Treppen** wird hier bewusst noch nicht aktiviert. Der zuvor diskutierte Artikel ist Michael Bitzos, [*Implementing satisfying stairs for your 2D top-down game*](https://michaelbitzos.com/devblog/implementing-stairs-in-2d-top-down-games). Die konkreten Geschwindigkeitsfaktoren stammen aus unserem vorhandenen 2D-Code `beta/dungeon-stairs.js`, nicht aus dem Artikel.
 
+## Geschossübergreifende Klicknavigation und flüssiges Rennen
+
+- **Rechtsklick auf Erdgeschossboden während einer Treppenbegehung:** Der Mauspunkt wird auf **Z=0** projiziert (nicht auf die Heldenhöhe). Das Bodenziel wird vorab überprüft; der Held steigt zuerst über den echten unteren Treppenabschluss ab. Erst nach dem physischen Etagenwechsel startet die Boden-Wegfindung zum **ursprünglich angeklickten Ziel**. Mit manueller Bewegung lässt sich das Ziel abbrechen. Wenn die Treppenprojektion das Anklicken verdeckt, erzwingt **Alt+Rechtsklick** die Auswahl des Erdgeschosses.
+- **Obergeschoss trotz unsichtbarer Bodenplatten ansteuerbar:** Eine **türkise, anklickbare Zielmarkierung** am oberen Treppenabschluss dient als sichtbarer Navigationseinstieg, ohne die oberen Raumlayer frühzeitig einzublenden.
+- **Offene U-Unterführung:** Eine **violette Markierung** erscheint unter dem geduckt begehbaren Podest und auf der Minikarte. Im Status steht die tatsächlich generierte Treppenform, sodass geschlossene und offene U-Treppe unterscheidbar sind.
+- **Sprintkontinuität:** Die Treppenbewegung nutzt jetzt dieselbe Walk-to-Sprint-Animation und Schrittphase wie ebener Boden. Während des Rennens bleibt der Steigungseinfluss spürbar, aber der Bewegungsfaktor beträgt mindestens **0,88**. Geh-, Duck- und Konsumgeschwindigkeiten sind weiterhin separat.
+- **Gleiches Geschoss unmittelbar nach Einstieg:** Ein erneuter Klick auf den Boden kann bereits vor dem ersten Schritt den Treppenmodus regulär verlassen.
+
 ## Vorberechnung und Laufzeit
 
 - Der Seed wird **einmal beim Start der Szene festgelegt**. Treppengeometrie, Podeste, Gebäude, Treppen-Texturen und Höhenlayer werden während des Lade-/Szenenaufbaus rasterisiert.
@@ -76,6 +84,7 @@ node tools/check-isometric-stair-render.cjs
 node tools/check-isometric-stair-physics.cjs
 node tools/check-isometric-stair-free-navigation.cjs
 node tools/check-isometric-stair-exits.cjs
+node tools/check-isometric-stair-click-intent.cjs
 node tools/check-isometric-occlusion.cjs
 node tools/check-isometric-stage4.cjs
 ```
