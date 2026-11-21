@@ -143,9 +143,18 @@ function controller({plan,state,nav,length,speeds,curving}){
     const distancePx=Math.min(...outline.map((a,j)=>
      edgeDistance(screen,a,outline[(j+1)%outline.length])));
     if(!inside&&distancePx>9)continue;
-    const projected=iso.toView(pts[0].x*48,pts[0].y*48,0),
-     score=(inside?160:75-distancePx*4)+(i===0?36:0)+
-      projected.y*.001+z*.0003;
+    // Top-face hits outrank projected side faces. On curved stairs several
+    // raised treads overlap in screen space; choose the closest actual tread
+    // centre instead of whichever happens to be later in the array.
+    const centroid=piece.center??{
+     x:pts.reduce((sum,p)=>sum+p.x,0)/pts.length,
+     y:pts.reduce((sum,p)=>sum+p.y,0)/pts.length
+    };
+    const onScreen=iso.toView(centroid.x*48,centroid.y*48,z),
+     centreDistance=distance(onScreen,screen);
+    const score=inside?
+     (i===0?900-centreDistance*1.4:450-centreDistance*.2):
+     90-distancePx*5-centreDistance*.1;
     if(score<best)continue;
     let point;
     if(i===0){
