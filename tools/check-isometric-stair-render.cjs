@@ -41,7 +41,8 @@ for(let seed=0;seed<expected.length;seed++){
  const layers=art.verticalLayers();
  assert(layers.length>=v.plan.steps.length+3);
  assert.equal(layers.filter(x=>x.kind==='stair-tread').length,v.plan.steps.length);
- assert.equal(layers.filter(x=>x.level===1).length,2);
+ assert(layers.filter(x=>x.kind==='upper-deck').length>=1);
+ assert.equal(layers.filter(x=>x.kind==='door-frame').length,2);
  const paintedTreads=layers.filter(x=>x.kind==='stair-tread');
  assert(new Set(paintedTreads.map(x=>x.depth)).size>=3,
   'the tread painter uses distinct static depths');
@@ -100,6 +101,12 @@ for(let seed=0;seed<expected.length;seed++){
   'real right-click router must reach the lower flight');
  assert(iso.routeTo(iso.spawn,feet(v.ladder.bottom)),
   'real right-click router must reach the wall ladder');
+ for(const door of window.AlleyGenerator.portals){
+  const outside=feet({x:door.x+door.dx*.8,y:door.y+door.dy*.8});
+  const inside=feet({x:door.x-door.dx*.8,y:door.y-door.dy*.8});
+  assert(iso.routeTo(iso.spawn,outside),'spawn to '+door.name);
+  assert(iso.routeTo(inside,outside)&&iso.routeTo(outside,inside),'two-way threshold '+door.name);
+ }
  v.state.floor=1;v.state.z=v.height;
  assert(iso.routeTo(feet(v.plan.top),feet(v.ladder.top)),
   'upper-story stairs and ladder must be connected by actual pathfinding');

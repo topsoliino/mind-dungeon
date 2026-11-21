@@ -4,11 +4,92 @@ const generator=window.AlleyGenerator,grammar=window.AlleyStairGeometry;
 if(!generator?.enabled||!generator.stairs?.length||!grammar){
  window.AlleyVertical={enabled:false};return;
 }
-const HEIGHT=grammar.height,projected=grammar.select(generator),room=projected.room;
+const HEIGHT=grammar.height;
 const key=(u,v)=>u+','+v;
+const directions=[{id:'north',dx:0,dy:-1},{id:'west',dx:-1,dy:0},
+ {id:'east',dx:1,dy:0},{id:'south',dx:0,dy:1}];
+const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const norm=(x,y)=>{const length=Math.hypot(x,y)||1;return {x:x/length,y:y/length};};
+const between=(p,a,b)=>{
+ const dx=b.x-a.x,dy=b.y-a.y,n=dx*dx+dy*dy;
+ const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/Math.max(n,.00001)));
+ return {t,distance:Math.hypot(p.x-a.x-dx*t,p.y-a.y-dy*t)};
+};
+const distanceEdge=(p,a,b)=>between(p,a,b).distance;
+function insideConvex(p,points){
+ let positive=false,negative=false;
+ for(let i=0;i<points.length;i++){
+  const a=points[i],b=points[(i+1)%points.length];
+  const cross=(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
+  positive||=cross>1e-7;negative||=cross< -1e-7;
+  if(positive&&negative)return false;
+ }
+ return true;
+}
+const intersectsStair=(part,p,r)=>insideConvex(p,part.corners)||r>0&&
+ part.corners.some((a,i)=>distanceEdge(p,a,part.corners[(i+1)%part.corners.length])<=r);
+// Find a second chamber with a real wall and trace a gallery from the stair head.
+const buildingCells=new Map();
+for(const chamber of generator.rooms.slice(1))
+ for(const cell of chamber.cells)buildingCells.set(key(...cell),chamber);
+const tile=p=>key(Math.floor(p.x),Math.floor(p.y));
+function placeLadder(plan){
+ const {room,upper}=plan;
+ const upperStart=tile(plan.top),parent=new Map([[upperStart,null]]);
+ const queue=[[Math.floor(plan.top.x),Math.floor(plan.top.y)]];
+ const surfaces=plan.steps.concat(plan.landings);
+ function clearDeck(x,y){
+  const cell=key(Math.floor(x),Math.floor(y));
+  return buildingCells.has(cell)&&(buildingCells.get(cell)!==room||
+   upper.has(cell)&&(distance({x,y},plan.top)<=.58+.29*.65||
+   !surfaces.some(part=>intersectsStair(part,{x,y},.29))));
+ }
+ for(let i=0;i<queue.length;i++){
+  const [x,y]=queue[i];
+  for(const {dx,dy} of directions){
+   const u=x+dx,v=y+dy,cell=key(u,v);
+   if(parent.has(cell)||!clearDeck(u+.5,v+.5)||
+    !clearDeck(x+.5+dx*.5,y+.5+dy*.5))continue;
+   parent.set(cell,key(x,y));queue.push([u,v]);
+  }
+ }
+ const openings=new Set(generator.doors.flatMap(d=>d.edges.flatMap(pair=>pair.map(p=>key(...p)))));
+ for(const p of generator.portals[1].edges)openings.add(key(...p[0]));
+ const candidates=[];
+ for(const chamber of generator.rooms.filter(r=>r.kind==='raum'&&r!==room)){
+  for(const [u,v] of chamber.cells)for(const dir of directions){
+   const cell=key(u,v),wall=key(u+dir.dx,v+dir.dy);
+   if(openings.has(cell)||buildingCells.has(wall))continue;
+   const bottom={x:u+.5,y:v+.5},top={x:bottom.x-dir.dx,y:bottom.y-dir.dy};
+   if(buildingCells.get(tile(top))!==chamber||!parent.has(tile(top))||
+    generator.blocked(bottom.x,bottom.y,.3))continue;
+   const preferred=(directions.indexOf(dir)+generator.seed)%4===0?1:0;
+   const score=(Math.floor(room.id/5)!==Math.floor(chamber.id/5)?1000:0)+
+    preferred*100+distance(bottom,plan.bottom);
+   candidates.push({roomId:chamber.id,wall:dir.id,dx:dir.dx,dy:dir.dy,cell:[u,v],
+    bottom,top,face:Math.atan2(dir.dy,dir.dx),score});
+  }
+ }
+ candidates.sort((a,b)=>b.score-a.score);
+ const picked=candidates.find(c=>{
+  // The gallery must approach the landing without crossing the ladder hatch.
+  const hatch=key(...c.cell);
+  for(let k=tile(c.top);k!==null;k=parent.get(k))if(k===hatch)return false;
+  return true;
+ });
+ if(!picked)return false;
+ const ladder={...picked,id:'wall-ladder',kind:'ladder',height:HEIGHT};
+ const ladderRoom=generator.rooms[ladder.roomId];
+ for(const cell of ladderRoom.cells)upper.add(key(...cell));
+ for(let k=tile(ladder.top);k!==null;k=parent.get(k))upper.add(k);
+ upper.delete(key(...ladder.cell));
+ plan.ladder=ladder;
+ return true;
+}
+const plan=grammar.select(generator,placeLadder),room=plan.room;
+const ladder=plan.ladder,upper=plan.upper;
 const occupied=new Set(room.cells.map(p=>key(...p)));
 const contains=(u,v)=>occupied.has(key(Math.floor(u),Math.floor(v)));
-const plan=projected;
 const stairs=generator.stairs[0];
 stairs.roomId=room.id;
 stairs.area=plan.region;
@@ -19,93 +100,18 @@ generator.metadata.stairs=generator.stairs;
 generator.metadata.stairVariant=plan.kind;
 generator.metadata.stairTitle=plan.style;
 room.plannedUse='Treppenraum';
-const directions=[{id:'north',dx:0,dy:-1},{id:'west',dx:-1,dy:0},
- {id:'east',dx:1,dy:0},{id:'south',dx:0,dy:1}];
-const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-const norm=(x,y)=>{const length=Math.hypot(x,y)||1;return {x:x/length,y:y/length};};
-const candidates=[];
-for(const [u,v] of room.cells){
- for(const dir of directions){
-  if(occupied.has(key(u+dir.dx,v+dir.dy)))continue;
-  const inward={x:u+.5-dir.dx,y:v+.5-dir.dy};
-  if(!contains(inward.x,inward.y))continue;
-  const bottom={x:u+.5,y:v+.5};
-  if(distance(bottom,plan.bottom)<3||distance(bottom,plan.top)<2.2)continue;
-  if(u>=stairs.area[0]-1&&u<=stairs.area[2]+1&&
-   v>=stairs.area[1]-1&&v<=stairs.area[3]+1)continue;
-  candidates.push({wall:dir.id,dx:dir.dx,dy:dir.dy,cell:[u,v],
-   bottom,top:inward,face:Math.atan2(dir.dy,dir.dx),
-   distance:distance(bottom,plan.bottom)});
- }
-}
-if(!candidates.length){
- for(const [u,v] of room.cells)for(const dir of directions){
-  if(occupied.has(key(u+dir.dx,v+dir.dy)))continue;
-  const top={x:u+.5-dir.dx,y:v+.5-dir.dy},bottom={x:u+.5,y:v+.5};
-  if(!contains(top.x,top.y)||distance(bottom,plan.bottom)<2.2)continue;
-  candidates.push({wall:dir.id,dx:dir.dx,dy:dir.dy,cell:[u,v],bottom,top,
-   face:Math.atan2(dir.dy,dir.dx),distance:distance(bottom,plan.bottom)});
- }
-}
-const preferred=['north','west','east','south'];
-const rotated=preferred.slice(generator.seed%4).concat(preferred.slice(0,generator.seed%4));
-// Upper-floor access is an architectural prerequisite, not a decor afterthought.
-const upper=plan.upper;
-const connectedFromTop=()=>{
- const start=key(Math.floor(plan.top.x),Math.floor(plan.top.y)),visited=new Set([start]),queue=[start];
- for(let i=0;i<queue.length;i++){
-  const [u,v]=queue[i].split(',').map(Number);
-  for(const [du,dv] of [[1,0],[-1,0],[0,1],[0,-1]]){
-   const n=key(u+du,v+dv);
-   if(upper.has(n)&&!visited.has(n)){visited.add(n);queue.push(n);}
-  }
- }
- return visited;
-};
-const upperReachable=connectedFromTop();
-candidates.sort((a,b)=>{
- const aConnected=Number(upperReachable.has(key(Math.floor(a.top.x),Math.floor(a.top.y))));
- const bConnected=Number(upperReachable.has(key(Math.floor(b.top.x),Math.floor(b.top.y))));
- if(bConnected!==aConnected)return bConnected-aConnected;
- const score=c=>4-rotated.indexOf(c.wall);
- return score(b)-score(a)||b.distance-a.distance||a.cell[1]-b.cell[1];
-});
-// A ladder opening may not sever the upstairs walkable region. Validate the
-// removal of its actual hatch cell, not merely its initial room membership.
-const staysConnected=c=>{
- const blocked=key(...c.cell),start=key(Math.floor(plan.top.x),Math.floor(plan.top.y)),
-  goal=key(Math.floor(c.top.x),Math.floor(c.top.y));
- if(!upper.has(start)||!upper.has(goal)||start===blocked||goal===blocked)return false;
- const visited=new Set([start]),queue=[start];
- for(let i=0;i<queue.length;i++){
-  const [u,v]=queue[i].split(',').map(Number);
-  for(const [du,dv] of [[1,0],[-1,0],[0,1],[0,-1]]){
-   const n=key(u+du,v+dv);
-   if(n!==blocked&&upper.has(n)&&!visited.has(n)){visited.add(n);queue.push(n);}
-  }
- }
- return visited.has(goal);
-};
-const picked=candidates.find(staysConnected)??candidates.find(c=>
- upperReachable.has(key(Math.floor(c.top.x),Math.floor(c.top.y))))??candidates[0];
-const ladder={...picked,id:'wall-ladder',kind:'ladder',height:HEIGHT};
-if(!ladder?.bottom)throw Error('Could not place a wall-anchored ladder in the upper chamber');
-if(staysConnected(ladder))upper.delete(key(...ladder.cell));
-upper.add(key(Math.floor(ladder.top.x),Math.floor(ladder.top.y)));
+generator.rooms[ladder.roomId].plannedUse='Leiterkammer';
 const stairsConnector={
- id:'stone-stairs',kind:'stairs',floorFrom:0,floorTo:1,
+ id:'stone-stairs',roomId:room.id,kind:'stairs',floorFrom:0,floorTo:1,
  bottom:plan.bottom,top:plan.top,
  face:Math.atan2(plan.path[1].y-plan.path[0].y,plan.path[1].x-plan.path[0].x),
  duration:Math.max(2.1,plan.length*.19),variant:plan.kind
 };
 const ladderConnector={
- id:'wall-ladder',kind:'ladder',floorFrom:0,floorTo:1,
+ id:'wall-ladder',roomId:ladder.roomId,kind:'ladder',floorFrom:0,floorTo:1,
  bottom:ladder.bottom,top:ladder.top,face:ladder.face,duration:2.8
 };
 const connectors=[stairsConnector,ladderConnector];
-const bounds=room.cells.reduce(([u,v,r,b],[x,y])=>
- [Math.min(u,x),Math.min(v,y),Math.max(r,x+1),Math.max(b,y+1)],
- [Infinity,Infinity,-Infinity,-Infinity]);
 const insideTop=(u,v,r=0)=>[[u-r,v],[u+r,v],[u,v-r],[u,v+r]]
  .every(([x,y])=>upper.has(key(Math.floor(x),Math.floor(y))));
 const playerInChamber=actor=>contains(actor.x/48,actor.y/48);
@@ -149,26 +155,8 @@ function speedOnStair(distanceAlong,sign){
   (curving?STAIR_SPEED.curvedUp:STAIR_SPEED.straightUp):
   (curving?STAIR_SPEED.curvedDown:STAIR_SPEED.straightDown);
 }
-const between=(p,a,b)=>{
- const dx=b.x-a.x,dy=b.y-a.y,n=dx*dx+dy*dy;
- const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/Math.max(n,.00001)));
- return {t,distance:Math.hypot(p.x-a.x-dx*t,p.y-a.y-dy*t)};
-};
-const distanceEdge=(p,a,b)=>between(p,a,b).distance;
-function insideConvex(p,points){
- let positive=false,negative=false;
- for(let i=0;i<points.length;i++){
-  const a=points[i],b=points[(i+1)%points.length];
-  const cross=(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
-  positive||=cross>1e-7;negative||=cross< -1e-7;
-  if(positive&&negative)return false;
- }
- return true;
-}
 const stairSurfaces=plan.steps.concat(plan.landings);
 const navigation=window.AlleyStairNavigation.make(plan);
-const intersectsStair=(part,p,r)=>insideConvex(p,part.corners)||r>0&&
- part.corners.some((a,i)=>distanceEdge(p,a,part.corners[(i+1)%part.corners.length])<=r);
 function overStair(u,v,r=0){
  const p={x:u,y:v};
  return stairSurfaces.some(part=>intersectsStair(part,p,r));
@@ -236,12 +224,20 @@ function pose(connector,up,t){
   landing:p>.82?clamp((p-.82)/.18):0};
 }
 function createLayers({project,polygon,line,cacheObject}){
- const slab=cacheObject(bounds,HEIGHT+34,ctx=>{
+ const batches=new Map();
+ for(const str of upper){
+  const [u,v]=str.split(',').map(Number),id=key(Math.floor(u/8),Math.floor(v/8));
+  if(!batches.has(id))batches.set(id,[]);
+  batches.get(id).push([u,v]);
+ }
+ const slabs=Array.from(batches.values(),cells=>{
+  const xs=cells.map(p=>p[0]),ys=cells.map(p=>p[1]);
+  const bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs)+1,Math.max(...ys)+1];
+  return {kind:'upper-deck',level:1,depth:4000,image:cacheObject(bounds,HEIGHT+34,ctx=>{
   const palette=['#687787','#728494','#677785','#788c99'];
   // The upper floor consists of genuine Z-elevated tiles. The cutout matches
   // the actual stair shaft instead of a fictitious hole in a rectangle.
-  for(const str of upper){
-   const [u,v]=str.split(',').map(Number);
+  for(const [u,v] of cells){
    const id=Math.abs((u*23+v*41)%4);
    polygon(ctx,[project(u,v,HEIGHT),project(u+1,v,HEIGHT),
     project(u+1,v+1,HEIGHT),project(u,v+1,HEIGHT)],
@@ -253,6 +249,7 @@ function createLayers({project,polygon,line,cacheObject}){
     polygon(ctx,[project(u,v+1,HEIGHT),project(u+1,v+1,HEIGHT),
      project(u+1,v+1,HEIGHT-17),project(u,v+1,HEIGHT-17)],'#394c5b','#748896');
   }
+  })};
  });
  // Static raster art is baked per tread at scene construction, with separate
  // scene depths. It is never re-rasterized when the guardian moves.
@@ -330,6 +327,25 @@ function createLayers({project,polygon,line,cacheObject}){
   stairObjects.push({kind:'stair-spindle',image,level:0,
    depth:project(p.x,p.y,0)[1]+.3});
  }
+ const doorFrames=generator.portals.map(door=>{
+  const sx=door.dy,sy=-door.dx;
+  const at=(offset,z)=>project(door.x+sx*offset,door.y+sy*offset,z);
+  const bounds=[door.x-Math.abs(sx)-.15,door.y-Math.abs(sy)-.15,
+   door.x+Math.abs(sx)+.15,door.y+Math.abs(sy)+.15];
+  const image=cacheObject(bounds,102,ctx=>{
+   for(const side of [-1,1]){
+    const outer=side*.99,inner=side*.85;
+    polygon(ctx,[at(outer,0),at(inner,0),at(inner,82),at(outer,82)],'#796046','#c0a079');
+    for(let z=18;z<80;z+=19)line(ctx,[at(outer,z),at(inner,z)],'#4c4037',2);
+   }
+   polygon(ctx,[at(-1,79),at(1,79),at(1,94),at(-1,94)],'#524339','#c9ab7f');
+   const [x,y]=at(0,90);
+   ctx.font='bold 11px system-ui';ctx.textAlign='center';
+   ctx.lineWidth=3;ctx.strokeStyle='#2c2423';ctx.strokeText(door.name,x,y);
+   ctx.fillStyle='#ffe6b6';ctx.fillText(door.name,x,y);
+  });
+  return {kind:'door-frame',level:0,image,depth:at(0,0)[1]+.5};
+ });
  const cell=ladder.cell,ladderArea=ladder.wall==='north'||ladder.wall==='south'?
   [cell[0]+.15,cell[1]-.12,cell[0]+.85,cell[1]+1.12]:
   [cell[0]-.12,cell[1]+.15,cell[0]+1.12,cell[1]+.85];
@@ -363,8 +379,8 @@ function createLayers({project,polygon,line,cacheObject}){
   for(const corners of plates)drawPrism(ctx,corners,HEIGHT,HEIGHT-13,false);
  });
  return [
-  {kind:'upper-deck',image:slab,depth:4000,level:1},
-  ...stairObjects,
+  ...slabs,
+  ...stairObjects,...doorFrames,
   {kind:'ladder-3d',image:ladderImage,
    depth:project(ladder.bottom.x,ladder.bottom.y)[1]+.25,level:0},
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}

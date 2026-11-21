@@ -47,8 +47,10 @@ for(let seed=0;seed<200;seed++){
  assert(within(v.room,plan.bottom)&&within(v.room,plan.top),
   'each landing must belong to the same room');
  const [lx,ly]=v.ladder.cell,dir=v.ladder;
- assert(within(v.room,dir.bottom));
- assert(!within(v.room,{x:lx+.5+dir.dx,y:ly+.5+dir.dy}),
+ const ladderRoom=g.rooms[dir.roomId];
+ assert.notEqual(ladderRoom.id,v.room.id);
+ assert(within(ladderRoom,dir.bottom));
+ assert(!within(ladderRoom,{x:lx+.5+dir.dx,y:ly+.5+dir.dy}),
   'ladder must rest on the actual external wall');
  assert(connected(v.upper,plan.top,v.ladder.top),
   'top stair and top ladder must remain connected after hatch cutout');
@@ -67,7 +69,7 @@ for(let seed=0;seed<200;seed++){
  assert.equal(plan.posts.length,plan.kind.startsWith('spiral')?1:0,
   'a helical staircase has precisely one full-height central spindle');
  for(const connector of v.connectors){
-  assert(within(v.room,connector.bottom)&&within(v.room,connector.top));
+  assert(within(g.rooms[connector.roomId],connector.bottom)&&within(g.rooms[connector.roomId],connector.top));
   for(const up of [true,false]){
    let previous=up?-1:133;
    for(let i=0;i<=40;i++){

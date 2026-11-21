@@ -128,6 +128,32 @@ for(let i=0;i<15&&!result;i++){actualSeed=(seed+i*7919)>>>0;result=generate(actu
 if(!result)throw Error('Generator: kein zusammenhängender 10-Raum-Grundriss möglich');
 const {rooms,doors,occ}=result;
 const openings=new Set(doors.flatMap(p=>p.edges.map(([a,b])=>edge(a,b))));
+// The first two-cell threshold already leads from the street into the building.
+const entrance={name:'Eingang',roomId:1,x:12,y:5,dx:-1,dy:0};
+const depths=[0];
+for(const room of rooms.slice(1))depths[room.id]=depths[room.parent]+1;
+const exteriorCandidates=[];
+for(const room of rooms.filter(room=>room.kind==='raum')){
+ for(const [x,y] of room.cells)for(const [dx,dy] of dirs){
+  const sx=dy?1:0,sy=dx?1:0;
+  if(occ.get(key(x+sx,y+sy))!==room.id)continue;
+  const cells=[];
+  for(let side=0;side<2;side++)for(let step=1;step<=2;step++)
+   cells.push([x+side*sx+step*dx,y+side*sy+step*dy]);
+  if(cells.some(([u,v])=>u<13||occ.has(key(u,v))))continue;
+  const distance=Math.hypot(x-entrance.x,y-entrance.y);
+  exteriorCandidates.push({roomId:room.id,x:x+.5+(sx+dx)/2,y:y+.5+(sy+dy)/2,
+   dx,dy,cells,score:depths[room.id]*100+distance,
+   edges:[[[x,y],[x+dx,y+dy]],[[x+sx,y+sy],[x+sx+dx,y+sy+dy]]]});
+ }
+}
+exteriorCandidates.sort((a,b)=>b.score-a.score);
+const exit=exteriorCandidates[0];
+if(!exit)throw Error('Kein freier Außenwandabschnitt für den Ausgang');
+exit.name='Ausgang';
+const exterior=new Set(exit.cells.map(cell=>key(...cell)));
+for(const [a,b] of exit.edges)openings.add(edge(a,b));
+const portals=[entrance,exit];
 const segments=[];
 for(const room of rooms.slice(1))for(const [x,y] of room.cells)for(const [dx,dy,side] of dirs){
  const nx=x+dx,ny=y+dy,other=occ.get(key(nx,ny));
@@ -234,11 +260,16 @@ for(const room of rooms){
  room.plannedUse=pool[Math.floor(roll*pool.length)]||'Studierzimmer';
  useCounts.set(room.plannedUse,(useCounts.get(room.plannedUse)||0)+1);
 }
-if(stairs)rooms[stairs.roomId].plannedUse='Treppenraum';
+
 const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.length,
  corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,
  interiorWalls:innerWalls.length,stairs:stairs?[stairs]:[],depth,roomLinearScale:2,wallCutHeight:96};
 function extend(map){
+ for(const [x,y] of exit.cells){
+  const area=[x,y,x+1,y+1];
+  map.logic.walkable.push(area);
+  map.art.ground.push({area,material:'court'});
+ }
  const strips=new Map();
  for(const room of rooms.slice(1))for(const [x,y] of room.cells){
   const name=room.id+':'+y,values=strips.get(name)||[];values.push(x);strips.set(name,values);
@@ -263,11 +294,13 @@ function blocked(u,v,r=0){
 }
 const alleyGround=[[1,2.75,12,6.85],[4.5,6.8,8.1,9.4],[9.5,.8,12,2.75]];
 function containsGround(u,v){
- return occ.has(key(Math.floor(u),Math.floor(v)))||
+ return exterior.has(key(Math.floor(u),Math.floor(v)))||occ.has(key(Math.floor(u),Math.floor(v)))||
   alleyGround.some(([a,b,c,d])=>u>=a&&u<=c&&v>=b&&v<=d);
 }
 function areaAt(u,v){
- const id=occ.get(key(Math.floor(u),Math.floor(v)));
+ const cell=key(Math.floor(u),Math.floor(v));
+ if(exterior.has(cell))return 'Draußen · Hinterausgang';
+ const id=occ.get(cell);
  if(id===undefined||id===0)return 'Gasse · Startraum';
  const room=rooms[id];
  return String(id+1).padStart(2,'0')+' / 10 · '+(room.kind==='gang'?'Gang':'Raum')+' · '+room.style;
@@ -401,7 +434,7 @@ function path(from,target,canWalk){
  return {goal,steps};
 }
 const generator={
- enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors,walls,containsGround,
+ enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors,walls,portals,containsGround,
  stairs:stairs?[stairs]:[],materials,metadata,seal:null,
  extend,blocked,areaAt,renderFloor,renderWall,
  renderSeal(){},renderProp(){},unlock(){},isUnlocked(){return true;},path,prewarm

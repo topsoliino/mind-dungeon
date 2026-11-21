@@ -176,10 +176,16 @@ function candidateAccessible(generator,model){
   for(let i=1;i<=n;i++)if(!pointOK(x+(u-x)*i/n,y+(v-y)*i/n))return false;
   return true;
  };
+ const exit=generator.portals[1];
+ const targets=[goal,{x:exit.x+exit.dx,y:exit.y+exit.dy}];
+ if(model.ladder)targets.push(model.ladder.bottom);
  for(let i=0;i<queue.length;i++){
   const [u,v]=queue[i],x=u+.5,y=v+.5;
-  if(dist(vec(x,y),goal)<1.5&&segmentClear(x,y,goal.x,goal.y))
-   return true;
+  for(let j=targets.length-1;j>=0;j--){
+   const target=targets[j];
+   if(dist(vec(x,y),target)<1.5&&segmentClear(x,y,target.x,target.y))targets.splice(j,1);
+  }
+  if(!targets.length)return true;
   for(const [du,dv] of [[1,0],[-1,0],[0,1],[0,-1]]){
    const nx=u+du,ny=v+dv,k=K(nx,ny);
    if(seen.has(k)||!tiles.has(k)||!pointOK(nx+.5,ny+.5)||
@@ -189,7 +195,7 @@ function candidateAccessible(generator,model){
  }
  return false;
 }
-function select(generator){
+function select(generator,placeLadder){
  const asked=new URLSearchParams(window.location.search).get('treppe');
  // Preserve the original seed->stair family mapping while allowing the
  // closed U-form to appear occasionally in ordinary generated levels.
@@ -236,13 +242,17 @@ function select(generator){
   }
   if(viable.length){
    viable.sort((a,b)=>b.score-a.score);
-   const possible=viable.find(model=>candidateAccessible(generator,model));
-   if(possible){viable.length=0;viable.push(possible);break;}
+   for(const model of viable){
+    const plan=withUpperDeck(model);
+    if((!placeLadder||placeLadder(plan))&&candidateAccessible(generator,plan))return plan;
+   }
    viable.length=0;
   }
  }
- if(!viable.length)throw Error('No physically reachable stair footprint fits any chamber');
- const chosen=viable[0],room=chosen.room;
+ throw Error('No physically reachable stair footprint fits any chamber');
+}
+function withUpperDeck(chosen){
+ const room=chosen.room;
  const avoid=new Set();
  for(const step of chosen.steps){
   if(step.z>H*.77)continue;
