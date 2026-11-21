@@ -4189,7 +4189,10 @@ function characterFrame(bank,look,armor,actor,{pose,falling,heading,air,dashTime
  return bank.get(look,armor,direction,actor.moving?'walk':'idle',actor.moving?walk:frame*2.6,0,false,textures);
 }
 function alleyActor(){
- return {...player,...iso.toView(player.x,player.y),dir:iso.viewAngle(player.dir),moveAngle:iso.viewAngle(player.moveAngle),
+ const z=alleyVertical?.state.z??0,point=iso.toView(player.x,player.y,z);
+ const raised=alleyVertical&&(alleyVertical.state.floor===1||alleyVertical.state.transition);
+ return {...player,...point,renderDepth:raised?7000+point.y:point.y,
+  dir:iso.viewAngle(player.dir),moveAngle:iso.viewAngle(player.moveAngle),
   recoilAngle:Number.isFinite(player.recoilAngle)?iso.viewAngle(player.recoilAngle):undefined};
 }
 function localSprite(textures,actor=player){
@@ -4310,6 +4313,11 @@ function drawCanvasCharacter(sprite,actor,lift,fall=null,alpha=1){
  s.restore();
 }
 function alleyGuardianPose(){
+ if(alleyVertical?.state.transition){
+  const task=alleyVertical.state.transition;
+  return {clip:task.connector.kind==='ladder'?(task.up?'climb-up':'climb-down'):'walk',
+   progress:task.age/task.duration,angle:player.dir,hideWeapon:true};
+ }
  if(alleyHit)return {clip:alleyHit.clip,progress:alleyHit.elapsed/guardian.atlas.knockback[alleyHit.clip].duration,angle:player.dir};
  if(player.dash>0)return {clip:'roll',progress:1-player.dash/player.dashDuration,angle:Math.atan2(player.dashY,player.dashX)};
  if(alleyChest)return {clip:'chest',progress:alleyChest.elapsed/alleyChest.duration,angle:alley.chestFacing,hideWeapon:true};
@@ -4334,12 +4342,12 @@ function alleySprites(actor){
   const facing=iso.viewAngle(angle),armed=!hideWeapon&&Boolean(save.equipment.weapon);
   if(guardian.rig){
    const rig=guardian.rig;
-   const live=rig.render(clip,guardian.atlas.clips[clip],progress,facing,armed,performance.now()/1000);
+   const live=rig.render(clip,guardian.atlas.clips[clip]??guardian.atlas.clips.idle,progress,facing,armed,performance.now()/1000);
    add(rig.canvas,'alley-guardian-rig',actor.x-rig.displaySize/2,actor.y-rig.ground,rig.displaySize,rig.displaySize,
-    {originX:0,originY:0,depth:actor.y,live});
+    {originX:0,originY:0,depth:actor.renderDepth??actor.y,live});
   }else{
-   const parts=guardianArt.parts(guardian,clip,progress,facing,actor.x,actor.y,armed);
-   parts.forEach((part,i)=>sprites.push({...part,depth:actor.y+i*.02,originX:0,originY:0}));
+   const parts=guardianArt.parts(guardian,guardian.atlas.clips[clip]?clip:'idle',progress,facing,actor.x,actor.y,armed);
+   parts.forEach((part,i)=>sprites.push({...part,depth:(actor.renderDepth??actor.y)+i*.02,originX:0,originY:0}));
   }
  }
  for(const e of enemies){
