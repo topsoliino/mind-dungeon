@@ -55,7 +55,11 @@ jobs:
                   beta/art/player-study/guardian-frames.json
           if ! git diff --cached --quiet; then
             git commit -m "Blender: bake and export Guardian climb-up/down on actual armature"
-            git push
+            # Source changes made while Blender was running must not make
+            # the binary asset commit fail with a non-fast-forward push.
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
           else
             echo "All baked ladder assets were already current."
           fi
