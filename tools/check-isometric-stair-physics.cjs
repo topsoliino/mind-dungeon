@@ -71,9 +71,16 @@ assert.equal(seen.size,8,'all eight stair families have physical traversal');
 const u=create(4,'switchback').plan;
 assert.equal(u.kind,'switchback');
 assert.equal(u.landings.length,1);
-const ledge=u.landings[0],south=Math.max(...ledge.corners.map(x=>x.y));
-assert(near(u.steps[7].end[0].y,south)&&near(u.steps[8].start[0].y,south),
- 'U stair runs must touch the same intermediate landing edge');
+const ledge=u.landings[0];
+const distanceToEdge=(p,a,b)=>{
+ const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,
+  ((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy)));
+ return Math.hypot(p.x-a.x-dx*t,p.y-a.y-dy*t);
+};
+const onLandingEdge=p=>ledge.corners.some((a,i)=>
+ distanceToEdge(p,a,ledge.corners[(i+1)%ledge.corners.length])<1e-5);
+assert(u.steps[7].end.every(onLandingEdge)&&u.steps[8].start.every(onLandingEdge),
+ 'U stair flights must contact the same solid landing perimeter after rotation');
 assert(near(u.path[2].z,66)&&near(u.path[3].z,66)&&near(u.path[4].z,66),
  'the U turn must remain at a constant mid-landing elevation');
 const curved=create(7,'curved').plan;
