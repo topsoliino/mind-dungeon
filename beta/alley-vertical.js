@@ -22,6 +22,7 @@ room.plannedUse='Treppenraum';
 const directions=[{id:'north',dx:0,dy:-1},{id:'west',dx:-1,dy:0},
  {id:'east',dx:1,dy:0},{id:'south',dx:0,dy:1}];
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const norm=(x,y)=>{const length=Math.hypot(x,y)||1;return {x:x/length,y:y/length};};
 const candidates=[];
 for(const [u,v] of room.cells){
  for(const dir of directions){
@@ -125,6 +126,67 @@ const stairPath=[
 const lengths=stairPath.slice(1).map((point,i)=>
  distance(point,stairPath[i]));
 const totalLength=lengths.reduce((a,b)=>a+b,0);
+// Reuse the calibrated 2D staircase movement constraints: climb speeds
+// .68/.73, descent speeds .83/.86, lateral walking .58, landings .95.
+const STAIR_SPEED=Object.freeze({straightUp:.68,straightDown:.83,
+ curvedUp:.73,curvedDown:.86,across:.58,landing:.95});
+const curving=plan.kind.startsWith('spiral')||
+ ['quarter','switchback','curved'].includes(plan.kind);
+function segmentAt(distanceAlong){
+ let left=Math.max(0,Math.min(totalLength,distanceAlong));
+ for(let i=0;i<lengths.length;i++){
+  if(left>lengths[i]&&i<lengths.length-1){left-=lengths[i];continue;}
+  return {index:i,t:Math.max(0,Math.min(1,left/Math.max(.00001,lengths[i]))),
+   a:stairPath[i],b:stairPath[i+1]};
+ }
+ const i=lengths.length-1;
+ return {index:i,t:1,a:stairPath[i],b:stairPath[i+1]};
+}
+function speedOnStair(distanceAlong,sign){
+ const {a,b}=segmentAt(distanceAlong);
+ if(Math.abs(a.z-b.z)<.001)return STAIR_SPEED.landing;
+ return sign>0?
+  (curving?STAIR_SPEED.curvedUp:STAIR_SPEED.straightUp):
+  (curving?STAIR_SPEED.curvedDown:STAIR_SPEED.straightDown);
+}
+const between=(p,a,b)=>{
+ const dx=b.x-a.x,dy=b.y-a.y,n=dx*dx+dy*dy;
+ const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/Math.max(n,.00001)));
+ return {t,distance:Math.hypot(p.x-a.x-dx*t,p.y-a.y-dy*t)};
+};
+const distanceEdge=(p,a,b)=>between(p,a,b).distance;
+function insideConvex(p,points){
+ let positive=false,negative=false;
+ for(let i=0;i<points.length;i++){
+  const a=points[i],b=points[(i+1)%points.length];
+  const cross=(b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x);
+  positive||=cross>1e-7;negative||=cross< -1e-7;
+  if(positive&&negative)return false;
+ }
+ return true;
+}
+function overStair(u,v,r=0){
+ const p={x:u,y:v},pieces=plan.steps.concat(plan.landings);
+ return pieces.some(piece=>{
+  const vertices=piece.corners;
+  return insideConvex(p,vertices)||r>0&&vertices.some((a,i)=>
+   distanceEdge(p,a,vertices[(i+1)%vertices.length])<=r);
+ });
+}
+function blocksGround(u,v,r=0){
+ if(!overStair(u,v,r))return false;
+ const entry=plan.bottom;
+ return distance(entry,{x:u,y:v})>.58+r*.65;
+}
+// Pick actual visible isometric tread surfaces, not their misleading
+// flat-ground cursor projections. This lets right-click target a flight.
+function pickStair(screen,iso){
+ for(const part of [...plan.steps,...plan.landings].slice().reverse()){
+  const poly=part.corners.map(p=>iso.toView(p.x*48,p.y*48,part.z));
+  if(insideConvex(screen,poly))return part;
+ }
+ return null;
+}
 function walkStairs(progress){
  let left=totalLength*clamp(progress);
  for(let i=0;i<lengths.length;i++){
@@ -183,7 +245,8 @@ function createLayers({project,polygon,line,cacheObject}){
   // The landing is a structural member of the staircase, not a decorative
   // rectangle painted on top of all other steps. It shares the depth painter.
   const pieces=plan.steps.map((s,i)=>({...s,index:i,kind:'step'}))
-   .concat(plan.landings.map(l=>({
+   // Top landings are 1st-floor objects and drawn in the upper-only layer.
+   .concat(plan.landings.filter(l=>!l.top).map(l=>({
     ...l,kind:'landing',center:l.corners.reduce((a,p)=>({
      x:a.x+p.x/l.corners.length,y:a.y+p.y/l.corners.length}),{x:0,y:0})
    })));
@@ -196,22 +259,33 @@ function createLayers({project,polygon,line,cacheObject}){
   for(const part of pieces){
    if(part.kind==='landing'){
     const ps=part.corners.map(p=>project(p.x,p.y,part.z));
+    // One continuous stone slab, only 13 px thick. The previous giant
+    // rectangular side faces concealed the connecting upper flight.
     for(let i=0;i<4;i++){
      const a=part.corners[i],b=part.corners[(i+1)%4];
-     if(i%2===0)polygon(ctx,[project(a.x,a.y,0),project(b.x,b.y,0),
-      project(b.x,b.y,part.z),project(a.x,a.y,part.z)],
-      '#586475','#424e5d');
+     if(i%2===0)polygon(ctx,[project(a.x,a.y,part.z-13),
+      project(b.x,b.y,part.z-13),project(b.x,b.y,part.z),
+      project(a.x,a.y,part.z)],'#586475','#424e5d');
+    }
+    // Four discrete supporting posts: the landing is load-bearing, not
+    // a wall that completely obstructs the isometric view beneath it.
+    if(part.z>20)for(const corner of part.corners){
+     const x=corner.x,y=corner.y,r=.09;
+     polygon(ctx,[project(x-r,y,0),project(x+r,y,0),
+      project(x+r,y,part.z-13),project(x-r,y,part.z-13)],
+      '#677483','#4a5765');
     }
     polygon(ctx,ps,'#939ca8','#ced2d6');
     continue;
    }
    const [a,b,c,d]=part.corners,z=part.z,prev=part.prev;
-   const base=p=>project(p.x,p.y,0);
    const top=p=>project(p.x,p.y,z);
    const low=p=>project(p.x,p.y,prev);
-   polygon(ctx,[base(a),base(d),top(d),top(a)],palettes.left,'#343d4b');
-   polygon(ctx,[base(b),base(c),top(c),top(b)],palettes.right,'#3e4654');
-   // Exact one-riser-high vertical face, with a constant tread depth.
+   const under=p=>project(p.x,p.y,Math.max(0,z-13));
+   // Shallow load-bearing stair stringers, not per-step towers built
+   // from floor zero up: those produced the isolated blocks in the screenshot.
+   polygon(ctx,[under(a),under(d),top(d),top(a)],palettes.left,'#343d4b');
+   polygon(ctx,[under(b),under(c),top(c),top(b)],palettes.right,'#3e4654');
    polygon(ctx,[low(a),low(b),top(b),top(a)],palettes.riser,'#424a57');
    polygon(ctx,[top(a),top(b),top(c),top(d)],
     palettes.top[part.index%2],'#d1c9ca');
@@ -286,12 +360,18 @@ function createLayers({project,polygon,line,cacheObject}){
  });
  // Separate upper-only details. They MUST NOT leak into the ground-floor view.
  const upperLanding=cacheObject(stairs.area,HEIGHT+40,ctx=>{
-  const top=plan.top,delta=.38,pts=[
+  // The final curved tread connects to this real horizontal landing only
+  // once the upper story is shown. It follows the final tread tangent.
+  const top=plan.top,delta=.38;
+  const caps=plan.landings.filter(l=>l.top);
+  const plates=caps.length?caps.map(l=>l.corners):[[
    {x:top.x-delta,y:top.y-delta},{x:top.x+delta,y:top.y-delta},
    {x:top.x+delta,y:top.y+delta},{x:top.x-delta,y:top.y+delta}
-  ];
-  polygon(ctx,pts.map(p=>project(p.x,p.y,HEIGHT+2)),'#8eabba','#d6cfc0');
-  line(ctx,[project(top.x-.3,top.y,HEIGHT+4),project(top.x+.3,top.y,HEIGHT+4)],'#e1d3b8',2);
+  ]];
+  for(const pts of plates)polygon(ctx,pts.map(p=>project(p.x,p.y,HEIGHT)),
+   '#8eabba','#d6cfc0');
+  line(ctx,[project(top.x-.3,top.y,HEIGHT+3),project(top.x+.3,top.y,HEIGHT+3)],
+   '#e1d3b8',2);
  });
  return [
   {kind:'upper-deck',image:slab,depth:4000,level:1},
@@ -302,8 +382,68 @@ function createLayers({project,polygon,line,cacheObject}){
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
  ];
 }
-const state={floor:0,z:0,transition:null,pending:null};
+const state={floor:0,z:0,transition:null,pending:null,stairRide:null};
+function boardStairs(actor,up=true,auto=true){
+ if(state.stairRide||state.transition||state.pending)return false;
+ const gate=up?plan.bottom:plan.top;
+ if(Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y)>.72)return false;
+ state.stairRide={s:up?0:totalLength,lateral:0,dir:up?1:-1,auto,up};
+ state.z=up?0:HEIGHT;
+ actor.x=gate.x*48;actor.y=gate.y*48;
+ return true;
+}
+function tryEnterStairs(actor,dx,dy){
+ if(state.stairRide||state.transition||state.pending)return false;
+ if(!dx&&!dy)return false;
+ const up=state.floor===0,gate=up?plan.bottom:plan.top;
+ const distanceGate=Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y);
+ if(distanceGate>.61)return false;
+ const a=up?stairPath[0]:stairPath.at(-1),
+  b=up?stairPath[1]:stairPath.at(-2);
+ const tangent={x:b.x-a.x,y:b.y-a.y},norm=Math.hypot(tangent.x,tangent.y)||1;
+ const toward=(dx*tangent.x+dy*tangent.y)/norm;
+ if(toward<.38)return false;
+ return boardStairs(actor,up,true);
+}
+function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
+ const ride=state.stairRide;
+ if(!ride)return false;
+ const {a,b}=segmentAt(ride.s),t=norm(b.x-a.x,b.y-a.y);
+ // Inputs are projected onto the local stair tangent. The lateral component
+ // may shift the hero inside the guarded stair width, but never outside.
+ const dot=inputX*t.x+inputY*t.y;
+ const across=inputX*(-t.y)+inputY*t.x;
+ if(Math.abs(dot)>.12){
+  ride.auto=false;ride.dir=Math.sign(dot);
+ }
+ const sign=ride.auto?ride.dir:Math.abs(dot)>.12?Math.sign(dot):0;
+ const incline=speedOnStair(ride.s,sign||ride.dir);
+ const travel=(worldSpeed/48)*dt*incline*(ride.auto?1:Math.abs(dot));
+ ride.s=Math.max(0,Math.min(totalLength,ride.s+travel*sign));
+ const maxLateral=Math.max(0,plan.width/2-.29-.15);
+ ride.lateral=Math.min(maxLateral,Math.max(-maxLateral,
+  ride.lateral+(worldSpeed/48)*dt*STAIR_SPEED.across*across));
+ const center=walkStairs(ride.s/totalLength);
+ const d=segmentAt(ride.s),dir=norm(d.b.x-d.a.x,d.b.y-d.a.y);
+ actor.x=(center.x-dir.y*ride.lateral)*48;
+ actor.y=(center.y+dir.x*ride.lateral)*48;
+ actor.dir=center.face+(ride.dir<0?Math.PI:0);
+ actor.moveAngle=actor.dir;actor.moving=Boolean(sign||Math.abs(across)>.01);
+ state.z=center.z;
+ if(ride.s>=totalLength-1e-5||ride.s<=1e-5&&ride.dir<0){
+  state.floor=ride.s>=totalLength-1e-5?1:0;
+  state.z=state.floor?HEIGHT:0;
+  const exit=state.floor?plan.top:plan.bottom;
+  actor.x=exit.x*48;actor.y=exit.y*48;actor.moving=false;
+  state.stairRide=null;
+  return {completed:true,floor:state.floor};
+ }
+ return {completed:false,floor:state.floor,z:state.z,
+  along:ride.s,total:totalLength,incline};
+}
 const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
- connectors,state,insideTop,playerInChamber,nearby,pose,createLayers};
+ connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
+ overStair,blocksGround,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
+ boardStairs,tryEnterStairs,advanceStairs};
 window.AlleyVertical=api;
 })();

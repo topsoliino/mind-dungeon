@@ -48,6 +48,9 @@
    // Upper-level physics belongs to its own slab; lower-level partitions must
    // not turn into invisible obstacles on the mezzanine.
    if(vertical?.state.floor===1)return vertical.insideTop(x/tile,y/tile,r/tile);
+   // Stair treads are physical geometry, not ordinary ground. The only
+   // accessible gaps into the ribbon are the guarded foot and head.
+   if(vertical?.blocksGround(x/tile,y/tile,r/tile))return false;
    if(art.blockedGround(x/tile,y/tile,r/tile))return false;
    return !includeProps||props.every(({point,half:[a,b]})=>{
     const dx=Math.max(0,Math.abs(x-point.x)-a*tile),dy=Math.max(0,Math.abs(y-point.y)-b*tile);
@@ -118,12 +121,17 @@
    // A level is a VISIBILITY GROUP, not a mostly transparent overlay.
    // Upper floors and upper-only fixtures are entirely hidden below. They
    // fade in near the last top-out frames (never before the landing).
-   const crossing=vertical?.state.transition;
-   const liftProgress=crossing?crossing.age/crossing.duration:0;
-   const reveal=crossing?
-    (crossing.up?Math.max(0,Math.min(1,(liftProgress-.84)/.16)):
-     Math.max(0,Math.min(1,(.18-liftProgress)/.18))):
-    (vertical?.state.floor===1?1:0);
+   const crossing=vertical?.state.transition,stair=vertical?.state.stairRide;
+   const liftProgress=crossing?crossing.age/crossing.duration:
+    stair?stair.s/Math.max(.001,vertical.stairLength):0;
+   // Stair visibility follows the actual height on the ribbon, not a
+   // separate cutscene timer. The upper floor appears only at the crest.
+   const reveal=stair?
+     Math.max(0,Math.min(1,(liftProgress-.84)/.16)):
+     crossing?
+     (crossing.up?Math.max(0,Math.min(1,(liftProgress-.84)/.16)):
+      Math.max(0,Math.min(1,(.18-liftProgress)/.18))):
+     (vertical?.state.floor===1?1:0);
    const verticalObjects=upperArchitecture.map(part=>{
     const visible=part.level===0||reveal>0;
     const alpha=part.level===1?reveal:1;
