@@ -1,7 +1,7 @@
 // Blender-exported 360-degree directional atlases with continuous view interpolation.
 window.AlleySkeleton=(()=>{
  'use strict';
- const sheets=new Map(),cell=96,deathDuration=.78,assetVersion=3,turn=Math.PI*2;
+ const sheets=new Map(),cell=96,deathDuration=.78,assetVersion=4,turn=Math.PI*2;
  async function load(){
   sheets.clear();
   await Promise.all(['sabre','bow'].flatMap(kit=>
@@ -44,24 +44,14 @@ window.AlleySkeleton=(()=>{
   const p=iso.toView(e.x,e.y),size=110*e.size;
   return {image,key:'skeleton-'+key,frame:row+'-'+col,sx:col*cell,sy:row*cell,w:cell,h:cell,
    width:size,height:size,x:p.x,y:p.y,depth:p.y,originX:.5,originY:.765,
-   alpha:deathAge===null?(e.hit>0?.72:1):Math.min(1,Math.max(0,(2.6-deathAge)/.5))};
+   alpha:deathAge===null?1:Math.min(1,Math.max(0,(2.6-deathAge)/.5))};
  }
  function sprites(e,iso,rules,deathAge=null){
-  const base=sprite(e,iso,rules,deathAge);
-  if(!base)return [];
-  const views=base.image.height/cell;
-  const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
-  // Preserve the native 3D camera-relative direction. Cross-fade between
-  // adjacent Blender renders, including the 360° -> 0° wraparound.
-  const exact=((views/8-facing*views/turn)%views+views)%views;
-  const low=Math.floor(exact),weight=exact-low;
-  if(weight<.02||weight>.98)return [base];
-  const first={...base,sy:low*cell,frame:low+'-'+base.sx/cell,
-   alpha:base.alpha*(1-weight)};
-  const upper=(low+1)%views;
-  const second={...base,sy:upper*cell,frame:upper+'-'+base.sx/cell,
-   alpha:base.alpha*weight,depth:base.depth+.0001};
-  return [first,second];
+  // 32 independently baked 3D directions: use solid nearest-frame
+  // rendering instead of two translucent skeletons overlaid. The old
+  // cross-fade showed the dungeon floor through the bones (ghosting).
+  const view=sprite(e,iso,rules,deathAge);
+  return view?[view]:[];
  }
  function encounters(generator,alley){
   const rooms=(generator.rooms||[]).filter(r=>r.kind==='raum'&&r.cells?.length);
