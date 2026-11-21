@@ -166,6 +166,7 @@ function insideConvex(p,points){
  return true;
 }
 const stairSurfaces=plan.steps.concat(plan.landings);
+const navigation=window.AlleyStairNavigation.make(plan);
 const intersectsStair=(part,p,r)=>insideConvex(p,part.corners)||r>0&&
  part.corners.some((a,i)=>distanceEdge(p,a,part.corners[(i+1)%part.corners.length])<=r);
 function overStair(u,v,r=0){
@@ -189,14 +190,7 @@ function blocksTop(u,v,r=0){
 }
 // Pick actual visible isometric tread surfaces, not their misleading
 // flat-ground cursor projections. This lets right-click target a flight.
-function pickStair(screen,iso){
- for(let i=stairSurfaces.length-1;i>=0;i--){
-  const part=stairSurfaces[i];
-  const poly=part.corners.map(p=>iso.toView(p.x*48,p.y*48,part.z));
-  if(insideConvex(screen,poly))return part;
- }
- return null;
-}
+function pickStair(screen,iso){return stairController.pick(screen,iso);}
 function walkStairs(progress){
  let left=totalLength*clamp(progress);
  for(let i=0;i<lengths.length;i++){
@@ -391,77 +385,19 @@ function targetAlongStairs(part){
  }
  return Math.max(0,Math.min(totalLength,at));
 }
-function boardStairs(actor,up=true,target=null){
- if(state.stairRide||state.transition||state.pending||state.floor!==(up?0:1))return false;
- const gate=up?plan.bottom:plan.top;
- if(Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y)>.72)return false;
- state.stairRide={s:up?0:totalLength,lateral:0,dir:up?1:-1,
-  targetS:target==null?null:typeof target==='number'?
-   Math.max(0,Math.min(totalLength,target)):targetAlongStairs(target),gait:0};
- state.z=up?0:HEIGHT;
- actor.x=gate.x*48;actor.y=gate.y*48;actor.moving=false;
- return true;
-}
-function aimStairs(part){
- if(!state.stairRide)return false;
- state.stairRide.targetS=part==null?null:targetAlongStairs(part);
- return true;
-}
-function tryEnterStairs(actor,dx,dy){
- if(state.stairRide||state.transition||state.pending||!dx&&!dy)return false;
- const up=state.floor===0,gate=up?plan.bottom:plan.top;
- if(Math.hypot(actor.x/48-gate.x,actor.y/48-gate.y)>.61)return false;
- const a=up?stairPath[0]:stairPath.at(-1),
-  b=up?stairPath[1]:stairPath.at(-2),t=norm(b.x-a.x,b.y-a.y);
- if(dx*t.x+dy*t.y<.38)return false;
- return boardStairs(actor,up);
-}
-function advanceStairs(actor,dt,worldSpeed,inputX=0,inputY=0){
- const ride=state.stairRide;
- if(!ride)return false;
- const {a,b}=segmentAt(ride.s),t=norm(b.x-a.x,b.y-a.y);
- const dot=inputX*t.x+inputY*t.y,across=inputX*(-t.y)+inputY*t.x;
- const manual=Math.hypot(inputX,inputY)>.15;
- if(manual)ride.targetS=null;
- let sign=0,amount=0;
- if(manual&&Math.abs(dot)>.12){sign=Math.sign(dot);amount=Math.min(1,Math.abs(dot));}
- else if(!manual&&ride.targetS!==null){
-  const delta=ride.targetS-ride.s;
-  if(Math.abs(delta)>1e-6){sign=Math.sign(delta);amount=1;}
-  else ride.targetS=null;
- }
- if(sign)ride.dir=sign;
- const incline=speedOnStair(ride.s,sign||ride.dir);
- let travel=(worldSpeed/48)*Math.min(.05,dt)*incline*amount;
- if(!manual&&ride.targetS!==null)travel=Math.min(travel,Math.abs(ride.targetS-ride.s));
- const oldS=ride.s,oldL=ride.lateral;
- ride.s=Math.max(0,Math.min(totalLength,ride.s+travel*sign));
- const maxLateral=Math.max(0,plan.width/2-.29-.15);
- ride.lateral=Math.min(maxLateral,Math.max(-maxLateral,
-  ride.lateral+(worldSpeed/48)*Math.min(.05,dt)*STAIR_SPEED.across*across));
- if(!manual&&ride.targetS!==null&&Math.abs(ride.s-ride.targetS)<1e-6)
-  ride.targetS=null;
- const center=walkStairs(ride.s/totalLength),d=segmentAt(ride.s);
- const forward=norm(d.b.x-d.a.x,d.b.y-d.a.y);
- actor.x=(center.x-forward.y*ride.lateral)*48;
- actor.y=(center.y+forward.x*ride.lateral)*48;
- actor.dir=center.face+(ride.dir<0?Math.PI:0);
- actor.moveAngle=actor.dir;
- actor.moving=Math.abs(ride.s-oldS)>1e-6||Math.abs(ride.lateral-oldL)>1e-6;
- ride.gait+=Math.hypot(ride.s-oldS,ride.lateral-oldL)*2;
- state.z=center.z;
- if(ride.dir>0&&ride.s>=totalLength-1e-6||
-    ride.dir<0&&ride.s<=1e-6){
-  state.floor=ride.s>=totalLength-1e-6?1:0;state.z=state.floor?HEIGHT:0;
-  const exit=state.floor?plan.top:plan.bottom;
-  actor.x=exit.x*48;actor.y=exit.y*48;actor.moving=false;
-  state.stairRide=null;return {completed:true,floor:state.floor};
- }
- return {completed:false,floor:state.floor,z:state.z,
-  along:ride.s,total:totalLength,incline};
-}
+// Both keyboard and click motion use one freeform, radius-safe navigation
+// surface rather than separate timing or single-centreline movement systems.
+const stairController=window.AlleyStairController.make({
+ plan,state,nav:navigation,length:totalLength,speeds:STAIR_SPEED,curving
+});
+const boardStairs=(actor,up=true,target=null)=>stairController.board(actor,up,target);
+const aimStairs=part=>stairController.aim(part);
+const tryEnterStairs=(actor,dx,dy)=>stairController.enter(actor,dx,dy);
+const advanceStairs=(actor,dt,speed,dx=0,dy=0,options=null)=>
+ stairController.advance(actor,dt,speed,dx,dy,options);
 const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,upper,
  connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
+ navigation,
  overStair,blocksGround,blocksTop,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
  boardStairs,aimStairs,targetAlongStairs,tryEnterStairs,advanceStairs};
 window.AlleyVertical=api;
