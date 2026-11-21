@@ -2260,6 +2260,9 @@ function approachAlleyVertical(){
  if(!alleyVertical)return false;
  const state=alleyVertical.state;
  if(state.pending||state.transition)return true;
+ if(player.attack>0||player.dash>0||heldAttack||alleyHit||alleyChest||isConsuming()){
+  tell('Erst die aktuelle Aktion beenden, dann E an der Leiter oder Treppe drücken.');return true;
+ }
  const target=alleyVertical.nearby(player,state.floor,145);
  if(!target){tell('Keine Leiter oder Treppe in Reichweite.');return true;}
  const route=alley.routeTo(player,target.approach);
