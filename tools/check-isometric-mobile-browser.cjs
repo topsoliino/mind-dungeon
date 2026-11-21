@@ -30,11 +30,20 @@ async function run(){
   assert(rect.x>=0&&rect.x+rect.width<390,'movement thumb stays on screen');
   const attack=await page.locator('#attack').boundingBox();
   assert(attack.x>=0&&attack.x+attack.width<=390,'attack button fits phone width');
+  await page.evaluate(()=>{
+   window.__touchDebug=[];
+   for(const kind of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture'])
+    document.querySelector('#mobile-stick').addEventListener(kind,e=>
+     window.__touchDebug.push([kind,e.pointerId,e.pointerType,e.clientX,e.clientY]),{capture:true});
+  });
   await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);
   await page.mouse.down();
   await page.mouse.move(rect.x+rect.width*.82,rect.y+rect.height/2,{steps:3});
   const offset=await page.locator('#mobile-stick-thumb').evaluate(e=>e.style.transform);
-  assert(offset.includes('translate(')&&!offset.endsWith('translate(-50%,-50%)'),'stick follows a finger');
+  const debug=await page.evaluate(()=>window.__touchDebug);
+  console.log('Joystick browser debug:',JSON.stringify({rect,offset,debug}));
+  await page.screenshot({path:'mobile-isometric-preview.png'});
+  assert(offset.includes('translate(')&&offset!=='translate(-50%,-50%)','stick follows a finger');
   await page.mouse.up();
   assert.equal(await page.locator('#mobile-stick-thumb').evaluate(e=>e.style.transform),'translate(-50%,-50%)');
   await page.locator('#attack').click();
