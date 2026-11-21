@@ -69,9 +69,27 @@ candidates.sort((a,b)=>{
  const score=c=>4-rotated.indexOf(c.wall);
  return score(b)-score(a)||b.distance-a.distance||a.cell[1]-b.cell[1];
 });
-const ladder={...candidates[0],id:'wall-ladder',kind:'ladder',height:HEIGHT};
+// A ladder opening may not sever the upstairs walkable region. Validate the
+// removal of its actual hatch cell, not merely its initial room membership.
+const staysConnected=c=>{
+ const blocked=key(...c.cell),start=key(Math.floor(plan.top.x),Math.floor(plan.top.y)),
+  goal=key(Math.floor(c.top.x),Math.floor(c.top.y));
+ if(!upper.has(start)||!upper.has(goal)||start===blocked||goal===blocked)return false;
+ const visited=new Set([start]),queue=[start];
+ for(let i=0;i<queue.length;i++){
+  const [u,v]=queue[i].split(',').map(Number);
+  for(const [du,dv] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const n=key(u+du,v+dv);
+   if(n!==blocked&&upper.has(n)&&!visited.has(n)){visited.add(n);queue.push(n);}
+  }
+ }
+ return visited.has(goal);
+};
+const picked=candidates.find(staysConnected)??candidates.find(c=>
+ upperReachable.has(key(Math.floor(c.top.x),Math.floor(c.top.y))))??candidates[0];
+const ladder={...picked,id:'wall-ladder',kind:'ladder',height:HEIGHT};
 if(!ladder?.bottom)throw Error('Could not place a wall-anchored ladder in the upper chamber');
-upper.delete(key(...ladder.cell));
+if(staysConnected(ladder))upper.delete(key(...ladder.cell));
 upper.add(key(Math.floor(ladder.top.x),Math.floor(ladder.top.y)));
 const stairsConnector={
  id:'stone-stairs',kind:'stairs',floorFrom:0,floorTo:1,
