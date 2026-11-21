@@ -251,101 +251,82 @@ function createLayers({project,polygon,line,cacheObject}){
      project(u+1,v+1,HEIGHT-17),project(u,v+1,HEIGHT-17)],'#394c5b','#748896');
   }
  });
- const stairsImage=cacheObject(stairs.area,HEIGHT+58,ctx=>{
-  // The landing is a structural member of the staircase, not a decorative
-  // rectangle painted on top of all other steps. It shares the depth painter.
-  const pieces=plan.steps.map((s,i)=>({...s,index:i,kind:'step'}))
-   // Top landings are 1st-floor objects and drawn in the upper-only layer.
-   .concat(plan.landings.filter(l=>!l.top).map(l=>({
-    ...l,kind:'landing',center:l.corners.reduce((a,p)=>({
-     x:a.x+p.x/l.corners.length,y:a.y+p.y/l.corners.length}),{x:0,y:0})
-   })));
-  pieces.sort((a,b)=>project(a.center.x,a.center.y,a.z)[1]-
-   project(b.center.x,b.center.y,b.z)[1]);
-  const palettes={
-   top:['#939eaf','#98a3b0'],riser:'#555f70',left:'#485565',
-   right:'#647384',line:'#d9ced0'
-  };
-  for(const part of pieces){
-   if(part.kind==='landing'){
-    const ps=part.corners.map(p=>project(p.x,p.y,part.z));
-    // One continuous stone slab, only 13 px thick. The previous giant
-    // rectangular side faces concealed the connecting upper flight.
-    for(let i=0;i<4;i++){
-     const a=part.corners[i],b=part.corners[(i+1)%4];
-     if(i%2===0)polygon(ctx,[project(a.x,a.y,part.z-13),
-      project(b.x,b.y,part.z-13),project(b.x,b.y,part.z),
-      project(a.x,a.y,part.z)],'#586475','#424e5d');
-    }
-    // Four discrete supporting posts: the landing is load-bearing, not
-    // a wall that completely obstructs the isometric view beneath it.
-    if(part.z>20)for(const corner of part.corners){
-     const x=corner.x,y=corner.y,r=.09;
-     polygon(ctx,[project(x-r,y,0),project(x+r,y,0),
-      project(x+r,y,part.z-13),project(x-r,y,part.z-13)],
-      '#677483','#4a5765');
-    }
-    polygon(ctx,ps,'#939ca8','#ced2d6');
-    continue;
-   }
-   const [a,b,c,d]=part.corners,z=part.z,prev=part.prev;
-   const top=p=>project(p.x,p.y,z);
-   const low=p=>project(p.x,p.y,prev);
-   const under=p=>project(p.x,p.y,Math.max(0,z-13));
-   // Shallow load-bearing stair stringers, not per-step towers built
-   // from floor zero up: those produced the isolated blocks in the screenshot.
-   polygon(ctx,[under(a),under(d),top(d),top(a)],palettes.left,'#343d4b');
-   polygon(ctx,[under(b),under(c),top(c),top(b)],palettes.right,'#3e4654');
-   polygon(ctx,[low(a),low(b),top(b),top(a)],palettes.riser,'#424a57');
-   polygon(ctx,[top(a),top(b),top(c),top(d)],
-    palettes.top[part.index%2],'#d1c9ca');
-   line(ctx,[top(a),top(b)],palettes.line,1.8);
+ // Static raster art is baked per tread at scene construction, with separate
+ // scene depths. It is never re-rasterized when the guardian moves.
+ const stairObjects=[];
+ const boundsFor=points=>[Math.min(...points.map(p=>p.x)),
+  Math.min(...points.map(p=>p.y)),Math.max(...points.map(p=>p.x)),
+  Math.max(...points.map(p=>p.y))];
+ function drawPrism(ctx,corners,z,base,posts=false){
+  const low=corners.map(p=>project(p.x,p.y,base));
+  const high=corners.map(p=>project(p.x,p.y,z));
+  polygon(ctx,low,'#454e5d','#394250');
+  for(let i=0;i<corners.length;i++){
+   const j=(i+1)%corners.length;
+   polygon(ctx,[low[i],low[j],high[j],high[i]],
+    i%2?'#697788':'#536174','#354352');
   }
-  for(const post of plan.posts){
-   const p=post.p,r=post.radius;
-   // Continuous spindle at the true geometric centre of the helical steps.
-   const footprint=[{x:p.x-r,y:p.y-r},{x:p.x+r,y:p.y-r},
-    {x:p.x+r,y:p.y+r},{x:p.x-r,y:p.y+r}];
+  if(posts&&base>5)for(const corner of corners){
+   const q=.085,x=corner.x,y=corner.y;
+   const pts=[{x:x-q,y:y-q},{x:x+q,y:y-q},
+    {x:x+q,y:y+q},{x:x-q,y:y+q}],
+    foot=pts.map(p=>project(p.x,p.y,0)),
+    cap=pts.map(p=>project(p.x,p.y,base));
    for(let i=0;i<4;i++){
-    const a=footprint[i],b=footprint[(i+1)%4];
-    if(i%2===0)polygon(ctx,[project(a.x,a.y,0),project(b.x,b.y,0),
-     project(b.x,b.y,post.z1),project(a.x,a.y,post.z1)],
-     '#5c6776','#a9aebb');
+    const j=(i+1)%4;
+    polygon(ctx,[foot[i],foot[j],cap[j],cap[i]],
+     i%2?'#586778':'#788798','#424e5c');
    }
-   polygon(ctx,footprint.map(v=>project(v.x,v.y,post.z1)),'#929dac','#d4c0a6');
+   polygon(ctx,cap,'#adb8bf','#354452');
   }
-  // Guardrails follow the real stringer, including a turn or curved helix.
-  // No rail crosses the landing as an impossible diagonal chord.
-  const profiles=[];
-  if(plan.kind.startsWith('spiral')||plan.kind==='curved'){
-   const vertices=plan.steps.map(step=>step.corners[1]).concat(plan.steps.at(-1).corners[2]);
-   profiles.push(vertices.map((p,i)=>({p,z:HEIGHT*i/(vertices.length-1)+28})));
-  }else{
-   for(const segment of (()=>{const all=[],start=plan.path[0];
-    for(let i=0;i<plan.path.length-1;i++){
-     const a=plan.path[i],b=plan.path[i+1];
-     if(Math.abs(b.z-a.z)<.001)continue;
-     all.push([a,b]);
-    }return all;})()){
-    for(const side of [-1,1]){
-     const [a,b]=segment,v={x:b.x-a.x,y:b.y-a.y},d=Math.hypot(v.x,v.y)||1,
-       n={x:-v.y/d*plan.width*.50,y:v.x/d*plan.width*.50};
-     profiles.push([a,b].map(point=>({p:{x:point.x+n.x,y:point.y+n.y},z:point.z+28})));
-    }
+  polygon(ctx,high,'#939ca8','#d4d6db');
+ }
+ for(const [index,step] of plan.steps.entries()){
+  const image=cacheObject(boundsFor(step.corners),HEIGHT+58,ctx=>{
+   const [a,b,c,d]=step.corners,z=step.z,prev=step.prev;
+   const top=p=>project(p.x,p.y,z),
+    low=p=>project(p.x,p.y,prev),
+    base=p=>project(p.x,p.y,plan.cfg.open?Math.max(0,z-13):0);
+   // Closed flights have stone infill to the floor; open flights have a
+   // 13px load-bearing soffit and allow passage under high sections.
+   polygon(ctx,[base(a),base(d),top(d),top(a)],'#485565','#343d4b');
+   polygon(ctx,[base(b),base(c),top(c),top(b)],'#647384','#3e4654');
+   polygon(ctx,[low(a),low(b),top(b),top(a)],'#555f70','#424a57');
+   polygon(ctx,[top(a),top(b),top(c),top(d)],
+    index%2?'#98a3b0':'#939eaf','#d1c9ca');
+   line(ctx,[top(a),top(b)],'#d9ced0',1.8);
+   // Keep rail geometry local to each flight; do not draw a diagonal
+   // rail across a real U-shaped intermediate landing.
+   const rails=plan.kind.startsWith('spiral')||plan.kind==='curved'?
+    [[b,c]]:[[a,d],[b,c]];
+   for(const [start,end] of rails){
+    line(ctx,[project(start.x,start.y,prev+27),
+     project(end.x,end.y,z+27)],'#9caab2',3);
+    if(index%2===0)line(ctx,[project(start.x,start.y,prev),
+     project(start.x,start.y,prev+27)],'#8d99a9',2.8);
    }
-  }
-  for(const prof of profiles){
-   if(prof.length<2)continue;
-   for(const [i,x] of prof.entries()){
-    if(i%3===0||i===prof.length-1){
-     const bottom=x.z-28;
-     line(ctx,[project(x.p.x,x.p.y,bottom),project(x.p.x,x.p.y,x.z)],
-      '#757986',3.2);
-    }
-   }
-   line(ctx,prof.map(x=>project(x.p.x,x.p.y,x.z)),'#9caab2',3);
-  }
- });
+  });
+  stairObjects.push({kind:'stair-tread',image,level:0,
+   depth:project(step.center.x,step.center.y,0)[1]+.25});
+ }
+ for(const landing of plan.landings.filter(l=>!l.top)){
+  const center=landing.corners.reduce((p,q)=>({x:p.x+q.x/landing.corners.length,
+   y:p.y+q.y/landing.corners.length}),{x:0,y:0});
+  const image=cacheObject(boundsFor(landing.corners),HEIGHT+58,ctx=>
+   drawPrism(ctx,landing.corners,landing.z,
+    plan.cfg.open?Math.max(0,landing.z-13):0,plan.cfg.open));
+  stairObjects.push({kind:'stair-landing',image,level:0,
+   depth:project(center.x,center.y,0)[1]+.25});
+ }
+ for(const post of plan.posts){
+  const p=post.p,r=post.radius,
+   corners=[{x:p.x-r,y:p.y-r},{x:p.x+r,y:p.y-r},
+    {x:p.x+r,y:p.y+r},{x:p.x-r,y:p.y+r}];
+  const image=cacheObject(boundsFor(corners),post.z1+20,ctx=>
+   drawPrism(ctx,corners,post.z1,0,false));
+  stairObjects.push({kind:'stair-spindle',image,level:0,
+   depth:project(p.x,p.y,0)[1]+.3});
+ }
  const cell=ladder.cell,ladderArea=ladder.wall==='north'||ladder.wall==='south'?
   [cell[0]+.15,cell[1]-.12,cell[0]+.85,cell[1]+1.12]:
   [cell[0]-.12,cell[1]+.15,cell[0]+1.12,cell[1]+.85];
@@ -370,23 +351,17 @@ function createLayers({project,polygon,line,cacheObject}){
  });
  // Separate upper-only details. They MUST NOT leak into the ground-floor view.
  const upperLanding=cacheObject(stairs.area,HEIGHT+40,ctx=>{
-  // The final curved tread connects to this real horizontal landing only
-  // once the upper story is shown. It follows the final tread tangent.
   const top=plan.top,delta=.38;
   const caps=plan.landings.filter(l=>l.top);
   const plates=caps.length?caps.map(l=>l.corners):[[
    {x:top.x-delta,y:top.y-delta},{x:top.x+delta,y:top.y-delta},
    {x:top.x+delta,y:top.y+delta},{x:top.x-delta,y:top.y+delta}
   ]];
-  for(const pts of plates)polygon(ctx,pts.map(p=>project(p.x,p.y,HEIGHT)),
-   '#8eabba','#d6cfc0');
-  line(ctx,[project(top.x-.3,top.y,HEIGHT+3),project(top.x+.3,top.y,HEIGHT+3)],
-   '#e1d3b8',2);
+  for(const corners of plates)drawPrism(ctx,corners,HEIGHT,HEIGHT-13,false);
  });
  return [
   {kind:'upper-deck',image:slab,depth:4000,level:1},
-  {kind:'stairs-3d',image:stairsImage,
-   depth:project(plan.bottom.x,plan.bottom.y)[1]+.25,level:0},
+  ...stairObjects,
   {kind:'ladder-3d',image:ladderImage,
    depth:project(ladder.bottom.x,ladder.bottom.y)[1]+.25,level:0},
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
