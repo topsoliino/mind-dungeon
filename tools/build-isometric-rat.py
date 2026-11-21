@@ -21,7 +21,7 @@ scene.view_settings.view_transform = 'Standard'
 try:
     scene.view_settings.look = 'Medium High Contrast'
 except TypeError:
-    scene.view_settings.look = 'Medium High Contrast' if 'Medium High Contrast' in scene.view_settings.bl_rna.properties['look'].enum_items.keys() else 'None'
+    pass  # Some Blender versions omit this color-management preset.
 V = Vector
 PI = math.pi
 VIEWS = 32
