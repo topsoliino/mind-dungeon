@@ -21,7 +21,7 @@ VIEWS = 32
 CELL = 96
 SHEETS = {
     "idle": 8, "run": 10, "stalk": 10, "jump": 12,
-    "bite": 9, "combo": 14, "dodge": 10, "death": 14
+    "bite": 9, "combo": 14, "dodge": 10, "dodge-left": 10, "death": 14
 }
 
 def mat(name, color, roughness=.83):
@@ -241,11 +241,11 @@ def pose(clip, t):
         for n in ("L","R"):
             rig.pose.bones["Shoulder"+n].rotation_euler.x=.28*anticipate-.38*snap
             rig.pose.bones["Hip"+n].rotation_euler.x=-.24*anticipate
-    elif clip=="dodge":
+    elif clip in ("dodge", "dodge-left"):
         across=smooth(t/.56)
-        root.location.x=.50*across
+        root.location.x=(-.50 if clip=="dodge-left" else .50)*across
         root.location.z=.12*math.sin(PI*t)
-        root.rotation_euler.y=.19*math.sin(PI*t)
+        root.rotation_euler.y=( -.19 if clip=="dodge-left" else .19)*math.sin(PI*t)
         chest.rotation_euler.z=-.27*math.sin(PI*t)
         for n,sign in (("L",1),("R",-1)):
             rig.pose.bones["Shoulder"+n].rotation_euler.x=.30*sign*math.sin(PI*t)
