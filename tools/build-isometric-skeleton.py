@@ -23,10 +23,10 @@ def material(name, color, metal=0):
     node = m.node_tree.nodes.get('Principled BSDF')
     node.inputs['Base Color'].default_value = (*color,1)
     node.inputs['Metallic'].default_value = metal
-    node.inputs['Roughness'].default_value = .62
+    node.inputs['Roughness'].default_value = .79
     return m
-ivory = material('Weathered ivory', (.64,.53,.35))
-edge = material('Pale worn bone', (.86,.76,.54))
+ivory = material('Weathered ivory', (.52,.43,.32))
+edge = material('Pale worn bone', (.69,.61,.48))
 dark = material('Deep sockets', (.024,.018,.021))
 teal = material('Faded petrol cloth', (.055,.15,.16))
 bronze = material('Hammered bronze', (.44,.25,.085), .35)
@@ -243,11 +243,11 @@ scene.render.image_settings.file_format='WEBP';scene.render.image_settings.color
 scene.render.image_settings.quality=88
 scene.render.film_transparent=True;scene.render.resolution_percentage=100
 scene.world=bpy.data.worlds.new('Ambient skylight');scene.world.use_nodes=True
-scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.61,.69,.79,1)
-scene.world.node_tree.nodes['Background'].inputs[1].default_value=.68
+scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.55,.60,.66,1)
+scene.world.node_tree.nodes['Background'].inputs[1].default_value=.53
 camdata=bpy.data.cameras.new('Atlas orthographic');cam=bpy.data.objects.new('Atlas camera',camdata);scene.collection.objects.link(cam);scene.camera=cam
 camdata.type='ORTHO';camdata.clip_end=300;cam.location=(0,0,20)
-for name,color,power,direction in [('Key', (1,.85,.63),3.0,(.4,-.7,1)),('Rim',(.55,.72,1),1.9,(-1,.6,.4))]:
+for name,color,power,direction in [('Key', (1,.83,.67),2.15,(.4,-.7,1)),('Rim',(.55,.72,1),.85,(-1,.6,.4))]:
     light=bpy.data.lights.new(name,'SUN');light.energy=power;light.color=color;light.angle=.4
     obj=bpy.data.objects.new(name,light);scene.collection.objects.link(obj)
     obj.rotation_euler=(-V(direction)).to_track_quat('-Z','Y').to_euler()
