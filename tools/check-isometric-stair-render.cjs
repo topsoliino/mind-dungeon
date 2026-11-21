@@ -65,6 +65,22 @@ for(let seed=0;seed<expected.length;seed++){
  assert(!descent[0].visible&&!descent[3].visible);
  assert.equal(lower[1].depth,upper[1].depth,
   'lower staircase foot position must establish a stable depth order');
+ // Show/hide the top layer according to the PHYSICAL progress of the stair
+ // rider, never from the separate ladder cutscene timer.
+ v.state.transition=null;
+ v.state.floor=0;
+ v.state.stairRide={s:v.stairLength*.72,auto:true,dir:1,up:true,lateral:0};
+ const beforeCrest=view(0);
+ assert(!beforeCrest[0].visible);
+ v.state.stairRide.s=v.stairLength*.92;
+ const atCrest=view(0);
+ assert(atCrest[0].visible&&atCrest[0].alpha>0&&atCrest[0].alpha<1);
+ v.state.stairRide=null;
+ for(const step of v.plan.steps){
+  const projected=iso.toView(step.center.x*48,step.center.y*48,step.z);
+  assert(v.pickStair(projected,iso),
+   'isometric right-click hit-test should resolve visible treads');
+ }
  v.state.floor=0;v.state.transition=null;v.state.z=0;
  const feet=p=>({x:p.x*48,y:p.y*48});
  assert(iso.walkable(...Object.values(feet(v.plan.bottom))));
