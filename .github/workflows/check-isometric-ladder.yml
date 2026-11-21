@@ -10,7 +10,9 @@ on:
       - beta/alley-stair-geometry.js
       - beta/alley-stair-navigation.js
       - beta/alley-stair-controller.js
+      - beta/index.html
       - tools/check-isometric-ladder-contact.cjs
+      - tools/check-isometric-upper-floor-clicks.cjs
       - tools/check-isometric-vertical.cjs
       - tools/check-isometric-stair-render.cjs
       - tools/check-isometric-stair-exits.cjs
@@ -26,6 +28,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Guardian stays on painted ladder rails across 200 seeds
         run: node tools/check-isometric-ladder-contact.cjs
+      - name: Check upper-floor clicks and 400 stair exits
+        run: node tools/check-isometric-upper-floor-clicks.cjs
+      - name: Preserve existing stair click-intent behavior
+        run: node tools/check-isometric-stair-click-intent.cjs
       - name: Check two-way traversal and landing geometry
         run: node tools/check-isometric-vertical.cjs
       - name: Check stair and ladder rendering plus floor paths
