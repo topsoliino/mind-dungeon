@@ -119,7 +119,7 @@
    // Upper floors and upper-only fixtures are entirely hidden below. They
    // fade in near the last top-out frames (never before the landing).
    const crossing=vertical?.state.transition;
-   const liftProgress=crossing?.age/crossing.duration??0;
+   const liftProgress=crossing?crossing.age/crossing.duration:0;
    const reveal=crossing?
     (crossing.up?Math.max(0,Math.min(1,(liftProgress-.84)/.16)):
      Math.max(0,Math.min(1,(.18-liftProgress)/.18))):
