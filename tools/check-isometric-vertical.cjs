@@ -87,7 +87,7 @@ for(let seed=0;seed<200;seed++){
   }
  }
 }
-assert.equal(kinds.size,8,'all eight available stair families appear in generated levels');
+assert.equal(kinds.size,9,'all nine stair families, including the closed U, appear');
 assert.equal(walls.size,4,'ladders continue to vary across all four wall orientations');
 for(const style of kinds.keys()){
  const found=Array.from({length:50},(_,seed)=>setup(seed,style))
@@ -95,11 +95,11 @@ for(const style of kinds.keys()){
  assert(found,'selectable design '+style+' must exist for at least one deterministic seed');
 }
 const html=read('index.html');
-assert(html.includes('alley-stair-geometry.js?v=3'));
-assert(html.indexOf('alley-stair-geometry.js?v=3')<html.indexOf('alley-stair-navigation.js?v=2'));
-assert(html.indexOf('alley-stair-navigation.js?v=2')<html.indexOf('alley-stair-controller.js?v=3'));
-assert(html.indexOf('alley-stair-controller.js?v=3')<html.indexOf('alley-vertical.js?v=9'));
-assert(html.indexOf('alley-vertical.js?v=9')<html.indexOf('alley-study.js?v=10'));
+assert(html.includes('alley-stair-geometry.js?v=4'));
+assert(html.indexOf('alley-stair-geometry.js?v=4')<html.indexOf('alley-stair-navigation.js?v=2'));
+assert(html.indexOf('alley-stair-navigation.js?v=2')<html.indexOf('alley-stair-controller.js?v=4'));
+assert(html.indexOf('alley-stair-controller.js?v=4')<html.indexOf('alley-vertical.js?v=10'));
+assert(html.indexOf('alley-vertical.js?v=10')<html.indexOf('alley-study.js?v=10'));
 assert(html.includes('state.floor=task.up?1:0'));
 assert(html.includes("state.z=pose.z"));
-console.log('200 levels passed: 8 staircase types, 4 ladder orientations, identical riser heights, connected landings and 2-way rig transitions.');
+console.log('200 levels passed: 9 staircase types, 4 ladder orientations, identical riser heights, connected landings and 2-way rig transitions.');
