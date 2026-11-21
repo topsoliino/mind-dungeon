@@ -46,6 +46,16 @@ for(const kind of ['switchback','curved']){
   alleyUnderpassMark,get floorGoal(){return alleyStairFloorGoal}};
  `)(vertical,alley,iso,{x:0,y:0,zoom:1},{x:0,y:0},0,0,
   mouse,false,20,noop,actor,noop);
+ const inputSource=cut('function movementInput(){','function setControllerPrompts(');
+ const readInput=new Function('keys','alley','generationMode','iso','noMovement',
+  'controllerMove',inputSource+';return movementInput();');
+ for(const [key,screenX,screenY] of [['KeyW',0,-1],['KeyD',1,0],['ArrowLeft',-1,0]]){
+  const delta=readInput({[key]:true},alley,true,iso,{x:0,y:0},{x:0,y:0});
+  const origin=iso.toView(0,0),end=iso.toView(delta.x,delta.y);
+  const dx=end.x-origin.x,dy=end.y-origin.y;
+  assert(Math.abs(dx*screenY-dy*screenX)<1e-8&&dx*screenX+dy*screenY>0,
+   key+' must steer the actual generator in screen space');
+ }
  const top=ui.alleyUpperExitMark();
  assert(top,'hidden upstairs floor must still have an exit target');
  mouse.x=top.center.x;mouse.y=top.center.y;
@@ -61,6 +71,15 @@ for(const kind of ['switchback','curved']){
  dash:0},false,1,.32,10,null,null,null,null,null,0,'down','run',
  {atlas:{knockback:{}}},alley);
  assert.equal(pose.clip,'sprint','running stairs must use the real sprint rig');
+ let ascent=0;
+ while(vertical.state.z<vertical.height*.9&&ascent++<1600)
+  vertical.advanceStairs(actor,1/60,180);
+ assert(vertical.state.stairRide&&ascent<1600,'reach the visible upper deck');
+ const deck=iso.toView(vertical.ladder.top.x*48,vertical.ladder.top.y*48,vertical.height);
+ assert(ui.aimAlleyStairFloor(deck),'click on visible upper floor');
+ assert.equal(ui.floorGoal.floor,1);
+ assert.equal(vertical.state.stairRide.exitTarget,1);
+ assert.equal(vertical.state.floor,0,'stay aboard until the portal');
  const ground=iso.toView(alley.spawn.x,alley.spawn.y,0);
  mouse.x=ground.x;mouse.y=ground.y;
  assert(!ui.approachClickStairs(),'floor click must not be misclassified as a tread');
@@ -85,7 +104,7 @@ for(const kind of ['switchback','curved']){
   'upper beacon from ground should approach the lower stair entrance');
  result.push({kind,groundClicks:true,upstairsBeacon:true,frames});
 }
-assert(html.includes('if(aimAlleyStairFloor(screen))return;'),
+assert(html.includes('if(aimAlleyStairFloor(screen,e.altKey))return;'),
  'right-click handler must submit a floor intent while stair riding');
 assert(html.includes('alleyMove={target:alleyStairFloorGoal.target,steps:null}'),
  'after portal completion, continue on the destination floor');

@@ -25,7 +25,7 @@
   const atlas=await response.json();
   if(settings?.ok)light=await settings.json();
   try{
-   const {loadRig}=await import('./dungeon-guardian-rig.js?v=4');
+   const {loadRig}=await import('./dungeon-guardian-rig.js?v=5');
    return {atlas,rig:await loadRig(root+'guardian-rig.glb.gz?v=3',atlas.clips)};
   }catch(error){
    console.warn('3D-Wächter nicht verfügbar. Sprite-Wächter wird verwendet.',error);

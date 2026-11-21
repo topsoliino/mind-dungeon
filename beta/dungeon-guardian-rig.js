@@ -136,7 +136,7 @@ export async function loadRig(url,clips={}){
     for(const node of attachments)node.visible=visible.has(node.userData.guardian_part);
     action.paused=false;
     action.enabled=true;
-    const fallbackLadder=lightClip(clip)&&!bakedLadder;
+    const fallbackLadder=!bakedLadder&&(clip==='climb-up'||clip==='climb-down');
     const [playingStart,playingCount]=fallbackLadder?
      (clips.idle??[0,4]):[start,count];
     mixer.setTime((playingStart+clamp(progress)*(playingCount-1))/frameRate);

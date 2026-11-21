@@ -100,8 +100,12 @@ function make(plan){
   }
  for(const a of nodes)for(const [dx,dy] of dirs){
   const b=nodeByCell.get(key(a.ix+dx,a.iy+dy));
-  if(b&&canStand({x:(a.x+b.x)/2,y:(a.y+b.y)/2}))
-   a.edges.push({to:b.index,cost:Math.hypot(dx,dy)*GRID});
+  if(!b||b.index<=a.index)continue;
+  if(canStand({x:(a.x+b.x)/2,y:(a.y+b.y)/2})){
+   const cost=Math.hypot(dx,dy)*GRID;
+   a.edges.push({to:b.index,cost});
+   b.edges.push({to:a.index,cost});
+  }
  }
  function nearest(point,restrict=null){
   let best=null,d2=Infinity;

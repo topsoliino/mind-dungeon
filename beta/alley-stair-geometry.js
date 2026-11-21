@@ -230,7 +230,7 @@ function select(generator){
      const old=generator.stairs?.[0]?.roomId===room.id?1:0;
      const variety=((Math.imul(generator.seed+31,(x+53)*17+(y+43)*13+rotation*7)>>>0)%53)/53;
      const score=Math.min(4,clearance)*2+old*2+variety;
-     viable.push({...model,room,score,style});
+     viable.push({...model,room,score});
     }
    }
   }

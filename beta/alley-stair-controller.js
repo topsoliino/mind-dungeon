@@ -58,10 +58,10 @@ function controller({plan,state,nav,length,speeds,curving}){
    lateral:0,gait:0,target:null,path:null,entry:up?'bottom':'top',
    traveled:0,leftEntry:false,exitTarget:null};
   state.stairRide=ride;state.z=up?0:H;
-  actor.x=ride.x*48;actor.y=ride.y*48;actor.moving=false;
   if(target&&!aim(target)){
    state.stairRide=null;return false;
   }
+  actor.x=ride.x*48;actor.y=ride.y*48;
   return true;
  }
  function aim(target){

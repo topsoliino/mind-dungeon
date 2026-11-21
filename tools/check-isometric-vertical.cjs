@@ -95,11 +95,13 @@ for(const style of kinds.keys()){
  assert(found,'selectable design '+style+' must exist for at least one deterministic seed');
 }
 const html=read('index.html');
-assert(html.includes('alley-stair-geometry.js?v=4'));
-assert(html.indexOf('alley-stair-geometry.js?v=4')<html.indexOf('alley-stair-navigation.js?v=2'));
-assert(html.indexOf('alley-stair-navigation.js?v=2')<html.indexOf('alley-stair-controller.js?v=7'));
-assert(html.indexOf('alley-stair-controller.js?v=7')<html.indexOf('alley-vertical.js?v=10'));
-assert(html.indexOf('alley-vertical.js?v=10')<html.indexOf('alley-study.js?v=10'));
+let previousScript=-1;
+for(const name of ['alley-stair-geometry','alley-stair-navigation','alley-stair-controller',
+ 'alley-vertical','alley-study']){
+ const index=html.indexOf('<script src="beta/'+name+'.js?');
+ assert(index>previousScript,name+' must load after its dependencies');
+ previousScript=index;
+}
 assert(html.includes('state.floor=task.up?1:0'));
 assert(html.includes("state.z=pose.z"));
 console.log('200 levels passed: 9 staircase types, 4 ladder orientations, identical riser heights, connected landings and 2-way rig transitions.');

@@ -63,7 +63,10 @@ function mount({generator:g,player,iso}){
  panel.querySelector('#iso-gen-apply').onclick=()=>setSeed(field.value);
  panel.querySelector('#iso-gen-new').onclick=()=>setSeed((g.requestedSeed+1)>>>0);
  field.onkeydown=e=>{if(e.key==='Enter')setSeed(field.value);};
- const canvas=panel.querySelector('#iso-gen-map'),ctx=canvas.getContext('2d');
+ const canvas=panel.querySelector('#iso-gen-map'),display=canvas.getContext('2d');
+ const background=document.createElement('canvas');
+ background.width=canvas.width;background.height=canvas.height;
+ const ctx=background.getContext('2d');
  const alley=[[1,2.75,12,6.85],[4.5,6.8,8.1,9.4],[9.5,.8,12,2.75]];
  const vertices=[...alley.flatMap(([u,v,r,b])=>[[u,v],[r,b]]),
   ...g.rooms.slice(1).flatMap(room=>room.cells.flatMap(([u,v])=>[[u,v],[u+1,v+1]]))];
@@ -84,8 +87,7 @@ function mount({generator:g,player,iso}){
  }
  const colors=['#687182','#617d87','#827487','#707e75'];
  const vertical=window.AlleyVertical;
- function draw(){
-  if(body.style.display==='none')return;
+ function drawBackground(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   for(const [u,v,r,b] of alley)poly(quad(u,v,r,b),'#495461','#8e9da3');
   for(const room of g.rooms.slice(1))
@@ -139,9 +141,19 @@ function mount({generator:g,player,iso}){
    panel.querySelector('#iso-gen-level').textContent=
     'GREYBOX · '+(vertical.state.floor?'OBERGESCHOSS':'ERDGESCHOSS');
   }
-  const hero=player(),dot=xy(hero.x/48,hero.y/48);
-  ctx.beginPath();ctx.arc(dot[0],dot[1],5.6,0,Math.PI*2);ctx.fillStyle='#ed6384';ctx.fill();
-  ctx.strokeStyle='#fff';ctx.lineWidth=1.7;ctx.stroke();
+ }
+ let cachedFloor=null,lastX=null,lastY=null;
+ function draw(){
+  if(body.style.display==='none')return;
+  const floor=vertical?.state.floor??0,hero=player();
+  if(cachedFloor===floor&&hero.x===lastX&&hero.y===lastY)return;
+  if(cachedFloor!==floor){drawBackground();cachedFloor=floor;}
+  lastX=hero.x;lastY=hero.y;
+  display.clearRect(0,0,canvas.width,canvas.height);
+  display.drawImage(background,0,0);
+  const dot=xy(hero.x/48,hero.y/48);
+  display.beginPath();display.arc(dot[0],dot[1],5.6,0,Math.PI*2);display.fillStyle='#ed6384';display.fill();
+  display.strokeStyle='#fff';display.lineWidth=1.7;display.stroke();
  }
  draw();
  const timer=setInterval(()=>{
