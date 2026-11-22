@@ -22,18 +22,55 @@ for(let level=1;level<=4;level++){
  assert(g.enabled,'Dungeon interior greybox missing at level '+level);
  assert.equal(d.level,level);
  assert.equal(g.rooms.length,10,'Ten connected rooms on level '+level);
- assert.equal(g.portals.length,2,'A real inward and outward building doorway');
- assert(g.stairs.length>0,'Generator stairs retained');
- const upper=g.portals[1],up=d.link({x:upper.x*48,y:upper.y*48},g);
- assert.equal(up.target,level+1,'Door to next dungeon level missing');
- assert.equal(up.entry,'from-lower');
- const lower=g.portals[0],down=d.link({x:lower.x*48,y:lower.y*48},g);
- assert.equal(down?.target,level>1?level-1:undefined);
- const next=d.href(level+1);
- assert(next.includes('level='+(level+1))&&next.includes('rocky-coast'));
+ const entrances=level===1?1:0,exits=level===4?1:0;
+ assert.equal(g.portals.length,entrances+exits,
+  'Only L1 may have an exterior entrance, only L4 may have an exit');
+ assert.equal(Boolean(g.outdoorEntrance),Boolean(entrances));
+ assert.equal(Boolean(g.outdoorExit),Boolean(exits));
+ assert.equal(d.hasEntrance,Boolean(entrances));
+ assert.equal(d.hasExit,Boolean(exits));
+ assert.equal(g.stairs.length,level===4?0:1,
+  'Only L1-L3 have an upward physical stair');
+ if(level>1){
+  assert.equal(g.doors.length,8,'Later levels have no starter alley doorway');
+  assert(g.blocked(12,4.5,.20)&&g.blocked(12,5.5,.20),
+   'Previous street entrance must be a SOLID collision wall');
+ }else{
+  assert.equal(g.doors.length,9);
+  assert.equal(d.link({x:g.outdoorEntrance.x*48,y:g.outdoorEntrance.y*48},g),null,
+   'L1 entrance must not act as an exit or skip floors');
+ }
+ if(level===4){
+  const exit=g.outdoorExit,near={x:exit.x*48,y:exit.y*48};
+  assert.equal(d.link(near,g)?.target,5,'Only L4 has a door to exterior L5');
+  assert.equal(d.link(near,g)?.kind,'exit');
+ }else{
+  const stair=g.stairs[0];
+  const top={x:stair.area[0]+.8,y:stair.area[1]+.8};
+  root.AlleyVertical={enabled:true,state:{floor:0,stairRide:null,
+   transition:null,pending:null},
+   connectors:[{kind:'stairs',top}]};
+  const hero={x:top.x*48,y:top.y*48};
+  assert.equal(d.link(hero,g),null,
+   'Dungeon floor must never skip via the staircase until reached upstairs');
+  root.AlleyVertical.state.floor=1;
+  const next=d.link(hero,g);
+  assert.equal(next?.target,level+1,'Completed real staircase leads to next level');
+  assert.equal(next?.kind,'stairs');
+  assert.equal(next?.entry,'from-lower');
+  root.AlleyVertical.state.stairRide={};
+  assert.equal(d.link(hero,g),null,'Cannot skip dungeon floor mid-climb');
+  root.AlleyVertical.state.stairRide=null;
+  root.AlleyVertical.state.pending={};
+  assert.equal(d.link(hero,g),null,'Cannot skip dungeon floor while interaction pending');
+  assert(d.href(level+1).includes('level='+(level+1)));
+ }
+ if(level===2||level===3)
+  assert.equal(d.link({x:14.5*48,y:5.5*48},g),null,
+   'Middle dungeon floors must have neither entrance nor exit');
  seeds.add(g.seed);
 }
-assert.equal(seeds.size,4,'Each indoor level must generate a separate stable layout');
+assert.equal(seeds.size,4,'Each indoor level generates a stable separate layout');
 const outside=region(5),definition=outside.RockyCoastPrison;
 assert(definition.isExterior&&!outside.AlleyGenerator.enabled);
 assert.equal(definition.link({x:350,y:325},outside.AlleyGenerator).target,4);
@@ -92,9 +129,9 @@ assert.equal(arts.length,world.diagnostic.chunkCount+4,
  'Prison, fence, forest and cliff must render as depth-sorted greybox layers');
 world.refreshLayers(arts,world.spawn,false,{x:1e6,y:1e6,width:700,height:450,zoom:1});
 assert(arts.every(sprite=>!sprite.visible),'Out-of-view terrain must be culled');
-for(const name of ['rocky-coast-prison.js?v=1','rocky-coast-terrain.js?v=4',
+for(const name of ['rocky-coast-prison.js?v=2','rocky-coast-terrain.js?v=4',
  'rockyPrison?.link(player,window.AlleyGenerator)','rockyTerrain.slide(player',
  'triggerRockyDeath','rockyTerrain.mountDebug']){
  assert(game.includes(name),'Rocky Coast game integration missing: '+name);
 }
-console.log('Rocky Coast: 4x10 connected interior rooms, 5-way dungeon traversal, exterior heightfield, normalmap, river/sea death, slope/cliff slip, border collision, camera culling and game integration: OK');
+console.log('Rocky Coast: sealed L2/L3 interiors, L1 entrance, L4 exterior-only exit, validated stair-to-next-level transitions, heightfield, normalmap and physics: OK');
