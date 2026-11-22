@@ -274,6 +274,30 @@ const run=async()=>{
   assert.equal(playErrors.length,0,
    'Real production playtest errors: '+playErrors.join('; '));
   console.log('PRODUCTION PLAYTEST FPS / FRAME COST:',JSON.stringify(benchmark));
+  // Long playtest: verify automatic downgrading reacts to sustained slow
+  // software WebGL WITHOUT changing gameplay or requiring a page reload.
+  await playtest.waitForTimeout(5200);
+  const adapted=await playtest.evaluate(async()=>{
+   const before=performance.now(),frames=[];
+   await new Promise(done=>{
+    let previous=before;
+    function tick(t){
+     frames.push(t-previous);previous=t;
+     if(t-before>1900)done();else requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+   });
+   frames.sort((a,b)=>a-b);
+   return {engine:window.__mindDiagnostics.engine,
+    quality:window.__mindDiagnostics.guardianQuality,
+    renderScale:window.__mindDiagnostics.resolutionScale,
+    fps:Math.round(frames.length*1000/(performance.now()-before)),
+    p95FrameMs:Math.round(frames[Math.floor(frames.length*.95)]||0)};
+  });
+  console.log('ADAPTIVE PLAYTEST FPS / RENDERER:',JSON.stringify(adapted));
+  if(benchmark.sampledFps<20)
+   assert(adapted.engine==='Canvas-Ersatzrenderer'||adapted.renderScale<1,
+    'Sustained slow GPUs must trigger adaptive software/quality rendering');
   await playtest.close();
   // Compare actual alternate renderer under identical software-GPU hardware.
   // This is a diagnostic, not an automatic recommendation or fake 60fps.

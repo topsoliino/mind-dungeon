@@ -37,6 +37,30 @@
    return {atlas:spriteAtlas,layers};
   }
  }
+ // The richly lit GLB remains the preferred path. If the measured in-game
+ // framerate is persistently poor, load its already-baked Blender atlas once
+ // and let gameplay switch to the GPU-free pose lookup without a reload.
+ const fallbackLoads=new WeakMap();
+ function ensureFallback(guardian,root='beta/art/player-study/'){
+  if(guardian.layers)return Promise.resolve(true);
+  if(fallbackLoads.has(guardian))return fallbackLoads.get(guardian);
+  const job=Promise.all(['body','weapon'].map(key=>
+   loadLayer(root,guardian.atlas.sheets[key]))).then(layers=>{
+    guardian.layers=layers;
+    guardian.spriteAtlas={...guardian.atlas,
+     clips:{...guardian.atlas.clips,
+      'climb-up':guardian.atlas.clips.walk,
+      'climb-down':guardian.atlas.clips.walk}};
+    guardian.spriteFallback={atlas:guardian.spriteAtlas,layers};
+    return true;
+   }).catch(error=>{
+    fallbackLoads.delete(guardian);
+    console.warn('Baked guardian performance fallback unavailable',error);
+    return false;
+   });
+  fallbackLoads.set(guardian,job);
+  return job;
+ }
  function facing(angle){
   const projected=Math.atan2(Math.sin(angle)/.47,Math.cos(angle));
   return (Math.round(projected/(Math.PI/4))+directionCount)%directionCount;
@@ -70,5 +94,5 @@
   const t=clamp((progress-from)/(to-from));
   return a+(b-a)*t*t*(3-2*t);
  }
- window.DungeonGuardian={load,parts,hitClip,hitDistance,heavyImpact,get light(){return light;}};
+ window.DungeonGuardian={load,parts,ensureFallback,hitClip,hitDistance,heavyImpact,get light(){return light;}};
 })();

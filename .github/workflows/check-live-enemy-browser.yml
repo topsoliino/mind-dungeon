@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/check-live-enemy-browser.yml
       - beta/dungeon-enemy-rig.js
+      - beta/dungeon-guardian-rig.js
+      - beta/dungeon-guardian.js
       - beta/creature-fur.js
       - beta/index.html
       - beta/art/skeleton/skeleton-*-rig.glb.gz

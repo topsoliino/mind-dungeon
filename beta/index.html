@@ -100,6 +100,23 @@ function updateArtStatus(){
 // Live Blender armatures rendered through the Guardian's Three.js pipeline.
 // Existing 32-view sprite sheets remain per-species fallback only.
 const enemyArtPreview=testParams.get('debug-art')==='1'||testParams.get('enemy3d')==='1';
+let guardianBaked=false,guardianSlowSeconds=0,guardianFallbackPending=false;
+function adaptGuardianQuality(dt){
+ if(enemyArtPreview||guardianBaked||guardianFallbackPending||!guardian?.rig||paused)return;
+ // Delay downgrade until sustained low FPS; occasional spikes retain 3D.
+ const fps=renderStats.fps||60;
+ guardianSlowSeconds=fps<27?
+  Math.min(5,guardianSlowSeconds+Math.min(.15,dt)):
+  Math.max(0,guardianSlowSeconds-dt*1.5);
+ if(guardianSlowSeconds<2.1)return;
+ guardianFallbackPending=true;
+ guardianArt.ensureFallback(guardian).then(ok=>{
+  guardianBaked=Boolean(ok);
+  if(ok)console.info('Mind Dungeon: low FPS, Guardian switched to Blender-baked animations');
+  else guardianSlowSeconds=0;
+  guardianFallbackPending=false;
+ });
+}
 const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=17')
  .then(module=>module.loadEnemyRigs({
   only:enemyArtPreview?null:['sabre','bow']
@@ -128,7 +145,7 @@ const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>
 const KEY='mind-dungeon-shadowbound-beta-v08',RESUME_KEY=KEY+(bossTest?'-boss-test':alley?'-alley-test':'')+'-resume',TILE=48,{LAST_DEPTH,DEFAULT_PACK}=run,TAU=Math.PI*2;
 const canvas=document.querySelector('#game'),displayContext=canvas.getContext('2d',{alpha:false});
 const scene=document.createElement('canvas'),s=scene.getContext('2d',{alpha:false});
-let cw=0,ch=0,dpr=1,frame=0,last=0,paused=true,modalType='',noticeUntil=0,shake=0,cam={x:0,y:0};
+let cw=0,ch=0,dpr=1,renderScale=1,frame=0,last=0,paused=true,modalType='',noticeUntil=0,shake=0,cam={x:0,y:0};
 let atTitle=true;
 const settingsKey=KEY+'-settings';
 const settings={shake:true,damageNumbers:true,soundVolume:.8,musicVolume:.65};
@@ -1168,7 +1185,7 @@ document.addEventListener('click',event=>{
   ?'ui_select':/back|leave|cancel/i.test(button.id)?'ui_back':'ui_click';
  soundUI(id);
 });
-function resize(){dpr=Math.min(devicePixelRatio||1,1.25);cw=innerWidth;ch=innerHeight;canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);scene.width=canvas.width;scene.height=canvas.height;displayContext.imageSmoothingEnabled=false}window.addEventListener('resize',resize);resize();
+function resize(){dpr=Math.min(devicePixelRatio||1,1.25)*renderScale;cw=innerWidth;ch=innerHeight;canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);scene.width=canvas.width;scene.height=canvas.height;displayContext.imageSmoothingEnabled=false}window.addEventListener('resize',resize);resize();
 const SAVE_SCHEMA=1;let saveBusy=false;let mdConfig=null,mdClasses=[],mdSlot=Number(localStorage.getItem(saveStorageKey+'-slot')||1);
 const MD_PUBLIC_CONFIG={url:'https://lgpppwxreeppgcywvlld.supabase.co',publishableKey:'sb_publishable_SB46czSlamMCuxXaCTdNew_VOSDZuLa'};
 function mdDuration(seconds){let t=Math.floor(seconds||0);return Math.floor(t/3600)+' Std. '+String(Math.floor(t%3600/60)).padStart(2,'0')+' Min.'}
@@ -4257,6 +4274,51 @@ displayContext.drawImage(scene,0,0);drawBossLayer(scrollX,scrollY); }
 // Phaser 3 ist die primäre Rendering-Engine. Die vorhandene Kampf- und Lernlogik
 // bleibt für Spielstand-Kompatibilität zunächst als eigenständige Simulation erhalten.
 let phaserGame=null,phaserActive=false,renderStats={fps:0,draws:0};
+let slowRenderTime=0,slowCanvasTime=0,qualityClock=0;
+let canvasPerfClock=0,canvasPerfFrames=0,canvasPerfLast=0;
+let rendererSwitchPending=false;
+function setResolutionScale(scale){
+ const next=Math.max(.56,Math.min(1,scale));
+ if(Math.abs(renderScale-next)<.015)return;
+ renderScale=next;resize();
+ console.info('Mind Dungeon dynamic resolution:',Math.round(renderScale*100)+'%');
+}
+function switchToCanvasForPerformance(){
+ rendererSwitchPending=false;
+ if(!phaserActive||paused||document.hidden)return;
+ phaserActive=false;
+ window.__engine='Canvas · Adaptive Performance';
+ phaserGame?.destroy(true);phaserGame=null;
+ window.__mindPhaserGame=null;
+ canvas.style.display='';
+ renderStats.draws=0;
+ slowCanvasTime=0;
+ setResolutionScale(.80);
+ console.info('Mind Dungeon: GPU bottleneck, switching to Canvas');
+}
+function monitorRenderQuality(){
+ if(!alley||enemyArtPreview||paused||document.hidden)return;
+ const now=performance.now();
+ if(!qualityClock){qualityClock=now;return;}
+ const wallDt=Math.min(.18,Math.max(0,(now-qualityClock)/1000));
+ qualityClock=now;
+ const fps=renderStats.fps;
+ if(phaserActive){
+  slowRenderTime=fps>0&&fps<24?Math.min(6,slowRenderTime+wallDt):
+   Math.max(0,slowRenderTime-wallDt*2);
+  if(slowRenderTime>2.4&&!rendererSwitchPending){
+   rendererSwitchPending=true;
+   setTimeout(switchToCanvasForPerformance,0);
+  }
+ }else{
+  slowCanvasTime=fps>0&&fps<36?Math.min(6,slowCanvasTime+wallDt):
+   Math.max(0,slowCanvasTime-wallDt*2);
+  if(slowCanvasTime>2.3&&renderScale>.59){
+   setResolutionScale(renderScale>.85?.78:renderScale>.68?.66:.57);
+   slowCanvasTime=0;
+  }
+ }
+}
 const PIXEL_SCALE=TILE/64;
 const dayStreet=world.alleys?.light==='day';
 const sceneLights=[
@@ -4726,13 +4788,15 @@ function alleySprites(actor){
  if(guardian){
   const {clip,progress,angle,hideWeapon}=alleyGuardianPose();
   const facing=iso.viewAngle(angle),armed=!hideWeapon&&Boolean(save.equipment.weapon);
-  if(guardian.rig){
+  if(guardian.rig&&!guardianBaked){
    const rig=guardian.rig;
    const live=rig.render(clip,guardian.atlas.clips[clip]??guardian.atlas.clips.idle,progress,facing,armed,performance.now()/1000);
    add(rig.canvas,'alley-guardian-rig',actor.x-rig.displaySize/2,actor.y-rig.ground,rig.displaySize,rig.displaySize,
     {originX:0,originY:0,depth:actor.renderDepth??actor.y,live});
   }else{
-   const parts=guardianArt.parts(guardian,guardian.atlas.clips[clip]?clip:'idle',progress,facing,actor.x,actor.y,armed);
+   const baked=guardian.spriteFallback||guardian;
+   const safeClip=clip.startsWith('climb-')?'walk':baked.atlas.clips[clip]?clip:'idle';
+   const parts=guardianArt.parts(baked,safeClip,progress,facing,actor.x,actor.y,armed);
    parts.forEach((part,i)=>sprites.push({...part,depth:(actor.renderDepth??actor.y)+i*.02,originX:0,originY:0}));
   }
  }
@@ -4884,6 +4948,7 @@ function drawAlleyHudEffects(dot,bar){
 }
 function drawAlleyCanvas(){
  const actor=alleyActor(),alpha=heroAlpha(),lift=alleyVertical?.state.z??vault?.lift??0;
+ adaptGuardianQuality(1/Math.max(8,renderStats.fps||60));
  enemyRig?.beginFrame(renderStats.fps);
  const layers=alleySprites(actor).map(sprite=>({depth:sprite.depth,draw:()=>drawAlleySprite(s,sprite)}));
  layers.push({depth:0,draw:()=>alleyGroundEffects((x,y,rx,ry,color,alpha)=>{
@@ -5084,6 +5149,7 @@ class DungeonScene extends Phaser.Scene{
    }
    if(this.weapon.visible)this.drawWeapon(this.weapon,weaponPose(),this.weaponClip,heroAlpha());
    alley.refreshLayers(this.alleyLayers,player,save.opened.includes(0));
+   adaptGuardianQuality(dt);
    enemyRig?.beginFrame(renderStats.fps);
    const sprites=alleySprites(actor);
    sprites.forEach((sprite,index)=>this.renderAlleySprite(sprite,index));
@@ -5251,6 +5317,7 @@ class DungeonScene extends Phaser.Scene{
    }
    drawBossLayer(window.__mindPhaserCameraX,window.__mindPhaserCameraY);
    renderStats.fps=Math.round(this.game.loop.actualFps);renderStats.draws=this.game.renderer.drawCount||0;
+   monitorRenderQuality();
   }
  }
  const probe=document.createElement('canvas');
@@ -5298,6 +5365,17 @@ function loop(t){
  if(modalType==='game-error')return;
  try{draw(dt);}
  catch(error){pauseOnFrameError('Canvas-Bildaufbau',error);}
+ if(!paused){
+  const elapsed=Math.min(.25,Math.max(0,(t-(canvasPerfLast||t))/1000));
+  canvasPerfLast=t;
+  canvasPerfClock+=elapsed;
+  canvasPerfFrames++;
+  if(canvasPerfClock>=.7){
+   renderStats.fps=Math.round(canvasPerfFrames/canvasPerfClock);
+   canvasPerfClock=0;canvasPerfFrames=0;
+  }
+  monitorRenderQuality();
+ }
 }
 requestAnimationFrame(loop);startPhaser();
 const archerDescription='Hält mit dem Eibenbogen Abstand und trägt Jägerrüstung.';
@@ -6511,6 +6589,10 @@ accountReady.then(async()=>{
  if(testRun)return;
  const confirmation=await mdHandleEmailConfirmation();
  if(confirmation?.ok)mdAccount();else if(confirmation?.error)alert('E-Mail-Bestätigung: '+confirmation.error);
-}).catch(err=>console.warn('Initialisierung:',err));window.addEventListener('beforeunload',persist);setInterval(()=>{const el=document.querySelector('#perf');if(el&&el.style.display!=='none')el.textContent=(phaserActive?'Phaser 3':'Canvas')+' · '+renderStats.fps+' FPS · '+enemies.length+' Gegner'},500);window.addEventListener('keydown',e=>{if(e.code==='F3'){e.preventDefault();const el=document.querySelector('#perf');el.style.display=el.style.display==='none'?'block':'none'}});window.__mindDiagnostics={get strataShader(){return Boolean(strataFx?.shader)},get engine(){return phaserActive?'Phaser 3':'Canvas-Ersatzrenderer'},get fps(){return renderStats.fps},get draws(){return renderStats.draws},get enemyCount(){return enemies.length},get questions(){return questions.length}};
+}).catch(err=>console.warn('Initialisierung:',err));window.addEventListener('beforeunload',persist);setInterval(()=>{const el=document.querySelector('#perf');if(el&&el.style.display!=='none')el.textContent=(phaserActive?'Phaser 3':'Canvas')+' · '+renderStats.fps+' FPS · '+enemies.length+' Gegner'},500);window.addEventListener('keydown',e=>{if(e.code==='F3'){e.preventDefault();const el=document.querySelector('#perf');el.style.display=el.style.display==='none'?'block':'none'}});window.__mindDiagnostics={get strataShader(){return Boolean(strataFx?.shader)},get engine(){return phaserActive?'Phaser 3':'Canvas-Ersatzrenderer'},get fps(){return renderStats.fps},get draws(){return renderStats.draws},get enemyCount(){return enemies.length},get questions(){return questions.length},
+ get guardianQuality(){return guardianBaked?'BAKED BLENDER ATLAS':'3D LIVE'},
+ get resolutionScale(){return renderScale},
+ get adaptiveRenderer(){return phaserActive?'Phaser WebGL':'Canvas'},
+ get gpuEnemyRenders(){return enemyRig?.stats?.gpuRenders||0}};
 })();
 </script></body></html>
