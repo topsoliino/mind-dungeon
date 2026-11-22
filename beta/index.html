@@ -5170,6 +5170,7 @@ class DungeonScene extends Phaser.Scene{
    });
    positionWorldHUD(view);
    renderStats.fps=Math.round(this.game.loop.actualFps);
+   monitorRenderQuality();
   }
   renderFrame(dt){
    frame+=paused?dt:0;
