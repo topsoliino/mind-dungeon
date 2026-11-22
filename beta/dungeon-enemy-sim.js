@@ -20,6 +20,21 @@ function create(api){
  const damageActive=(source,amount,split,status,depth,cue,critical,impactAngle)=>takeDamage(player,amount,split,status,depth,cue,critical,source,impactAngle);
  const bleedActive=(e,amount)=>addBleed(player,amount,origin(e,'Blutverlust'));
  const poison=(actor,options)=>applyPoison(actor,options);
+ const soulController=root.SoulVessels?.create({
+  state,floor,heroes:coopActors,poison,origin,random:()=>rand(0,1),
+  heroFloor:actor=>actor.alleyFloor
+ });
+ const skeletonCombat=root.SkeletonCombat?.create({
+  move:moveEnemy,aim:aimEnemy,
+  advance:(e,dt,speed,clear)=>pursue(e,dt,speed,clear),
+  fireArrow:e=>fireBolt(e,'bow'),
+  throwVessel:(e,angle)=>soulController?.throwVessel(e,angle),
+  damage:(e,hero,name,amount)=>asHero(hero,
+   ()=>damageActive(origin(e,name),amount,{physical:.88,dark:.12})),
+  blocked:(e,hero)=>gateLineBlocked(e.x,e.y,hero.x,hero.y)||
+   Boolean(furnitureBetween(e.x,e.y,hero.x,hero.y,3)),
+  random:()=>rand(0,1)
+ });
  const recover=(enemy,seconds)=>{
   enemy.recover=seconds;enemy.counterUntil=combatClock+balance.counterSeconds;
  };
@@ -32,7 +47,7 @@ function create(api){
  function moveFrom(dt,actor,clock,width,height){
   player=actor;combatClock=clock;cw=width;ch=height;
   state.waterArcs=(state.waterArcs??[]).filter(arc=>(arc.life-=dt)>0);
-  updateWebs(dt);updateStorm(dt);updateBolts(dt);updatePlates(dt);updateEnemyHazards(dt);
+  updateWebs(dt);updateStorm(dt);updateBolts(dt);soulController?.update(dt);updatePlates(dt);updateEnemyHazards(dt);
  }
  function act(e,dt,actor,clock,width,height){
   player=actor;combatClock=clock;cw=width;ch=height;updateEnemy(e,dt);
@@ -94,6 +109,10 @@ function updateEnemy(e,dt){
   e.audioEntered=soundWorld('boss_enter',e,{priority:2,cooldown:1.05,gain:.82})||false;
  }
  const clear=line&&e.aggro>0;
+ if(e.skeleton&&skeletonCombat){
+  skeletonCombat.update(e,player,dt,spec,d,angle,clear);
+  return;
+ }
  if(e.type===RAT){
   e.ratJumpCooldown=Math.max(0,(e.ratJumpCooldown||0)-dt);
   e.ratDodgeCooldown=Math.max(0,(e.ratDodgeCooldown||0)-dt);

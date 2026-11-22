@@ -13,9 +13,12 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]/"beta"/"art"
 PACKAGES=[
  ("skeleton/skeleton-sabre-rig.glb.gz","skeleton/skeleton-live.json","sabre",
-  ("idle","run","strike","death")),
+  ("idle","run","strike","combo","combo-run","slash","slash-run",
+    "overhead","overhead-run","cartwheel-enter","cartwheel",
+    "cartwheel-exit","throw","throw-run","death")),
  ("skeleton/skeleton-bow-rig.glb.gz","skeleton/skeleton-live.json","bow",
-  ("idle","run","shoot","death")),
+  ("idle","run","shoot","flee","shoot-run","double-shoot",
+    "double-shoot-run","throw","throw-run","death")),
  ("rat/rat-live-rig.glb.gz","rat/rat-live.json",None,
   ("idle","run","stalk","strafe-left","strafe-right","back",
     "jump","bite","combo","dodge","dodge-left","death")),
@@ -43,7 +46,7 @@ for asset,settings_path,variant,clips in PACKAGES:
     assert manifest.get("materialColorSpace")=="srgb-to-linear", (
         asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
     assert manifest.get("artStyle")==(
-       "guardian-rebuilt-skeleton-v4" if variant is not None
+       "guardian-rebuilt-skeleton-v5" if variant is not None
        else "guardian-rebuilt-rat-v6"), (asset,"wrong art generation")
     source_blend=ROOT/("rat/rat.blend" if variant is None else "skeleton/skeleton.blend")
     assert manifest.get("sourceBlendSha256")==hashlib.sha256(source_blend.read_bytes()).hexdigest(), (
@@ -51,7 +54,8 @@ for asset,settings_path,variant,clips in PACKAGES:
     names={m.get("name","") for m in gltf["materials"]}
     required=(
         {"Ossuary ivory bone","Ossuary pale sunlit bone","Ossuary graphite bone recess",
-         "Ossuary forged sabre steel" if variant=="sabre" else "Ossuary bow yew"}
+         "Ossuary forged sabre steel" if variant=="sabre" else "Ossuary bow yew",
+          "Ossuary ghost-vessel grey stone"}
         if variant is not None else
         {"Guardian rat slate-blue fur","Guardian rat graphite underfur",
          "Guardian rat silver guard hairs","Guardian rat cool flank fur",
@@ -63,6 +67,8 @@ for asset,settings_path,variant,clips in PACKAGES:
     if variant is not None:
         assert "Neck" in {n.get("name","") for n in gltf.get("nodes",[])}, (
             asset,"Bare skeleton must have separate animated cervical neck")
+        assert "Vessel" in {n.get("name","") for n in gltf.get("nodes",[])}, (
+            asset,"Throwable stone capsule needs an articulated hand grip")
         assert not any(any(token in name.lower() for token in
                 ("armor","cuirass","tabard","greave","buckler","pauldron","cloak"))
             for name in names), (asset,"Deleted skeleton armor returned")

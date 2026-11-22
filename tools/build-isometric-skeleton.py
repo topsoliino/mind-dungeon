@@ -12,7 +12,8 @@ CLI from repository root:
 
 The three downstream object names/actions are the stable gameplay API:
   "Skeleton rig"; "Skeleton • both/sabre/bow";
-  "idle", "run", "strike", "shoot", "death".
+  "idle", "run", "strike", "shoot", "death" plus special attack,
+  running-attack, bow-retreat and cartwheel clips.
 """
 import math
 import os
@@ -67,6 +68,8 @@ leather=material('Ossuary weapon grip','583633',.78)
 bronze=material('Ossuary guard brass','c4a577',.52,.26)
 wood=material('Ossuary bow yew','72513d',.77)
 stringmat=material('Ossuary bowstring','d1c9ab',.8)
+vesselstone=material('Ossuary ghost-vessel grey stone','777c87',.87)
+vesselrune=material('Ossuary ghost-vessel dark veins','434b56',.89)
 
 # Same world scale, anatomical pivots and elbow/knee targets as the Guardian;
 # its Hips/Chest/Arm/Forearm/Thigh/Shin/Boot solver can be used unchanged.
@@ -102,6 +105,7 @@ design['String1']=( (left[0],left[1]+.04,left[2]+.41),
                     (left[0],left[1]-.06,left[2]),'Bow.L')
 design['Arrow']=( (left[0],left[1],left[2]),
                   (left[0],left[1]-.5,left[2]),'Bow.L')
+design['Vessel']=(left,(left[0],left[1]-.11,left[2]+.18),'Hand.L')
 
 arm=bpy.data.armatures.new('Ossuary guardian-IK armature')
 rig=bpy.data.objects.new('Skeleton rig',arm)
@@ -428,6 +432,12 @@ limb('Arrow barbed head',bow+V((0,-.59,0)),bow+V((0,-.67,0)),
      [(0,.028,.018),(.6,.021,.015),(1,.001,.001)],
      [steel_edge],'Arrow',8,'bow',.002)
 
+# A long grey carved stone capsule, visibly grasped during either throw.
+limb('Ghost vessel elongated grey stone',V(left)+V((0,-.16,-.085)),
+     V(left)+V((0,-.16,.185)),
+     [(0,.043,.047),(.17,.059,.065),(.83,.057,.061),(1,.035,.040)],
+     [vesselstone,vesselrune],'Vessel',10,'both',.008)
+
 # Bind geometry with vertex groups to the same armature and apply Guardian
 # bevels / weighted normals BEFORE export. The other enemy and Guardian both
 # use one continuous AnimationMixer track rather than sprite blending.
@@ -546,8 +556,27 @@ def sample_pose(kind,t):
     bpy.context.view_layer.update()
     phase=math.tau*t
     swing=math.cos(phase)
-    locomotion=kind=='run'
-    sword=kind=='strike'; archery=kind=='shoot'
+    action=kind[:-4] if kind.endswith('-run') else kind
+    locomotion=kind in ('run','flee') or kind.endswith('-run')
+    sword=action in ('strike','combo','slash','overhead')
+    archery=action in ('shoot','double-shoot')
+    throwing=action=='throw'
+    if action in ('cartwheel-enter','cartwheel','cartwheel-exit'):
+        # Full-body lateral somersault: roll around the long forward axis.
+        # A separate start/end clip gives the wheel a real preparation/landing.
+        u=smooth(t)
+        if action=='cartwheel-enter':angle=(pi*.46)*u
+        elif action=='cartwheel-exit':angle=pi*.46+(pi*1.54)*u
+        else:angle=pi*.46+math.tau*t
+        hips=rig.pose.bones['Hips']
+        hips.rotation_quaternion=Euler((0,angle,0)).to_quaternion()
+        hips.location=V((0,0,-.14*math.sin(pi*t)**2))
+        for side,sign in SIDES:
+            rig.pose.bones['Arm.'+side].rotation_quaternion=Euler((-.48,0,sign*.42)).to_quaternion()
+            rig.pose.bones['Thigh.'+side].rotation_quaternion=Euler((.28,0,sign*.24)).to_quaternion()
+        rig.pose.bones['Vessel'].scale=(.0001,)*3
+        bpy.context.view_layer.update()
+        return
     if locomotion:
         bob=.020+.029*(1-math.cos(phase*2))/2
         hips=rest['Hips'][0]+V((-.037*math.sin(phase-.13),-.018,bob-.062))
@@ -560,6 +589,11 @@ def sample_pose(kind,t):
         thorax_yaw=-.027*math.sin(phase-.3)
         pitch=.032+.010*math.sin(phase)
     if sword:
+        # Six rapid crossing cuts or a powerful overhead/single advance.
+        # Evaluate the blade on a complete cycle while the legs may scurry.
+        cut_t=(t*6)%1 if action=='combo' else t
+        if action=='overhead':
+            cut_t=t*.79
         # Anticipation and contact are distinct deliberate cinematic poses.
         yaw,fore,drop,lean,handx,handy,handz,blade_yaw,blade_elev=sample([
          (0,0,0,0,.055, -.36,-.095,1.01,.25,-.27),
@@ -569,20 +603,27 @@ def sample_pose(kind,t):
          (.58,.36,-.146,.048,.20,-.39,-.43,1.12,-1.23,-.16),
          (.70,.91,-.105,.090,.31,-.18,-.49,.87,-1.69,-.57),
          (.82,.31,-.026,.040,.18,-.31,-.19,.93,-.81,-.38),
-         (1,0,0,0,.055,-.36,-.095,1.01,.25,-.27)],t)
-        hips=rest['Hips'][0]+V((yaw*.055,fore,-drop))
+         (1,0,0,0,.055,-.36,-.095,1.01,.25,-.27)],cut_t)
+        hips=rest['Hips'][0]+V((yaw*.055,fore if not locomotion else -.045,-drop*.4 if locomotion else -drop))
         pelvic_yaw=yaw*.56
         thorax_yaw=yaw
         pitch=lean
     elif archery:
-        draw=smooth((t-.035)/.42)
-        release=smooth((t-.63)/.075)
-        recovery=smooth((t-.83)/.17)
+        shot_t=(t*2)%1 if action=='double-shoot' else t
+        draw=smooth((shot_t-.015)/.33)
+        release=smooth((shot_t-.52)/.065)
+        recovery=smooth((shot_t-.77)/.2)
         load=draw*(1-recovery)
-        hips=rest['Hips'][0]+V((-.022*load,.042*load,-.034))
+        hips=rest['Hips'][0]+V((-.022*load, -.05 if locomotion else .042*load,-.034))
         pelvic_yaw=-.15*load+.11*release
         thorax_yaw=-.32*load+.27*release
         pitch=-.16*load+.20*release
+    elif throwing:
+        arm_throw=smooth((t-.16)/.38)*(1-smooth((t-.63)/.32))
+        hips=rest['Hips'][0]+V((0,-.03 if locomotion else 0,-.04))
+        pelvic_yaw=.15*arm_throw
+        thorax_yaw=.31*arm_throw
+        pitch=-.22*arm_throw
     orient('Hips',hips,Euler((pitch*.35,.034*math.sin(phase),pelvic_yaw)).to_matrix())
     chest=attached('Hips',rest['Chest'][0])
     chest_rotation=Euler((pitch,.028*math.sin(phase-.3),thorax_yaw)).to_matrix()
@@ -598,7 +639,8 @@ def sample_pose(kind,t):
     for side,sign in SIDES:
         if locomotion:
             footphase=(t+(0 if sign<0 else .5))%1
-            travel,lift,footpitch=gait_foot(footphase)
+            travel,lift,footpitch=gait_foot(footphase,.37 if kind=='flee' else .44)
+            if kind=='flee':travel=-travel
         elif sword:
             travel,lift,footpitch=(-.12 if sign<0 else .13),0,.14 if sign>0 else 0
         elif archery:
@@ -608,9 +650,15 @@ def sample_pose(kind,t):
         place_foot(side,sign,travel,lift,footpitch,.025)
         shoulder=attached('Chest',rest['Arm.'+side][0])
         if sword and sign>0:
-            wrist=V((handx,handy,handz))
+            wrist=V((handx,handy,handz+(.32 if action=='overhead' else 0)))
         elif sword:
             wrist=shoulder+V((-.044,-.095,-.384+.085*abs(yaw)))
+        elif throwing:
+            draw_throw=smooth(t/.38)
+            if sign<0:
+                wrist=shoulder+V((-.04,-.28-.25*draw_throw,-.03+.12*draw_throw))
+            else:
+                wrist=shoulder+V((.06,-.10,-.38))
         elif archery:
             if sign<0:
                 wrist=V((-.30,-.17-.34*load,1.12+.35*load))
@@ -645,8 +693,13 @@ def sample_pose(kind,t):
             tip=attached('Bow.L',rest['String'+str(i)][0])
             point('String'+str(i),tip,nock)
         point('Arrow',nock,nock+V((0,-.62,0)))
-        if t>=.71:
+        if shot_t>=.57:
             rig.pose.bones['Arrow'].scale=(.0001,.0001,.0001)
+    vessel=rig.pose.bones['Vessel']
+    vessel.scale=(1,1,1) if throwing and t<.59 else (.0001,.0001,.0001)
+    if throwing:
+        anchor=attached('Hand.L',rest['Vessel'][0])
+        point('Vessel',anchor,anchor+V((0,-1,.22 if t>.4 else .46)))
     if kind=='death':
         fall=smooth((t-.08)/.70)
         for i,(name,(anchor,tail,parent)) in enumerate(rest.items()):
@@ -661,7 +714,12 @@ def sample_pose(kind,t):
             orient(name,where,rotation)
     bpy.context.view_layer.update()
 
-clips={'idle':8,'run':12,'strike':12,'shoot':12,'death':12}
+clips={'idle':8,'run':12,'strike':12,'shoot':12,'death':12,
+       'flee':12,'double-shoot':12,'throw':12,
+       'combo':16,'slash':12,'overhead':12,
+       'cartwheel-enter':12,'cartwheel':20,'cartwheel-exit':12,
+       'shoot-run':12,'double-shoot-run':12,'throw-run':12,
+       'combo-run':16,'slash-run':12,'overhead-run':12}
 for clip in clips:
     action=bpy.data.actions.new(clip)
     action.use_fake_user=True

@@ -97,7 +97,7 @@ export async function loadEnemyRigs(){
  renderer.setClearColor(0,0);
  renderer.toneMapping=ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.13;
- const versions={sabre:7,bow:7,rat:8};
+ const versions={sabre:9,bow:9,rat:8};
  const files=[
   ['sabre','beta/art/skeleton/skeleton-sabre-rig.glb.gz',
    'beta/art/skeleton/skeleton-live.json','sabre'],
@@ -156,7 +156,8 @@ export async function loadEnemyRigs(){
    canvases.set(enemy,state);
   }
   const {clips,fps,displaySize}=stage.settings;
-  const spec=clips[selection.clip]||(type==='rat'?clips.run:clips.idle);
+  const spec=clips[selection.clip]||
+   (type==='rat'?clips.run:type==='bow'?clips.shoot:clips.strike)||clips.idle;
   if(!spec)return null;
   const [start,count]=spec;
   const t=clamp(selection.t);

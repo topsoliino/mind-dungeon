@@ -7,11 +7,15 @@ on:
     paths:
       - .github/workflows/check-isometric-skeleton.yml
       - beta/alley-skeleton.js
+      - beta/skeleton-combat.js
+      - beta/soul-vessels.js
+      - beta/ghost-fog-visual.js
       - beta/dungeon-enemy-sim.js
       - beta/dungeon-enemies.js
       - beta/art/skeleton/**
       - tools/build-isometric-skeleton.py
       - tools/check-isometric-skeleton.cjs
+      - tools/check-skeleton-specials.cjs
       - tools/check-isometric-skeleton-sprites.cjs
       - tools/check-isometric-skeleton-atlases.py
 
@@ -25,7 +29,7 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Verify combat, collision, arrow flight and retreat
+      - name: Verify six-hit combo, double-arrow fire, cartwheel, collision and ten-second poison cloud
         run: node tools/check-isometric-skeleton.cjs
       - name: Verify skeleton render selection and deterministic dungeon spawns
         run: node tools/check-isometric-skeleton-sprites.cjs

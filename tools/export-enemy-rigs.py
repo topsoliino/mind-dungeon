@@ -131,7 +131,15 @@ def skeleton():
     combined = bpy.data.objects["Skeleton • both"]
     manifests = {}
     for weapon, move in [("sabre", "strike"), ("bow", "shoot")]:
-        clips = {"idle": "idle", "run": "run", move: move, "death": "death"}
+        names = (
+            ("idle","run","shoot","flee","shoot-run","double-shoot",
+             "double-shoot-run","throw","throw-run","death")
+            if weapon=="bow" else
+            ("idle","run","strike","combo","combo-run","slash","slash-run",
+             "overhead","overhead-run","cartwheel-enter","cartwheel",
+             "cartwheel-exit","throw","throw-run","death")
+        )
+        clips = {name:name for name in names}
         export_model(ROOT / "skeleton" / f"skeleton-{weapon}-rig.glb.gz",
                      rig, [combined, bpy.data.objects["Skeleton • " + weapon]],
                      clips)
@@ -141,7 +149,7 @@ def skeleton():
                 for i, key in enumerate(clips)
             }, "displaySize": 116, "field": 3.23, "targetHeight": 1.01,
             "materialColorSpace": "srgb-to-linear",
-            "artStyle": "guardian-rebuilt-skeleton-v4",
+            "artStyle": "guardian-rebuilt-skeleton-v5",
             "sourceBlendSha256": hashlib.sha256(
                 (ROOT / "skeleton" / "skeleton.blend").read_bytes()).hexdigest(),
         }

@@ -1,7 +1,7 @@
 // Blender-exported 360-degree directional atlases with continuous view interpolation.
 window.AlleySkeleton=(()=>{
  'use strict';
- const sheets=new Map(),cell=128,deathDuration=.78,assetVersion=8,turn=Math.PI*2;
+ const sheets=new Map(),cell=128,deathDuration=.78,assetVersion=9,turn=Math.PI*2;
  async function load(){
   sheets.clear();
   await Promise.all(['sabre','bow'].flatMap(kit=>
@@ -27,7 +27,13 @@ window.AlleySkeleton=(()=>{
   if(!spec||!e.skeleton)return null;
   let clip=e.moving?'run':'idle',t=(e.phase*(e.moving?1.65:.8))%1;
   if(deathAge!==null){clip='death';t=Math.min(1,deathAge/deathDuration);}
-  else if(e.windup>0||e.runAttack>0||e.recover>0){
+  else if(e.skeletonAction){
+   const a=e.skeletonAction;
+   clip=a.name;
+   if(e.moving&&['shoot','double-shoot','throw','combo','slash','overhead'].includes(clip))
+    clip+='-run';
+   t=a.age/Math.max(.001,a.duration);
+  }else if(e.windup>0||e.runAttack>0||e.recover>0){
    clip=bow?'shoot':'strike';
    const boundary=bow?.62:.47;
    t=e.windup>0?boundary*(1-e.windup/spec.windup):
@@ -40,7 +46,12 @@ window.AlleySkeleton=(()=>{
   const selected=choose(e,rules,deathAge);
   if(!selected)return null;
   const {clip,t}=selected;
-  const key=e.skeleton+'-'+clip,image=sheets.get(key);
+  const key=e.skeleton+'-'+clip;
+  const fallback=e.skeleton+'-'+(clip==='idle'||clip==='run'||clip==='death'?clip:
+   e.skeleton==='bow'?'shoot':'strike');
+  // The new live GLB is authoritative; old directional atlases remain a
+  // visual fallback until the new specialized batches are rendered.
+  const resolved=sheets.has(key)?key:fallback,image=sheets.get(resolved);
   if(!image)return null;
   const textureCell=image.height/32;
   const count=image.width/textureCell,col=Math.max(0,Math.min(count-1,Math.floor(t*count)));
@@ -50,7 +61,7 @@ window.AlleySkeleton=(()=>{
   const views=image.height/cell;
   const row=((Math.round(views/8-facing*views/turn)%views)+views)%views;
   const p=iso.toView(e.x,e.y,e.alleyZ||0),size=140*e.size;
-  return {image,key:'skeleton-'+key,frame:row+'-'+col,sx:col*textureCell,sy:row*textureCell,
+  return {image,key:'skeleton-'+resolved,frame:row+'-'+col,sx:col*textureCell,sy:row*textureCell,
    w:textureCell,h:textureCell,
    width:size,height:size,x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.765,
    alpha:deathAge===null?1:Math.min(1,Math.max(0,(2.6-deathAge)/.5))};
