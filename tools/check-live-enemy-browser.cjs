@@ -211,7 +211,7 @@ const run=async()=>{
   const playtest=await browser.newPage({viewport:{width:1100,height:800}});
   const playErrors=[];
   playtest.on('pageerror',err=>playErrors.push(err.message));
-  await playtest.goto(base+'?szene=gasse&modus=generator&seed=4148',
+  await playtest.goto(base+'?szene=gasse&modus=generator&seed=4148&profile-render=1',
    {waitUntil:'domcontentloaded',timeout:45000});
   await playtest.waitForFunction(()=>
    window.__mindEnemyRig?.active?.length===2&&
@@ -262,6 +262,8 @@ const run=async()=>{
     sampledFps:Math.round(samples.length*1000/elapsed),
     p95FrameMs:Math.round(samples[Math.floor(samples.length*.95)]||0),
     gpuRenders:rig.stats.gpuRenders-initial,
+     rendererCosts:window.__mindAlleyProfile||{},
+     enemyGpuCostMs:rig.stats.gpuCostMs||0,
     cacheHits:rig.stats.cacheHits,
     budgetSkips:rig.stats.budgetSkips,
     profile:Object.fromEntries(Object.entries(profile).map(([k,v])=>
