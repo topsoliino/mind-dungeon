@@ -23,7 +23,7 @@ function borderAt(x,y){
  // Independent boulder/rock wall marks the upper-left ridge.
  if(x<300&&y<210)return 'rock-wall';
  // The prison itself is solid. Only its exterior gate apron is walkable.
- if(x>235&&x<397&&y>175&&y<300)return 'prison-wall';
+ if(x>213&&x<416&&y>175&&y<307)return 'prison-wall';
  return null;
 }
 function gaussian(x,y,cx,cy,rx,ry){
