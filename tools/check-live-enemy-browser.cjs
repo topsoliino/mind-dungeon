@@ -41,7 +41,7 @@ const run=async()=>{
   }
   await page.waitForFunction(()=>window.__mindGuardianRig&&
    window.__mindGuardianAtlas?.clips?.idle,null,{timeout:35000});
-  const result=await page.evaluate(()=>{
+  const result=await page.evaluate(async()=>{
    const renderer=window.__mindEnemyRig;
    const iso={viewAngle:angle=>angle,toView:()=>({x:90,y:110})};
    const kinds=['sabre','bow','rat'],out={active:renderer.active,visuals:[]};
@@ -53,6 +53,36 @@ const run=async()=>{
    for(let i=3;i<smokePixels.length;i+=4)if(smokePixels[i]>18)visibleSmoke++;
    if(visibleSmoke<250)throw Error('Ghost fog shader produced an empty texture');
    out.ghostFog={gpu:true,visibleSmoke};
+   // Binary asset verification only after the v5 source has been exported.
+   // On source commits the previous GLB may legitimately still be deployed.
+   const skeletonManifest=await (await fetch(
+    'beta/art/skeleton/skeleton-live.json',{cache:'no-cache'})).json();
+   if(skeletonManifest.sabre?.artStyle==='guardian-rebuilt-skeleton-v5'){
+    out.specialClips=[];
+    for(const [kind,names] of [['sabre',['combo','slash','overhead',
+       'cartwheel-enter','cartwheel','cartwheel-exit','throw','combo-run']],
+       ['bow',['double-shoot','flee','throw','shoot-run','double-shoot-run']]]){
+     for(const clip of names){
+      const enemy={x:100,y:100,size:1,facing:.12,phase:.2,moving:true};
+      const hashes=[];
+      for(const t of [.08,.43,.78]){
+       const selection=renderer.draw(enemy,kind,{clip,t},iso);
+       if(!selection)throw Error('Missing special live clip '+kind+':'+clip);
+       const c=selection.image.getContext('2d');
+       const pixels=c.getImageData(0,0,208,208).data;
+       let solid=0,hash=0;
+       for(let i=0;i<pixels.length;i+=4)if(pixels[i+3]>24){
+        solid++;hash=((hash*31)^(pixels[i]+pixels[i+1]+pixels[i+2]+i))>>>0;
+       }
+       if(solid<60)throw Error('Empty special Blender clip '+kind+':'+clip);
+       hashes.push(hash);
+      }
+      if(new Set(hashes).size<2)
+       throw Error('Static special Blender animation '+kind+':'+clip);
+      out.specialClips.push(kind+':'+clip);
+     }
+    }
+   }
    const checksum=canvas=>{
     const ctx=canvas.getContext('2d');
     if(canvas.width!==208||canvas.height!==208)
