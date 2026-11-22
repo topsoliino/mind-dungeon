@@ -114,10 +114,22 @@ export async function loadRig(url,clips={}){
  };
 
  let yaw=null,previousTime=null,previousPose='',previousClip=null,transition=null;
+ let lastDrawTime=-Infinity,lastArmed=null;
   return {
    canvas,displaySize,ground,
    render(clip,[start,count],progress,viewAngle,armed,time){
     const angle=Math.atan2(Math.cos(viewAngle),Math.sin(viewAngle)/Math.sin(elevation));
+    // The previous guardian renderer did GPU skinned animation + synchronized
+    // GPU->CPU framebuffer readback + a Phaser texture upload on EVERY tick.
+    // Animate at up to 40 FPS while the PLAYER POSITION keeps moving at 60.
+    // When hardware is under load, lower only the expensive pose sampling.
+    // Never delay a new attack clip, gear state or significant turn.
+    const measured=window.__mindDiagnostics?.fps||60;
+    const interval=1/(measured<28?24:measured<43?30:40);
+    const urgent=clip!==previousClip||armed!==lastArmed||
+     yaw===null||Math.abs(Math.atan2(Math.sin(angle-yaw),Math.cos(angle-yaw)))>.12;
+    if(!urgent&&time-lastDrawTime<interval)return false;
+    lastDrawTime=time;lastArmed=armed;
     const dt=previousTime===null?0:Math.min(.1,Math.max(0,time-previousTime));
     previousTime=time;
     const difference=yaw===null?0:Math.atan2(Math.sin(angle-yaw),Math.cos(angle-yaw));
