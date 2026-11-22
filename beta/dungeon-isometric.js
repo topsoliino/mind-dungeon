@@ -194,8 +194,21 @@
   function drawLayers(ctx,player,opened,actors){
    const ordered=layers(player,opened).filter(layer=>layer.visible!==false).concat(actors);
    ordered.sort((a,b)=>a.depth-b.depth);
+   // The Canvas fallback previously submitted EVERY baked building / floor
+   // surface, even tens of rooms beyond the camera. On software GPUs
+   // drawImage() for a huge off-screen transparent layer can still trigger
+   // costly compositing. Cull BEFORE issuing a draw.
+   const m=ctx.getTransform();
+   const visible=m.a>0&&m.d>0?{
+    left:-m.e/m.a-20,top:-m.f/m.d-20,
+    right:(ctx.canvas.width-m.e)/m.a+20,
+    bottom:(ctx.canvas.height-m.f)/m.d+20
+   }:null;
    for(const layer of ordered){
     if(layer.draw){layer.draw();continue;}
+    if(visible&&(layer.x>visible.right||layer.y>visible.bottom||
+       layer.x+layer.canvas.width<visible.left||
+       layer.y+layer.canvas.height<visible.top))continue;
     ctx.globalAlpha=layer.alpha??1;
     ctx.drawImage(layer.canvas,layer.x,layer.y);
     ctx.globalAlpha=1;
