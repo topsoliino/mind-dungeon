@@ -53,28 +53,23 @@ def mat(name, color, roughness=.83, metal=0):
     shader.inputs["Metallic"].default_value = metal
     return m
 
-# Same dark/base/highlight/edge material hierarchy as the Guardian armor.
-fur = mat("Warm dark umber fur", (.34, .235, .22), .67)
-fur_light = mat("Copper brown fur highlights", (.64, .47, .37), .61)
-belly = mat("Warm grey belly", (.72, .62, .53), .68)
-skin = mat("Russet pink paws and tail", (.47, .27, .30))
-ear = mat("Rose inner ears", (.65, .42, .41))
-eye = mat("Black glass eyes", (.012, .008, .014), .22)
-nose = mat("Dark wet nose", (.225, .065, .084), .27)
-teeth = mat("Small ivory incisors", (.77, .69, .50))
-whisker = mat("Pale whiskers", (.67, .58, .48))
-fur_shadow = mat("Dense charcoal underfur", (.105, .085, .112), .78)
-fur_coat = mat("Dark matted dorsal coat", (.17, .135, .17), .74)
-fur_gold = mat("Sparse warm guard hairs", (.58, .365, .24), .68)
-ear_shadow = mat("Inner ear folds", (.39, .19, .20))
-claw = mat("Hard ivory claws", (.69, .61, .47))
-hide = mat("Weathered saddle-brown leather", (.18, .105, .095), .7)
-iron = mat("Guardian gunmetal scavenger armor", (.34, .44, .53), .53, .25)
-silver = mat("Guardian silver scavenger facets", (.76, .81, .82), .50, .22)
-seams = mat("Graphite harness recesses", (.043, .054, .072), .70)
-brass = mat("Found dungeon brass", (.53, .33, .12), .52, .38)
-patch = mat("Ragged muted red cloth", (.48, .145, .19), .70)
-tail_ring = mat("Tail joint dark folds", (.35, .16, .17))
+# Cool blue-grey rat, no clothing or equipment. Maintain the Guardian's
+# deep/mid/light graphic value structure, with entirely non-metallic fur.
+fur = mat("Slate blue-grey main coat", (.32,.40,.50), .76)
+fur_light = mat("Cold silver-grey fur facets", (.57,.64,.70), .73)
+belly = mat("Smoky grey belly", (.54,.59,.63), .81)
+skin = mat("Muted slate-rose paws and tail", (.35,.31,.38), .82)
+ear = mat("Dusty grey-pink inner ears", (.48,.41,.48), .82)
+eye = mat("Black glass eyes", (.012,.018,.032), .21)
+nose = mat("Dark wet nose", (.16,.16,.23), .29)
+teeth = mat("Small ivory incisors", (.79,.78,.73), .77)
+whisker = mat("Pale cold whiskers", (.65,.68,.70), .79)
+fur_shadow = mat("Deep slate underfur", (.115,.16,.23), .83)
+fur_coat = mat("Dark dorsal blue-grey coat", (.21,.28,.38), .78)
+fur_gold = mat("Bristled cold fur tips", (.49,.57,.64), .76)
+ear_shadow = mat("Inner ear folds", (.23,.24,.32), .84)
+claw = mat("Hard weathered claws", (.45,.48,.52), .74)
+tail_ring = mat("Dark slate tail folds", (.23,.22,.30), .86)
 
 joints = {}
 parts = []
@@ -141,21 +136,25 @@ body_shell = style.profile_mesh("Broad pear-shaped body", [
         2 if facet in (6,7) else
         1 if facet in (0,5,9) and band in (1,2) else 0)
 add_part(body_shell,"Broad pear-shaped body","Root",fur)
-# A rat is not a knight: the previous broad dorsal saddle became a white
-# shoebox that hid the actual fur silhouette in the game. Its shape read as a
-# second, flat-edged object sitting on the animal rather than worn tack.
-# Preserve the Guardian's cool graphite/silver material family on a narrow
-# *body-hugging* leather-and-iron back strap instead.
-backstrap=style.profile_mesh("Scavenger narrow forged back strap",[
-    (-.24,0,.567,.050,.014),
-    (-.08,0,.604,.085,.014),
-    (.13,0,.639,.085,.014),
-    (.32,0,.605,.052,.010),
-], [hide,iron,silver], axis="y", sides=10,
-    face_material=lambda band,facet:
-        2 if band==1 and facet in (0,9) else
-        1 if facet in (0,1,8,9) else 0)
-add_part(backstrap,"Scavenger narrow forged back strap","Root",hide)
+# Short directional clumps sit inside the existing surface volume. Every
+# bristle is real skinned 3D geometry, anchored in the silhouette rather
+# than painted decals or detached roof-spikes. Deliberately varied lengths.
+for row,(y,rx,back_z) in enumerate((
+    (-.40,.19,.484),(-.25,.24,.532),(-.07,.30,.574),
+    (.12,.32,.593),(.31,.30,.580),(.46,.22,.518))):
+    for sign in (-1,1):
+        x=sign*rx*.75
+        off=(row%3)*.008
+        rod("Low shaggy dorsal fur clump","Root",
+            (x,y,back_z-.035),
+            (sign*(abs(x)+.038+off),y+.045+.011*(row%2),
+             back_z+.014+off),
+            .032,fur_light if row in (1,4) else fur_coat,.003)
+        if row in (1,3,5):
+            rod("Short side fur lock","Root",
+                (sign*rx*.92,y+.018,back_z-.09),
+                (sign*(rx+.025),y+.079,back_z-.072),
+                .025,fur_gold,.003)
 oval("Underbelly", "Root", (0, -.08, .185), (.255, .42, .125), belly)
 ruff = style.profile_mesh("Shoulder ruff", [
     (-.59,0,.365,.085,.073),
@@ -306,38 +305,16 @@ for i in range(6):
             (n*(.049-i*.006),p.y+.089,p.z-.008)
         ],skin)
 
-# Readable armor-like plane transitions echo the Guardian's pauldrons.
-# This does NOT turn the rat into a knight: it remains a compact rodent,
-# but its scavenger harness is built with the same forged material vocabulary.
-for side in (-1,1):
-    flank=style.profile_mesh("Scavenger forged flank pauldron",[
-        (-.14,side*.234,.536,.034,.017),
-        (-.01,side*.256,.565,.059,.033),
-        (.14,side*.261,.550,.057,.031),
-        (.24,side*.254,.519,.027,.014),
-    ], [iron,silver,seams], axis="y", sides=10,
-      face_material=lambda band,facet:
-         1 if band==1 and facet in (0,9) else
-         2 if facet in (5,6) else 0)
-    add_part(flank,"Scavenger forged flank pauldron","Root",iron)
-    oval("Pauldron silver stud","Root",
-         (side*.263,.045,.602),(.013,.010,.013),silver)
-belt=style.front_plate("Red knight-inspired harness clasp",[
-    (-.107,.646),(.104,.646),(.082,.720),(-.097,.716)],
-    -.212,.024,patch,brass)
-add_part(belt,"Red knight-inspired harness clasp","Chest",patch)
-
-# Worn scavenger harness: two straps, brass buckles and a tiny torn patch.
-for side in (-1,1):
-    rod("Back harness strap","Root",
-        (side*.241,-.13,.58),(side*.232,.17,.585),.027,hide,.023)
-    oval("Harness brass eyelet","Root",
-         (side*.230,-.105,.614),(.024,.019,.018),brass)
-# This small chest clasp is the only bright-red costume accent. The
-# previous red roof triangles and elevated crossbar gave the rat a
-# house-shaped back; keep the back contour readable instead.
-oval("Harness centre buckle","Root",(0,-.075,.632),
-     (.035,.018,.014),brass,12)
+# Fully natural exterior. No saddle, pauldrons, bridle, tags, metal studs,
+# buckles, leather straps or dyed cloth. Silhouette comes only from the
+# anatomical profiles, asymmetrical cheek ruffs and short bristled tufts.
+for sign in (-1,1):
+    for index,y in enumerate((-.29,-.13,.09,.29)):
+        rod("Shaggy flank fur layer","Root",
+            (sign*(.205+.05*int(index>1)),y,.49+.023*int(index>1)),
+            (sign*(.254+.052*int(index>1)),y+.054,
+             .50+.027*int(index>1)),
+            .031,fur_light if index%3==0 else fur_coat,.003)
 
 # More expressive animation curves: independent ear flicks, snout twitching
 # and raised hackles. These details read during both idle and locomotion.
@@ -360,12 +337,10 @@ bpy.context.view_layer.update()
 for obj, bone in parts:
     obj.data.transform(obj.matrix_world)
     obj.matrix_world = Matrix.Identity(4)
-    # The Guardian's armor has intentional edge glints, not rounded blobs.
-    # The rat keeps faceted anatomy but gains forged highlights on its gear.
-    if any(token in obj.name.lower() for token in (
-        "harness","buckle","saddle","leather","eyelet","claw",
-        "forged","pauldron","auricle","clasp")):
-        style.forged_hard_edges(obj, width=.003)
+    # Only eye-claw/ear anatomy receives micro-beveled transitions. No
+    # metal, no gear or costume elements remain in this character.
+    if any(token in obj.name.lower() for token in ("auricle","claw")):
+        style.forged_hard_edges(obj, width=.002)
     group = obj.vertex_groups.new(name=bone)
     group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
     obj.select_set(False)
@@ -423,11 +398,14 @@ def pose(clip, t):
         stalk=clip=="stalk"
         stride=.19 if stalk else .49
         bob=.016 if stalk else .063
-        root.location.z=bob*abs(math.sin(phase))
-        chest.rotation_euler.x=.13 if stalk else .22
-        head.rotation_euler.x=-.19 if stalk else -.12
-        head.rotation_euler.z=.06*math.sin(phase+(0 if stalk else .4))
-        root.rotation_euler.z=.018*math.sin(phase)
+        # Four-beat scurry with a compressing spine and slight nose lead.
+        # No jumping up/down like a human biped.
+        root.location.z=(.015 if stalk else .024)+bob*.60*(1-math.cos(2*phase))*.5
+        chest.rotation_euler.x=(.10 if stalk else .19)+.10*math.sin(phase+.55)
+        head.rotation_euler.x=(-.18 if stalk else -.12)-.09*math.sin(phase+.25)
+        head.rotation_euler.z=.05*math.sin(phase+.45)
+        root.rotation_euler.z=.024*math.sin(phase)
+        root.location.y=.016*math.sin(phase+.5)
         for n, sign in (("L",1),("R",-1)):
             swing=math.sin(phase+sign*PI/2)
             rig.pose.bones["Shoulder"+n].rotation_euler.x=stride*swing
@@ -459,20 +437,31 @@ def pose(clip, t):
         for i in range(6):
             rig.pose.bones["Tail"+str(i)].rotation_euler.x=-.26*lift
     elif clip in ("bite","combo"):
-        # A clear anticipation, jaw snap and recovery; combo has TWO separate snaps.
-        contacts=[.48] if clip=="bite" else [.30,.67]
-        snap=sum(bell(t, contact, .095) for contact in contacts)
-        anticipate=(smooth(t/.24)*(1-smooth((t-contacts[0])/.15)))
-        chest.rotation_euler.x=-.31*anticipate+.64*snap
-        head.rotation_euler.x=.38*anticipate-.58*snap
-        jaw.rotation_euler.x=.67*anticipate-.29*snap
+        # Readable crouch + backward snout pull -> rapid bite/pounce ->
+        # suspended follow-through and recovery. Two separately readable
+        # contacts in the combo, without advancing world position twice.
+        contacts=[.48] if clip=="bite" else [.34,.69]
+        snap=sum(bell(t,contact,.075) for contact in contacts)
+        first=contacts[0]
+        anticipate=smooth(t/.16)*(1-smooth((t-first+.080)/.12))
+        if clip=="combo":
+            anticipate=max(anticipate,
+                .70*smooth((t-.46)/.065)*(1-smooth((t-.65)/.055)))
+        settle=smooth((t-(contacts[-1]+.055))/.19)
+        chest.rotation_euler.x=-.51*anticipate+1.02*snap-.21*settle
+        head.rotation_euler.x=.62*anticipate-.96*snap+.21*settle
+        jaw.rotation_euler.x=.91*anticipate-.39*snap-.20*settle
         for n in ("L","R"):
-            rig.pose.bones["Ear"+n].rotation_euler.x=-.22*anticipate+.07*snap
-        root.location.y=-.055*max(anticipate,snap)
-        root.location.z=-.06*anticipate+.07*snap
+            rig.pose.bones["Ear"+n].rotation_euler.x=-.38*anticipate+.15*snap
+        root.location.y=.067*anticipate-.116*snap
+        root.location.z=-.115*anticipate+.123*snap-.015*settle
         for n in ("L","R"):
-            rig.pose.bones["Shoulder"+n].rotation_euler.x=.28*anticipate-.38*snap
-            rig.pose.bones["Hip"+n].rotation_euler.x=-.24*anticipate
+            rig.pose.bones["Shoulder"+n].rotation_euler.x=.44*anticipate-.65*snap
+            rig.pose.bones["Foreleg"+n].rotation_euler.x=-.37*anticipate+.26*snap
+            rig.pose.bones["Hip"+n].rotation_euler.x=-.34*anticipate+.17*snap
+        for i in range(6):
+            rig.pose.bones["Tail"+str(i)].rotation_euler.x=(
+                -.28*anticipate+.30*snap)*max(.4,1-i*.09)
     elif clip in ("dodge", "dodge-left"):
         across=smooth(t/.56)
         # Side dodge advances through the collision system in gameplay.
