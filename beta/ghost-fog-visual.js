@@ -103,7 +103,7 @@ function create(){
     const density=v.cells[y*SIZE+x]??0;
     if(density<.11)continue;
     const px=v.x+(x-7)*CELL,py=v.y+(y-7)*CELL;
-    if(!visible(px,py))continue;
+    if(!visible(px,py,v.alleyFloor))continue;
     const pos=view(px,py,v.alleyFloor*132);
     result.push({x:pos.x,y:pos.y,alpha:Math.min(.78,density*.76),depth:pos.y+1,
      size:38+Math.min(18,density*14)});
@@ -117,7 +117,7 @@ function create(){
  function draw(ctx,stones,visible,view,time,drawPots=true){
   frame(time);
   if(drawPots)for(const v of stones??[]){
-   if(!visible(v.x,v.y))continue;
+   if(!visible(v.x,v.y,v.alleyFloor))continue;
    const p=view(v.x,v.y,v.z);
    ctx.drawImage(vessel,p.x-26,p.y-67,52,78);
   }
