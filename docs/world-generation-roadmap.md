@@ -84,3 +84,19 @@ Jeder Schritt ist eine **freigabefähige Etappe**: Erst Greybox/Physik/Begehbark
 7. **Abnahme:** FPS/GPU-Metriken in realen Kämpfen, Treppen/Brücken/Fluss-Kollisionen, Save/Load über Stockwerke und Dungeon-Grenzen, kein Render-Duplikat.
 
 **Nicht umsetzen, bis die einzelnen Abschnitte konkretisiert sind:** Terrain, Normalmaps, Küsten-Grafik, Vegetation, Tiere, Wettereffekte oder neue Gebäude für Rocky Coast.
+
+
+## 6. Implementierungsstand: Rocky Coast Greybox (22.11.2026)
+
+**Laufend angebundener Prototyp — noch keine finale Landschaftsgrafik:**
+
+- `beta/rocky-coast-prison.js`: fünf Dungeon-Ebenen (1–4 Innenräume, 5 Außenlandschaft), eindeutige Dungeon-Level-IDs, deterministische Seeds, Auf-/Abstieg über die beiden Türportale (E).
+- `beta/alley-generator.js` und `beta/dungeon-isometric.js`: 10 verbundene Räume je Innenebene, Bestands-Treppen und -Leitern, Rückweg vom Außenportal; die Heldbewegung und Angriffssysteme bleiben gemeinsam.
+- `beta/rocky-coast-terrain.js`: analytische Höhenkarte, daraus erzeugte Tangent-/Normalmap, 30-Pixel-Heightfield-Kacheln, statische gechunkte Polygon-Greyboxes und Kamera-Culling; lokales normales Shading durch die abgeleiteten Normalen.
+- Outdoor-Terrain ist weitgehend offen. Der breite Fluss blockiert sichere Wegsuche außerhalb der einen vorhandenen Greybox-Brücke. Meer/Fluss sind Death Zones mit vorhandener Fallanimation; nicht überwindbare Gebirgs-/Felswände, Grenzzaun, Wald und Gefängnisfassade sind visuell und physisch als Barriere vorhanden.
+- Weltkoordinaten und Höhen werden direkt für Projektion, Rechtsklick-Raycast, Bewegung/Kollision und Hangwinkel (23° Anstrengung, 32° Abrutschen, 53° Klippenrutschen) verwendet. Auf unhaltbaren Hängen reduziert die Physik Bewegung bergauf und bewegt den Charakter hangabwärts. Aktuell werden dafür die vorhandenen Wächter-Knockback-/Bodenwurfclips verwendet, noch keine speziell gebaute Blender-Rutschspur.
+- `tools/check-rocky-coast.cjs` ist der CI-Test für Seed-Konsistenz, fünf Levelverbindungen, 3D-Terrain, Normalmap, Death/Border Zones, Navigation, Sliding und Chunk-Culling.
+
+**Noch ausstehend:** Regen-/Sturm-/Nebel-Shader, tatsächliches Wasser-/Brandungs-Rendering, konkrete nordirische Vegetation, Wildlife, Zonen-Lebendigkeit, eigenständige Rutschrigs, erweiterte Gebäudevariationen, vollumfängliche Browser- und FPS-Tests. Die vier Innenstufen sind bewusst Greybox-Layouts desselben stabilen Raumgenerators — ihre Gefängnisfunktionen und individuelle Architektur werden später ausgearbeitet.
+
+**Test-URL:** `beta/latest.html?region=rocky-coast&level=1`. Zum Terrain-MVP unmittelbar: `beta/latest.html?region=rocky-coast&level=5`. Die Beta-Ladeoberfläche ergänzt `szene=gasse&modus=generator` automatisch.
