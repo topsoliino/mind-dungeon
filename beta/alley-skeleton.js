@@ -94,7 +94,12 @@ window.AlleySkeleton=(()=>{
     ensure('sabre','idle'),ensure('sabre','run'),
     ensure('bow','idle'),ensure('bow','run')
    ]);
-   if(loaded.every(Boolean))return true;
+   if(loaded.every(Boolean)){
+    // Predecode the first likely melee and ranged attack while the loading
+    // screen is up. Their real bone animation will be available immediately.
+    await Promise.allSettled([ensure('sabre','combo'),ensure('bow','shoot')]);
+    return true;
+   }
    atlas=null;sheets.clear();
    return false;
   }catch(error){
