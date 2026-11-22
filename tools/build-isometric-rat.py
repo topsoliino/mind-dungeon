@@ -141,21 +141,21 @@ body_shell = style.profile_mesh("Broad pear-shaped body", [
         2 if facet in (6,7) else
         1 if facet in (0,5,9) and band in (1,2) else 0)
 add_part(body_shell,"Broad pear-shaped body","Root",fur)
-# Large, clean steel-on-graphite back shape uses the same visual language as
-# the Guardian's cuirass. It is a light-catching silhouette plane, not a
-# texture overlay or bright post-processing effect.
-saddle=style.profile_mesh("Scavenger forged dorsal saddle",[
-    # Plate now follows the actual back curve instead of floating as a
-    # horizontal metal brick above the animal.
-    (-.20,0,.553,.126,.030),
-    (-.05,0,.603,.208,.035),
-    (.16,0,.643,.211,.040),
-    (.35,0,.626,.137,.030),
-], [iron,silver,seams], axis="y", sides=10,
+# A rat is not a knight: the previous broad dorsal saddle became a white
+# shoebox that hid the actual fur silhouette in the game. Its shape read as a
+# second, flat-edged object sitting on the animal rather than worn tack.
+# Preserve the Guardian's cool graphite/silver material family on a narrow
+# *body-hugging* leather-and-iron back strap instead.
+backstrap=style.profile_mesh("Scavenger narrow forged back strap",[
+    (-.24,0,.567,.050,.014),
+    (-.08,0,.604,.085,.014),
+    (.13,0,.639,.085,.014),
+    (.32,0,.605,.052,.010),
+], [hide,iron,silver], axis="y", sides=10,
     face_material=lambda band,facet:
-        1 if facet in (1,2,3) and band in (0,1) else
-        2 if facet in (6,7) else 0)
-add_part(saddle,"Scavenger forged dorsal saddle","Root",iron)
+        2 if band==1 and facet in (0,9) else
+        1 if facet in (0,1,8,9) else 0)
+add_part(backstrap,"Scavenger narrow forged back strap","Root",hide)
 oval("Underbelly", "Root", (0, -.08, .185), (.255, .42, .125), belly)
 ruff = style.profile_mesh("Shoulder ruff", [
     (-.59,0,.365,.085,.073),
@@ -193,12 +193,12 @@ for s in (-1, 1):
     side = "L" if s > 0 else "R"
     # Full 3D pointed auricle with an actual inset; no overlapping circles.
     ear_outer=style.front_plate("Angular auricle",[
-        (s*.110,.535),(s*.275,.540),(s*.332,.685),
-        (s*.249,.799),(s*.144,.716)], -.565,.041,fur,fur_shadow)
+        (s*.120,.525),(s*.257,.535),(s*.274,.605),
+        (s*.260,.668),(s*.205,.695),(s*.149,.662)], -.559,.033,fur,fur_shadow)
     add_part(ear_outer,"Angular auricle","Ear"+side,fur)
     ear_inner=style.front_plate("Inset ear leather",[
-        (s*.151,.573),(s*.253,.574),(s*.296,.683),
-        (s*.241,.746),(s*.177,.684)], -.579,.012,ear,ear_shadow)
+        (s*.151,.557),(s*.235,.562),(s*.251,.620),
+        (s*.225,.660),(s*.177,.630)], -.576,.010,ear,ear_shadow)
     add_part(ear_inner,"Inset ear leather","Ear"+side,ear)
     for k in range(2):
         rod("Whisker", "Nose", (s*.045, -.866, .338+(k-.5)*.038),
@@ -288,22 +288,9 @@ for sign in (-1,1):
                 (x+sign*.007,y+(-.038 if front else .038),.012),
                 .010,claw,.0005)
 
-# Layered guard hairs across the rump with two warm and dark values.
-# Tufts follow the body root; no random geometry flashing between frames.
-for row in range(3):
-    y=-.16+row*.255
-    width=.15+.12*max(0,1-abs(y-.07)/.61)
-    height=.714+.03*math.cos((y-.12)*2.5)
-    for col in range(3):
-        t=col-1
-        x=t*width
-        z=height-.025*t*t
-        seed=(row*23+col*17)%7
-        spike=.045+seed*.006
-        triangle("Individual coarse guard fur","Root",[
-            (x-.022,y,z-.022),(x+.027,y,z-.015),
-            (x+.010,y+spike,z+.016)
-        ],fur_gold if seed==0 else fur_shadow if seed==2 else fur_coat)
+# No floating roof spikes: all long-range coat variation is encoded in
+# the major body-shell facets. Detached triangles were visible above the
+# outline as random horns rather than integrated fur at the actual game zoom.
 
 # The long tail has rings, creases and an organic silhouette.
 for i in range(6):
@@ -324,16 +311,17 @@ for i in range(6):
 # but its scavenger harness is built with the same forged material vocabulary.
 for side in (-1,1):
     flank=style.profile_mesh("Scavenger forged flank pauldron",[
-        (-.10,side*.244,.57,.075,.038),
-        (.01,side*.260,.610,.091,.066),
-        (.18,side*.247,.590,.085,.055),
-        (.25,side*.239,.56,.037,.025),
-    ], [iron,silver,seams], axis="y", sides=8,
+        (-.14,side*.234,.536,.034,.017),
+        (-.01,side*.256,.565,.059,.033),
+        (.14,side*.261,.550,.057,.031),
+        (.24,side*.254,.519,.027,.014),
+    ], [iron,silver,seams], axis="y", sides=10,
       face_material=lambda band,facet:
-         1 if facet in (0,1,7) else 2 if facet in (4,5) else 0)
+         1 if band==1 and facet in (0,9) else
+         2 if facet in (5,6) else 0)
     add_part(flank,"Scavenger forged flank pauldron","Root",iron)
     oval("Pauldron silver stud","Root",
-         (side*.255,.045,.666),(.019,.014,.022),silver)
+         (side*.263,.045,.602),(.013,.010,.013),silver)
 belt=style.front_plate("Red knight-inspired harness clasp",[
     (-.107,.646),(.104,.646),(.082,.720),(-.097,.716)],
     -.212,.024,patch,brass)
@@ -345,19 +333,11 @@ for side in (-1,1):
         (side*.241,-.13,.58),(side*.232,.17,.585),.027,hide,.023)
     oval("Harness brass eyelet","Root",
          (side*.230,-.105,.614),(.024,.019,.018),brass)
-rod("Harness dorsal cross strap","Root",
-    (-.243,-.035,.712),(.243,-.035,.712),.025,hide,.025)
-oval("Harness centre buckle","Root",(0,-.055,.745),
-     (.054,.028,.020),brass,16)
-# Small torn cloth panel that makes the silhouette identifiable in combat.
-triangle("Red scrap shoulder fabric","Root",[
-    (-.105,-.14,.725),(.115,-.16,.725),
-    (.030,.17,.755)
-],patch)
-triangle("Scrap torn trailing hem","Root",[
-    (-.07,.19,.73),(.086,.18,.735),
-    (-.057,.38,.685)
-],patch)
+# This small chest clasp is the only bright-red costume accent. The
+# previous red roof triangles and elevated crossbar gave the rat a
+# house-shaped back; keep the back contour readable instead.
+oval("Harness centre buckle","Root",(0,-.075,.632),
+     (.035,.018,.014),brass,12)
 
 # More expressive animation curves: independent ear flicks, snout twitching
 # and raised hackles. These details read during both idle and locomotion.
