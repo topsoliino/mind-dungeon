@@ -269,6 +269,7 @@ const run=async()=>{
     seconds:Math.round(elapsed)/1000
    };
   });
+  console.log('PRODUCTION PLAYTEST FPS / FRAME COST:',JSON.stringify(benchmark));
   assert.equal(benchmark.engine,'Phaser 3');
   assert(benchmark.atlasRat,
    'Normal playtest must use baked dense-fur rat, not live WebGL skinning');
@@ -278,7 +279,6 @@ const run=async()=>{
    'Enemy GPU render budget must remain capped, not scale with enemy count');
   assert.equal(playErrors.length,0,
    'Real production playtest errors: '+playErrors.join('; '));
-  console.log('PRODUCTION PLAYTEST FPS / FRAME COST:',JSON.stringify(benchmark));
   // Long playtest: verify automatic downgrading reacts to sustained slow
   // software WebGL WITHOUT changing gameplay or requiring a page reload.
   await playtest.waitForTimeout(5200);
