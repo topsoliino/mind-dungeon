@@ -211,7 +211,7 @@ const run=async()=>{
   const playtest=await browser.newPage({viewport:{width:1100,height:800}});
   const playErrors=[];
   playtest.on('pageerror',err=>playErrors.push(err.message));
-  await playtest.goto(base+'?szene=gasse&modus=generator&seed=4148&profile-render=1',
+  await playtest.goto(base+'?szene=gasse&modus=generator&seed=4148&profile-render=1&renderer=webgl',
    {waitUntil:'domcontentloaded',timeout:45000});
   await playtest.waitForFunction(()=>
    window.__mindEnemyRig?.active?.length===2&&
@@ -375,7 +375,7 @@ const run=async()=>{
   // Compare actual alternate renderer under identical software-GPU hardware.
   // This is a diagnostic, not an automatic recommendation or fake 60fps.
   const canvasPage=await browser.newPage({viewport:{width:1100,height:800}});
-  await canvasPage.goto(base+'?szene=gasse&modus=generator&seed=4148&renderer=canvas',
+  await canvasPage.goto(base+'?szene=gasse&modus=generator&seed=4148',
    {waitUntil:'domcontentloaded',timeout:45000});
   await canvasPage.waitForFunction(()=>
    window.__mindGuardianRig&&
@@ -397,9 +397,15 @@ const run=async()=>{
     fps:Math.round(times.length*1000/(performance.now()-start)),
     p95FrameMs:Math.round(times[Math.floor(times.length*.95)]||0),
     enemyCount:window.__mindDiagnostics.enemyCount,
-    simulation:window.__mindDiagnostics.simulationMs};
+    simulation:window.__mindDiagnostics.simulationMs,
+    renderScale:window.__mindDiagnostics.resolutionScale,
+    guardian:window.__mindDiagnostics.guardianQuality};
   });
-  console.log('SOFTWARE CANVAS COMPARISON:',JSON.stringify(canvasSample));
+  console.log('FAST DEFAULT 30 FPS ACCEPTANCE:',JSON.stringify(canvasSample));
+  assert(canvasSample.fps>=30,
+   'Default real gameplay must deliver at least 30 FPS on software Chromium');
+  assert(canvasSample.guardian==='BAKED BLENDER ATLAS'&&canvasSample.renderScale<=.73,
+   'Fast mode must preload the authentic Blender atlas before combat');
   await canvasPage.close();
 
   // End-to-end acceptance test for the user's actual workflow:

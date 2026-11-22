@@ -115,6 +115,11 @@ function updateArtStatus(){
 // Live Blender armatures rendered through the Guardian's Three.js pipeline.
 // Existing 32-view sprite sheets remain per-species fallback only.
 const enemyArtPreview=testParams.get('debug-art')==='1'||testParams.get('enemy3d')==='1';
+const preferredRenderer=testParams.get('renderer');
+// Fast by default: the same Blender assets, without synchronous GPU
+// texture uploads every time a skeleton pose changes. Debug can force WebGL.
+const fastIsometric=Boolean(alley&&!enemyArtPreview&&
+ preferredRenderer!=='webgl'&&preferredRenderer!=='phaser-canvas');
 let guardianBaked=false,guardianSlowSeconds=0,guardianFallbackPending=false,
  guardianQualityClock=0;
 function adaptGuardianQuality(dt){
@@ -163,10 +168,13 @@ const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=22')
 // Only the much denser-furred rat retains pre-rendered atlas animation.
 const skeletonReady=Promise.resolve();
 const ratReady=alley?ratArt.load():Promise.resolve();
-const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>{
+const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(async data=>{
  guardian=data;
  window.__mindGuardianRig=data.rig||null;
  window.__mindGuardianAtlas=data.atlas||null;
+ // Decode the authored Blender animation atlas BEFORE game entry so combat
+ // will never pause while switching from live armature to cached sprites.
+ if(fastIsometric)guardianBaked=Boolean(await guardianArt.ensureFallback(data));
  updateArtStatus();
 }).catch(error=>{
  updateArtStatus();
@@ -175,7 +183,7 @@ const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>
 const KEY='mind-dungeon-shadowbound-beta-v08',RESUME_KEY=KEY+(bossTest?'-boss-test':alley?'-alley-test':'')+'-resume',TILE=48,{LAST_DEPTH,DEFAULT_PACK}=run,TAU=Math.PI*2;
 const canvas=document.querySelector('#game'),displayContext=canvas.getContext('2d',{alpha:false});
 const scene=document.createElement('canvas'),s=scene.getContext('2d',{alpha:false});
-let cw=0,ch=0,dpr=1,renderScale=1,frame=0,last=0,paused=true,modalType='',noticeUntil=0,shake=0,cam={x:0,y:0};
+let cw=0,ch=0,dpr=1,renderScale=fastIsometric?.57:1,frame=0,last=0,paused=true,modalType='',noticeUntil=0,shake=0,cam={x:0,y:0};
 let atTitle=true;
 const settingsKey=KEY+'-settings';
 const settings={shake:true,damageNumbers:true,soundVolume:.8,musicVolume:.65};
@@ -4382,7 +4390,7 @@ displayContext.drawImage(scene,0,0);drawBossLayer(scrollX,scrollY); }
 // Phaser 3 ist die primäre Rendering-Engine. Die vorhandene Kampf- und Lernlogik
 // bleibt für Spielstand-Kompatibilität zunächst als eigenständige Simulation erhalten.
 let phaserGame=null,phaserActive=false,renderStats={fps:0,draws:0};
-let slowRenderTime=0,slowCanvasTime=0,qualityClock=0;
+let slowRenderTime=0,slowCanvasTime=0,fastCanvasTime=0,qualityClock=0;
 let canvasPerfClock=0,canvasPerfFrames=0,canvasPerfLast=0;
 let rendererSwitchPending=false;
 function setResolutionScale(scale){
@@ -4401,8 +4409,8 @@ function switchToCanvasForPerformance(){
  canvas.style.display='';
  renderStats.draws=0;
  slowCanvasTime=0;
- setResolutionScale(.80);
- console.info('Mind Dungeon: GPU bottleneck, switching to Canvas');
+ setResolutionScale(.57);
+ console.info('Mind Dungeon: GPU bottleneck, switching directly to fast Canvas');
 }
 function monitorRenderQuality(){
  if(!alley||enemyArtPreview||paused||document.hidden)return;
@@ -4419,11 +4427,21 @@ function monitorRenderQuality(){
    setTimeout(switchToCanvasForPerformance,0);
   }
  }else{
-  slowCanvasTime=fps>0&&fps<36?Math.min(6,slowCanvasTime+wallDt):
+  // Target a 40+ FPS reserve for combat. Never spend several seconds
+  // lagging before adapting, but restore resolution on strong hardware.
+  slowCanvasTime=fps>0&&fps<43?Math.min(3,slowCanvasTime+wallDt):
    Math.max(0,slowCanvasTime-wallDt*2);
-  if(slowCanvasTime>2.3&&renderScale>.59){
-   setResolutionScale(renderScale>.85?.78:renderScale>.68?.66:.57);
-   slowCanvasTime=0;
+  if(slowCanvasTime>.72&&renderScale>.58){
+   setResolutionScale(renderScale>.8?.72:renderScale>.69?.64:.57);
+   slowCanvasTime=0;fastCanvasTime=0;
+  }
+  fastCanvasTime=fps>56&&slowCanvasTime===0?
+   Math.min(5,fastCanvasTime+wallDt):
+   Math.max(0,fastCanvasTime-wallDt*2);
+  if(fastCanvasTime>4.2&&renderScale<.90){
+   setResolutionScale(renderScale<.63?.65:renderScale<.73?.73:
+    renderScale<.82?.82:.92);
+   fastCanvasTime=0;
   }
  }
 }
@@ -5165,7 +5183,7 @@ function orcTurnScale(e){
  const cos=Math.cos(TAU*(1-e.veilTime/enemyRules.attacks[e.type].windup));
  return (Math.sign(cos)||1)*Math.max(.23,Math.abs(cos));
 }
-function startPhaser(){if(!window.Phaser||alley&&testParams.get('renderer')==='canvas')return false;try{
+function startPhaser(){if(!window.Phaser||fastIsometric||alley&&preferredRenderer==='canvas')return false;try{
 class DungeonScene extends Phaser.Scene{
   constructor(){super('Dungeon')}
   create(){
@@ -6860,12 +6878,12 @@ accountReady.then(async()=>{
  const confirmation=await mdHandleEmailConfirmation();
  if(confirmation?.ok)mdAccount();else if(confirmation?.error)alert('E-Mail-Bestätigung: '+confirmation.error);
 }).catch(err=>console.warn('Initialisierung:',err));window.addEventListener('beforeunload',persist);setInterval(()=>{const el=document.querySelector('#perf');if(el&&el.style.display!=='none')el.textContent=(phaserActive?'Phaser 3':'Canvas')+' · '+renderStats.fps+' FPS · '+enemies.length+
- ' Gegner · GLB '+(enemyRig?.stats?.gpuCostMs??0)+' ms · Cache '+
+ ' Gegner · Render '+Math.round(renderScale*100)+' % · GLB '+(enemyRig?.stats?.gpuCostMs??0)+' ms · Cache '+
  (enemyRig?.stats?.cacheHits??0)+' · GPU '+(enemyRig?.stats?.gpuRenders??0)},500);window.addEventListener('keydown',e=>{if(e.code==='F3'){e.preventDefault();const el=document.querySelector('#perf');el.style.display=el.style.display==='none'?'block':'none'}});window.__mindDiagnostics={get strataShader(){return Boolean(strataFx?.shader)},get engine(){return phaserActive?'Phaser 3':'Canvas-Ersatzrenderer'},get fps(){return renderStats.fps},get gameTime(){return frame},
  get isPlaying(){return !paused&&!atTitle},get draws(){return renderStats.draws},get enemyCount(){return enemies.length},get questions(){return questions.length},
  get guardianQuality(){return guardianBaked?'BAKED BLENDER ATLAS':'3D LIVE'},
  get resolutionScale(){return renderScale},
- get adaptiveRenderer(){return phaserActive?'Phaser WebGL':'Canvas'},
+ get adaptiveRenderer(){return phaserActive?'Phaser '+(phaserGame?.renderer?.type===1?'Canvas':'WebGL'):'Canvas2D · adaptiv'},
  get gpuEnemyRenders(){return enemyRig?.stats?.gpuRenders||0},
  get navigation(){return {
   active:Boolean(alleyMove),target:alleyMove?.goal||alleyMove?.target||null,
