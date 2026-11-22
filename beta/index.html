@@ -79,7 +79,8 @@ const debugArt=alley&&testParams.get('debug-art')==='1';
 function updateArtStatus(){
  const active=enemyRig?.active||[];
  const diag={
-  guardian:guardian?.rig?'3D LIVE':'Sprite/Fallback',
+  guardian:guardianBaked?'Blender-Atlas (Performance)':
+   guardian?.rig?'3D LIVE':'Sprite/Fallback',
   skeleton:active.includes('sabre')&&active.includes('bow')?'3D LIVE':'Sprite/Fallback',
   rat:active.includes('rat')?'3D LIVE':'Sprite/Fallback',
   error:rigFailure
@@ -113,13 +114,11 @@ function adaptGuardianQuality(dt){
  guardianArt.ensureFallback(guardian).then(ok=>{
   guardianBaked=Boolean(ok);
   if(ok){
-   // Never keep a dormant WebGL context or its skinned GPU buffers alive
-   // after switching this actor permanently to its pre-rendered Blender art.
-   guardian.rig?.dispose?.();
-   guardian.rig=null;
-   window.__mindGuardianRig=null;
+   // Switching images is cheap. Forcing a WebGL context loss mid-game can
+   // stall software GPU compositors for over a second; defer GPU teardown
+   // until game exit, not during a critical FPS recovery.
    updateArtStatus();
-   console.info('Mind Dungeon: Guardian switched to Blender-baked animation; 3D GPU released');
+   console.info('Mind Dungeon: Guardian switched to Blender-baked animation');
   }else guardianSlowSeconds=0;
   guardianFallbackPending=false;
  });
