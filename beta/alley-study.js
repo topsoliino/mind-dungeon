@@ -222,15 +222,15 @@
   const [u,v,r,b]=gate.area,[a,c]=gate.opening;
   const solids=[[u,v,r,a],[u,c,r,b]];
   const routePainter={project,polygon,line,block};
-  const drawUnderlay=ctx=>{
+  const drawUnderlay=(ctx,interior=false)=>{
    const gradient=ctx.createLinearGradient(0,45,0,height);
    gradient.addColorStop(0,'#272637');gradient.addColorStop(.85,'#151622');
    ctx.fillStyle=gradient;ctx.fillRect(0,0,width,height);
    ctx.save();
    ctx.globalAlpha=.62;
-   for(const [index,building] of backdrop.entries())facadeArt.skyline(ctx,{...building,roof:18+index*5},index);
+   for(const [index,building] of (interior?[]:backdrop).entries())facadeArt.skyline(ctx,{...building,roof:18+index*5},index);
    ctx.restore();
-   for(const area of walkable){
+   for(const area of interior?walkable.slice(map.logic.streetAreaCount):walkable){
     const [u,v,r,b]=area;
     block(ctx,[u-.13,v-.13,r+.13,b+.13],0,['#272635','#272635','#39394b','#20212f']);
    }
@@ -241,9 +241,9 @@
    seed=(Math.imul(1664525,seed)+1013904223)>>>0;
    return seed/4294967296;
   };
-  const drawFloor=ctx=>{
+  const drawFloor=(ctx,interior=false)=>{
    seed=71129;
-   for(const surface of ground)paving(ctx,surface,random);
+   for(const surface of interior?ground.slice(map.art.streetSurfaceCount):ground)paving(ctx,surface,random);
    route?.renderFloor(ctx,routePainter);
   };
   const floor=generatorMode?null:bitmap(drawFloor);
@@ -253,7 +253,7 @@
   // A long wall spans many projected depth values. Split its RENDERING into
   // short immutable panels; physics still uses the unbroken structural wall.
   const renderWalls=(route?.walls??[]).flatMap(wall=>{
-   if(generatorMode&&(wall.side==='east'||wall.side==='south'))return [];
+   if(generatorMode&&!wall.shared&&!wall.interior&&(wall.side==='east'||wall.side==='south'))return [];
    if(!generatorMode||wall.axis==null)return [wall];
    const count=Math.ceil((wall.end-wall.start)/1.75);
    return Array.from({length:count},(_,i)=>{
@@ -391,16 +391,16 @@
       area[1]<gate.area[1]&&area[3]<=gate.area[1]+.23);
      const depth=behind&&enabled('foreground')?Math.min(renderDepth,archDepth-2):renderDepth;
      const alpha=wallVisibility({renderDepth:depth,hull},x,heroY);
-     result.push({image,depth,alpha});
+     result.push({image,depth,alpha,street:true});
     }
     for(const wall of wallPanels){
      result.push({image:wall.image,depth:wall.renderDepth,
-      alpha:(generatorMode||wall.wall.axis==='u'&&feet[0]>=wall.area[2]||
+      alpha:(generatorMode&&!wall.wall.shared&&!wall.wall.interior||wall.wall.axis==='u'&&feet[0]>=wall.area[2]||
        wall.wall.axis==='v'&&feet[1]>=wall.area[3])?1:wallVisibility(wall,x,heroY)});
     }
    }
    if(enabled('foreground')){
-    result.push({image:gateway,depth:archDepth,
+    result.push({image:gateway,depth:archDepth,street:true,
      alpha:wallVisibility(archPanel,x,heroY)});
     if(sealPanel)result.push({image:labSeal,depth:sealPanel.renderDepth,
      alpha:route.isUnlocked()?0:wallVisibility(sealPanel,x,heroY)});
@@ -461,8 +461,8 @@
   // passes once per chunk instead of retaining four full-map canvas sets.
   const combinedGround=generatorMode&&window.RockyCoastPrison?.enabled&&!sceneControls;
   const bakedGround=combinedGround?[chunks(ctx=>{
-   drawUnderlay(ctx);drawFloor(ctx);drawDetails(ctx,groundDetails);drawGroundLight(ctx,0);
-  },-4,true)]:generatorMode?[
+   drawUnderlay(ctx,true);drawFloor(ctx,true);
+  },-4)]:generatorMode?[
    chunks(drawUnderlay,-4,true),
    chunks(drawFloor,-3),
    chunks(ctx=>drawDetails(ctx,groundDetails),-2),
@@ -473,7 +473,14 @@
    [{canvas:detail,x:0,y:0,depth:-2}],
    [{canvas:bitmap(ctx=>drawGroundLight(ctx,0)),x:0,y:0,depth:-1}]
   ];
-  const bakedOverlays=generatorMode?
+  const street=combinedGround&&window.RockyCoastPrison.hasEntrance?
+   cacheObject([-3,-3,15,13],150,ctx=>{
+    for(const [i,building] of backdrop.entries())facadeArt.skyline(ctx,{...building,roof:18+i*5},i);
+    for(const surface of ground.slice(0,map.art.streetSurfaceCount))paving(ctx,surface,random);
+    drawDetails(ctx,groundDetails);drawGroundLight(ctx,0);
+   }):null;
+  if(street)bakedGround.push([{...street,depth:-3,street:true}]);
+  const bakedOverlays=combinedGround?[]:generatorMode?
    chunks(ctx=>drawOverlays(ctx,0),height+1):
    [{canvas:bitmap(ctx=>drawOverlays(ctx,0)),x:0,y:0,depth:height+1}];
   function drawProp(ctx,prop,vault,units){

@@ -103,9 +103,13 @@
  }
  const entry=q.get('entry');
  root.RockyCoastPrison={
-  enabled,isExterior:enabled&&level===5,level,entry,levels,nearest,link,href,
+  enabled,runSeed,isExterior:enabled&&level===5,level,entry,levels,nearest,link,href,
   hasEntrance,hasExit,get hasAscent(){return hasAscent&&storey===count;},title,
   get storey(){return storey;},count,get last(){return storey===count;},layoutSeed,
+  atStorey(index,read){
+   const original=storey;
+   try{storey=index;return read();}finally{storey=original;}
+  },
   changeStorey(delta){if(Math.abs(delta)!==1||storey+delta<1||storey+delta>count)return false;
    storey+=delta;return true;},
   id:'rocky-coast-prison-dungeon',

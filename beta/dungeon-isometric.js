@@ -77,7 +77,8 @@
    // Stair treads are physical geometry, not ordinary ground. The only
    // accessible gaps into the ribbon are the guarded foot and head.
    if(prison?.enabled){
-    if(prison.hasEntrance&&prison.storey>1&&x-r<12*tile&&x+r>=12*tile&&y+r>4*tile&&y-r<6*tile)return false;
+    if((prison.storey>1||!prison.hasEntrance)&&!(window.AlleyGenerator.roomAt(x/tile,y/tile)>0)&&!window.AlleyGenerator.outdoorExit?.cells.some(([u,v])=>
+     u===Math.floor(x/tile)&&v===Math.floor(y/tile)))return false;
     if(prison.hasExit&&!prison.last&&window.AlleyGenerator.outdoorExit?.cells.some(([u,v])=>
      Math.floor(x/tile)===u&&Math.floor(y/tile)===v))return false;
    }
@@ -156,7 +157,9 @@
   });
   function layers(player,opened){
    const {x,y}=toView(player.x,player.y);
-   const buildings=art.structures(x,y-footOffset).map(({image,depth,alpha})=>({...image,depth:depth+footOffset,alpha}));
+   const street=!prison?.enabled||prison.hasEntrance&&prison.storey===1;
+   const buildings=art.structures(x,y-footOffset).map(({image,depth,alpha,street:outside})=>
+    ({...image,depth:depth+footOffset,alpha,street:outside,visible:!outside||street}));
    // A level is a VISIBILITY GROUP, not a mostly transparent overlay.
    // Upper floors and upper-only fixtures are entirely hidden below. They
    // fade in near the last top-out frames (never before the landing).
@@ -176,6 +179,7 @@
     const prison=window.RockyCoastPrison;
     let visible=part.level===0||reveal>0;
     if(prison?.enabled){
+     if(!part.door)visible&&=part.flight===(prison.storey-(part.downId?2:1))%2;
      if(part.downId)visible&&=vertical.connectorsAt(prison.storey-2).some(c=>c.id===part.downId);
      else if(part.door)visible&&=part.door===window.AlleyGenerator.outdoorEntrance?prison.storey===1:prison.last;
      else if(part.connectorId)visible&&=vertical.connectors.some(c=>c.id===part.connectorId);
@@ -189,13 +193,23 @@
     const depth=part.depth+(raised&&stairPart&&(part.surfaceZ??Infinity)>(vertical.state.z+.5)?7000:0);
     return {...part.image,depth,alpha,visible};
    });
-   return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),
+   const stacked=prison?.enabled&&!prison.last;
+   const h=vertical?.height??0;
+   const t=stacked?Math.max(0,Math.min(1,((vertical.state.z/h)-.62)/.38)):0;
+   const blend=t*t*(3-2*t);
+   const floors=ground.map(p=>({...p,visible:!p.street||street}));
+   const incoming=prison?.enabled?ground.filter(p=>!p.street).map(p=>({...p,y:p.y-h,depth:3999,alpha:blend,visible:blend>0})):[];
+   const upperWalls=prison?.enabled?buildings.filter(p=>!p.street).map(p=>({...p,
+    y:p.y-h,depth:4001+(p.depth-y),alpha:p.alpha*blend,visible:blend>0&&p.visible})):[];
+   if(blend>0)for(const p of verticalObjects)if(p.depth===4000)p.alpha*=1-blend;
+   return [...floors,...incoming,...buildings,...upperWalls,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),
     ...verticalObjects,...atmosphere];
   }
   function addLayers(scene,player){
+   const textures=new Map();
    const images=layers(player,false).map(({canvas,x,y,depth},index)=>{
-    const key='alley-layer-'+index;
-    scene.textures.addCanvas(key,canvas);
+    let key=textures.get(canvas);
+    if(!key){key='alley-layer-'+index;scene.textures.addCanvas(key,canvas);textures.set(canvas,key);}
     return scene.add.image(x,y,key).setOrigin(0).setDepth(depth);
    });
    art.onArtReady(()=>images.forEach(image=>image.texture.refresh()));
@@ -230,6 +244,7 @@
     const inView=!viewport||!(x>viewport.right||y>viewport.bottom||
      x+canvas.width<viewport.left||y+canvas.height<viewport.top);
     const drawn=visible&&alpha>.001&&inView;
+    if(image.y!==y)image.y=y;
     if(image.depth!==depth)image.setDepth(depth);
     if(image.alpha!==alpha)image.setAlpha(alpha);
     if(image.visible!==drawn)image.setVisible(drawn);
@@ -270,10 +285,13 @@
   if(procedural&&vertical&&typeof route.prewarm==='function'){
    const originalFloor=vertical.state.floor,oldCrouch=vertical.state.crouching;
    try{
-    for(const floor of [0,1]){
-     vertical.state.floor=floor;vertical.state.crouching=false;
-     route.prewarm(floorPredicate(floor),floor);
-    }
+    const warm=()=>{
+     vertical.state.floor=0;vertical.state.crouching=false;
+     route.prewarm(groundRouteWalk,0);
+    };
+    if(prison?.enabled)for(let i=1;i<=prison.count;i++)prison.atStorey(i,warm);
+    else warm();
+    vertical.state.floor=1;route.prewarm(upperRouteWalk,1);
     vertical.state.floor=0;vertical.state.crouching=true;
     route.prewarm(crouchRouteWalk,'0-crouch');
    }finally{

@@ -127,7 +127,7 @@ function mount({generator:g,player,iso}){
    '· 1 Treppe'+(ladders?' · '+ladders+(ladders===1?' Leiter':' Leitern'):''):'· Ausgang zur Küste';
   if(prison?.enabled)title.textContent='Stockwerk '+prison.storey+' / '+prison.count;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  for(const [u,v,r,b] of alley)poly(quad(u,v,r,b),'#495461','#8e9da3');
+  for(const [u,v,r,b] of (!prison?.enabled||prison.hasEntrance&&prison.storey===1)?alley:[])poly(quad(u,v,r,b),'#495461','#8e9da3');
   for(const room of g.rooms.slice(1))
    for(const [u,v] of room.cells)poly(quad(u,v,u+1,v+1),colors[room.id%4]);
   if(vertical?.enabled&&vertical.state.floor===1){

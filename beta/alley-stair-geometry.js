@@ -199,7 +199,7 @@ function candidateAccessible(generator,model){
  }
  return false;
 }
-function select(generator,placeLadder){
+function select(generator,placeLadder,reserved=null){
  const asked=new URLSearchParams(window.location.search).get('treppe');
  // Preserve the original seed->stair family mapping while allowing the
  // closed U-form to appear occasionally in ordinary generated levels.
@@ -224,6 +224,7 @@ function select(generator,placeLadder){
       if(!occupied.has(K(a,b))){fits=false;break;}
      }
      if(!fits)continue;
+     if(reserved&&x<reserved[2]+1&&x+W>reserved[0]-1&&y<reserved[3]+1&&y+L>reserved[1]-1)continue;
      const model=transform(template,[x,y],rotation);
      // A usable upper and lower landing must remain in the SAME room.
      if(!occupied.has(K(Math.floor(model.bottom.x),Math.floor(model.bottom.y)))||

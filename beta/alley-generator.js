@@ -175,7 +175,7 @@ for(const room of rooms.slice(1))for(const [x,y] of room.cells)for(const [dx,dy,
  const axis=dx?'u':'v',p=dx?x+(dx>0?1:0):y+(dy>0?1:0),start=dx?y:x;
  // All partitions in one contiguous building share the SAME cut height.
  // Their location (not a random height offset) establishes front/back order.
- segments.push({axis,p,start,end:start+1,room:room.id,side,
+ segments.push({axis,p,start,end:start+1,room:room.id,side,shared:other>0,
   height:96,tone:['grey-a','grey-b','grey-c'][room.id%3]});
 }
 segments.sort((a,b)=>a.room-b.room||a.axis.localeCompare(b.axis)||a.p-b.p||a.side.localeCompare(b.side)||a.start-b.start);
@@ -183,7 +183,7 @@ const groups=[];
 for(const segment of segments){
  const last=groups[groups.length-1];
  if(last&&last.room===segment.room&&last.axis===segment.axis&&last.p===segment.p&&
-  last.side===segment.side&&last.end===segment.start){last.end=segment.end;continue;}
+  last.shared===segment.shared&&last.side===segment.side&&last.end===segment.start){last.end=segment.end;continue;}
  groups.push({...segment});
 }
 const th=.075;
@@ -280,6 +280,8 @@ const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.length,
  corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,
  interiorWalls:innerWalls.length,stairs:stairs?[stairs]:[],depth,roomLinearScale:2,wallCutHeight:96};
 function extend(map){
+ map.art.streetSurfaceCount=map.art.ground.length;
+ map.logic.streetAreaCount=map.logic.walkable.length;
  for(const [x,y] of hasOutdoorExit&&exit?exit.cells:[]){
   const area=[x,y,x+1,y+1];
   map.logic.walkable.push(area);
@@ -465,6 +467,7 @@ function path(from,target,canWalk,floorOverride=null){
 }
 const generator={
  enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors:activeDoors,walls,portals,
+ roomAt:(u,v)=>occ.get(key(Math.floor(u),Math.floor(v))),
  outdoorEntrance:hasOutdoorEntrance?entrance:null,
  outdoorExit:hasOutdoorExit?exit:null,dungeonLevel,containsGround,
  stairs:stairs?[stairs]:[],materials,metadata,seal:null,

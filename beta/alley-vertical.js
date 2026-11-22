@@ -99,7 +99,9 @@ function placeLadder(plan){
  plan.ladders=ladders;plan.ladder=ladders[0];
  return true;
 }
-const plan=grammar.select(generator,placeLadder),room=plan.room;
+const state={floor:0,z:0,transition:null,pending:null,stairRide:null,crouching:false};
+function buildFlight(parity,previous){
+const plan=grammar.select(generator,placeLadder,previous?.plan.region),room=plan.room;
 const ladder=plan.ladder,upper=plan.upper;
 // Share ONE wall-space reference for ladder artwork and player root motion.
 // The wall rails sit .38 of a cell outward from the ladder-cell centre.
@@ -125,7 +127,7 @@ return {
 const ladderContact=contactFor(ladder);
 const occupied=new Set(room.cells.map(p=>key(...p)));
 const contains=(u,v)=>occupied.has(key(Math.floor(u),Math.floor(v)));
-const stairs=generator.stairs[0];
+const stairs=parity?{...generator.stairs[0]}:generator.stairs[0];
 stairs.roomId=room.id;
 stairs.area=plan.region;
 stairs.variant=plan.kind;
@@ -137,14 +139,14 @@ generator.metadata.stairTitle=plan.style;
 room.plannedUse='Treppenraum';
 generator.rooms[ladder.roomId].plannedUse='Leiterkammer';
 const stairsConnector={
- id:'stone-stairs',roomId:room.id,kind:'stairs',floorFrom:0,floorTo:1,
+ flight:parity,id:'stone-stairs',roomId:room.id,kind:'stairs',floorFrom:0,floorTo:1,
  bottom:plan.bottom,top:plan.top,
  face:Math.atan2(plan.path[1].y-plan.path[0].y,plan.path[1].x-plan.path[0].x),
  duration:Math.max(2.1,plan.length*.19),variant:plan.kind
 };
 const ladders=plan.ladders??[ladder];
 const connectors=[stairsConnector,...ladders.map(l=>({
- id:l.id,roomId:l.roomId,kind:'ladder',floorFrom:0,floorTo:1,
+ flight:parity,id:l.id,roomId:l.roomId,kind:'ladder',floorFrom:0,floorTo:1,
  bottom:l.bottom,top:l.top,face:l.face,duration:2.8,contact:contactFor(l)
 }))];
 const floors=prison?Array.from({length:prison.count},(_,index)=>{
@@ -211,7 +213,7 @@ const CROUCH_CLEARANCE=39;
 function blocksGround(u,v,r=0,crouching=state.crouching){
  if(!hasStairs())return false;
  const p={x:u,y:v};
- if(prison?.storey>1&&distance(plan.top,p)<.85+r)return false;
+ 
  if(distance(plan.bottom,p)<=.58+r*.65)return false;
  const clearance=crouching?CROUCH_CLEARANCE:HEAD_CLEARANCE;
  // Closed switchbacks have full-height infill, and support posts are never
@@ -478,7 +480,6 @@ function createLayers({project,polygon,line,cacheObject}){
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
  ];
 }
-const state={floor:0,z:0,transition:null,pending:null,stairRide:null,crouching:false};
 // Clicks target a 3D point on the stair centreline. Explicit foot/head
 // positions are exact endpoints, so a click can finish a floor transition.
 function targetAlongStairs(part){
@@ -519,5 +520,19 @@ const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,lad
  navigation,
  overStair,blocksGround,blocksTop,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
  boardStairs,aimStairs,targetAlongStairs,tryEnterStairs,advanceStairs};
-window.AlleyVertical=api;
+return api;
+}
+const primary=buildFlight(0,null);
+if(!prison){window.AlleyVertical=primary;return;}
+const flights=[primary,buildFlight(1,primary)];
+const flightAt=i=>flights[(i%2+2)%2];
+const current=()=>flightAt(prison.storey-1);
+const shared={
+ state,
+ connectorsAt:i=>i<0?[]:flightAt(i).connectorsAt(i),
+ pose:(link,...args)=>flights[link.flight??0].pose(link,...args),
+ createLayers:painter=>flights.flatMap((flight,i)=>flight.createLayers(painter)
+  .filter(p=>i===0||!p.door).map(p=>({...p,flight:i})))
+};
+window.AlleyVertical=new Proxy(shared,{get:(self,key)=>key in self?self[key]:current()[key]});
 })();

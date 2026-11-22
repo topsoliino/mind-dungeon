@@ -63,7 +63,7 @@ for(let level=1;level<=4;level++){
   assert.equal(progress?.kind,storey===count?'stairs':undefined);
   if(storey<count){
    assert(vertical.connectors.length>=1&&vertical.connectors.length<=4);
-   const flight=vertical.connectors,location=w.location.href;
+   const flight=vertical.connectors,location=w.location.href,region=vertical.plan.region;
    const pursuit=w.AlleyEnemyPursuit.create(vertical,scene);
    for(const link of flight){
     const skeleton=link.kind==='ladder',entry={x:link.bottom.x*48,y:link.bottom.y*48};
@@ -79,7 +79,11 @@ for(let level=1;level<=4;level++){
     assert.equal(guard.alleyFloor,storey);
    }
    assert(w.RockyCoastPrison.changeStorey(1));
+   const nextRegion=vertical.plan.region;
+   assert(region[2]<=nextRegion[0]||nextRegion[2]<=region[0]||region[3]<=nextRegion[1]||nextRegion[3]<=region[1],
+    'The return landing cannot be underneath the next flight');
    vertical.state.floor=0;vertical.state.z=0;
+   assert(!scene.groundWalkable(6.6*48,5.15*48,14,false),'No street on an indoor storey');
    assert(scene.groundWalkable(climber.x,climber.y,14,false),'Walk off the upper landing');
    assert.equal(w.location.href,location);
    assert(w.RockyCoastPrison.changeStorey(-1));
