@@ -125,8 +125,12 @@ assert(ratBuilder.includes('"rat_"+clip')&&
  ratBuilder.includes('MIND_DUNGEON_RIG_ONLY')&&
  ratBuilder.includes('def place_paw('),
  'Retain all existing 3D clip names with Guardian planted-paw animation');
-assert(ratBuilder.includes('groom_coat("Creature fur | rat coat"')&&
- furBuilder.includes('def groom_coat(')&&furBuilder.includes('uv.data[loop].uv')&&
+assert(ratBuilder.includes('add_coat("Rat torso dense underwool"')&&
+ ratBuilder.includes('add_coat("Fully furred skull and cheeks"')&&
+ ratBuilder.includes('add_limb_fur("Lower hindleg coat "')&&
+ furBuilder.includes('def groom_coat(')&&
+ furBuilder.includes('def groom_limb(')&&
+ furBuilder.includes('uv.data[loop].uv')&&
  furRuntime.includes('prepareCreatureFur')&&furRuntime.includes('updateCreatureFur')&&
  enemy.includes('stage.fur=prepareCreatureFur(model.scene)')&&
  enemy.includes('updateCreatureFur(stage.fur,enemy,selection,state)'),
