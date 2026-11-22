@@ -11,6 +11,11 @@ on:
       - beta/dungeon-version.js
       - beta/dungeon-fresh-assets.js
       - tools/check-beta-version.cjs
+      - tools/check-alley-runtime.cjs
+      - beta/dungeon-enemy-rig.js
+      - beta/dungeon-isometric.js
+      - beta/ghost-fog-visual.js
+      - beta/art/props/ghost-vessel-art.json
       - .github/workflows/check-beta-version.yml
 
 permissions:
@@ -23,4 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify version detection and fresh game assets
-        run: node tools/check-beta-version.cjs
+        run: |
+          node tools/check-beta-version.cjs
+          node tools/check-alley-runtime.cjs
