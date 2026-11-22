@@ -59,8 +59,8 @@ def material(name,hex_color,roughness=.79,metal=0):
 coat=material("Guardian rat slate-blue fur","667b90",.81)
 mane=material("Guardian rat graphite underfur","34495f",.86)
 high=material("Guardian rat silver guard hairs","a3b1bd",.78)
-mid=material("Guardian rat cool flank fur","8799a8",.83)
-belly=material("Guardian rat shaded belly","778692",.88)
+mid=material("Guardian rat cool flank fur","76899b",.84)
+belly=material("Guardian rat shaded belly","687888",.88)
 muzzle=material("Guardian rat pale snout fur","92a1af",.83)
 skin=material("Guardian rat muted skin","756975",.87)
 ears=material("Guardian rat ear lining","a28f98",.83)
@@ -228,9 +228,9 @@ def longitudinal_profile(name,rings,mats,bone,sides=14,bevel=.005,soft=False):
             faces.append((a,a+sides,b+sides,b))
             # Broad subtle dorsal stripe, lighter lateral fur and deep
             # creases underneath. No armor-like chunky patches.
-            ids.append(1 if i in (2,3,4) else
-                       2 if i in (1,5,6,13) and row%3!=0 else
-                       3 if i in (8,9,10) else 0)
+            ids.append(1 if i in (2,3,4) and row in (2,3,4,5) else
+                       2 if i in (0,1,5,6,13) and row in (1,2,3,4) else
+                       3 if i in (9,10,11) else 0)
     faces.append(tuple(reversed(range(len(coords)-sides,len(coords)))))
     ids.append(0)
     return mesh(name,coords,faces,mats,bone,bevel,ids,soft)
@@ -264,8 +264,9 @@ torso=longitudinal_profile("Shaggy slate-blue torso",[
 ], [coat,mane,mid,belly],"Root",16,bevel=.007,soft=True)
 mass("Fur-covered chest",(0,-.346,.385),(.204,.17,.172),
      "Chest",[coat,mid,mane])
-mass("Underside and belly",(0,-.04,.231),(.245,.355,.108),
-     "Root",[belly,coat])
+# No overlapping belly ellipsoid: the former bright continuous horizontal
+# strip read as armor from the game's true isometric camera. The underside
+# is now a controlled dark/blue-grey region of the single torso shell.
 neck=mass("Furry neck",(0,-.526,.402),(.152,.116,.122),
      "Neck",[coat,mane,mid])
 # More natural rat anatomy: long broad cheeks taper into a pointed snout.
@@ -482,7 +483,7 @@ def gait_foot(phase,stride,stance,clearance):
         pitch,=sample([(0,.14),(.34,.13),(.58,.01),(.86,-.07),(1,-.09)],t)
     return travel,height,pitch
 
-def place_paw(name,phase,stride,stance,clearance,crouch=0,spread=0):
+def place_paw(name,phase,stride,stance,clearance,crouch=0,spread=0,lift_extra=0):
     side=name.split(".")[-1]
     sign=-1 if side=="L" else 1
     front=name.startswith("Front")
@@ -494,7 +495,7 @@ def place_paw(name,phase,stride,stance,clearance,crouch=0,spread=0):
     lowest=min((rotation@(p-ankle)).z for p in paw_soles[name])
     position=V((ankle.x+sign*spread,
                 ankle.y+travel,
-                max(.014,.012+lift-lowest-.016*crouch)))
+                max(.014,.012+lift+lift_extra-lowest-.025*crouch)))
     upper="Shoulder."+side if front else "Hip."+side
     lower="Foreleg."+side if front else "Hindleg."+side
     root=attached("Chest" if front else "Root",rest[upper][0])
@@ -558,11 +559,13 @@ def sample_pose(kind,t):
                 (1,0,0,0)],t)
         strike=hit
         settle=recover
-        bob=-.104*load+.091*hit-.016*recover
-        root_pitch=-.18*load+.18*hit-.06*recover
-        chest_pitch=-.31*load+.65*hit-.14*recover
-        skull_pitch=.49*load-.73*hit+.24*recover
-        shift=.020*load-.068*hit
+        # Strong attack language: body compresses, nose tucks back,
+        # front feet lift, then a fast forward/downward bite.
+        bob=-.145*load+.155*hit-.027*recover
+        root_pitch=-.24*load+.27*hit-.075*recover
+        chest_pitch=-.43*load+.86*hit-.20*recover
+        skull_pitch=.67*load-1.04*hit+.30*recover
+        shift=.024*load-.040*hit
     elif kind in ("dodge","dodge-left"):
         side=-1 if kind=="dodge-left" else 1
         v=math.sin(PI*t)
@@ -592,10 +595,12 @@ def sample_pose(kind,t):
     orient("Neck",neck,Euler((neck_pitch,
            .014*math.sin(phase-.6),.33*yaw)).to_matrix())
     head=attached("Neck",rest["Head"][0])
+    if kind in ("bite","combo"):
+        head+=V((0,.100*load-.123*strike,-.043*load+.046*strike))
     orient("Head",head,Euler((skull_pitch,
           .013*math.sin(phase-1.0),-.36*yaw)).to_matrix())
     jaw=attached("Head",rest["Jaw"][0])
-    orient("Jaw",jaw,Euler((.03+.54*load-.26*strike,
+    orient("Jaw",jaw,Euler((.03+.77*load-.45*strike,
                            0,.011*math.sin(phase))).to_matrix())
     nose_at=attached("Head",rest["Nose"][0])
     orient("Nose",nose_at,Euler((.045*math.sin(phase*2.3),
@@ -618,7 +623,8 @@ def sample_pose(kind,t):
                 # during the rapid bite instead of waving them in the air.
                 offset=0 if side=="L" else .5
                 place_paw(paw,(.24+offset)%1,
-                          .045, .82,0.003,crouch=load)
+                          .045, .82,0.003,crouch=load,
+                          lift_extra=.082*strike if front else 0)
         # Regenerate the actual chain from parented skeleton matrices.
     for i in range(6):
         name="Tail%d"%i
