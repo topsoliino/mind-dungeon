@@ -34,7 +34,9 @@ window.AlleyRat=(()=>{
  }
  async function load(){
   sheets.clear();pending.clear();
-  await Promise.all(['idle','run','bite','death'].map(ensure));
+  // Death is a 4096px-high atlas. Decode it only when a rat is
+  // seriously hurt or dying; locomotion and bite remain preloaded.
+  await Promise.all(['idle','run','bite'].map(ensure));
  }
  function choose(e,rules,deathAge){
   if(deathAge!==null)return {clip:'death',t:clamp(deathAge/DEATH_SECONDS)};
@@ -66,6 +68,10 @@ window.AlleyRat=(()=>{
  }
  function sprite(e,iso,rules,deathAge=null){
   if(!e||e.type!==rules.RAT)return null; // Electro-rats retain their own effect.
+  // Start decoding the Blender death atlas before the fatal hit whenever
+  // possible, without paying its full memory cost during loading.
+  if(deathAge===null&&e.max>0&&e.hp>0&&e.hp/e.max<.42&&!sheets.has('death'))
+   void ensure('death');
   const {clip,t}=choose(e,rules,deathAge);
   // Older cached atlases remain valid while Blender CI rebuilds the new
   // gait sheets. Missing directions fall back to the existing run atlas.

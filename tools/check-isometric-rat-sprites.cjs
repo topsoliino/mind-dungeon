@@ -25,7 +25,7 @@ const iso={toView:(x,y)=>({x:x-y,y:(x+y)/2})};
 const rules={RAT:13,attacks:Array.from({length:21},()=>({windup:.23,recovery:.36}))};
 async function test(){
  await rat.load();
- assert.equal(loaded.length,4,'Only the four common huge atlases should be eagerly decoded');
+ assert.equal(loaded.length,3,'Only the four common huge atlases should be eagerly decoded');
  const e={type:13,x:100,y:120,phase:.1,angle:0,moving:false,size:.86,hit:0,
   windup:0,runAttack:0,recover:0};
  assert.equal(rat.sprite(e,iso,rules).key,'rat-idle');
@@ -60,6 +60,7 @@ async function test(){
  rat.sprite(e,iso,rules);await new Promise(setImmediate);
  assert.equal(rat.sprite(e,iso,rules).key,'rat-dodge-left');
  e.ratMotion=null;
+ rat.sprite(e,iso,rules,0);await new Promise(setImmediate);
  assert.equal(rat.sprite(e,iso,rules,0).key,'rat-death');
  assert.equal(rat.sprite(e,iso,rules,1.2).sx,13*128);
  assert(rat.sprite(e,iso,rules,2.55).alpha<.1);
@@ -81,10 +82,10 @@ async function test(){
  assert.equal(JSON.stringify(first),JSON.stringify(rat.encounters({rooms},floor)));
  missing='combo';loaded.length=0;
  await rat.load();
- assert.equal(loaded.length,4);
+ assert.equal(loaded.length,3);
  e.ratMotion=null;e.ratAttackClip='combo';e.windup=.22;e.runAttack=0;e.recover=0;
  rat.sprite(e,iso,rules);await new Promise(setImmediate);
  assert(warnings.some(msg=>msg.includes('combo')));
- console.log('Rat browser adapter: 4 eager + lazy 3D clips, 32 facings, combat and spawning OK');
+ console.log('Rat browser adapter: 3 eager + lazy 3D clips, 32 facings, combat and spawning OK');
 }
 test().catch(err=>{console.error(err);process.exitCode=1;});
