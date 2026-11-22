@@ -307,3 +307,73 @@ export async function loadEnemyRigs({only=null}={}){
   dispose(){for(const stage of stages.values())stage.mixer.stopAllAction();
    frames.clear();renderer.dispose();renderer.forceContextLoss();}};
 }
+
+// OFFLINE BUILD ONLY. Reuse the exact Guardian-matched lighting, camera,
+// weighted Blender meshes, materials and armature poses from live gameplay.
+// The resulting images contain genuine 3D samples in 32 independent facings.
+// They are baked in Chromium CI; ordinary gameplay never invokes this.
+const atlasBakers=new Map();
+export async function bakeSkeletonAtlas(kind,clip,{cell=112,views=32,frames=8}={}){
+ if(!['sabre','bow'].includes(kind))throw Error('Unknown skeleton kit');
+ if(!Number.isInteger(frames)||frames<2||frames>16||
+    views!==32||cell<64||cell>160)throw Error('Invalid atlas geometry');
+ let baker=atlasBakers.get(kind);
+ if(!baker){
+  const manifest=await (await fetch('beta/art/skeleton/skeleton-live.json',
+   {cache:'no-store'})).json();
+  const settings=manifest[kind];
+  if(!settings?.clips?.idle)throw Error('Missing skeleton Blender manifest');
+  const revision=settings.sourceBlendSha256?.slice(0,16)||'1';
+  const model=await glb('beta/art/skeleton/skeleton-'+kind+'-rig.glb.gz?v='+revision);
+  const stage=makeStage(settings.field,settings.targetHeight);
+  prepareMaterials(model.scene,settings);
+  stage.pivot.add(model.scene);
+  const mixer=new AnimationMixer(model.scene);
+  const action=mixer.clipAction(model.animations[0]);
+  action.setLoop(LoopOnce,1);action.clampWhenFinished=true;action.play();
+  const renderer=new WebGLRenderer({
+   alpha:true,antialias:false,preserveDrawingBuffer:true
+  });
+  renderer.setSize(cell,cell,false);renderer.setPixelRatio(1);
+  renderer.setClearColor(0,0);
+  renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=1.13;
+  baker={settings,stage,mixer,action,renderer};
+  atlasBakers.set(kind,baker);
+ }
+ const {settings,stage,mixer,action,renderer}=baker;
+ const spec=settings.clips[clip];
+ if(!spec)throw Error('Missing original Blender action '+kind+':'+clip);
+ const [start,count]=spec;
+ const atlas=document.createElement('canvas');
+ atlas.width=cell*frames;atlas.height=cell*views;
+ const context=atlas.getContext('2d',{alpha:true});
+ if(!context)throw Error('Canvas unavailable');
+ let nonempty=0;
+ for(let row=0;row<views;row++){
+  stage.pivot.rotation.y=row*2*Math.PI/views;
+  for(let column=0;column<frames;column++){
+   const sample=(start+column/(frames-1)*(count-1))/settings.fps;
+   action.paused=false;action.enabled=true;
+   mixer.setTime(sample);
+   renderer.render(stage.scene,stage.camera);
+   context.drawImage(renderer.domElement,column*cell,row*cell,cell,cell);
+  }
+  // Test a center cell per angle to avoid publishing a transparent atlas.
+  const pixels=context.getImageData(0,row*cell,cell,cell).data;
+  for(let i=3;i<pixels.length;i+=4)if(pixels[i]>30){nonempty++;break;}
+ }
+ if(nonempty<views-2)throw Error('Invisible '+kind+':'+clip+' Blender atlas');
+ const data=atlas.toDataURL('image/webp',.94);
+ if(!data.startsWith('data:image/webp;base64,'))
+  throw Error('Chromium WebP encoding unavailable');
+ return {kind,clip,cell,views,frames,nonempty,
+  groundFraction:stage.groundFraction,
+  sourceBlendSha256:settings.sourceBlendSha256,data};
+}
+export function disposeSkeletonAtlasBakers(){
+ for(const baker of atlasBakers.values()){
+  baker.mixer.stopAllAction();
+  baker.renderer.dispose();baker.renderer.forceContextLoss();
+ }
+ atlasBakers.clear();
+}
