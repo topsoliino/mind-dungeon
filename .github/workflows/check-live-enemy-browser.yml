@@ -42,5 +42,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: guardian-forged-art-audit
-          path: artifacts/guardian-style-audit.png
+          path: artifacts/*.png
           if-no-files-found: ignore

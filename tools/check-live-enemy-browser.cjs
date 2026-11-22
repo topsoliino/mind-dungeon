@@ -114,6 +114,36 @@ const run=async()=>{
     }
    }
    out.preview=preview.toDataURL('image/png');
+   // Separate contact sheet for the *actual bone animations*. Frame four is
+   // an after-swing/recovery pose, not a static sprite or CSS effect.
+   const actionSheet=document.createElement('canvas');
+   actionSheet.width=tile*4;actionSheet.height=tile*3;
+   const ag=actionSheet.getContext('2d');
+   ag.fillStyle='#26303d';ag.fillRect(0,0,actionSheet.width,actionSheet.height);
+   out.telegraphs=[];
+   for(const [row,kind] of ['sabre','bow','rat'].entries()){
+    const clip=kind==='sabre'?'strike':kind==='bow'?'shoot':'bite';
+    const samples=kind==='sabre'?[.08,.39,.61,.89]:
+     kind==='bow'?[.08,.47,.69,.92]:[.08,.27,.49,.85];
+    const hashes=[];
+    for(const [col,t] of samples.entries()){
+     const enemy={x:100,y:100,size:1,facing:.20,
+       skeleton:kind==='rat'?null:kind,moving:false};
+     const result=renderer.draw(enemy,kind,{clip,t},iso);
+     if(!result)throw Error('Missing action pose '+kind+' '+t);
+     const m=checksum(result.image);
+     if(m.alpha<100)throw Error('Empty action pose '+kind+' '+t);
+     hashes.push(m.hash);
+     const x=col*tile+3,y=row*tile+18;
+     ag.drawImage(result.image,x,y,224,205);
+     ag.fillStyle='#f5f2e8';ag.font='12px monospace';
+     ag.fillText(kind+' '+clip+' '+(t*100).toFixed(0)+'%',x+7,y-3);
+    }
+    if(new Set(hashes).size<3)
+     throw Error('Attack animation barely changes across anticipation/strike/recovery: '+kind);
+    out.telegraphs.push({kind,clip,distinctFrames:new Set(hashes).size});
+   }
+   out.actionPreview=actionSheet.toDataURL('image/png');
    out.artStatus=window.__mindArtStatus;
    return out;
   });
@@ -128,7 +158,9 @@ const run=async()=>{
   fs.mkdirSync('artifacts',{recursive:true});
   fs.writeFileSync('artifacts/guardian-style-audit.png',
    Buffer.from(result.preview.split(',')[1],'base64'));
-  delete result.preview;
+  fs.writeFileSync('artifacts/enemy-attack-telegraphs.png',
+   Buffer.from(result.actionPreview.split(',')[1],'base64'));
+  delete result.preview;delete result.actionPreview;
   assert.equal(errors.length,0,'Game runtime JavaScript errors: '+errors.join('; '));
   console.log('Guardian-compatible live 3D enemy browser smoke:',JSON.stringify(result));
   console.log('All three animated GLB rigs render with genuine opaque pixels in Chromium WebGL.');
