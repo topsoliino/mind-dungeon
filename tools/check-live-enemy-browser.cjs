@@ -305,6 +305,24 @@ const run=async()=>{
   if(benchmark.sampledFps<20)
    assert(adapted.engine==='Canvas-Ersatzrenderer'||adapted.renderScale<1,
     'Sustained slow GPUs must trigger adaptive software/quality rendering');
+  // Real right-click navigation: click a reachable target on-screen and
+  // ensure the character keeps walking instead of taking two short steps.
+  const clickProbe=await playtest.evaluate(()=>window.__mindDiagnostics.probeRightClick());
+  assert(clickProbe&&clickProbe.distance>65,
+   'Could not select a reachable right-click waypoint on the generated floor');
+  await playtest.mouse.click(clickProbe.screenX,clickProbe.screenY,{button:'right'});
+  await playtest.waitForFunction(({start,distance})=>{
+   const state=window.__mindDiagnostics?.navigation;
+   if(!state)return false;
+   return Math.hypot(state.x-start.x,state.y-start.y)>=Math.min(75,distance*.72);
+  },clickProbe,{timeout:18000});
+  const reached=await playtest.evaluate(()=>window.__mindDiagnostics.navigation);
+  assert(Math.hypot(reached.x-clickProbe.start.x,reached.y-clickProbe.start.y)>48,
+   'A right-click must cause sustained movement across the room');
+  assert.equal(
+   await playtest.evaluate(()=>document.querySelector('#modalWrap')?.style.display),
+   'none','Right-click must keep the game active, not open the title');
+  console.log('RIGHT-CLICK NAVIGATION PATH:',JSON.stringify({clickProbe,reached}));
   await playtest.close();
   // Compare actual alternate renderer under identical software-GPU hardware.
   // This is a diagnostic, not an automatic recommendation or fake 60fps.

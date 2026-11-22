@@ -33,19 +33,27 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=17')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=18')"));
 assert(!enemy.includes("function hasLegacyPalette("),
  'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
 assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
  'Version each GLB from its exact Blender source rather than a fixed stale asset number');
 assert(html.includes('debug-art')&&html.includes('__mindArtStatus'),
  'On-device art diagnostics must identify 3D renderer versus atlas fallback');
-assert(html.includes("enemyRig?.draw(e,e.skeleton,selection,iso)"));
+assert(html.includes("enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)"));
+assert(!html.includes('skeletonArt.sprites('),
+ 'The low-quality legacy skeleton atlases must NEVER render again');
+assert(!html.includes('const skeletonReady=alley?skeletonArt.load()'),
+ 'Do not decode retired skeleton WebP atlases at startup');
+assert(!source('alley-skeleton.js').includes('.webp'),
+ 'All skeleton model variants must be taken from the live Blender GLBs');
+assert(source('alley-skeleton.js').includes('return {choose,encounters}'),
+ 'The legacy sprite-renderer API must be fully removed');
 assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso)"));
 assert(html.includes("enemyRig?.beginFrame(renderStats.fps)"));
 assert(html.includes("only:enemyArtPreview?null:['sabre','bow']"));
 assert(enemy.includes('const frames=new Map(),MAX_FRAMES=112'));
-assert(enemy.includes('renderedThisFrame>=1'));
+assert(enemy.includes('state.last&&(renderedThisFrame>=1'));
 assert(enemy.includes('cacheHits:0'));
 assert(html.includes('if(!onScreen(e))continue'));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));

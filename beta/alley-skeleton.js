@@ -1,27 +1,9 @@
-// Blender-exported 360-degree directional atlases with continuous view interpolation.
+// Canonical skeleton selection for the Guardian-derived LIVE 3D GLB rigs.
+// All eight legacy 32-way WebP atlases and their loader were permanently
+// retired. Rendering remains in dungeon-enemy-rig.js for EVERY pose.
 window.AlleySkeleton=(()=>{
  'use strict';
- const sheets=new Map(),cell=128,deathDuration=.78,assetVersion=10,turn=Math.PI*2;
- async function load(){
-  sheets.clear();
-  await Promise.all(['sabre','bow'].flatMap(kit=>
-   ['idle','run',kit==='bow'?'shoot':'strike','death'].map(async clip=>{
-    const key=kit+'-'+clip,image=new Image();
-    image.src='beta/art/skeleton/'+key+'.webp?v='+assetVersion;
-    try{
-     await image.decode();
-     const textureCell=image.height/32;
-     if(![96,128].includes(textureCell)||
-        image.width<textureCell||image.width%textureCell)
-      throw new Error('Ungültige Sprite-Abmessungen '+image.width+'×'+image.height);
-     sheets.set(key,image);
-    }catch(error){
-     // One broken sprite must not prevent the entire dungeon from loading.
-     // The standard enemy renderer remains available for this one enemy.
-     console.warn('Skelett-Atlas fehlt oder ist beschädigt: '+key,error);
-    }
-   })));
- }
+ const deathDuration=.78;
  function choose(e,rules,deathAge=null){
   const spec=rules.attacks[e.type],bow=e.skeleton==='bow';
   if(!spec||!e.skeleton)return null;
@@ -43,37 +25,6 @@ window.AlleySkeleton=(()=>{
     .89+.11*(1-e.recover/Math.max(.01,spec.recovery));
   }
   return {clip,t:Math.max(0,Math.min(1,t)),kit:e.skeleton};
- }
- function sprite(e,iso,rules,deathAge=null){
-  const selected=choose(e,rules,deathAge);
-  if(!selected)return null;
-  const {clip,t}=selected;
-  const key=e.skeleton+'-'+clip;
-  const fallback=e.skeleton+'-'+(clip==='idle'||clip==='run'||clip==='death'||clip==='flee'?clip==='flee'?'run':clip:
-   e.skeleton==='bow'?'shoot':'strike');
-  // The new live GLB is authoritative; old directional atlases remain a
-  // visual fallback until the new specialized batches are rendered.
-  const resolved=sheets.has(key)?key:fallback,image=sheets.get(resolved);
-  if(!image)return null;
-  const textureCell=image.height/32;
-  const count=image.width/textureCell,col=Math.max(0,Math.min(count-1,Math.floor(t*count)));
-  const facing=Number.isFinite(e.facing)?e.facing:Number.isFinite(e.angle)?e.angle:0;
-  // The atlas is baked camera-relatively: row zero looks toward the viewer,
-  // while row two faces right in the projected scene.
-  const views=image.height/cell;
-  const row=((Math.round(views/8-facing*views/turn)%views)+views)%views;
-  const p=iso.toView(e.x,e.y,e.alleyZ||0),size=140*e.size;
-  return {image,key:'skeleton-'+resolved,frame:row+'-'+col,sx:col*textureCell,sy:row*textureCell,
-   w:textureCell,h:textureCell,
-   width:size,height:size,x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.765,
-   alpha:deathAge===null?1:Math.min(1,Math.max(0,(2.6-deathAge)/.5))};
- }
- function sprites(e,iso,rules,deathAge=null){
-  // 32 independently baked 3D directions: use solid nearest-frame
-  // rendering instead of two translucent skeletons overlaid. The old
-  // cross-fade showed the dungeon floor through the bones (ghosting).
-  const view=sprite(e,iso,rules,deathAge);
-  return view?[view]:[];
  }
  function encounters(generator,alley){
   const rooms=(generator.rooms||[]).filter(r=>r.kind==='raum'&&r.cells?.length);
@@ -97,5 +48,5 @@ window.AlleySkeleton=(()=>{
   }
   return encounters;
  }
- return {load,sprite,sprites,choose,encounters};
+ return {choose,encounters};
 })();

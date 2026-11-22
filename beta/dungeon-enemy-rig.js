@@ -202,11 +202,11 @@ export async function loadEnemyRigs({only=null}={}){
    if(!image){
     const now=performance.now();
     const delay=targetFps<25?180:targetFps<40?115:65;
-    if(!preview&&(renderedThisFrame>=1||now-lastGpuTime<delay)){
-     // Keep the last fully rendered pose while movement continues at 60fps.
-     // First encounter without a cached pose falls back to the 32-way atlas.
+    if(!preview&&state.last&&(renderedThisFrame>=1||now-lastGpuTime<delay)){
+     // Keep the previous genuine live-GLB frame while movement continues.
+     // The first frame for a skeleton must always be rendered: there is no
+     // lower-quality legacy sprite model to fall back to any more.
      stats.budgetSkips++;
-     if(!state.last)return null;
      changed=false;
     }else{
      renderedThisFrame++;
