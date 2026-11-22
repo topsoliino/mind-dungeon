@@ -3458,6 +3458,7 @@ function moveActor(actor,dx,dy,knockback=false,origin){
  const step=(x,y)=>{
   if(alley){
    if(hero&&rockyTerrain){
+    if(rockyTerrain.uphillBlocked(actor,x,y))return;
     const hazard=rockyTerrain.dangerAt(x,y);
     if(hazard){triggerRockyDeath(hazard==='river'?'Fluss':'Meer');return;}
    }
