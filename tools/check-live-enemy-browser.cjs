@@ -46,13 +46,13 @@ const run=async()=>{
    const iso={viewAngle:angle=>angle,toView:()=>({x:90,y:110})};
    const kinds=['sabre','bow','rat'],out={active:renderer.active,visuals:[]};
    const fog=window.GhostFogVisual?.create();
-   if(!fog?.gpu)throw Error('Shared ghost-vessel fog shader did not compile on WebGL');
+   if(!fog||fog.gpu)throw Error('Green ghost fog must draw without a competing WebGL context');
    fog.frame(1.0);
    const smokePixels=fog.canvas.getContext('2d').getImageData(0,0,96,96).data;
    let visibleSmoke=0;
    for(let i=3;i<smokePixels.length;i+=4)if(smokePixels[i]>18)visibleSmoke++;
-   if(visibleSmoke<250)throw Error('Ghost fog shader produced an empty texture');
-   out.ghostFog={gpu:true,visibleSmoke};
+   if(visibleSmoke<250)throw Error('Rolling orb poison cloud produced an empty texture');
+   out.ghostFog={gpu:fog.gpu,visibleSmoke};
    // Binary asset verification only after the v5 source has been exported.
    // On source commits the previous GLB may legitimately still be deployed.
    const skeletonManifest=await (await fetch(
