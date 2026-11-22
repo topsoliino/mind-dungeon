@@ -57,7 +57,7 @@ function create(hooks){
     }
    }else if(a.name==='cartwheel'){
     travel(e,angle+Math.PI*.5*(e.skeletonWheelSide||1),
-           spec.speed*3,dt,angle);
+           spec.speed*1.52*3,dt,angle);
     e.skeletonWheelContact=Math.max(0,(e.skeletonWheelContact||0)-dt);
     if(e.skeletonWheelContact<=0&&
        Math.hypot(e.x-hero.x,e.y-hero.y)<38){
