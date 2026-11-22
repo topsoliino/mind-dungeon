@@ -33,7 +33,11 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=8')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=9')"));
+assert(!enemy.includes("function hasLegacyPalette("),
+ 'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
+assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
+ 'Version each GLB from its exact Blender source rather than a fixed stale asset number');
 assert(html.includes('debug-art')&&html.includes('__mindArtStatus'),
  'On-device art diagnostics must identify 3D renderer versus atlas fallback');
 assert(html.includes('enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)'));

@@ -99,7 +99,7 @@ function updateArtStatus(){
 }
 // Live Blender armatures rendered through the Guardian's Three.js pipeline.
 // Existing 32-view sprite sheets remain per-species fallback only.
-const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=8')
+const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=9')
  .then(module=>module.loadEnemyRigs()).then(renderer=>{
   enemyRig=renderer;window.__mindEnemyRig=renderer;
   updateArtStatus();

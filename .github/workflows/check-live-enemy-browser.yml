@@ -13,12 +13,16 @@ on:
       - beta/art/rat/rat-live-rig.glb.gz
       - beta/art/rat/rat-live.json
       - tools/check-live-enemy-browser.cjs
+  workflow_run:
+    workflows: [Fast export Guardian-style skeleton and rat rigs]
+    types: [completed]
 
 permissions:
   contents: read
 
 jobs:
   webgl:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
