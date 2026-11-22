@@ -53,7 +53,7 @@ assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),is
 assert(html.includes("enemyRig?.beginFrame(renderStats.fps)"));
 assert(html.includes("only:enemyArtPreview?null:['sabre','bow']"));
 assert(enemy.includes('const frames=new Map(),MAX_FRAMES=176'));
-assert(enemy.includes('state.last&&(renderedThisFrame>=1'));
+assert(enemy.includes('(state.last||stage.idleImage)'),'First visible enemy must reuse a genuine pre-baked GLB pose if GPU is busy');
 assert(enemy.includes('cacheHits:0'));
 assert(html.includes('if(!onScreen(e))continue'));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));
