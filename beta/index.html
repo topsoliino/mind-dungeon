@@ -4324,7 +4324,7 @@ for(const d of dust){s.globalAlpha=d.life*.43;s.fillStyle='#9c896a';s.fillRect(M
 for(const p of particles){s.globalAlpha=Math.min(1,p.life/.5);s.fillStyle=p.c;s.beginPath();s.arc(p.x,p.y,p.r,0,TAU);s.fill()}s.globalAlpha=1;
 if(player.dash>0){s.strokeStyle='#d8bd82';s.lineWidth=2;s.beginPath();s.arc(player.x,player.y,25,0,TAU);s.stroke()}
 drawCombatEffects(drawCanvasEffect,false);
-ghostFog?.draw(s,soulVessels,regionVisibleAt,(x,y,z)=>({x,y:y-z}),combatClock);
+if(soulVessels.length)ghostFog?.draw(s,soulVessels,regionVisibleAt,(x,y,z)=>({x,y:y-z}),combatClock);
 drawTempleAttacks(drawLine);
  drawWaterArcs(drawLine);
 drawFireAtmosphere((x,y,w,h,color,alpha)=>{s.globalAlpha=alpha;s.fillStyle=color;s.fillRect(Math.round(x),Math.round(y),w,h);});
@@ -5032,7 +5032,7 @@ function drawAlleyCanvas(){
   }
  }
  alley.drawLayers(s,player,save.opened.includes(0),layers);
- ghostFog?.draw(s,soulVessels,regionVisibleAt,(x,y,z)=>iso.toView(x,y,z),combatClock);
+ if(soulVessels.length)ghostFog?.draw(s,soulVessels,regionVisibleAt,(x,y,z)=>iso.toView(x,y,z),combatClock);
  drawAlleyHudEffects((x,y,r,color,opacity)=>{
   s.globalAlpha=opacity;s.fillStyle=color;s.beginPath();s.arc(x,y,r,0,TAU);s.fill();s.globalAlpha=1;
  },(x,y,health)=>{
@@ -5321,7 +5321,8 @@ class DungeonScene extends Phaser.Scene{
     if(o.changed)this.scenery[i].setTexture(o.key+(o.changed()?'-open':''));
    }
    this.fx.clear();
-   if(ghostFog){
+   // Skip expensive shader/readback/texture refresh when there is no gas.
+   if(ghostFog&&soulVessels.length){
     if(ghostFog.frame(combatClock))
      this.textures.get('ghost-vessel-fog').refresh();
     const visible=ghostFog.cells(soulVessels,regionVisibleAt,
@@ -5343,6 +5344,8 @@ class DungeonScene extends Phaser.Scene{
      this.fx.lineStyle(1,0xadb4b9,.86);
      this.fx.strokeEllipse(vessel.x,vessel.y-vessel.z-5,13,23);
     }
+   }else{
+    for(const sprite of this.ghostFogSprites)sprite.setVisible(false);
    }
    let webIndex=0;
    drawWebHazards((x,y)=>{
@@ -6328,7 +6331,8 @@ function asHero(actor,action){
  try{return action();}finally{player=current;}
 }
 
-const enemyEffects={};
+// One authoritative array for simulation, visibility and rendering.
+const enemyEffects={soulVessels};
 let stormStrikes=[];
 const enemySim=createEnemySimulation({
  arrowTargetHeight:()=>alleyVertical?.state.z??0,
