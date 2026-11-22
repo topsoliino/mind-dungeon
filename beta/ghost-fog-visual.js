@@ -52,62 +52,34 @@ function create(){
   ctx.restore();
  }
  // The previous Blender jar was intentionally retired: no large 3D props.
- let gl=null,program=null,uniformT=null,position=null,lastFrame=-1;
- try{
-  gl=canvas.getContext('webgl',{alpha:true,preserveDrawingBuffer:true,
-   premultipliedAlpha:false,antialias:false,depth:false});
-  if(gl){
-   const make=(type,source)=>{
-    const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);
-    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));
-    return s;
-   };
-   program=gl.createProgram();
-   gl.attachShader(program,make(gl.VERTEX_SHADER,
-    'attribute vec2 aPosition;varying vec2 vUv;void main(){vUv=(aPosition+1.0)*.5;gl_Position=vec4(aPosition,0.,1.);}'));
-   gl.attachShader(program,make(gl.FRAGMENT_SHADER,
-    'precision mediump float;varying vec2 vUv;uniform float uTime;'+
-    'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}'+
-    'float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);'+
-    'return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),'+
-    'mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}'+
-    'float fbm(vec2 p){return noise(p)*.55+noise(p*2.03)*.28+noise(p*4.11)*.17;}'+
-    'void main(){vec2 p=vUv*2.-1.;float r=length(p);'+
-    'float swirl=fbm(p*3.7+vec2(uTime*.21,-uTime*.14));'+
-    'vec2 flow=vec2(fbm(p*2.6+uTime*.17),fbm(p*2.6-uTime*.13));'+
-    'float turbulence=fbm(p*5.2+flow*.9+vec2(uTime*.34,-uTime*.26));'+
-    'float edge=1.-smoothstep(.35,.98,r+(.5-swirl)*.36);'+
-    'float a=clamp(edge*(.48+turbulence*.45),0.,.86);'+
-    'vec3 color=mix(vec3(.16,.34,.16),vec3(.58,.89,.35),swirl*.85);'+
-    'gl_FragColor=vec4(color,a);}'));
-   gl.linkProgram(program);
-   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));
-   gl.useProgram(program);
-   uniformT=gl.getUniformLocation(program,'uTime');
-   position=gl.getAttribLocation(program,'aPosition');
-   const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-   gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
-   gl.viewport(0,0,96,96);
-   gl.clearColor(0,0,0,0);
-  }
- }catch(error){console.warn('Soul fog shader fallback:',error);gl=null;}
+ // A single lightweight, translucent smoke texture, updated only 9 Hz.
+ // Do not allocate a fourth WebGL context (Phaser, Guardian and enemy GLBs
+ // already contend for GPU contexts, especially on mobile Safari).
+ let lastFrame=-1;
  function frame(time){
   const stamp=Math.floor(time*9);
   if(lastFrame===stamp)return false;
   lastFrame=stamp;
   ctx.clearRect(0,0,96,96);
-  if(gl){
-   gl.clear(gl.COLOR_BUFFER_BIT);
-   gl.uniform1f(uniformT,time);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-   ctx.drawImage(canvas,0,0);
-  }else{
-   const grad=ctx.createRadialGradient(48,48,4,48,48,46);
-   grad.addColorStop(0,'rgba(172,239,87,.82)');
-   grad.addColorStop(.55,'rgba(101,172,67,.48)');
-   grad.addColorStop(1,'rgba(47,83,40,0)');
-   ctx.fillStyle=grad;ctx.fillRect(0,0,96,96);
+  const haze=ctx.createRadialGradient(48,48,2,48,48,47);
+  haze.addColorStop(0,'rgba(163,232,83,.89)');
+  haze.addColorStop(.34,'rgba(127,201,70,.70)');
+  haze.addColorStop(.69,'rgba(93,151,62,.32)');
+  haze.addColorStop(1,'rgba(42,88,36,0)');
+  ctx.fillStyle=haze;ctx.fillRect(0,0,96,96);
+  ctx.save();
+  ctx.globalCompositeOperation='screen';
+  for(let i=0;i<6;i++){
+   const angle=i*Math.PI/3+time*(i%2?.18:-.15);
+   const distance=10+8*Math.sin(time*.69+i*2.6);
+   const x=48+Math.cos(angle)*distance,y=48+Math.sin(angle)*distance*.63;
+   const w=14+4*Math.sin(time*.8+i*1.4);
+   const puff=ctx.createRadialGradient(x,y,0,x,y,w);
+   puff.addColorStop(0,'rgba(185,246,107,.21)');
+   puff.addColorStop(1,'rgba(71,146,46,0)');
+   ctx.fillStyle=puff;ctx.fillRect(x-w,y-w,w*2,w*2);
   }
+  ctx.restore();
   return true;
  }
  function cells(stones,visible,view,limit=90){
@@ -144,7 +116,7 @@ function create(){
  }
  return {canvas:result,vessel,get vesselRevision(){return vesselRevision;},
   get modelRevision(){return modelRevision;},get modelFrames(){return modelFrames;},
-  set3DFrames,modelIndex,drawVessel,frame,cells,draw,gpu:Boolean(gl)};
+  set3DFrames,modelIndex,drawVessel,frame,cells,draw,gpu:false};
 }
 root.GhostFogVisual={create};
 })(typeof window==='undefined'?globalThis:window);
