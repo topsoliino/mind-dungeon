@@ -155,7 +155,11 @@ function blocksCandidate(model,u,v,r){
 function candidateAccessible(generator,model){
  // Linear-time grid flood fill, not a full A* invocation for every possible
  // position. This check happens before creating renderer art.
- const start=window.AlleyStudyMap.logic.spawn,R=.29,goal=model.bottom;
+ // Enclosed dungeon floors start within their own corridor. Using the
+ // original outside alley would make every upstairs stair falsely unreachable.
+ const enclosed=window.RockyCoastPrison?.enabled&&window.RockyCoastPrison.level>1;
+ const start=enclosed?[14.5,5.5]:window.AlleyStudyMap.logic.spawn,
+  R=.29,goal=model.bottom;
  const [a,b,c,d]=model.region;
  const pointOK=(u,v)=>{
   if(generator.blocked(u,v,R)||![[u-R,v],[u+R,v],[u,v-R],[u,v+R]]
@@ -176,8 +180,8 @@ function candidateAccessible(generator,model){
   for(let i=1;i<=n;i++)if(!pointOK(x+(u-x)*i/n,y+(v-y)*i/n))return false;
   return true;
  };
- const exit=generator.portals[1];
- const targets=[goal,{x:exit.x+exit.dx,y:exit.y+exit.dy}];
+ const exit=generator.outdoorExit;
+ const targets=[goal,...(exit?[{x:exit.x+exit.dx,y:exit.y+exit.dy}]:[])];
  if(model.ladder)targets.push(model.ladder.bottom);
  for(let i=0;i<queue.length;i++){
   const [u,v]=queue[i],x=u+.5,y=v+.5;
