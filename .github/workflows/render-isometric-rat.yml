@@ -40,13 +40,13 @@ jobs:
             -P tools/build-isometric-rat.py
       - name: Inspect actual Blender source and rendered WebP sheets
         run: python3 tools/check-isometric-rat-atlases.py
-      - name: Commit generated Blender source and rendered animations
+      - name: Commit rendered fallback atlases (canonical Blender source comes from fast rig build)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add beta/art/rat/rat.blend beta/art/rat/*.webp
+          git add beta/art/rat/*.webp
           if ! git diff --cached --quiet; then
-            git commit -m "Blender: bake 32 views for 9 small-rat animation actions"
+            git commit -m "Blender: publish 32 facing rat fallback atlases"
             git fetch origin main
             git rebase origin/main
             git push origin HEAD:main
