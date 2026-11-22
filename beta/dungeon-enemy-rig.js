@@ -8,7 +8,9 @@ import {
 } from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
-const RENDER_SIZE=176; // same internal antialias resolution as the Guardian
+// Maintain at least the Guardian's pixel density at the skeleton's larger
+// on-screen size (208/132 ~= 176/110). No per-enemy WebGL contexts.
+const RENDER_SIZE=208;
 const ELEVATION=Math.atan(1/Math.sqrt(2));
 const clamp=value=>Math.max(0,Math.min(1,value));
 const TAU=Math.PI*2;
@@ -47,6 +49,39 @@ async function glb(url){
  return parsed;
 }
 
+// Older GLBs encoded sRGB artist-palette numbers as *linear* shader values,
+// unlike the Guardian builder. Under identical lights this lifts the midtones,
+// washing out the bone/fur-to-crease contrast. Once the Blender rebuild lands,
+// the manifest flags properly decoded materials and this shim turns itself off.
+function srgbToLinear(value){
+ return value<=.04045?value/12.92:Math.pow((value+.055)/1.055,2.4);
+}
+function prepareMaterials(root,settings){
+ const legacyPalette=settings.materialColorSpace!=='srgb-to-linear';
+ const prepared=new Set();
+ root.traverse(node=>{
+  if(!node.isMesh)return;
+  for(const material of Array.isArray(node.material)?node.material:[node.material]){
+   if(!material||prepared.has(material))continue;
+   prepared.add(material);
+   if(legacyPalette&&material.color){
+    const c=material.color;
+    c.setRGB(srgbToLinear(c.r),srgbToLinear(c.g),srgbToLinear(c.b));
+   }
+   // Enemy anatomy, cloth and weapons are solid, just like the Guardian.
+   // Avoid accidental blend/depth sorting that makes them look translucent.
+   material.opacity=1;
+   material.transparent=false;
+   material.alphaTest=0;
+   material.depthWrite=true;
+   if(material.metalness>=.25){
+    material.roughness=Math.min(material.roughness,.57);
+   }
+   material.needsUpdate=true;
+  }
+ });
+}
+
 export async function loadEnemyRigs(){
  const renderer=new WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});
  renderer.setSize(RENDER_SIZE,RENDER_SIZE,false);
@@ -54,7 +89,7 @@ export async function loadEnemyRigs(){
  renderer.setClearColor(0,0);
  renderer.toneMapping=ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.13;
- const versions={sabre:1,bow:1,rat:1};
+ const versions={sabre:2,bow:2,rat:2};
  const files=[
   ['sabre','beta/art/skeleton/skeleton-sabre-rig.glb.gz',
    'beta/art/skeleton/skeleton-live.json','sabre'],
@@ -75,6 +110,7 @@ export async function loadEnemyRigs(){
       !Object.keys(settings.clips).includes('idle'))
     throw Error('Invalid enemy rig manifest: '+id);
    const stage=makeStage(settings.field,settings.targetHeight);
+   prepareMaterials(model.scene,settings);
    stage.pivot.add(model.scene);
    stage.mixer=new AnimationMixer(model.scene);
    stage.action=stage.mixer.clipAction(model.animations[0]);
