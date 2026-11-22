@@ -9,6 +9,7 @@ on:
       - beta/dungeon-enemy-rig.js
       - beta/dungeon-guardian-rig.js
       - beta/dungeon-guardian.js
+      - beta/dungeon-isometric.js
       - beta/creature-fur.js
       - beta/index.html
       - beta/art/skeleton/skeleton-*-rig.glb.gz
