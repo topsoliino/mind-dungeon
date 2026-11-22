@@ -90,6 +90,33 @@ function prepareMaterials(root,settings){
  });
 }
 
+// One shared GPU context for all skeletal enemies and the carved 3D pot.
+// The 24 angle/tumble views are generated once at startup, not during combat.
+async function bakeGhostVessel(renderer,pixels){
+ try{
+  const result=await fetch('beta/art/props/ghost-vessel.glb?v=1');
+  if(!result.ok)throw Error('3D ghost vessel HTTP '+result.status);
+  const model=await new GLTFLoader().parseAsync(await result.arrayBuffer(),'');
+  const stage=makeStage(1.82,.56);
+  model.scene.rotation.x=-Math.PI/2; // authored in Z-up coordinates
+  model.scene.position.y=-.54;stage.pivot.position.y=.54;
+  stage.pivot.add(model.scene);
+  const frames=[];
+  for(let i=0;i<24;i++){
+   const airborne=i>=16;
+   stage.pivot.rotation.set(airborne?(i-16)*Math.PI/4:0,
+    airborne?(i-16)*Math.PI/4:i*Math.PI/8,
+    airborne?.19*Math.sin(i*1.6):0);
+   renderer.render(stage.scene,stage.camera);
+   const canvas=document.createElement('canvas');
+   canvas.width=canvas.height=pixels;
+   canvas.getContext('2d',{alpha:true}).drawImage(renderer.domElement,0,0);
+   frames.push(canvas);
+  }
+  return frames;
+ }catch(error){console.warn('Ghost vessel GLB fallback:',error);return [];}
+}
+
 export async function loadEnemyRigs({only=null}={}){
  // Only cinematic art inspection uses full 208px live rendering for rats.
  // Gameplay uses the Blender-baked dense-fur rat atlases and reserves live
@@ -166,6 +193,7 @@ export async function loadEnemyRigs({only=null}={}){
   snapshot.getContext('2d').drawImage(renderer.domElement,0,0);
   stage.idleImage=snapshot;
  }
+ const ghostProps=await bakeGhostVessel(renderer,pixels);
  const canvases=new WeakMap();
  const stats={gpuRenders:0,cacheHits:0,budgetSkips:0,frames:0};
  let nextId=0,renderedThisFrame=0,lastGpuTime=-1e6,targetFps=60;
@@ -264,7 +292,7 @@ export async function loadEnemyRigs({only=null}={}){
    depth:(enemy.alleyFloor===1||enemy.alleyClimb?7000:0)+feet,
    alpha,live:changed};
  }
- return {draw,beginFrame,stats,has:kind=>stages.has(kind),
+ return {draw,beginFrame,stats,ghostProps,has:kind=>stages.has(kind),
   active:[...stages.keys()],
   dispose(){for(const stage of stages.values())stage.mixer.stopAllAction();
    frames.clear();renderer.dispose();renderer.forceContextLoss();}};

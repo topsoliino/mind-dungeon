@@ -30,7 +30,28 @@ function create(){
  const canvas=document.createElement('canvas');canvas.width=canvas.height=96;
  const result=document.createElement('canvas');result.width=result.height=96;
  const ctx=result.getContext('2d');
- const vessel=createPot();let vesselRevision=0;
+ const vessel=createPot();let vesselRevision=0,modelRevision=0;
+ let modelFrames=[];
+ function set3DFrames(frames){
+  if(!Array.isArray(frames)||frames.length!==24)return false;
+  modelFrames=frames;modelRevision++;
+  const context=vessel.getContext('2d');
+  context.clearRect(0,0,vessel.width,vessel.height);
+  context.drawImage(frames[0],0,0,vessel.width,vessel.height);
+  vesselRevision++;
+  return true;
+ }
+ function modelIndex(v){
+  if(!modelFrames.length)return -1;
+  if(!v.landed)return 16+((Math.floor(v.age*12+(v.seed||0))%8+8)%8);
+  return ((Math.floor(v.seed||0)%16+16)%16);
+ }
+ function vesselImage(v){const index=modelIndex(v);return index<0?vessel:modelFrames[index];}
+ function drawVessel(ctx,v,view){
+  const p=view(v.x,v.y,v.z),image=vesselImage(v);
+  if(modelFrames.length)ctx.drawImage(image,p.x-45,p.y-73,90,90);
+  else ctx.drawImage(image,p.x-26,p.y-67,52,78);
+ }
  const asset=new Image();
  asset.onload=()=>{
   const c=vessel.getContext('2d');c.clearRect(0,0,64,96);
@@ -124,8 +145,7 @@ function create(){
   frame(time);
   if(drawPots)for(const v of stones??[]){
    if(!visible(v.x,v.y,v.alleyFloor))continue;
-   const p=view(v.x,v.y,v.z);
-   ctx.drawImage(vessel,p.x-26,p.y-67,52,78);
+   drawVessel(ctx,v,view);
   }
   const fields=cells(stones,visible,view,90);
   for(const f of fields){
@@ -134,7 +154,9 @@ function create(){
   }
   ctx.globalAlpha=1;
  }
- return {canvas:result,vessel,get vesselRevision(){return vesselRevision;},frame,cells,draw,gpu:Boolean(gl)};
+ return {canvas:result,vessel,get vesselRevision(){return vesselRevision;},
+  get modelRevision(){return modelRevision;},get modelFrames(){return modelFrames;},
+  set3DFrames,modelIndex,drawVessel,frame,cells,draw,gpu:Boolean(gl)};
 }
 root.GhostFogVisual={create};
 })(typeof window==='undefined'?globalThis:window);
