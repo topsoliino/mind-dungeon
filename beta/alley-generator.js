@@ -304,11 +304,6 @@ function extend(map){
  map.art.routeWalls=walls;
 }
 function blocked(u,v,r=0){
- if(dungeonLevel){
-  const prison=window.RockyCoastPrison;
-  if(hasOutdoorEntrance&&prison.storey>1&&u-r<12&&u+r>=12&&v+r>4&&v-r<6)return true;
-  if(hasOutdoorExit&&!prison.last&&exterior.has(key(Math.floor(u),Math.floor(v))))return true;
- }
  return (wallIndex.get(key(Math.floor(u),Math.floor(v)))||[]).some(([a,b,c,d])=>
   u+r>a&&u-r<c&&v+r>b&&v-r<d);
 }

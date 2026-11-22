@@ -59,6 +59,7 @@ function placeLadder(plan){
  const candidates=[];
  for(const chamber of generator.rooms.filter(r=>r.kind==='raum'&&r!==room)){
   for(const [u,v] of chamber.cells)for(const dir of directions){
+   if(prison&&(dir.id==='south'||dir.id==='east'))continue;
    const cell=key(u,v),wall=key(u+dir.dx,v+dir.dy);
    if(openings.has(cell)||buildingCells.has(wall))continue;
    // The top-out must be radius-safe INSIDE the adjacent upper-floor cell,

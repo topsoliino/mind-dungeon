@@ -41,7 +41,7 @@
   // Floors 2-4 start INSIDE their own generated building, not in the
   // original outdoor alley or through an invisible/forbidden entrance.
   // The first interior corridor always occupies [12..,4..7].
-  const innerSpawn=prison?.enabled&&!prison.hasEntrance&&prison.level<=4?
+  const innerSpawn=prison?.enabled&&(!prison.hasEntrance||prison.storey>1)&&prison.level<=4?
    {x:14.5*tile,y:5.5*tile}:null;
   const returnLanding=vertical&&prison?.enabled&&prison.entry?.startsWith('down-')?
    vertical.connectors.find(c=>c.kind===prison.entry.slice(5))?.top:null;
@@ -76,6 +76,11 @@
   function groundWalkable(x,y,r=radius,includeProps=true){
    // Stair treads are physical geometry, not ordinary ground. The only
    // accessible gaps into the ribbon are the guarded foot and head.
+   if(prison?.enabled){
+    if(prison.hasEntrance&&prison.storey>1&&x-r<12*tile&&x+r>=12*tile&&y+r>4*tile&&y-r<6*tile)return false;
+    if(prison.hasExit&&!prison.last&&window.AlleyGenerator.outdoorExit?.cells.some(([u,v])=>
+     Math.floor(x/tile)===u&&Math.floor(y/tile)===v))return false;
+   }
    if(vertical?.blocksGround(x/tile,y/tile,r/tile))return false;
    if(art.blockedGround(x/tile,y/tile,r/tile))return false;
    return !includeProps||props.every(({point,half:[a,b]})=>{
