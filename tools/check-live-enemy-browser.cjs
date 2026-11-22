@@ -273,6 +273,42 @@ const run=async()=>{
    };
   });
   console.log('PRODUCTION PLAYTEST FPS / FRAME COST:',JSON.stringify(benchmark));
+  const phaserCanvas=await browser.newPage({viewport:{width:1100,height:800}});
+  const candidateErrors=[];
+  phaserCanvas.on('pageerror',err=>candidateErrors.push(err.message));
+  await phaserCanvas.goto(base+'?szene=gasse&modus=generator&seed=4148&renderer=phaser-canvas',
+   {waitUntil:'domcontentloaded',timeout:45000});
+  await phaserCanvas.waitForFunction(()=>
+   window.__mindEnemyRig?.active?.length===2&&
+   window.__mindDiagnostics?.engine==='Phaser 3'&&
+   window.__mindDiagnostics?.isPlaying,null,{timeout:40000});
+  const candidate=await phaserCanvas.evaluate(async()=>{
+   const game=window.__mindPhaserGame,scene=game.scene.scenes[0],
+    p={calls:0,total:0,max:0},original=scene.renderAlley;
+   scene.renderAlley=function(...args){
+    const now=performance.now();
+    try{return original.apply(this,args);}
+    finally{const dt=performance.now()-now;p.calls++;p.total+=dt;p.max=Math.max(p.max,dt);}
+   };
+   const start=performance.now(),startGame=window.__mindDiagnostics.gameTime,frames=[];
+   await new Promise(done=>{
+    let last=start;
+    function tick(now){
+     frames.push(now-last);last=now;
+     if(now-start>2400)done();else requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+   });
+   frames.sort((a,b)=>a-b);
+   const sec=(performance.now()-start)/1000;
+   return {fps:Math.round(frames.length/sec),
+    p95FrameMs:Math.round(frames[Math.floor(frames.length*.95)]||0),
+    gameSeconds:window.__mindDiagnostics.gameTime-startGame,wallSeconds:sec,
+    alleyAvgMs:p.total/Math.max(1,p.calls),alleyMaxMs:p.max,renderCalls:p.calls,
+    phaserType:game.renderer.type,glbRenders:window.__mindEnemyRig.stats.gpuRenders};
+  });
+  console.log('PHASER CANVAS A/B COMBAT:',JSON.stringify({...candidate,errors:candidateErrors}));
+  await phaserCanvas.close();
   assert.equal(benchmark.engine,'Phaser 3');
   assert(benchmark.atlasRat,
    'Normal playtest must use baked dense-fur rat, not live WebGL skinning');

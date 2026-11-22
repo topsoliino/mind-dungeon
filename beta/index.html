@@ -5541,7 +5541,11 @@ class DungeonScene extends Phaser.Scene{
  }
  const probe=document.createElement('canvas');
  const webgl=probe.getContext('webgl');
- const renderer=webgl?Phaser.WEBGL:Phaser.CANVAS;
+ // Identical 3D-produced skeleton sprites without Phaser WebGL uploads.
+ const preferCanvasPhaser=new URLSearchParams(location.search)
+  .get('renderer')==='phaser-canvas';
+ const renderer=preferCanvasPhaser?Phaser.CANVAS:
+  webgl?Phaser.WEBGL:Phaser.CANVAS;
  webgl?.getExtension('WEBGL_lose_context')?.loseContext();
  phaserGame=new Phaser.Game({type:renderer,audio:{noAudio:true},parent:'phaser-host',width:innerWidth,height:innerHeight,backgroundColor:'#080c18',render:{antialias:false,pixelArt:true,roundPixels:true},fps:{target:60,forceSetTimeOut:false},scene:[DungeonScene],scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});
  window.__mindPhaserGame=phaserGame;return true;
