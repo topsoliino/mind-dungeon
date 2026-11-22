@@ -3,13 +3,17 @@ window.AlleyRat=(()=>{
  'use strict';
  const CELL=128,VIEWS=32,TAU=Math.PI*2,VERSION=9;
  const files=['idle','run','stalk','strafe-left','strafe-right','back','jump','bite','combo','dodge','dodge-left','death'];
- const sheets=new Map();
+ const sheets=new Map(),pending=new Map();
  const DEATH_SECONDS=1.15;
  const clamp=(x)=>Math.max(0,Math.min(1,x));
  const wrap=(x,n)=>((x%n)+n)%n;
- async function load(){
-  sheets.clear();
-  await Promise.all(files.map(async clip=>{
+ // The old eager loader decoded twelve enormous 4k-high atlases at once.
+ // Keep only the common gaits in memory and load special clips on demand.
+ // GPU residency is likewise limited to actual in-view animation frames.
+ function ensure(clip){
+  if(sheets.has(clip))return Promise.resolve(sheets.get(clip));
+  if(pending.has(clip))return pending.get(clip);
+  const task=(async()=>{
    const image=new Image();
    image.src='beta/art/rat/'+clip+'.webp?v='+VERSION;
    try{
@@ -19,11 +23,18 @@ window.AlleyRat=(()=>{
        image.width%textureCell||!image.width)
      throw Error('Unexpected rat atlas size '+image.width+'x'+image.height);
     sheets.set(clip,image);
+    return image;
    }catch(error){
-    // A missing rat sheet must not block loading; legacy rat art is the fallback.
     console.warn('Rat Blender atlas unavailable: '+clip,error);
-   }
-  }));
+    return null;
+   }finally{pending.delete(clip);}
+  })();
+  pending.set(clip,task);
+  return task;
+ }
+ async function load(){
+  sheets.clear();pending.clear();
+  await Promise.all(['idle','run','bite','death'].map(ensure));
  }
  function choose(e,rules,deathAge){
   if(deathAge!==null)return {clip:'death',t:clamp(deathAge/DEATH_SECONDS)};
@@ -58,7 +69,9 @@ window.AlleyRat=(()=>{
   const {clip,t}=choose(e,rules,deathAge);
   // Older cached atlases remain valid while Blender CI rebuilds the new
   // gait sheets. Missing directions fall back to the existing run atlas.
-  const renderedClip=sheets.has(clip)?clip:(clip==='back'||clip.startsWith('strafe-')?'run':clip);
+  if(!sheets.has(clip)&&!pending.has(clip))void ensure(clip);
+  const renderedClip=sheets.has(clip)?clip:
+   sheets.has('run')?'run':sheets.has('idle')?'idle':clip;
   const image=sheets.get(renderedClip);
   if(!image)return null;
   const textureCell=image.height/VIEWS;

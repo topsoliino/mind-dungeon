@@ -23,7 +23,7 @@ for(const field of [
  'new OrthographicCamera',
  'Math.atan2(Math.cos(view),Math.sin(view)/Math.sin(ELEVATION))',
  'new AnimationMixer(model.scene)','stage.mixer.setTime(sample)',
- 'WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true})',
+ 'WebGLRenderer({alpha:true,antialias:false,preserveDrawingBuffer:true})',
  'new WeakMap()','const renderer=new WebGLRenderer',
  'function srgbToLinear(value)','function prepareMaterials(root,settings)',
  "settings.materialColorSpace!=='srgb-to-linear'",
@@ -33,18 +33,24 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=15')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=16')"));
 assert(!enemy.includes("function hasLegacyPalette("),
  'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
 assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
  'Version each GLB from its exact Blender source rather than a fixed stale asset number');
 assert(html.includes('debug-art')&&html.includes('__mindArtStatus'),
  'On-device art diagnostics must identify 3D renderer versus atlas fallback');
-assert(html.includes('enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)'));
+assert(html.includes("enemyRig?.draw(e,e.skeleton,selection,iso)"));
 assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso)"));
+assert(html.includes("enemyRig?.beginFrame(renderStats.fps)"));
+assert(html.includes("only:enemyArtPreview?null:['sabre','bow']"));
+assert(enemy.includes('const frames=new Map(),MAX_FRAMES=112'));
+assert(enemy.includes('renderedThisFrame>=1'));
+assert(enemy.includes('cacheHits:0'));
+assert(html.includes('if(!onScreen(e))continue'));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));
-assert(html.includes("enemyRig?.has('rat')?null:ratArt.load()"),
- 'large sprite atlases should only download if WebGL fails');
+assert(html.includes('const ratReady=alley?ratArt.load()'),
+ 'Use baked rat frames to avoid expensive live GPU skinning');
 
 const window={};
 vm.runInNewContext(source('alley-skeleton.js'),{window});

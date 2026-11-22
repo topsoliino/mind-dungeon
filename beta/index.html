@@ -99,8 +99,11 @@ function updateArtStatus(){
 }
 // Live Blender armatures rendered through the Guardian's Three.js pipeline.
 // Existing 32-view sprite sheets remain per-species fallback only.
-const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=15')
- .then(module=>module.loadEnemyRigs()).then(renderer=>{
+const enemyArtPreview=testParams.get('debug-art')==='1'||testParams.get('enemy3d')==='1';
+const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=16')
+ .then(module=>module.loadEnemyRigs({
+  only:enemyArtPreview?null:['sabre','bow']
+ })).then(renderer=>{
   enemyRig=renderer;window.__mindEnemyRig=renderer;
   updateArtStatus();
   console.info('Mind Dungeon live 3D enemy rigs:',renderer.active);
@@ -109,14 +112,10 @@ const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=15')
   updateArtStatus();
   console.warn('3D enemy rig fallback:',error);
  }):Promise.resolve();
-// High-resolution WebP atlases are only a fallback. Avoid downloading and
-// decoding 17 old sprite sheets when actual Guardian-style GLB rigs work.
-const skeletonReady=alley?enemyRigReady.then(()=>
- enemyRig?.has('sabre')&&enemyRig?.has('bow')?null:skeletonArt.load()
-).catch(()=>skeletonArt.load()):Promise.resolve();
-const ratReady=alley?enemyRigReady.then(()=>
- enemyRig?.has('rat')?null:ratArt.load()
-).catch(()=>ratArt.load()):Promise.resolve();
+// A baked 32-direction Blender atlas is cheaper than skinning/copying live
+// WebGL models for every opponent. Rat atlases load only needed clips.
+const skeletonReady=alley?skeletonArt.load():Promise.resolve();
+const ratReady=alley?ratArt.load():Promise.resolve();
 const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>{
  guardian=data;
  window.__mindGuardianRig=data.rig||null;
@@ -4715,6 +4714,14 @@ function alleyGuardianPose(){
 }
 function alleySprites(actor){
  const sprites=[];
+ // Cull off-camera enemies BEFORE any 3D animation, readback or upload.
+ const onScreen=(entity,pad=185)=>{
+  if(!renderedView||!cw||!ch)return true;
+  const p=iso.toView(entity.x,entity.y,entity.alleyZ||0),
+   {x,y,zoom=1}=renderedView;
+  return p.x>=x-pad&&p.y>=y-pad&&
+   p.x<=x+cw/zoom+pad&&p.y<=y+ch/zoom+pad;
+ };
  const add=(image,key,x,y,width,height,options={})=>sprites.push({image,key,x,y,width,height,depth:y,...options});
  if(guardian){
   const {clip,progress,angle,hideWeapon}=alleyGuardianPose();
@@ -4730,13 +4737,25 @@ function alleySprites(actor){
   }
  }
  for(const e of enemies){
+  if(!onScreen(e))continue;
   if(e.skeleton){
-   const rig=enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso);
+   const selection=skeletonArt.choose(e,enemyRules);
+   const baked=['idle','run','death','flee'].includes(selection?.clip);
+   if(!enemyArtPreview&&baked){
+    const frames=skeletonArt.sprites(e,iso,enemyRules);
+    if(frames.length){sprites.push(...frames);continue;}
+   }
+   // Specialized sword/bow attacks retain the 3D rig; frame-budgeted below.
+   const rig=enemyRig?.draw(e,e.skeleton,selection,iso);
    if(rig){sprites.push(rig);continue;}
    const models=skeletonArt.sprites(e,iso,enemyRules);
    if(models.length){sprites.push(...models);continue;}
   }
   if(e.type===RAT){
+   if(!enemyArtPreview){
+    const frames=ratArt.sprites(e,iso,enemyRules);
+    if(frames.length){sprites.push(...frames);continue;}
+   }
    const rig=enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso);
    if(rig){sprites.push(rig);continue;}
    const models=ratArt.sprites(e,iso,enemyRules);
@@ -4749,7 +4768,12 @@ function alleySprites(actor){
   });
  }
  for(const {enemy,age} of alleyRemains){
+  if(!onScreen(enemy))continue;
   const kind=enemy.skeleton||'rat',selector=enemy.skeleton?skeletonArt:ratArt;
+  if(!enemyArtPreview){
+   const frames=selector.sprites(enemy,iso,enemyRules,age);
+   if(frames.length){sprites.push(...frames);continue;}
+  }
   const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age);
   if(rig)sprites.push(rig);
   else sprites.push(...selector.sprites(enemy,iso,enemyRules,age));
@@ -4860,6 +4884,7 @@ function drawAlleyHudEffects(dot,bar){
 }
 function drawAlleyCanvas(){
  const actor=alleyActor(),alpha=heroAlpha(),lift=alleyVertical?.state.z??vault?.lift??0;
+ enemyRig?.beginFrame(renderStats.fps);
  const layers=alleySprites(actor).map(sprite=>({depth:sprite.depth,draw:()=>drawAlleySprite(s,sprite)}));
  layers.push({depth:0,draw:()=>alleyGroundEffects((x,y,rx,ry,color,alpha)=>{
   s.globalAlpha=alpha;s.fillStyle=color;s.beginPath();s.ellipse(x,y,rx,ry,0,0,TAU);s.fill();s.globalAlpha=1;
@@ -5059,6 +5084,7 @@ class DungeonScene extends Phaser.Scene{
    }
    if(this.weapon.visible)this.drawWeapon(this.weapon,weaponPose(),this.weaponClip,heroAlpha());
    alley.refreshLayers(this.alleyLayers,player,save.opened.includes(0));
+   enemyRig?.beginFrame(renderStats.fps);
    const sprites=alleySprites(actor);
    sprites.forEach((sprite,index)=>this.renderAlleySprite(sprite,index));
    for(let i=sprites.length;i<this.alleySprites.length;i++)this.alleySprites[i].setVisible(false);

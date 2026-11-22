@@ -90,9 +90,15 @@ function prepareMaterials(root,settings){
  });
 }
 
-export async function loadEnemyRigs(){
- const renderer=new WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});
- renderer.setSize(RENDER_SIZE,RENDER_SIZE,false);
+export async function loadEnemyRigs({only=null}={}){
+ // Only cinematic art inspection uses full 208px live rendering for rats.
+ // Gameplay uses the Blender-baked dense-fur rat atlases and reserves live
+ // skinned 3D work for the specialized skeleton attack telegraphs.
+ const preview=new URLSearchParams(location.search).get('debug-art')==='1'||
+  new URLSearchParams(location.search).get('enemy3d')==='1';
+ const pixels=preview?RENDER_SIZE:152;
+ const renderer=new WebGLRenderer({alpha:true,antialias:false,preserveDrawingBuffer:true});
+ renderer.setSize(pixels,pixels,false);
  renderer.setPixelRatio(1);
  renderer.setClearColor(0,0);
  renderer.toneMapping=ACESFilmicToneMapping;
@@ -107,7 +113,8 @@ export async function loadEnemyRigs(){
    'beta/art/rat/rat-live.json',null],
  ];
  const stages=new Map();
- await Promise.all(files.map(async ([id,url,manifest,variant])=>{
+ await Promise.all(files.filter(([id])=>!only||only.includes(id))
+  .map(async ([id,url,manifest,variant])=>{
   try{
    const response=await fetch(manifest+'?v='+versions[id],{cache:'no-cache'});
    if(!response.ok)throw Error('Enemy animation manifest unavailable');
@@ -142,16 +149,32 @@ export async function loadEnemyRigs(){
   renderer.dispose();renderer.forceContextLoss();
   throw Error('No live enemy rig could be loaded.');
  }
+ // A single renderer.render() -> readback -> canvas upload can cost many ms.
+ // The previous implementation repeated it PER RAT/SKELETON PER FRAME,
+ // tanking FPS even when most enemies shared the same locomotion cycle.
+ // Cache quantized *actual 3D Blender poses* across every instance.
+ const frames=new Map(),MAX_FRAMES=112;
  const canvases=new WeakMap();
- let nextId=0;
+ const stats={gpuRenders:0,cacheHits:0,budgetSkips:0,frames:0};
+ let nextId=0,renderedThisFrame=0,lastGpuTime=-1e6,targetFps=60;
+ function beginFrame(fps=60){
+  renderedThisFrame=0;
+  stats.frames++;
+  if(Number.isFinite(fps)&&fps>0)targetFps=fps;
+ }
+ function remember(signature,canvas){
+  frames.set(signature,canvas);
+  // Hard memory cap: 112 x 152² pixels < 11 MB (plus small textures).
+  if(frames.size>MAX_FRAMES)frames.delete(frames.keys().next().value);
+ }
  function draw(enemy,type,selection,iso,deathAge=null){
   const stage=stages.get(type);
   if(!stage||!selection)return null;
   let state=canvases.get(enemy);
   if(!state){
    const canvas=document.createElement('canvas');
-   canvas.width=canvas.height=RENDER_SIZE;
-   state={id:++nextId,canvas,context:canvas.getContext('2d'),
+   canvas.width=canvas.height=pixels;
+   state={id:++nextId,canvas,context:canvas.getContext('2d',{alpha:true}),
     last:null,lastYaw:null};
    canvases.set(enemy,state);
   }
@@ -166,21 +189,49 @@ export async function loadEnemyRigs(){
   const view=iso.viewAngle(heading);
   // Exactly the Guardian's world-to-model yaw correction.
   const yaw=Math.atan2(Math.cos(view),Math.sin(view)/Math.sin(ELEVATION));
-  const sample=(start+t*(count-1))/fps;
-  const signature=type+'|'+selection.clip+'|'+Math.round(sample*120)+
-   '|'+Math.round(yaw*300);
-  const changed=state.last!==signature;
+  // At 32 facings and 12 action frames, displacement stays truly continuous
+  // in Phaser while the skinned pose comes from a reusable baked snapshot.
+  const poseStep=preview?Math.round(t*120):Math.round(t*12);
+  const viewStep=preview?Math.round(yaw*300):Math.round(yaw/TAU*32);
+  const sample=(start+(preview?t:poseStep/12)*(count-1))/fps;
+  const facing=preview?yaw:viewStep*TAU/32;
+  const signature=type+'|'+selection.clip+'|'+poseStep+'|'+viewStep;
+  let changed=state.last!==signature;
   if(changed){
-   state.last=signature;
-   if(stage.fur.length)updateCreatureFur(stage.fur,enemy,selection,state);
-   // Reuse a single GLB model per weapon/species, but sample its continuous
-   // rig animation independently into every enemy's own persistent canvas.
-   stage.pivot.rotation.y=yaw;
-   stage.action.paused=false;stage.action.enabled=true;
-   stage.mixer.setTime(sample);
-   renderer.render(stage.scene,stage.camera);
-   state.context.clearRect(0,0,RENDER_SIZE,RENDER_SIZE);
-   state.context.drawImage(renderer.domElement,0,0);
+   let image=frames.get(signature);
+   if(!image){
+    const now=performance.now();
+    const delay=targetFps<25?180:targetFps<40?115:65;
+    if(!preview&&(renderedThisFrame>=1||now-lastGpuTime<delay)){
+     // Keep the last fully rendered pose while movement continues at 60fps.
+     // First encounter without a cached pose falls back to the 32-way atlas.
+     stats.budgetSkips++;
+     if(!state.last)return null;
+     changed=false;
+    }else{
+     renderedThisFrame++;
+     lastGpuTime=now;
+     stats.gpuRenders++;
+     if(stage.fur.length)updateCreatureFur(stage.fur,enemy,selection,state);
+     stage.pivot.rotation.y=facing;
+     stage.action.paused=false;stage.action.enabled=true;
+     stage.mixer.setTime(sample);
+     renderer.render(stage.scene,stage.camera);
+     image=document.createElement('canvas');
+     image.width=image.height=pixels;
+     image.getContext('2d').drawImage(renderer.domElement,0,0);
+     remember(signature,image);
+    }
+   }else{
+    stats.cacheHits++;
+    // Refresh LRU without reallocating the image or the Phaser texture.
+    frames.delete(signature);frames.set(signature,image);
+   }
+   if(image){
+    state.last=signature;
+    state.context.clearRect(0,0,pixels,pixels);
+    state.context.drawImage(image,0,0);
+   }
   }
   const p=iso.toView(enemy.x,enemy.y,enemy.alleyZ||0);
   const size=displaySize*(enemy.size||1);
@@ -191,7 +242,8 @@ export async function loadEnemyRigs(){
    depth:(enemy.alleyFloor===1||enemy.alleyClimb?7000:0)+p.y,
    alpha,live:changed};
  }
- return {draw,has:kind=>stages.has(kind),active:[...stages.keys()],
+ return {draw,beginFrame,stats,has:kind=>stages.has(kind),
+  active:[...stages.keys()],
   dispose(){for(const stage of stages.values())stage.mixer.stopAllAction();
-   renderer.dispose();renderer.forceContextLoss();}};
+   frames.clear();renderer.dispose();renderer.forceContextLoss();}};
 }
