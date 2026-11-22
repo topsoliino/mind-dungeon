@@ -14,6 +14,8 @@ on:
       - beta/index.html
       - beta/art/skeleton/skeleton-*-rig.glb.gz
       - beta/art/skeleton/skeleton-live.json
+      - beta/art/skeleton/skeleton-atlas.json
+      - beta/art/skeleton/atlas-*.webp
       - beta/art/rat/rat-live-rig.glb.gz
       - beta/art/rat/rat-live.json
       - tools/check-live-enemy-browser.cjs
