@@ -319,6 +319,16 @@ const run=async()=>{
   const reached=await playtest.evaluate(()=>window.__mindDiagnostics.navigation);
   assert(Math.hypot(reached.x-clickProbe.start.x,reached.y-clickProbe.start.y)>48,
    'A right-click must cause sustained movement across the room');
+  // Continue until the click target is ACTUALLY reached, not just halfway:
+  // an intermediate waypoint or an unlucky blocked frame must not finish it.
+  await playtest.waitForFunction(({goal})=>{
+   const move=window.__mindDiagnostics?.navigation;
+   return move&&!move.active&&Math.hypot(move.x-goal.x,move.y-goal.y)<10;
+  },clickProbe,{timeout:20000});
+  const finalPosition=await playtest.evaluate(()=>window.__mindDiagnostics.navigation);
+  console.log('RIGHT-CLICK DESTINATION REACHED:',JSON.stringify({
+   goal:clickProbe.goal,position:finalPosition
+  }));
   assert.equal(
    await playtest.evaluate(()=>document.querySelector('#modalWrap')?.style.display),
    'none','Right-click must keep the game active, not open the title');
