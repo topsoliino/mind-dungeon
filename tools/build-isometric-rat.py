@@ -57,13 +57,13 @@ def mat(name, color, roughness=.83, metal=0):
 fur = mat("Warm dark umber fur", (.34, .235, .22), .67)
 fur_light = mat("Copper brown fur highlights", (.64, .47, .37), .61)
 belly = mat("Warm grey belly", (.72, .62, .53), .68)
-skin = mat("Russet pink paws and tail", (.61, .29, .30))
-ear = mat("Rose inner ears", (.78, .395, .39))
+skin = mat("Russet pink paws and tail", (.47, .27, .30))
+ear = mat("Rose inner ears", (.65, .42, .41))
 eye = mat("Black glass eyes", (.012, .008, .014), .22)
 nose = mat("Dark wet nose", (.225, .065, .084), .27)
 teeth = mat("Small ivory incisors", (.77, .69, .50))
 whisker = mat("Pale whiskers", (.67, .58, .48))
-fur_shadow = mat("Dense charcoal underfur", (.045, .042, .061), .78)
+fur_shadow = mat("Dense charcoal underfur", (.105, .085, .112), .78)
 fur_coat = mat("Dark matted dorsal coat", (.17, .135, .17), .74)
 fur_gold = mat("Sparse warm guard hairs", (.58, .365, .24), .68)
 ear_shadow = mat("Inner ear folds", (.39, .19, .20))
@@ -138,6 +138,19 @@ body_shell = style.profile_mesh("Broad pear-shaped body", [
         2 if facet in (6,7) else
         1 if facet in (0,5,9) and band in (1,2) else 0)
 add_part(body_shell,"Broad pear-shaped body","Root",fur)
+# Large, clean steel-on-graphite back shape uses the same visual language as
+# the Guardian's cuirass. It is a light-catching silhouette plane, not a
+# texture overlay or bright post-processing effect.
+saddle=style.profile_mesh("Scavenger forged dorsal saddle",[
+    (-.20,0,.624,.13,.038),
+    (-.05,0,.651,.219,.052),
+    (.16,0,.635,.205,.055),
+    (.35,0,.572,.124,.032),
+], [iron,silver,seams], axis="y", sides=10,
+    face_material=lambda band,facet:
+        1 if facet in (1,2,3) and band in (0,1) else
+        2 if facet in (6,7) else 0)
+add_part(saddle,"Scavenger forged dorsal saddle","Root",iron)
 oval("Underbelly", "Root", (0, -.08, .185), (.255, .42, .125), belly)
 ruff = style.profile_mesh("Shoulder ruff", [
     (-.59,0,.38,.11,.095),
@@ -272,12 +285,12 @@ for sign in (-1,1):
 
 # Layered guard hairs across the rump with two warm and dark values.
 # Tufts follow the body root; no random geometry flashing between frames.
-for row in range(6):
-    y=-.26+row*.164
+for row in range(3):
+    y=-.16+row*.255
     width=.15+.12*max(0,1-abs(y-.07)/.61)
     height=.714+.03*math.cos((y-.12)*2.5)
-    for col in range(5):
-        t=(col-2)/2
+    for col in range(3):
+        t=col-1
         x=t*width
         z=height-.025*t*t
         seed=(row*23+col*17)%7

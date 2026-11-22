@@ -51,8 +51,8 @@ def material(name, color, metal=0, roughness=None):
     return m
 # Hero reference: bright desaturated bone, cool blue forged steel and
 # graphite cavities. The old warm yellow bone blended into dungeon floors.
-ivory = material('Weathered ivory', (.73,.70,.63), roughness=.64)
-edge = material('Pale worn bone', (.91,.89,.82), roughness=.57)
+ivory = material('Weathered ivory', (.83,.82,.79), roughness=.64)
+edge = material('Pale worn bone', (.95,.94,.91), roughness=.57)
 dark = material('Deep sockets', (.012,.012,.020))
 teal = material('Faded oxblood cloth', (.37,.105,.15))
 bronze = material('Hammered bronze', (.69,.52,.29), .29, .53)
@@ -60,12 +60,15 @@ steel = material('Forged charcoal steel', (.47,.56,.64), .33, .51)
 leather = material('Oxblood leather', (.19,.069,.034))
 wood = material('Yew', (.34,.155,.052))
 aged = material('Bone shadows and age lines', (.23,.18,.15))
-weathered = material('Oxidized armor plate', (.38,.47,.56), .33, .53)
+weathered = material('Oxidized armor plate', (.467,.537,.592), .33, .53)
 trim = material('Polished battered brass', (.78,.65,.44), .26, .49)
 cloth_light = material('Worn crimson cloth highlights', (.60,.255,.29))
 cloth_shadow = material('Tattered crimson underskirt', (.13,.038,.073))
-iron_dark = material('Dark recesses between armor plates', (.045,.055,.075), .15, .67)
-graphite = material('Graphite ribcage negative space', (.055,.061,.085), roughness=.72)
+# Explicit same sRGB swatches as Guardian build-player-sprite-study.py:
+# Gunmetal insets #343f54; padded graphite #232534. The previous values
+# were nearly black (P10≈6), unlike the Guardian's readable P10≈38.
+iron_dark = material('Dark recesses between armor plates', (.204,.247,.329), .15, .61)
+graphite = material('Graphite ribcage negative space', (.137,.145,.204), roughness=.67)
 steel_edge = material('Guardian silver plate facets', (.79,.83,.84), .25, .49)
 sabre_edge = material('Sharpened steel cutting edge', (.86,.91,.89), .48)
 scar = material('Bone fracture stains', (.20,.19,.175))
