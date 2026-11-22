@@ -57,26 +57,11 @@ async function glb(url){
 function srgbToLinear(value){
  return value<=.04045?value/12.92:Math.pow((value+.055)/1.055,2.4);
 }
-function hasLegacyPalette(root,settings){
- // A render workflow may publish the manifest before freshly rebuilt .blend
- // sources finish. Detect the actual GLB material values, not only metadata.
- // The two stable palette probes differ by >2x in linear RGB.
- const isRat=settings.field<3;
- const name=isRat?'Warm dark umber fur':'Weathered ivory';
- let red=null;
- root.traverse(node=>{
-  if(!node.isMesh)return;
-  for(const material of Array.isArray(node.material)?node.material:[node.material]){
-   if(red===null&&material?.name?.startsWith(name)&&material.color){
-    red=material.color.r;
-   }
-  }
- });
- return red===null?settings.materialColorSpace!=='srgb-to-linear':
-  red>(isRat?.14:.43);
-}
 function prepareMaterials(root,settings){
- const legacyPalette=hasLegacyPalette(root,settings);
+ // Authoritative Blender-export contract; do NOT infer the color space from
+ // how bright a particular bone/fur swatch is. Bright sRGB-encoded ivory was
+ // falsely classified as a legacy GLB and darkened TWICE on every frame.
+ const legacyPalette=settings.materialColorSpace!=='srgb-to-linear';
  const prepared=new Set();
  root.traverse(node=>{
   if(!node.isMesh)return;
@@ -123,14 +108,17 @@ export async function loadEnemyRigs(){
  const stages=new Map();
  await Promise.all(files.map(async ([id,url,manifest,variant])=>{
   try{
-   const [model,response]=await Promise.all([
-    glb(url+'?v='+versions[id]),fetch(manifest+'?v='+versions[id],{cache:'no-cache'})
-   ]);
+   const response=await fetch(manifest+'?v='+versions[id],{cache:'no-cache'});
    if(!response.ok)throw Error('Enemy animation manifest unavailable');
    const json=await response.json(),settings=variant?json[variant]:json;
    if(!settings?.clips||!settings.fps||
       !Object.keys(settings.clips).includes('idle'))
     throw Error('Invalid enemy rig manifest: '+id);
+   // The manifest carries a SHA-256 of the exact authored Blender source.
+   // Using it in the GLB URL prevents stale CDN and Safari caches from
+   // mixing the old low-contrast mesh with the newly graded materials.
+   const revision=settings.sourceBlendSha256?.slice(0,16)||versions[id];
+   const model=await glb(url+'?v='+revision);
    const stage=makeStage(settings.field,settings.targetHeight);
    prepareMaterials(model.scene,settings);
    stage.pivot.add(model.scene);
