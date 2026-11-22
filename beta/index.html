@@ -1019,7 +1019,7 @@ function enemyEncounterReady(e){
  return enemyRules.encounterReady(e,player,world,player===realHero?entryGrace:0,!e.bossRole&&player===realHero&&vision.seesEnemy(e),combatClock);
 }
 const returningToFloor=!coopRoom&&Array.isArray(save.floorEnemies);
-if(returningToFloor)enemies.push(...save.floorEnemies);
+if(returningToFloor&&!testRun)enemies.push(...save.floorEnemies);
 else if(alley){
  if(rockyTerrain){
   // Outside greybox: wildlife and encounter sets are added in later stages.
