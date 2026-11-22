@@ -124,14 +124,17 @@ for i in range(6):
 # overlapping spheres. Planar sections, value bands and a ridged back are
 # deliberately visible at the Guardian's actual isometric game zoom.
 body_shell = style.profile_mesh("Broad pear-shaped body", [
-    (-.58,0,.36,.070,.067),
-    (-.46,0,.375,.220,.178),
-    (-.30,0,.393,.298,.250),
-    (-.09,0,.386,.340,.286),
-    (.13,0,.357,.319,.265),
-    (.32,0,.327,.265,.225),
-    (.49,0,.294,.170,.144),
-    (.61,0,.276,.045,.040),
+    # Natural rodent body mass: narrow neck, broad hindquarters and a
+    # rising rump. Former radius peaks were at the shoulders, causing an
+    # almost rectangular torso in the actual side-on game camera.
+    (-.60,0,.332,.067,.063),
+    (-.48,0,.345,.156,.143),
+    (-.28,0,.355,.228,.198),
+    (-.04,0,.362,.289,.243),
+    (.22,0,.371,.340,.283),
+    (.40,0,.352,.310,.255),
+    (.54,0,.320,.204,.162),
+    (.64,0,.283,.067,.053),
 ], [fur,fur_light,fur_shadow,fur_coat], axis="y", sides=10,
     face_material=lambda band,facet:
         3 if facet in (1,2,3,4) and band>=2 else
@@ -142,10 +145,12 @@ add_part(body_shell,"Broad pear-shaped body","Root",fur)
 # the Guardian's cuirass. It is a light-catching silhouette plane, not a
 # texture overlay or bright post-processing effect.
 saddle=style.profile_mesh("Scavenger forged dorsal saddle",[
-    (-.20,0,.624,.13,.038),
-    (-.05,0,.651,.219,.052),
-    (.16,0,.635,.205,.055),
-    (.35,0,.572,.124,.032),
+    # Plate now follows the actual back curve instead of floating as a
+    # horizontal metal brick above the animal.
+    (-.20,0,.553,.126,.030),
+    (-.05,0,.603,.208,.035),
+    (.16,0,.643,.211,.040),
+    (.35,0,.626,.137,.030),
 ], [iron,silver,seams], axis="y", sides=10,
     face_material=lambda band,facet:
         1 if facet in (1,2,3) and band in (0,1) else
@@ -153,11 +158,11 @@ saddle=style.profile_mesh("Scavenger forged dorsal saddle",[
 add_part(saddle,"Scavenger forged dorsal saddle","Root",iron)
 oval("Underbelly", "Root", (0, -.08, .185), (.255, .42, .125), belly)
 ruff = style.profile_mesh("Shoulder ruff", [
-    (-.59,0,.38,.11,.095),
-    (-.47,0,.40,.25,.202),
-    (-.29,0,.405,.288,.238),
-    (-.13,0,.40,.213,.16),
-    (-.07,0,.38,.075,.067),
+    (-.59,0,.365,.085,.073),
+    (-.47,0,.383,.177,.152),
+    (-.29,0,.391,.242,.205),
+    (-.13,0,.390,.216,.166),
+    (-.07,0,.376,.073,.057),
 ], [fur,fur_light,fur_shadow], axis="y", sides=10,
     face_material=lambda band,facet: 1 if facet in (0,1,2,3,4) else 2 if facet in (6,7) else 0)
 add_part(ruff,"Shoulder ruff","Chest",fur)
