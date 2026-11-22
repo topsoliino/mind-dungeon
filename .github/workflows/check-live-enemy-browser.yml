@@ -33,3 +33,10 @@ jobs:
           webserver=$!
           trap 'kill $webserver || true' EXIT
           node tools/check-live-enemy-browser.cjs
+      - name: Upload Guardian versus skeleton and rat art comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guardian-forged-art-audit
+          path: artifacts/guardian-style-audit.png
+          if-no-files-found: ignore

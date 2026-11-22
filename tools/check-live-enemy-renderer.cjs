@@ -33,7 +33,9 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=6')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=7')"));
+assert(html.includes('debug-art')&&html.includes('__mindArtStatus'),
+ 'On-device art diagnostics must identify 3D renderer versus atlas fallback');
 assert(html.includes('enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)'));
 assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso)"));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));
@@ -69,6 +71,8 @@ for(const [label,script] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
  assert(script.includes('srgb_to_linear(v) for v in color'),
   label+' must assign linear palette to Principled BSDF');
 }
+assert(style.includes('def faceted_oval(')&&style.includes('def front_plate('),
+ 'Enemy anatomy and closed armor plates must use the same sculpting language');
 assert(style.includes('def profile_mesh(')&&style.includes('def forged_hard_edges('),
  'Shared Guardian sculpt and weighted-normal finishing code must exist');
 for(const [label,builder] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
@@ -79,6 +83,14 @@ for(const [label,builder] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
  assert(builder.includes('guardian-style.py'),
   label+' must import the common art-style helper');
 }
+assert(!ratBuilder.includes('oval("Ear cartilage"')&&
+ !ratBuilder.includes('oval("Rump underfur"')&&
+ ratBuilder.includes('Tapered faceted muzzle')&&
+ ratBuilder.includes('Scavenger forged flank pauldron'),
+ 'Rat must have nonblob angular muzzle, ears and readable gear planes');
+assert(skeletonBuilder.includes('Ribcage graphite shadow core')&&
+ skeletonBuilder.includes('Broken cuirass main plate'),
+ 'Skeleton must have real dark rib recesses and broad Guardian-style metal');
 assert(!ratBuilder.includes('oval("Broad pear-shaped body"'),
  'Rat body must not fall back to a smooth primitive');
 assert(!skeletonBuilder.includes("oval('Cranium'"),
