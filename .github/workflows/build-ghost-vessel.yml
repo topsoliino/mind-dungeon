@@ -1,0 +1,59 @@
+name: Bake ghost vessel Blender model for isometric gameplay
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - tools/build-ghost-vessel.py
+      - .github/workflows/build-ghost-vessel.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ghost-vessel-blender
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Check Blender builder
+        run: python3 -m py_compile tools/build-ghost-vessel.py
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Render sculpt and export reusable GLB
+        run: blender -b --factory-startup -t 2 --python-exit-code 1 -P tools/build-ghost-vessel.py
+      - name: Publish 3D source, portable GLB and game PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          initial=$(git rev-parse HEAD)
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          cp beta/art/props/ghost-vessel.blend beta/art/props/ghost-vessel.glb beta/art/props/ghost-vessel.png "$tmp/"
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            if ! git diff --quiet "$initial" origin/main -- tools/build-ghost-vessel.py; then
+              echo "Newer source exists; refusing stale Blender render"
+              exit 0
+            fi
+            git reset --hard origin/main
+            mkdir -p beta/art/props
+            cp "$tmp/"* beta/art/props/
+            git add beta/art/props/ghost-vessel.blend beta/art/props/ghost-vessel.glb beta/art/props/ghost-vessel.png
+            if git diff --cached --quiet; then exit 0; fi
+            git commit -m "Blender: publish carved spectral ghost-vessel 3D model and sprite"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          exit 1
