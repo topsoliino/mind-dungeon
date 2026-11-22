@@ -11,6 +11,9 @@ on:
       - beta/dungeon-isometric.js
       - beta/index.html
       - tools/check-rocky-coast.cjs
+      - tools/check-rocky-coast-stairs.cjs
+      - beta/alley-stair-geometry.js
+      - beta/alley-vertical.js
       - .github/workflows/check-rocky-coast.yml
 
 permissions:
@@ -23,4 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify five dungeon levels and terrain movement
-        run: node tools/check-rocky-coast.cjs
+        run: |
+          node tools/check-rocky-coast.cjs
+          node tools/check-rocky-coast-stairs.cjs
