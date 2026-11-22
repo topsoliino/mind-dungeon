@@ -41,13 +41,16 @@ for asset,settings_path,variant,clips in PACKAGES:
     assert manifest["field"]>0 and manifest["targetHeight"]>0
     assert manifest.get("materialColorSpace")=="srgb-to-linear", (
         asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
-    assert manifest.get("artStyle")=="guardian-natural-enemies-v3", (asset,"wrong art generation")
+    assert manifest.get("artStyle")==(
+       "guardian-rebuilt-skeleton-v4" if variant is not None
+       else "guardian-natural-enemies-v3"), (asset,"wrong art generation")
     source_blend=ROOT/("rat/rat.blend" if variant is None else "skeleton/skeleton.blend")
     assert manifest.get("sourceBlendSha256")==hashlib.sha256(source_blend.read_bytes()).hexdigest(), (
         asset,"Live rig does not use the current Blender source; rebuild GLB")
     names={m.get("name","") for m in gltf["materials"]}
     required=(
-        {"Weathered ivory","Pale worn bone","Bone shadows and age lines"}
+        {"Ossuary ivory bone","Ossuary pale sunlit bone","Ossuary graphite bone recess",
+         "Ossuary forged sabre steel" if variant=="sabre" else "Ossuary bow yew"}
         if variant is not None else
         {"Slate blue-grey main coat","Cold silver-grey fur facets",
          "Deep slate underfur","Dark dorsal blue-grey coat"}
@@ -57,10 +60,9 @@ for asset,settings_path,variant,clips in PACKAGES:
     if variant is not None:
         assert "Neck" in {n.get("name","") for n in gltf.get("nodes",[])}, (
             asset,"Bare skeleton must have separate animated cervical neck")
-        armor={"Oxidized armor plate","Guardian silver plate facets",
-               "Faded oxblood cloth","Tattered crimson underskirt",
-               "Graphite harness recesses"}
-        assert names.isdisjoint(armor), (asset,"Skeleton still wears armor")
+        assert not any(any(token in name.lower() for token in
+                ("armor","cuirass","tabard","greave","buckler","pauldron","cloak"))
+            for name in names), (asset,"Deleted skeleton armor returned")
     else:
         assert manifest["displaySize"]<=84, (asset,"Rat must render smaller")
         assert not any(

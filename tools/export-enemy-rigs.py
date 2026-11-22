@@ -135,7 +135,7 @@ def skeleton():
                 for i, key in enumerate(clips)
             }, "displaySize": 116, "field": 3.23, "targetHeight": 1.01,
             "materialColorSpace": "srgb-to-linear",
-            "artStyle": "guardian-natural-enemies-v3",
+            "artStyle": "guardian-rebuilt-skeleton-v4",
             "sourceBlendSha256": hashlib.sha256(
                 (ROOT / "skeleton" / "skeleton.blend").read_bytes()).hexdigest(),
         }

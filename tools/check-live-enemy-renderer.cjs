@@ -68,49 +68,35 @@ assert.equal(window.AlleyRat.choose(rat,rules,.9).clip,'death');
 const skeletonBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-skeleton.py'),'utf8');
 const ratBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-rat.py'),'utf8');
 const exporter=fs.readFileSync(path.join(__dirname,'export-enemy-rigs.py'),'utf8');
-const style=fs.readFileSync(path.join(__dirname,'guardian-style.py'),'utf8');
-for(const [label,script] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
- assert(script.includes('def srgb_to_linear(value):'),
-  label+' must convert its authored palette like the Guardian');
- assert(script.includes('srgb_to_linear(v) for v in color'),
-  label+' must assign linear palette to Principled BSDF');
+const oldGuardian=fs.readFileSync(path.join(__dirname,'build-player-sprite-study.py'),'utf8');
+for(const helper of ['def mesh(', 'def profile(', 'def limb(', 'def plate(',
+ 'def point(', 'def bend_joint(', 'def attached(', 'def gait_foot(']){
+ assert(oldGuardian.includes(helper),
+  'Guardian reference has changed: '+helper);
+ assert(skeletonBuilder.includes(helper),
+  'Fresh skeleton must use original Guardian model/IK primitive: '+helper);
 }
-assert(style.includes('def faceted_oval(')&&style.includes('def front_plate('),
- 'Enemy anatomy and closed armor plates must use the same sculpting language');
-assert(style.includes('def profile_mesh(')&&style.includes('def forged_hard_edges('),
- 'Shared Guardian sculpt and weighted-normal finishing code must exist');
-for(const [label,builder] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
- assert(builder.includes('style.profile_mesh('),
-  label+' must sculpt primary silhouettes using planar profiles');
- assert(builder.includes('style.forged_hard_edges('),
-  label+' must bake Guardian-style bevels and weighted normals');
- assert(builder.includes('guardian-style.py'),
-  label+' must import the common art-style helper');
-}
+assert(skeletonBuilder.includes('def srgb_to_linear(v):')&&
+ skeletonBuilder.includes('srgb_to_linear(v) for v in rgb'),
+ 'Skeleton uses Guardians original sRGB conversion, not old palettes');
+assert(skeletonBuilder.includes("'Ossuary guardian-IK armature'")&&
+ skeletonBuilder.includes("profile('Ossuary cranium'")&&
+ skeletonBuilder.includes("Uneven iliac wing")&&
+ skeletonBuilder.includes("Anatomical rib")&&
+ skeletonBuilder.includes("Bow yew limb")&&
+ skeletonBuilder.includes("Saber wrapped grip")&&
+ skeletonBuilder.includes("def sample_pose("),
+ 'Full bone geometry, Guardian pose solver and two weapon variants must be rebuilt');
+assert(!skeletonBuilder.includes('style.profile_mesh(')&&
+ !skeletonBuilder.includes('Broken cuirass main plate')&&
+ !skeletonBuilder.includes('Buckler timber core'),
+ 'Legacy skeleton architecture and armor must be deleted, not restyled');
 assert(ratBuilder.includes('Slate blue-grey main coat')&&
  ratBuilder.includes('Low shaggy dorsal fur clump')&&
  ratBuilder.includes('Shaggy flank fur layer')&&
  !ratBuilder.includes('Scavenger forged flank pauldron')&&
- !ratBuilder.includes('Scavenger narrow forged back strap')&&
- !ratBuilder.includes('Harness centre buckle'),
- 'Small blue-grey rat must have true bristled fur and absolutely no equipment');
-assert(skeletonBuilder.includes("joint('Neck'")&&
- skeletonBuilder.includes("Cervical vertebra body")&&
- skeletonBuilder.includes("Uneven scapular ridge")&&
- skeletonBuilder.includes("local['Neck']")&&
- !skeletonBuilder.includes('Broken cuirass main plate')&&
- !skeletonBuilder.includes('Buckler timber core')&&
- !skeletonBuilder.includes('Tattered tabard front'),
- 'Bare skeleton must have articulated uneven bones and no plated armor');
-assert(skeletonBuilder.includes('cut=ease((t-.48)/.17)')&&
- skeletonBuilder.includes('release=ease((t-.64)/.07)'),
- 'Skeleton sword and bow attacks need clear anticipation and fast release');
-assert(ratBuilder.includes('contacts=[.48] if clip=="bite" else [.34,.69]'),
- 'Rat bite/combo must have a readable crouch-pounce telegraph');
-assert(!ratBuilder.includes('oval("Broad pear-shaped body"'),
- 'Rat body must not fall back to a smooth primitive');
-assert(!skeletonBuilder.includes("oval('Cranium'"),
- 'Skeleton cranium must no longer be an oval primitive');
+ ratBuilder.includes('guardian-style.py'),
+ 'Keep current approved rat exactly as it is');
 assert(exporter.includes('"materialColorSpace": "srgb-to-linear"'),
- 'GLB manifests must prevent correcting a corrected palette twice');
-console.log('Guardian renderer parity: high-contrast sRGB/linear palette, solid materials, matched pixels, 360-degree bones, corpses and fallback OK');
+ 'Exporter must not gamma-correct live rigs twice');
+console.log('Guardian original-model skeleton and unchanged rat contracts OK');

@@ -340,7 +340,7 @@ for side,sign in SIDES:
         origin=V(wrist)+V((dx,-.057,-.048))
         limb('Bare phalange '+side+str(finger),origin,
             origin+V((0,-.027,-.043)),
-            [(0,.013,.012),(1,.007,.009)],[bone,pale],'Hand.'+side,6,.0)
+            [(0,.013,.012),(1,.007,.009)],[bone,pale],'Hand.'+side,6,bevel=.0)
     # Hip bones are exposed, never shoulder or shin armor.
     limb('Femur '+side,hip,knee,[
         (0,.074,.073),(.13,.078,.068),(.46,.046,.047),
