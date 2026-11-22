@@ -101,7 +101,7 @@ function create(){
   }
   ctx.globalAlpha=1;
  }
- return {canvas:result,frame,cells,draw};
+ return {canvas:result,frame,cells,draw,gpu:Boolean(gl)};
 }
 root.GhostFogVisual={create};
 })(typeof window==='undefined'?globalThis:window);
