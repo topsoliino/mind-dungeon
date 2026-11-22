@@ -11,6 +11,7 @@ on:
       - tools/creature_fur.py
       - tools/export-enemy-rigs.py
       - tools/check-live-enemy-rigs.py
+      - tools/check-live-enemy-renderer.cjs
 
 permissions:
   contents: write
