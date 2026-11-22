@@ -78,6 +78,10 @@ let alleySwing=null,alleyQueuedLight=null,alleyHit=null,alleyChest=null,alleyNex
 let alleySneaking=false,alleyGaitMode='run',alleyItemWalkUntil=0;
 const alleyVertical=alley?.vertical?.enabled?alley.vertical:null;
 const rockyPrison=window.RockyCoastPrison?.enabled?window.RockyCoastPrison:null;
+const rockyRunKey='mind-dungeon-rocky-coast-continuation-v2';
+const rockyCarryFields=['hp','xp','gold','bones','rubies','kills','level',
+ 'pendingLevels','attributes','inventory','equipment','quickSlots','quickActive',
+ 'solved','questionReview','questionCount','activePack','bossRewards'];
 const rockyTerrain=alley?.exterior?alley:null;
 let rockyDebug=null;
 const alleyEnemyPursuit=generationMode&&alleyVertical?
@@ -303,6 +307,23 @@ if(bossTest){
  const sourceSeed=save.depthSeeds?.[1]??save.templeRunSeed??save.dungeonSeed;
  const seed=Number.isInteger(sourceSeed)?sourceSeed:run.freshSeed();
  Object.assign(save,run.freshRun(seed),{hp:32+3*(save.attributes?.vigor??10),consumeQueue:[],accessByDepth:{},wellOffer:null});
+}
+// Preserve the hero's health and equipment when an actual staircase loads
+// the next procedurally generated level. Never write into the main save.
+let rockyContinuation=null;
+if(rockyPrison){
+ try{
+  const value=JSON.parse(sessionStorage.getItem(rockyRunKey)||'null');
+  sessionStorage.removeItem(rockyRunKey);
+  if(value&&value.target===rockyPrison.level&&
+     Math.abs(value.sourceLevel-value.target)===1&&
+     Date.now()-value.savedAt<10*60*1000){
+   Object.assign(save,value.hero);
+   rockyContinuation=value;
+  }
+ }catch(error){console.warn('Dungeon-Ebenenstand nicht wiederherstellbar:',error);}
+ save.floor=Math.min(4,rockyPrison.level);
+ save.dungeonSeed=rockyPrison.levels[rockyPrison.level-1].seed;
 }
 save.consumeQueue=Array.isArray(save.consumeQueue)?save.consumeQueue.filter(it=>it?.kind==='food'||it?.kind==='potion'):
  save.consumeQueue?.kind==='food'||save.consumeQueue?.kind==='potion'?[save.consumeQueue]:[];
@@ -565,10 +586,11 @@ if(unmetRequirements(save.equipment.weapon).length){
  items.setWeapon(save.equipment,{kind:'weapon',id:'rust'});
  if(!save.inventory.some(it=>it.kind==='weapon'&&it.id==='rust'))save.inventory.unshift({kind:'weapon',id:'rust'});
 }
-player.stamina=maxStamina();
+player.stamina=rockyContinuation?
+ Math.max(0,Math.min(maxStamina(),rockyContinuation.stamina)):maxStamina();
 save.quickSlots=Array.from({length:4},(_,i)=>typeof save.quickSlots?.[i]==='string'?save.quickSlots[i]:null);
 save.quickActive=Number.isInteger(save.quickActive)&&save.quickActive>=0&&save.quickActive<4?save.quickActive:0;
-if(alley){
+if(alley&&!rockyContinuation){
  const potion={kind:'potion',id:'alley-breath',brew:[10],duration:18,rarity:'common',source:'Testgasse'};
  save.inventory.push({kind:'food',id:'bread',source:'Testgasse'},potion);
  save.quickSlots[0]=items.key(potion);
@@ -2563,10 +2585,23 @@ function approachAlleyVertical(){
  finishAlleyApproach();
  return true;
 }
+function goRockyFloor(target,entry=target<rockyPrison.level?'from-upper':'from-lower'){
+ if(!rockyPrison)return false;
+ const hero={};
+ for(const field of rockyCarryFields)if(save[field]!==undefined)hero[field]=save[field];
+ hero.hp=player.hp;
+ try{
+  sessionStorage.setItem(rockyRunKey,JSON.stringify({
+   sourceLevel:rockyPrison.level,target,entry,savedAt:Date.now(),
+   stamina:player.stamina,hero
+  }));
+ }catch(error){console.warn('Dungeon-Fortschritt konnte nicht übernommen werden:',error);}
+ return rockyPrison.route(target,entry);
+}
 function interact(){if(bossIntro()||modalType||paused||vault||isConsuming()||heroFallProgress()>=0||mdNavigatingToNewCharacter)return;
 if(alley){
  const passage=rockyPrison?.link(player,window.AlleyGenerator);
- if(passage){rockyPrison.route(passage.target);return;}
+ if(passage){goRockyFloor(passage.target,passage.entry);return;}
  if(generationMode&&near?.kind!=='soul'){approachAlleyVertical();return;}
  if(near?.kind==='soul'&&!alleyHit&&!alleyChest){claimSoul(near.orb);return;}
  if(near?.kind==='iso-archive'){
@@ -2929,7 +2964,7 @@ function updateAlleyActions(dt){
    // gold/red threshold to the NEXT generated dungeon floor. Never move
    // stages at a decorative building door, from a ladder or from floor 0.
    if(rockyPrison?.hasAscent&&result.floor===1){
-    rockyPrison.route(rockyPrison.level+1,'from-lower');return;
+    goRockyFloor(rockyPrison.level+1,'from-lower');return;
    }
    if(alleyStairFloorGoal?.floor===result.floor){
     // Only after the real portal transition route along the destination
@@ -2952,7 +2987,7 @@ function updateAlleyActions(dt){
    const final=task.up?task.connector.top:task.connector.bottom;
    player.x=final.x*48;player.y=final.y*48;state.transition=null;
    if(rockyPrison?.hasAscent&&task.up&&task.connector.kind==='stairs'){
-    rockyPrison.route(rockyPrison.level+1,'from-lower');return;
+    goRockyFloor(rockyPrison.level+1,'from-lower');return;
    }
    tell(state.floor?'Obergeschoss erreicht · E zum Abstieg':'Erdgeschoss erreicht');
   }
