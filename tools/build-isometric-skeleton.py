@@ -36,6 +36,11 @@ PIXELS=128
 def srgb_to_linear(v):
     return v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4
 
+def rotation(x=0,y=0,z=0):
+    # The 32-view fallback batch rotates the exact same evaluated skinned
+    # Guardian-style skeleton; keep the renderer rotation utility available.
+    return Euler((x,y,z)).to_matrix().to_4x4()
+
 def material(name,hex_color,roughness=.67,metal=0):
     # COPIED CONTRACT from Guardian's build-player-sprite-study.py.
     rgb=[int(hex_color[i:i+2],16)/255 for i in (0,2,4)]
@@ -138,6 +143,9 @@ def mesh(name,vertices,faces,mats,bind,bevel=.006,indices=None,kit='both'):
         modifier.limit_method='ANGLE'
         modifier.angle_limit=.16
         bpy.ops.object.modifier_apply(modifier=modifier.name)
+        if hasattr(data,'use_auto_smooth'):
+            data.use_auto_smooth=True
+            data.auto_smooth_angle=.62
         normal=obj.modifiers.new('Weighted normals','WEIGHTED_NORMAL')
         normal.keep_sharp=True
         bpy.ops.object.modifier_apply(modifier=normal.name)
