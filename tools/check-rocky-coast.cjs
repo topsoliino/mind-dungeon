@@ -67,6 +67,11 @@ const hill=world.surfaceAt(200,220),cliff=world.surfaceAt(220,220);
 assert.equal(hill.zone,'slide','Must have walk-to-slide slopes');
 assert.equal(cliff.zone,'cliff-slide','Must have cliffs with forced descent');
 assert.equal(world.surfaceAt(world.spawn.x,world.spawn.y).zone,'walk');
+const steepNormal=world.surfaceAt(720,300).normal;
+assert(world.uphillBlocked({x:720,y:300},720+steepNormal.dx,300+steepNormal.dy),
+ 'The hero must not run straight uphill on slide-class terrain');
+assert(!world.uphillBlocked({x:720,y:300},720-steepNormal.dx,300-steepNormal.dy),
+ 'Gravity-directed downhill movement must stay possible');
 const across=world.routeTo({x:1070,y:680},{x:1070,y:1080});
 assert(across&&across.steps.length,'A safe route must cross the river on the bridge');
 assert(!world.routeTo(world.spawn,{x:610,y:m.river(610)}),'Pathfinding must reject deep water');
@@ -87,7 +92,7 @@ assert.equal(arts.length,world.diagnostic.chunkCount+1,
  'Building facade must be a separate depth-sorted greybox layer');
 world.refreshLayers(arts,world.spawn,false,{x:1e6,y:1e6,width:700,height:450,zoom:1});
 assert(arts.every(sprite=>!sprite.visible),'Out-of-view terrain must be culled');
-for(const name of ['rocky-coast-prison.js?v=1','rocky-coast-terrain.js?v=1',
+for(const name of ['rocky-coast-prison.js?v=1','rocky-coast-terrain.js?v=2',
  'rockyPrison?.link(player,window.AlleyGenerator)','rockyTerrain.slide(player',
  'triggerRockyDeath','rockyTerrain.mountDebug']){
  assert(game.includes(name),'Rocky Coast game integration missing: '+name);
