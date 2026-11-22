@@ -192,7 +192,16 @@ def limb(name,a,b,widths,mats,bone,sides=8,bevel=.004,soft=False):
     return mesh(name,coords,faces,mats,bone,bevel,ids,soft)
 
 def plate(name,points,thickness,mat,bone,bevel=.003):
-    """Guardian plate for thin organic ear flaps, not armor."""
+    """Guardian plate for thin organic ear flaps, not armor.
+
+    Mirror-contours reverse their winding. Correct that before GLB export
+    so the left ear is not back-face culled (which looked transparent).
+    """
+    points=list(points)
+    winding=sum(points[i][0]*points[(i+1)%len(points)][2]-
+                points[(i+1)%len(points)][0]*points[i][2]
+                for i in range(len(points)))
+    if winding<0:points.reverse()
     n=len(points)
     verts=list(points)+[(x,y+thickness,z) for x,y,z in points]
     faces=[tuple(range(n)),tuple(reversed(range(n,n*2)))]
