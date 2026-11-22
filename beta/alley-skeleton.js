@@ -1,6 +1,5 @@
-// Canonical skeleton selection for the Guardian-derived LIVE 3D GLB rigs.
-// All eight legacy 32-way WebP atlases and their loader were permanently
-// retired. Rendering remains in dungeon-enemy-rig.js for EVERY pose.
+// The ONLY fallback for live skeletons: authentic Guardian-lit Blender
+// animation views, baked from the very same skinned GLB for smooth gameplay.
 window.AlleySkeleton=(()=>{
  'use strict';
  const deathDuration=.78;
@@ -48,75 +47,98 @@ window.AlleySkeleton=(()=>{
   }
   return encounters;
  }
- // Visible emergency drawing when a compressed GLB, Three.js CDN or WebGL
- // cannot load. This is a NEW lightweight bone silhouette, not the discarded
- // legacy skeleton atlas; the Blender 3D model remains the preferred render.
- const fallbackImages=new Map();
- function safeImage(kind,pose,step){
-  const key=kind+'-'+pose+'-'+step;
-  if(fallbackImages.has(key))return fallbackImages.get(key);
-  const c=document.createElement('canvas');c.width=c.height=128;
-  const g=c.getContext('2d');
-  const phase=step*Math.PI/4,swing=pose==='run'?Math.sin(phase)*9:0;
-  const attack=pose==='strike'||pose==='combo'||pose==='slash'||
-   pose==='overhead'||pose==='shoot'||pose==='throw';
-  const arm=attack?Math.sin((step+1)*Math.PI/8)*16:0;
-  function bone(x,y,u,v,w=5){
-   g.lineCap='round';g.lineJoin='round';
-   g.strokeStyle='#323d42';g.lineWidth=w+3;
-   g.beginPath();g.moveTo(x+1,y+2);g.lineTo(u+1,v+2);g.stroke();
-   g.strokeStyle='#d2cab0';g.lineWidth=w;
-   g.beginPath();g.moveTo(x,y);g.lineTo(u,v);g.stroke();
-   g.strokeStyle='#f1e8cf';g.lineWidth=Math.max(1,w*.28);
-   g.beginPath();g.moveTo(x-1,y-1);g.lineTo(u-1,v-1);g.stroke();
-  }
-  g.fillStyle='#00000033';g.beginPath();g.ellipse(64,111,20,5,0,0,Math.PI*2);g.fill();
-  // Legs, pelvis, ribs and vertebrae: always recognizable as a skeleton.
-  bone(55,69,50+swing,88,8);bone(50+swing,88,48+swing*1.4,109,6);
-  bone(71,69,76-swing,89,8);bone(76-swing,89,81-swing*1.4,109,6);
-  bone(55,69,71,69,8);bone(63,36,63,72,6);
-  for(let j=0;j<4;j++){
-   const y=43+j*6,r=13-j*1.7;
-   bone(63,y,63-r,y+3,3);bone(63,y,63+r,y+3,3);
-  }
-  bone(62,30,63,37,6);
-  bone(56,39,43,51+arm*.3,6);bone(43,51+arm*.3,37,67+arm*.6,4);
-  bone(71,39,83,50-arm*.3,6);bone(83,50-arm*.3,91,66-arm*.9,4);
-  g.fillStyle='#dfd4b7';g.strokeStyle='#3b4140';g.lineWidth=2;
-  g.beginPath();g.ellipse(63,21,12,15,0,0,Math.PI*2);g.fill();g.stroke();
-  g.fillStyle='#1b252b';g.beginPath();g.ellipse(58,22,3,4,-.2,0,Math.PI*2);
-  g.ellipse(68,22,3,4,.2,0,Math.PI*2);g.fill();
-  g.strokeStyle='#394347';g.lineWidth=1.4;g.beginPath();
-  g.moveTo(58,32);g.lineTo(68,32);g.stroke();
-  if(kind==='bow'){
-   g.strokeStyle='#8c5c38';g.lineWidth=4;g.beginPath();
-   g.arc(93,58-arm*.8,21,-Math.PI*.45,Math.PI*.45);g.stroke();
-   g.strokeStyle='#e0cda3';g.lineWidth=1;g.beginPath();
-   g.moveTo(96,41-arm*.8);g.lineTo(96,75-arm*.8);g.stroke();
-   if(attack){bone(55,59,104,56,2);}
-  }else{
-   bone(91,66-arm*.9,96,44-arm*.9,3);
-   g.strokeStyle='#d9e4e0';g.lineWidth=5;g.beginPath();
-   g.moveTo(96,44-arm*.9);g.lineTo(108,16-arm*.9);g.stroke();
-   g.strokeStyle='#8ba9ad';g.lineWidth=2;g.beginPath();
-   g.moveTo(96,44-arm*.9);g.lineTo(108,16-arm*.9);g.stroke();
-  }
-  fallbackImages.set(key,c);
-  return c;
+ // Authoritative Blender GLB snapshots, baked OFFLINE to 32 full 3D
+ // directions. Never draw a made-up skeletal placeholder or retired model.
+ const TAU=Math.PI*2,VIEWS=32,ELEVATION=Math.atan(1/Math.sqrt(2));
+ const sheets=new Map(),pending=new Map();
+ let atlas=null;
+ const name=(kit,clip)=>kit+'-'+clip;
+ const wrap=(n,max)=>((n%max)+max)%max;
+ async function ensure(kit,clip){
+  if(!atlas?.clips?.[kit]?.[clip])return null;
+  const key=name(kit,clip);
+  if(sheets.has(key))return sheets.get(key);
+  if(pending.has(key))return pending.get(key);
+  const task=(async()=>{
+   try{
+    const src='beta/art/skeleton/atlas-'+kit+'-'+clip+
+     '.webp?v='+atlas.source[kit].slice(0,16);
+    const image=new Image();image.src=src;
+    await image.decode();
+    if(image.width!==atlas.cell*atlas.clips[kit][clip]||
+       image.height!==atlas.cell*VIEWS)
+     throw Error('Unexpected Blender atlas dimensions '+kit+':'+clip);
+    sheets.set(key,image);return image;
+   }catch(error){
+    console.warn('Blender skeleton pose atlas unavailable:',key,error);
+    return null;
+   }finally{pending.delete(key);}
+  })();
+  pending.set(key,task);
+  return task;
  }
- function fallback(e,iso,deathAge=null){
-  const selection=choose(e,{attacks:{[e.type]:{windup:.4,recovery:.4}}},deathAge);
-  const pose=deathAge!==null?'death':selection?.clip||'idle';
-  const step=Math.floor((deathAge!==null?deathAge*6:e.phase*6)%8);
-  const image=safeImage(e.skeleton||'sabre',pose,step);
+ async function load(){
+  try{
+   const response=await fetch('beta/art/skeleton/skeleton-atlas.json?v=1',
+    {cache:'no-cache'});
+   if(!response.ok)throw Error('Original skeleton atlases not published yet');
+   const config=await response.json();
+   const manifest=await (await fetch('beta/art/skeleton/skeleton-live.json?v=11',
+    {cache:'no-cache'})).json();
+   if(config.views!==VIEWS||config.cell<96||
+      config.source?.sabre!==manifest.sabre.sourceBlendSha256||
+      config.source?.bow!==manifest.bow.sourceBlendSha256)
+    throw Error('Atlas differs from current original Blender skeleton models');
+   atlas=config;
+   const loaded=await Promise.all([
+    ensure('sabre','idle'),ensure('sabre','run'),
+    ensure('bow','idle'),ensure('bow','run')
+   ]);
+   if(loaded.every(Boolean))return true;
+   atlas=null;sheets.clear();
+   return false;
+  }catch(error){
+   console.warn('Using original live 3D Blender skeletons:',error);
+   atlas=null;sheets.clear();return false;
+  }
+ }
+ function hasBaked(){return Boolean(atlas&&
+  sheets.has('sabre-idle')&&sheets.has('sabre-run')&&
+  sheets.has('bow-idle')&&sheets.has('bow-run'));}
+ function loaded(){return [...sheets].map(([key,image])=>({
+  key:'alley-skeleton-baked-'+key,image,
+  columns:atlas.clips[key.split('-')[0]][key.slice(key.indexOf('-')+1)],
+  rows:VIEWS,cell:atlas.cell
+ }));}
+ function sprite(e,iso,rules,deathAge=null){
+  if(!hasBaked())return null;
+  const selected=choose(e,rules,deathAge);
+  if(!selected)return null;
+  const kit=selected.kit,clip=selected.clip;
+  if(!sheets.has(name(kit,clip)))void ensure(kit,clip);
+  // While a special pose is decoding, retain the same authentic 3D skeleton
+  // with its run/idle movement instead of drawing a fake dummy.
+  const shown=sheets.has(name(kit,clip))?clip:
+   e.moving&&sheets.has(name(kit,'run'))?'run':'idle';
+  const image=sheets.get(name(kit,shown));
+  if(!image)return null;
+  const frames=atlas.clips[kit][shown],column=Math.max(0,
+   Math.min(frames-1,Math.floor(selected.t*frames)));
+  const heading=Number.isFinite(e.facing)?e.facing:
+   Number.isFinite(e.angle)?e.angle:0;
+  const view=iso.viewAngle(heading);
+  const yaw=Math.atan2(Math.cos(view),Math.sin(view)/Math.sin(ELEVATION));
+  const row=wrap(Math.round(yaw/TAU*VIEWS),VIEWS);
   const p=iso.toView(e.x,e.y,e.alleyZ||0);
-  const foot=iso.toView(e.x,e.y,0).y;
-  const size=116*(e.size||1);
-  return {image,key:'alley-skeleton-safe-'+(e.skeleton||'sabre')+'-'+pose+'-'+step,
-   x:p.x-size/2,y:p.y-size*.87,width:size,height:size,
-   originX:0,originY:0,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+foot,
-   alpha:deathAge===null?1:Math.max(0,1-deathAge/1.4),
-   angle:deathAge===null?0:Math.min(.95,deathAge)*1.1};
+  const feet=iso.toView(e.x,e.y,0).y;
+  const size=116*(e.size||1),cell=atlas.cell;
+  return {image,key:'alley-skeleton-baked-'+name(kit,shown),
+   frame:row+'-'+column,sx:column*cell,sy:row*cell,
+   w:cell,h:cell,x:p.x-size/2,
+   y:p.y-size*(atlas.groundFraction[kit]??.71),
+   width:size,height:size,originX:0,originY:0,
+   depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+feet,
+   alpha:deathAge===null?1:Math.max(0,Math.min(1,(2.6-deathAge)/.55))};
  }
- return {choose,encounters,fallback};
+ return {choose,encounters,load,hasBaked,loaded,sprite};
 })();
