@@ -34,12 +34,12 @@ jobs:
       - name: Install Blender for genuine skinned GLB export
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-numpy
           blender -b --version | head -2
       - name: Export saber skeleton, archer skeleton and rat with continuous rig animations
         run: |
           python3 -m py_compile tools/export-enemy-rigs.py
-          blender -b --factory-startup -t 4 --python-exit-code 1 \
+          PYTHONPATH=/usr/lib/python3/dist-packages blender -b --factory-startup -t 4 --python-exit-code 1 \
             -P tools/export-enemy-rigs.py
       - name: Inspect GLB skins, animated bones and packed clip metadata
         run: python3 tools/check-live-enemy-rigs.py
