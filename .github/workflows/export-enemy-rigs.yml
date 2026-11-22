@@ -1,0 +1,57 @@
+name: Export real-time Three.js enemy rigs from Blender
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/export-enemy-rigs.yml
+      - tools/export-enemy-rigs.py
+      - tools/check-live-enemy-rigs.py
+      - beta/art/skeleton/skeleton.blend
+      - beta/art/rat/rat.blend
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-threejs-enemy-rigs
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Blender for genuine skinned GLB export
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender -b --version | head -2
+      - name: Export saber skeleton, archer skeleton and rat with continuous rig animations
+        run: |
+          python3 -m py_compile tools/export-enemy-rigs.py
+          blender -b --factory-startup -t 4 --python-exit-code 1 \
+            -P tools/export-enemy-rigs.py
+      - name: Inspect GLB skins, animated bones and packed clip metadata
+        run: python3 tools/check-live-enemy-rigs.py
+      - name: Commit all three compressed 3D assets and manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add beta/art/skeleton/skeleton-*-rig.glb.gz beta/art/skeleton/skeleton-live.json
+          git add beta/art/rat/rat-live-rig.glb.gz beta/art/rat/rat-live.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Blender: export 3 skinned live enemy GLB rigs for Guardian Three.js renderer"
+            for attempt in 1 2 3 4 5 6; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then exit 0; fi
+              sleep 2
+            done
+            echo "Failed to publish 3D enemy models" >&2
+            exit 1
+          fi
