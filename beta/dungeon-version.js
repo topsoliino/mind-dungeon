@@ -39,8 +39,8 @@
    '<p class="md-version-status" role="status" id="md-version-status">Online-Stand wird geprüft …</p>'+
    '<div class="md-version-actions">'+
    '<button type="button" id="md-version-check">Updates prüfen</button>'+
-   '<button type="button" class="primary" id="md-version-load">↻ Neueste Beta laden</button></div>'+
-   '<small>Neueste Spielskripte, Skelette und Animationen frisch laden; Spielstände bleiben erhalten.</small>'+
+   '<button type="button" class="primary" id="md-version-load">▶ Neueste Beta starten</button></div>'+
+   '<small>Startet direkt den aktuellen isometrischen Playtest mit frisch geladenen Skripten und Animationen. Spielstände bleiben erhalten.</small>'+
    '</section>';
  }
  function latestURL(){
@@ -50,6 +50,12 @@
   // auth tokens, or unrelated tracking parameters to the game.
   for(const key of ['szene','modus','seed','boss-test','renderer','debug-art','enemy3d']){
    if(query.has(key))target.searchParams.set(key,query.get(key));
+  }
+  // The default title leads to the real procedural test, not another title.
+  // Preserve explicit boss/scene choices for active playtests.
+  if(!target.searchParams.has('szene')&&!target.searchParams.has('boss-test')){
+   target.searchParams.set('szene','gasse');
+   target.searchParams.set('modus','generator');
   }
   return target;
  }
@@ -88,7 +94,7 @@
    }
   }catch(error){
    if(status.isConnected){
-    status.textContent='Online-Stand gerade nicht prüfbar. „Neueste Beta laden“ versucht es erneut.';
+    status.textContent='Online-Stand gerade nicht prüfbar. „Neueste Beta starten“ versucht es erneut.';
     status.dataset.state='error';
    }
   }finally{if(button?.isConnected)button.disabled=false;}

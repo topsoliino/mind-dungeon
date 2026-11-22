@@ -22,6 +22,15 @@ a{color:#ffdc90}
 (async function(){
  const label=document.getElementById('md-refresh-status');
  try{
+  // This URL is the PLAY entrypoint, not another copy of the title screen.
+  // Without an explicit scene, enter the current procedural isometric test.
+  // Do this before document.write(): the game reads location.search on boot.
+  const playURL=new URL(location.href);
+  if(!playURL.searchParams.has('szene')&&!playURL.searchParams.has('boss-test')){
+   playURL.searchParams.set('szene','gasse');
+   playURL.searchParams.set('modus','generator');
+   history.replaceState(history.state,'',playURL.href);
+  }
   const url=new URL('./index.html',location.href);
   const stamp=Date.now().toString(36);
   url.searchParams.set('__md_latest',stamp);

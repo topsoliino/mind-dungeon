@@ -17,6 +17,9 @@ assert(html.includes('window.DungeonVersion.panel()'));
 assert.equal((html.match(/window.DungeonVersion.attach\(/g)||[]).length,4,
  'Update control must work on regular title, alley title, boss title and pause screen');
 assert(latest.includes("fetch(url,{cache:'no-store'})"));
+assert(latest.includes("playURL.searchParams.set('szene','gasse')"));
+assert(latest.includes("history.replaceState(history.state,'',playURL.href)"));
+assert(version.includes('Neueste Beta starten'));
 assert(latest.includes('beta/dungeon-fresh-assets.js?fresh='));
 assert(latest.includes('document.open()')&&latest.includes('document.write(html)'));
 assert(fresh.includes('HTMLImageElement.prototype')&&fresh.includes('window.fetch=function'));
@@ -33,6 +36,10 @@ assert.equal(url.pathname,'/mind-dungeon/beta/latest.html');
 assert.equal(url.searchParams.get('szene'),'gasse');
 assert.equal(url.searchParams.get('seed'),'4148');
 assert(!url.searchParams.has('tracking'));
+context.location.search='';
+const defaultPlay=u.latestURL();
+assert.equal(defaultPlay.searchParams.get('szene'),'gasse');
+assert.equal(defaultPlay.searchParams.get('modus'),'generator');
 u.registerSource(source);
 assert.equal(context.window.__mindBuildId.length,12);
 assert.notEqual(u.safeHash(source),u.safeHash(source+'updated'));
@@ -51,6 +58,10 @@ assert.equal(u.safeHash(source),u.safeHash(source.replace(
    ok:true,text:async()=>html
   }},
   location:{href:'https://example.org/mind-dungeon/beta/latest.html'},
+  history:{state:null,replaceState(_state,_title,url){
+   assert(String(url).includes('szene=gasse'));
+   assert(String(url).includes('modus=generator'));
+  }},
   URL,Date,console
  });
  await result;

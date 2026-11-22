@@ -336,44 +336,53 @@ const run=async()=>{
   console.log('SOFTWARE CANVAS COMPARISON:',JSON.stringify(canvasSample));
   await canvasPage.close();
 
-  // Actual title-screen update path, not just static source checks:
-  // loading latest.html must replace the document with a fresh Beta and
-  // attach a unique revision to all real script/image requests.
+  // End-to-end acceptance test for the user's actual workflow:
+  // from the real title, press "Neueste Beta starten", enter gameplay.
+  // Prior tests only checked a new cache token and missed a title-screen LOOP.
   const latestPage=await browser.newPage({viewport:{width:1100,height:800}});
   const updateErrors=[];
   latestPage.on('pageerror',error=>updateErrors.push(error.message));
-  await latestPage.goto(base+'latest.html',{waitUntil:'domcontentloaded',timeout:45000});
+  await latestPage.goto(base,{waitUntil:'domcontentloaded',timeout:45000});
   await latestPage.waitForFunction(()=>
-   window.__mindFreshToken&&window.__mindBuildId&&
+   window.__mindBuildId&&
    document.querySelector('#md-version-panel #md-version-load')&&
    window.DungeonVersion?.latestURL,
    null,{timeout:45000});
   const before=await latestPage.evaluate(()=>({
-   token:window.__mindFreshToken,build:window.__mindBuildId,
-   check:document.querySelector('#md-version-check')?.textContent,
-   script:document.querySelector('script[src*="dungeon-version.js"]')?.src,
+   build:window.__mindBuildId,
    action:document.querySelector('#md-version-load')?.textContent,
-   latest:window.DungeonVersion.latestURL().pathname
+   latest:window.DungeonVersion.latestURL().href
   }));
   assert.equal(before.build.length,12);
-  assert(before.script.includes('__fresh='));
-  assert(before.latest.endsWith('/beta/latest.html'));
-  assert(before.action.includes('Neueste Beta laden'));
+  assert(before.action.includes('Neueste Beta starten'));
+  assert(new URL(before.latest).searchParams.get('szene')==='gasse');
   await latestPage.locator('#md-version-load').click();
-  await latestPage.waitForFunction(previous=>
-    window.__mindFreshToken&&window.__mindFreshToken!==previous&&
-    window.__mindBuildId&&document.querySelector('#md-version-panel'),
-    before.token,{timeout:45000});
+  await latestPage.waitForFunction(()=>
+   window.__mindFreshToken&&
+   window.__mindBuildId&&
+   window.__mindDiagnostics?.isPlaying===true&&
+   location.search.includes('szene=gasse')&&
+   window.__mindArtStatus,
+   null,{timeout:60000});
   const after=await latestPage.evaluate(()=>({
    token:window.__mindFreshToken,build:window.__mindBuildId,
-   status:document.querySelector('#md-version-status')?.textContent
+   playing:window.__mindDiagnostics.isPlaying,
+   scene:new URLSearchParams(location.search).get('szene'),
+   mode:new URLSearchParams(location.search).get('modus'),
+   engine:window.__mindDiagnostics.engine,
+   overlay:document.querySelector('#modalWrap')?.style.display,
+   art:window.__mindArtStatus
   }));
-  assert.equal(before.build,after.build,
-   'A fresh reload of the same published version must keep the same build ID');
-  assert.notEqual(before.token,after.token,
-   'Latest-button navigation must invalidate asset URLs');
-  assert.deepEqual(updateErrors,[],'Latest beta entrypoint must have no JavaScript errors');
-  console.log('LATEST BETA TITLE UPDATE:',JSON.stringify({before,after}));
+  assert.equal(after.build,before.build,
+   'Refreshing identical deployed game code must preserve build ID');
+  assert(after.token,'Latest entrypoint must bypass stale cached assets');
+  assert.equal(after.playing,true,'Update button MUST start an actual game');
+  assert.equal(after.scene,'gasse');
+  assert.equal(after.mode,'generator');
+  assert(after.overlay==='none'||
+   latestPage.url().includes('szene=gasse'),'Game cannot be trapped in the title overlay');
+  assert.deepEqual(updateErrors,[],'Entering updated Beta must have no JavaScript errors');
+  console.log('LATEST BETA BUTTON ENTERED ACTIVE ISOMETRIC PLAYTEST:',JSON.stringify({before,after}));
   await latestPage.close();
  }finally{await browser.close();}
 };
