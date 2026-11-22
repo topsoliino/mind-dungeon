@@ -695,11 +695,13 @@ def sample_pose(kind,t):
         point('Arrow',nock,nock+V((0,-.62,0)))
         if shot_t>=.57:
             rig.pose.bones['Arrow'].scale=(.0001,.0001,.0001)
-    vessel=rig.pose.bones['Vessel']
-    vessel.scale=(1,1,1) if throwing and t<.59 else (.0001,.0001,.0001)
     if throwing:
         anchor=attached('Hand.L',rest['Vessel'][0])
         point('Vessel',anchor,anchor+V((0,-1,.22 if t>.4 else .46)))
+    # Apply visibility AFTER orient(); assigning a pose matrix can reset
+    # scale, which otherwise leaves the thrown stone stuck in the hand.
+    rig.pose.bones['Vessel'].scale=(
+        (1,1,1) if throwing and t<.59 else (.0001,.0001,.0001))
     if kind=='death':
         fall=smooth((t-.08)/.70)
         for i,(name,(anchor,tail,parent)) in enumerate(rest.items()):
