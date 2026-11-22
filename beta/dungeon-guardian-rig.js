@@ -125,9 +125,10 @@ export async function loadRig(url,clips={}){
     // When hardware is under load, lower only the expensive pose sampling.
     // Never delay a new attack clip, gear state or significant turn.
     const measured=window.__mindDiagnostics?.fps||60;
-    const interval=1/(measured<28?24:measured<43?30:40);
+    const interval=1/(measured<22?12:measured<32?18:measured<45?25:36);
     const urgent=clip!==previousClip||armed!==lastArmed||
-     yaw===null||Math.abs(Math.atan2(Math.sin(angle-yaw),Math.cos(angle-yaw)))>.12;
+     yaw===null||Math.abs(Math.atan2(Math.sin(angle-yaw),Math.cos(angle-yaw)))>
+      (measured<32?.21:.12);
     if(!urgent&&time-lastDrawTime<interval)return false;
     lastDrawTime=time;lastArmed=armed;
     const dt=previousTime===null?0:Math.min(.1,Math.max(0,time-previousTime));

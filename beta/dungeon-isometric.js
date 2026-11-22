@@ -178,7 +178,7 @@
   // Re-evaluate wall occlusion only after meaningful movement, floor changes
   // or a visible portion of the upper-floor transition.
   let lastLayerRefresh=null;
-  function refreshLayers(images,player,opened){
+  function refreshLayers(images,player,opened,view=null){
    const stair=vertical?.state.stairRide,cross=vertical?.state.transition;
    const stage=stair?'stair':cross?'ladder':'floor';
    const progress=stair?stair.s/Math.max(.001,vertical.stairLength):
@@ -187,14 +187,25 @@
    const old=lastLayerRefresh;
    if(old&&old.images===images&&old.opened===opened&&old.floor===floor&&
     old.stage===stage&&Math.hypot(old.x-player.x,old.y-player.y)<9&&
-    Math.abs(old.progress-progress)<.025)return;
-   lastLayerRefresh={images,opened,floor,stage,progress,x:player.x,y:player.y};
+    Math.abs(old.progress-progress)<.025&&
+    (!view||old.camera&&Math.abs(old.camera.x-view.x)<14&&
+     Math.abs(old.camera.y-view.y)<14&&Math.abs(old.camera.zoom-(view.zoom||1))<.015))return;
+   lastLayerRefresh={images,opened,floor,stage,progress,x:player.x,y:player.y,
+    camera:view?{x:view.x,y:view.y,zoom:view.zoom||1}:null};
    const current=layers(player,opened);
+   // Discard static wall/tread tiles outside the viewport before Phaser
+   // submits them. A generous margin avoids seams while the camera moves.
+   const pad=128,zoom=view?.zoom||1;
+   const viewport=view?{left:view.x-pad,top:view.y-pad,
+    right:view.x+view.width/zoom+pad,bottom:view.y+view.height/zoom+pad}:null;
    images.forEach((image,i)=>{
-    const {depth,alpha=1,visible=true}=current[i];
+    const {depth,alpha=1,visible=true,x,y,canvas}=current[i];
+    const inView=!viewport||!(x>viewport.right||y>viewport.bottom||
+     x+canvas.width<viewport.left||y+canvas.height<viewport.top);
+    const drawn=visible&&alpha>.001&&inView;
     if(image.depth!==depth)image.setDepth(depth);
     if(image.alpha!==alpha)image.setAlpha(alpha);
-    if(image.visible!==visible)image.setVisible(visible);
+    if(image.visible!==drawn)image.setVisible(drawn);
    });
   }
   function drawLayers(ctx,player,opened,actors){
