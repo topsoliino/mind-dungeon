@@ -153,7 +153,19 @@ export async function loadEnemyRigs({only=null}={}){
  // The previous implementation repeated it PER RAT/SKELETON PER FRAME,
  // tanking FPS even when most enemies shared the same locomotion cycle.
  // Cache quantized *actual 3D Blender poses* across every instance.
- const frames=new Map(),MAX_FRAMES=112;
+ const frames=new Map(),MAX_FRAMES=176;
+ // Render an actual GLB idle pose per kit while still on the loading screen.
+ // Concurrent enemy spawns can reuse this instead of multiple GPU readbacks.
+ for(const stage of stages.values()){
+  const [start]=stage.settings.clips.idle;
+  stage.pivot.rotation.y=0;
+  stage.mixer.setTime(start/stage.settings.fps);
+  renderer.render(stage.scene,stage.camera);
+  const snapshot=document.createElement('canvas');
+  snapshot.width=snapshot.height=pixels;
+  snapshot.getContext('2d').drawImage(renderer.domElement,0,0);
+  stage.idleImage=snapshot;
+ }
  const canvases=new WeakMap();
  const stats={gpuRenders:0,cacheHits:0,budgetSkips:0,frames:0};
  let nextId=0,renderedThisFrame=0,lastGpuTime=-1e6,targetFps=60;
@@ -164,7 +176,7 @@ export async function loadEnemyRigs({only=null}={}){
  }
  function remember(signature,canvas){
   frames.set(signature,canvas);
-  // Hard memory cap: 112 x 152² pixels < 11 MB (plus small textures).
+  // Hard memory cap: 176 x 128^2 RGBA snapshots around 11 MB.
   if(frames.size>MAX_FRAMES)frames.delete(frames.keys().next().value);
  }
  function draw(enemy,type,selection,iso,deathAge=null){
@@ -191,9 +203,13 @@ export async function loadEnemyRigs({only=null}={}){
   const yaw=Math.atan2(Math.cos(view),Math.sin(view)/Math.sin(ELEVATION));
   // At 32 facings and 12 action frames, displacement stays truly continuous
   // in Phaser while the skinned pose comes from a reusable baked snapshot.
-  const poseStep=preview?Math.round(t*120):Math.round(t*12);
-  const viewStep=preview?Math.round(yaw*300):Math.round(yaw/TAU*32);
-  const sample=(start+(preview?t:poseStep/12)*(count-1))/fps;
+  // Under load, quantize idle and run slightly more. Keep all 32 viewing
+ // directions and the full attack/cartwheel pose resolution intact.
+ const gait=selection.clip==='run'||selection.clip==='idle';
+ const steps=!preview&&gait&&targetFps<45?7:12;
+ const poseStep=preview?Math.round(t*120):Math.round(t*steps);
+ const viewStep=preview?Math.round(yaw*300):Math.round(yaw/TAU*32);
+ const sample=(start+(preview?t:poseStep/steps)*(count-1))/fps;
   const facing=preview?yaw:viewStep*TAU/32;
   const signature=type+'|'+selection.clip+'|'+poseStep+'|'+viewStep;
   let changed=state.last!==signature;
@@ -203,13 +219,16 @@ export async function loadEnemyRigs({only=null}={}){
     const now=performance.now();
     // Deliberately cap GPU skinning+readback under load. A stale pose is
      // preferable to another frame stall; XY locomotion still runs smoothly.
-     const delay=targetFps<20?330:targetFps<35?200:targetFps<48?130:80;
-    if(!preview&&state.last&&(renderedThisFrame>=1||now-lastGpuTime<delay)){
+     const delay=targetFps<20?410:targetFps<35?260:targetFps<48?165:92;
+    if(!preview&&(renderedThisFrame>=1||now-lastGpuTime<delay)&&
+        (state.last||stage.idleImage)){
      // Keep the previous genuine live-GLB frame while movement continues.
      // The first frame for a skeleton must always be rendered: there is no
      // lower-quality legacy sprite model to fall back to any more.
      stats.budgetSkips++;
-     changed=false;
+     // First visible frame uses this kit's real neutral GLB silhouette.
+     if(!state.last&&stage.idleImage)image=stage.idleImage;
+     else changed=false;
     }else{
      renderedThisFrame++;
      lastGpuTime=now;

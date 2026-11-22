@@ -33,7 +33,7 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=19')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=20')"));
 assert(!enemy.includes("function hasLegacyPalette("),
  'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
 assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
@@ -52,7 +52,7 @@ assert(source('alley-skeleton.js').includes('return {choose,encounters}'),
 assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso)"));
 assert(html.includes("enemyRig?.beginFrame(renderStats.fps)"));
 assert(html.includes("only:enemyArtPreview?null:['sabre','bow']"));
-assert(enemy.includes('const frames=new Map(),MAX_FRAMES=112'));
+assert(enemy.includes('const frames=new Map(),MAX_FRAMES=176'));
 assert(enemy.includes('state.last&&(renderedThisFrame>=1'));
 assert(enemy.includes('cacheHits:0'));
 assert(html.includes('if(!onScreen(e))continue'));
