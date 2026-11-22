@@ -84,3 +84,45 @@ def forged_hard_edges(obj, width=.004):
     weighted.keep_sharp = True
     weighted.weight = 60
     bpy.ops.object.modifier_apply(modifier=weighted.name)
+
+
+def faceted_oval(name, center, radii, material, sides=8):
+    """Angular counterpart to a UV sphere, using the Guardian's profiles."""
+    x,y,z=center
+    rx,ry,rz=radii
+    return profile_mesh(name, [
+        (z-rz*.98,x,y,rx*.20,ry*.20),
+        (z-rz*.60,x,y,rx*.77,ry*.77),
+        (z,x,y,rx,ry),
+        (z+rz*.60,x,y,rx*.77,ry*.77),
+        (z+rz*.98,x,y,rx*.20,ry*.20),
+    ], [material], axis="z", sides=max(8,min(12,sides)))
+
+
+def front_plate(name, contour, front_y, thickness, face_material, edge_material):
+    """A closed skinnable armor / ear plate, not a two-sided 2D decal.
+
+    Outline x/z winding is corrected automatically, so mirrored variants
+    retain front-facing material normals in every one of the 32 directions.
+    """
+    outline=list(contour)
+    signed=sum(outline[i][0]*outline[(i+1)%len(outline)][1]-
+               outline[(i+1)%len(outline)][0]*outline[i][1]
+               for i in range(len(outline)))
+    if signed<0:
+        outline.reverse()
+    n=len(outline)
+    vertices=[(x,front_y,z) for x,z in outline]+[
+        (x,front_y+thickness,z) for x,z in outline]
+    faces=[tuple(range(n)),tuple(range(2*n-1,n-1,-1))]
+    faces.extend((i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n))
+    mesh=bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices,[],faces)
+    mesh.update()
+    mesh.materials.append(face_material)
+    mesh.materials.append(edge_material)
+    for poly in mesh.polygons:
+        poly.material_index=0 if poly.index<2 else 1
+    obj=bpy.data.objects.new(name,mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    return obj
