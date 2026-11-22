@@ -236,6 +236,7 @@ export async function loadEnemyRigs({only=null}={}){
    }
   }
   const p=iso.toView(enemy.x,enemy.y,enemy.alleyZ||0);
+  const feet=iso.toView(enemy.x,enemy.y,0).y;
   const size=displaySize*(enemy.size||1);
   const alpha=deathAge===null?1:clamp((2.6-deathAge)/.55);
   return {image:state.canvas,key:'alley-live-enemy-'+state.id,

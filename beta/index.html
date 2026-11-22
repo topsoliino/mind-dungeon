@@ -5110,6 +5110,12 @@ class DungeonScene extends Phaser.Scene{
    this.hero=this.add.image(0,0,'__MISSING').setOrigin(.5,characterArt.origin);
    this.weapon=this.add.image(0,0,'weapon-'+weaponArtId(save.equipment.weapon)).setDisplaySize(58,58);
    this.weaponClip=this.createWeaponClip();
+   // These pools are shared by the alley and dungeon render paths.
+   this.ghostFogSprites=[];this.ghostVesselSprites=[];this.vesselArtRevision=-1;
+   if(ghostFog){
+    this.textures.addCanvas('ghost-vessel-fog',ghostFog.canvas);
+    this.textures.addCanvas('ghost-vessel-pot',ghostFog.vessel);
+   }
    if(alley){
     this.alleyLayers=alley.addLayers(this,player);
     this.alleySprites=[];
@@ -5177,11 +5183,6 @@ class DungeonScene extends Phaser.Scene{
    this.weatherFx=this.add.graphics().setDepth(H*TILE+3).setScrollFactor(0);
    this.fog=this.add.graphics().setDepth(H*TILE+2);this.fogRevision=-1;
    this.textures.addCanvas('floor-web',webGroundBitmap);this.webSprites=[];
-   this.ghostFogSprites=[];this.ghostVesselSprites=[];this.vesselArtRevision=-1;
-   if(ghostFog){
-    this.textures.addCanvas('ghost-vessel-fog',ghostFog.canvas);
-    this.textures.addCanvas('ghost-vessel-pot',ghostFog.vessel);
-   }
    this.activateView();
   }
   activateView(){
@@ -5231,7 +5232,7 @@ class DungeonScene extends Phaser.Scene{
     .setDisplaySize(width,height).setRotation(angle).setFlipX(flip).setAlpha(alpha).setDepth(depth);
   }
   renderGhostVisuals(isometric=false){
-   const hide=sprites=>{for(const sprite of sprites)sprite.setVisible(false);};
+   const hide=sprites=>{for(const sprite of sprites||[])sprite.setVisible(false);};
    if(!ghostFog||!soulVessels.length){
     hide(this.ghostFogSprites);hide(this.ghostVesselSprites);return;
    }
