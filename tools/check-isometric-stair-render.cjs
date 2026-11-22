@@ -72,8 +72,12 @@ for(let seed=0;seed<expected.length;seed++){
  assert(upper.every(o=>o.visible),'all geometry must appear upstairs');
  assert(ascent[0].visible&&ascent[0].alpha>0&&ascent[0].alpha<1);
  assert(!descent[0].visible&&!descent.at(-1).visible);
- assert.equal(lower[1].depth,upper[1].depth,
-  'prerendered first tread keeps a constant painter depth');
+ const treadIndex=layers.findIndex(part=>part.kind==='stair-tread');
+ assert(treadIndex>=0);
+ assert.equal(upper[treadIndex].depth-lower[treadIndex].depth,7000,
+  'treads must enter the same raised sorting plane as the Guardian on upper floors');
+ assert.equal(lower[treadIndex].depth,paintedTreads[0].depth,
+  'the baked geometry remains unchanged despite dynamic scene depth');
  // Show/hide the top layer according to the PHYSICAL progress of the stair
  // rider, never from the separate ladder cutscene timer.
  v.state.transition=null;
