@@ -13,8 +13,8 @@ out.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.context.preferences.filepaths.save_version = 0
 scene = bpy.context.scene
-# Consistent game-palette color management: AgX/Filmic desaturates dark
-# creatures compared with the high-contrast guardian's silver/red materials.
+# Retain the high-contrast atlas preset for the sprite fallback.
+# The live GLB uses the Guardian's Three.js ACES light rig instead.
 scene.view_settings.view_transform = 'Standard'
 try:
     scene.view_settings.look = 'Medium High Contrast'
@@ -24,14 +24,25 @@ V = Vector
 pi = math.pi
 FACINGS = 32  # 360 degrees, independent baked 3D views; NO translucent view crossfades.
 PIXELS = 128
-def material(name, color, metal=0):
+def srgb_to_linear(value):
+    # Match the Guardian builder: artist palette floats are sRGB, not
+    # linear radiometric values. Feeding them directly into the BSDF made
+    # our GLBs unnaturally bright/flat under the identical Three.js lights.
+    return value / 12.92 if value <= .04045 else ((value + .055) / 1.055) ** 2.4
+
+
+def material(name, color, metal=0, roughness=None):
     m = bpy.data.materials.new(name)
-    m.diffuse_color = (*color, 1)
+    linear = tuple(srgb_to_linear(v) for v in color)
+    m.diffuse_color = (*linear, 1)
     m.use_nodes = True
     node = m.node_tree.nodes.get('Principled BSDF')
-    node.inputs['Base Color'].default_value = (*color,1)
+    node.inputs['Base Color'].default_value = (*linear, 1)
     node.inputs['Metallic'].default_value = metal
-    node.inputs['Roughness'].default_value = .75
+    # Guardian plates are roughness ~.48-.61. Formerly everything here
+    # was .75, causing steel, bronze and bone to read like dull clay.
+    node.inputs['Roughness'].default_value = (
+        roughness if roughness is not None else (.52 if metal >= .25 else .68))
     return m
 ivory = material('Weathered ivory', (.59,.51,.395))
 edge = material('Pale worn bone', (.78,.71,.55))
