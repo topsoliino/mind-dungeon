@@ -213,9 +213,56 @@ function create(options){
   chunks.push({canvas,x:minX,y:minY,depth:-10,visible:true,alpha:1,
    world:[cx*SIZE,cy*SIZE,Math.min(WIDTH,(cx+CHUNK)*SIZE),Math.min(HEIGHT,(cy+CHUNK)*SIZE)]});
  }
- const layers=()=>chunks;
+ // Exterior greybox: one connected fortress climbing from ocean spray up
+ // the cliff. These are architectural volumes, not a second landscape
+ // building; the upper gate is the playable return portal to dungeon L4.
+ const prisonBlocks=[
+  {area:[217,194,271,280],height:72},
+  {area:[258,177,321,288],height:96},
+  {area:[301,184,370,306],height:115},
+  {area:[348,219,412,304],height:88}
+ ];
+ function makePrison(){
+  const corners=prisonBlocks.flatMap(({area:[x,y,r,b],height:h})=>
+   [[x,y],[r,y],[r,b],[x,b]].flatMap(([u,v])=>[
+    toView(u,v,heightAt(u,v)),toView(u,v,heightAt(u,v)+h)]));
+  const minX=Math.floor(Math.min(...corners.map(p=>p.x)))-24,
+   minY=Math.floor(Math.min(...corners.map(p=>p.y)))-38,
+   maxX=Math.ceil(Math.max(...corners.map(p=>p.x)))+24,
+   maxY=Math.ceil(Math.max(...corners.map(p=>p.y)))+25;
+  const canvas=document.createElement('canvas');
+  canvas.width=maxX-minX;canvas.height=maxY-minY;
+  const ctx=canvas.getContext('2d');ctx.translate(-minX,-minY);
+  for(const [index,block] of prisonBlocks.entries()){
+   const [x,y,r,b]=block.area,h=block.height,
+    p=[[x,y],[r,y],[r,b],[x,b]],
+    base=p.map(([u,v])=>toView(u,v,heightAt(u,v))),
+    top=p.map(([u,v])=>toView(u,v,heightAt(u,v)+h)),
+    pair=a=>[a.x,a.y];
+   paintPoly(ctx,[pair(base[1]),pair(base[2]),pair(top[2]),pair(top[1])],
+    index%2?'#535c67':'#626b74','#3c4650');
+   paintPoly(ctx,[pair(base[2]),pair(base[3]),pair(top[3]),pair(top[2])],
+    index%2?'#47525f':'#53606b','#37424d');
+   paintPoly(ctx,top.map(pair),index%2?'#818b95':'#8c96a0','#d5d1c2');
+   for(let k=1;k<4;k++){
+    const z=h*k/4;
+    const p1=toView(r,y,heightAt(r,y)+z),p2=toView(r,b,heightAt(r,b)+z);
+    ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
+    ctx.strokeStyle='#bcc4c15a';ctx.lineWidth=2;ctx.stroke();
+   }
+  }
+  const gate=toView(prison.x,prison.y,heightAt(prison.x,prison.y));
+  ctx.fillStyle='#d9c6aa';ctx.fillRect(gate.x-13,gate.y-48,26,46);
+  ctx.fillStyle='#111923';ctx.fillRect(gate.x-9,gate.y-42,18,40);
+  ctx.fillStyle='#e5e4dc';ctx.font='bold 12px system-ui';ctx.textAlign='center';
+  ctx.fillText('ROCKY COAST PRISON',gate.x,gate.y-58);
+  return {canvas,x:minX,y:minY,depth:toView(381,305,0).y+.1,
+   visible:true,alpha:1};
+ }
+ const prisonArt=makePrison(),artLayers=[...chunks,prisonArt];
+ const layers=()=>artLayers;
  function addLayers(scene){
-  return chunks.map((chunk,i)=>{
+  return artLayers.map((chunk,i)=>{
    const key='rocky-terrain-'+i;
    scene.textures.addCanvas(key,chunk.canvas);
    return scene.add.image(chunk.x,chunk.y,key).setOrigin(0).setDepth(chunk.depth);
@@ -230,13 +277,13 @@ function create(options){
   if(!view)return;
   const rect=visibleRect(view);
   for(let i=0;i<images.length;i++){
-   const c=chunks[i],on=!(c.x>rect.right||c.y>rect.bottom||
+   const c=artLayers[i],on=!(c.x>rect.right||c.y>rect.bottom||
     c.x+c.canvas.width<rect.x||c.y+c.canvas.height<rect.y);
    if(images[i].visible!==on)images[i].setVisible(on);
   }
  }
  function drawLayers(ctx,actor,opened,actors){
-  const sorted=chunks.concat(actors).sort((a,b)=>a.depth-b.depth);
+  const sorted=artLayers.concat(actors).sort((a,b)=>a.depth-b.depth);
   const t=ctx.getTransform(),bounds={
    left:-t.e/t.a-140,top:-t.f/t.d-140,
    right:(ctx.canvas.width-t.e)/t.a+140,bottom:(ctx.canvas.height-t.f)/t.d+140};
@@ -272,6 +319,41 @@ function create(options){
   actor.moving=true;
   return zone;
  }
+ function mountDebug(actor){
+  const holder=document.createElement('div');
+  holder.id='rocky-terrain-map';
+  holder.style.cssText='position:fixed;left:12px;bottom:12px;z-index:16;background:#101821eb;color:#d7d7d4;border:1px solid #718086;border-radius:7px;padding:8px;font:12px system-ui';
+  const heading=document.createElement('div');
+  heading.textContent='ROCKY COAST · HEIGHTFIELD / NORMALMAP';
+  heading.style.cssText='font-weight:bold;margin-bottom:5px';holder.append(heading);
+  const canvas=document.createElement('canvas');
+  canvas.width=260;canvas.height=234;
+  canvas.style.cssText='width:260px;height:234px;display:block';holder.append(canvas);
+  const note=document.createElement('div');note.style.cssText='font:10px system-ui;max-width:260px;opacity:.8;margin-top:4px';
+  note.textContent='Grün: offen · Gelb: Hang · Rot: Rutschklippe · Blau: Todeszone · Grau: Grenze';
+  holder.append(note);document.body.append(holder);
+  const ctx=canvas.getContext('2d');
+  const background=document.createElement('canvas');
+  background.width=260;background.height=234;
+  const ground=background.getContext('2d');
+  for(let py=0;py<234;py+=3)for(let px=0;px<260;px+=3){
+   const x=(px+.5)/260*WIDTH,y=(py+.5)/234*HEIGHT,v=surfaceAt(x,y);
+   ground.fillStyle=v.danger?'#3c6e89':v.border?'#50555c':
+    v.zone==='cliff-slide'?'#b65d52':v.zone==='slide'?'#c7a173':
+    v.zone==='strain'?'#a0b27c':'#627a67';
+   ground.fillRect(px,py,3,3);
+  }
+  let last=-Infinity;
+  function draw(now=0){
+   if(now-last<140)return;
+   last=now;
+   const a=actor();ctx.clearRect(0,0,260,234);ctx.drawImage(background,0,0);
+   const x=a.x/WIDTH*260,y=a.y/HEIGHT*234;
+   ctx.beginPath();ctx.arc(x,y,4.2,0,TAU);ctx.fillStyle='#f6f8dc';ctx.fill();
+   ctx.strokeStyle='#152027';ctx.lineWidth=1.8;ctx.stroke();
+  }
+  draw(1000);return {draw,element:holder};
+ }
  function zoneAt(actor){
   const surface=surfaceAt(actor.x,actor.y);
   return 'Rocky Coast · '+(surface.zone==='slide'?'Rutschhang':
@@ -280,7 +362,7 @@ function create(options){
  }
  const noop=()=>false;
  return {
-  region:REGION,exterior:true,spawn,prison,normalMap,heightAt,normalAt,
+  region:REGION,exterior:true,spawn,prison,normalMap,mountDebug,heightAt,normalAt,
   surfaceAt,dangerAt,borderAt,slide,nearestTerrainPoint,level:5,
   walkable,walkableOnFloor,groundWalkable:walkable,
   routeTo,routeToFloor:routeTo,clearLine:(x,y,u,v)=>line({x,y},{x:u,y:v}),
