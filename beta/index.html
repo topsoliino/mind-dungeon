@@ -5356,8 +5356,9 @@ class DungeonScene extends Phaser.Scene{
     if(sprite.texture?.key!==key)sprite.setTexture(key);
     sprite.setVisible(true).setPosition(point.x,point.y)
      .setOrigin(.5,.5)
-     .setDisplaySize(26,26).setRotation(vessel.spin||0)
+     .setDisplaySize(26,26)
      .setDepth((isometric&&vessel.alleyFloor?7000:0)+foot+.6);
+    sprite.rotation=vessel.spin||0;
    }
    for(;i<this.ghostVesselSprites.length;i++)this.ghostVesselSprites[i].setVisible(false);
   }
