@@ -6,24 +6,23 @@ const SIZE=15,CELL=18;
 // The runtime sprite is rendered from the actual Blender prop when its asset
 // has been published. The procedural preview is deliberately kept visible
 // on slow networks and when the art CDN is unavailable.
+// Compact, hand-sized orb — not a jar/silo. The dark seam rotates with
+// physical distance travelled and therefore visualizes rolling velocity.
 function createPot(){
- const canvas=document.createElement('canvas');canvas.width=64;canvas.height=96;
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=48;
  const c=canvas.getContext('2d');
- c.shadowColor='#111521';c.shadowBlur=8;c.shadowOffsetY=5;
- c.fillStyle='#292f3b';c.beginPath();c.ellipse(32,83,15,5,0,0,Math.PI*2);c.fill();
- c.shadowBlur=0;c.shadowOffsetY=0;
- const body=c.createLinearGradient(15,0,50,0);
- body.addColorStop(0,'#20252d');body.addColorStop(.19,'#697582');body.addColorStop(.5,'#a4afb7');
- body.addColorStop(.73,'#5f6a77');body.addColorStop(1,'#252b36');
- c.fillStyle=body;c.strokeStyle='#171e29';c.lineWidth=2;
- c.beginPath();c.moveTo(24,20);c.bezierCurveTo(22,31,15,37,17,57);
- c.bezierCurveTo(17,79,25,82,32,83);c.bezierCurveTo(45,82,49,73,47,55);
- c.bezierCurveTo(49,37,42,29,40,20);c.closePath();c.fill();c.stroke();
- c.fillStyle='#343b49';c.fillRect(23,14,18,8);
- c.strokeStyle='#b9c5ce';c.lineWidth=2;c.beginPath();c.ellipse(32,16,11,4,0,0,Math.PI*2);c.stroke();
- c.strokeStyle='#3c4858';c.lineWidth=3;c.beginPath();c.ellipse(32,52,15,10,0,0,Math.PI*2);c.stroke();
- c.strokeStyle='#a6bdc0';c.lineWidth=1.4;c.beginPath();c.moveTo(29,47);c.lineTo(33,56);c.lineTo(38,46);c.stroke();
- c.fillStyle='#b6d2c8';c.beginPath();c.ellipse(32,15,7,2,0,0,Math.PI*2);c.fill();
+ c.fillStyle='#080e12a0';c.beginPath();c.ellipse(24,39,12,3.5,0,0,Math.PI*2);c.fill();
+ const body=c.createRadialGradient(18,13,2,25,25,18);
+ body.addColorStop(0,'#e8f4e3');body.addColorStop(.22,'#afc9c2');
+ body.addColorStop(.55,'#547c74');body.addColorStop(.85,'#283d43');
+ body.addColorStop(1,'#101a24');
+ c.fillStyle=body;c.strokeStyle='#18252c';c.lineWidth=1.6;
+ c.beginPath();c.arc(24,23,15,0,Math.PI*2);c.fill();c.stroke();
+ c.strokeStyle='#91ffac';c.shadowColor='#79e982';c.shadowBlur=5;
+ c.lineWidth=2;c.beginPath();c.moveTo(16,17);c.lineTo(22,22);c.lineTo(19,28);
+ c.moveTo(22,22);c.lineTo(30,17);c.lineTo(33,23);c.stroke();
+ c.shadowBlur=0;
+ c.fillStyle='#edfff7b8';c.beginPath();c.ellipse(18,15,4,2.2,-.6,0,Math.PI*2);c.fill();
  return canvas;
 }
 function create(){
@@ -35,11 +34,8 @@ function create(){
  function set3DFrames(frames){
   if(!Array.isArray(frames)||frames.length!==24)return false;
   modelFrames=frames;modelRevision++;
-  const context=vessel.getContext('2d');
-  context.clearRect(0,0,vessel.width,vessel.height);
-  context.drawImage(frames[0],0,0,vessel.width,vessel.height);
-  vesselRevision++;
-  return true;
+  // Keep spherical gameplay artwork even if a legacy 3D jar is loaded.
+  return false;
  }
  function modelIndex(v){
   if(!modelFrames.length)return -1;
@@ -49,21 +45,13 @@ function create(){
  function vesselImage(v){const index=modelIndex(v);return index<0?vessel:modelFrames[index];}
  function drawVessel(ctx,v,view){
   const p=view(v.x,v.y,v.z),image=vesselImage(v);
-  if(modelFrames.length)ctx.drawImage(image,p.x-45,p.y-73,90,90);
-  else ctx.drawImage(image,p.x-26,p.y-67,52,78);
+  ctx.save();
+  ctx.translate(p.x,p.y);
+  ctx.rotate((v.spin||0)% (Math.PI*2));
+  ctx.drawImage(image,-13,-13,26,26);
+  ctx.restore();
  }
- const asset=new Image();
- asset.onload=()=>{
-  const c=vessel.getContext('2d');c.clearRect(0,0,64,96);
-  c.drawImage(asset,0,0,64,96);vesselRevision++;
- };
- // A missing in-progress Blender render must NOT trigger a 404 on every
- // startup. Load it only after the build pipeline publishes its manifest.
- fetch('beta/art/props/ghost-vessel-art.json?v=1',{cache:'no-store'})
-  .then(response=>response.ok?response.json():null)
-  .then(config=>{
-   if(config?.spriteReady)asset.src='beta/art/props/ghost-vessel.png?v='+(config.version||1);
-  }).catch(()=>{});
+ // The previous Blender jar was intentionally retired: no large 3D props.
  let gl=null,program=null,uniformT=null,position=null,lastFrame=-1;
  try{
   gl=canvas.getContext('webgl',{alpha:true,preserveDrawingBuffer:true,
@@ -88,10 +76,10 @@ function create(){
     'float swirl=fbm(p*3.7+vec2(uTime*.21,-uTime*.14));'+
     'vec2 flow=vec2(fbm(p*2.6+uTime*.17),fbm(p*2.6-uTime*.13));'+
     'float turbulence=fbm(p*5.2+flow*.9+vec2(uTime*.34,-uTime*.26));'+
-    'float edge=1.-smoothstep(.35,.97,r+(.5-swirl)*.40);'+
-    'float a=clamp(edge*(.28+turbulence*.42),0.,.76);'+
-    'vec3 color=mix(vec3(.32,.35,.42),vec3(.69,.70,.77),swirl*.8);'+
-    'gl_FragColor=vec4(color*a,a);}'));
+    'float edge=1.-smoothstep(.35,.98,r+(.5-swirl)*.36);'+
+    'float a=clamp(edge*(.48+turbulence*.45),0.,.86);'+
+    'vec3 color=mix(vec3(.16,.34,.16),vec3(.58,.89,.35),swirl*.85);'+
+    'gl_FragColor=vec4(color,a);}'));
    gl.linkProgram(program);
    if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));
    gl.useProgram(program);
@@ -115,9 +103,9 @@ function create(){
    ctx.drawImage(canvas,0,0);
   }else{
    const grad=ctx.createRadialGradient(48,48,4,48,48,46);
-   grad.addColorStop(0,'rgba(160,169,188,.64)');
-   grad.addColorStop(.55,'rgba(121,130,150,.32)');
-   grad.addColorStop(1,'rgba(80,88,108,0)');
+   grad.addColorStop(0,'rgba(172,239,87,.82)');
+   grad.addColorStop(.55,'rgba(101,172,67,.48)');
+   grad.addColorStop(1,'rgba(47,83,40,0)');
    ctx.fillStyle=grad;ctx.fillRect(0,0,96,96);
   }
   return true;
@@ -128,12 +116,12 @@ function create(){
    if(!v.landed)continue;
    for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){
     const density=v.cells[y*SIZE+x]??0;
-    if(density<.11)continue;
-    const px=v.x+(x-7)*CELL,py=v.y+(y-7)*CELL;
+    if(density<.065)continue;
+    const px=(v.cloudX??v.x)+(x-7)*CELL,py=(v.cloudY??v.y)+(y-7)*CELL;
     if(!visible(px,py,v.alleyFloor))continue;
-    const pos=view(px,py,v.alleyFloor*132);
-    result.push({x:pos.x,y:pos.y,alpha:Math.min(.78,density*.76),depth:pos.y+1,
-     size:38+Math.min(18,density*14)});
+    const pos=view(px,py,v.alleyFloor*132+9);
+    result.push({x:pos.x,y:pos.y,alpha:Math.min(.88,.20+density*.60),
+     floor:v.alleyFloor,depth:pos.y+.1,size:43+Math.min(27,density*18)});
    }
   }
   if(result.length>limit){
