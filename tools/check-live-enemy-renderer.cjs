@@ -31,9 +31,9 @@ for(const field of [
  "if(skinned<1)throw Error"]){
  assert(enemy.includes(field),'3D enemies must share Guardian rendering: '+field);
 }
-assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
- 'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=23')"));
+assert.equal(enemy.match(/new WebGLRenderer/g).length,2,
+ 'One gameplay GPU context plus one offline-only atlas baking context');
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=24')"));
 assert(!enemy.includes("function hasLegacyPalette("),
  'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
 assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
@@ -45,10 +45,12 @@ assert(!html.includes('skeletonArt.sprites('),
  'The low-quality legacy skeleton atlases must NEVER render again');
 assert(!html.includes('const skeletonReady=alley?skeletonArt.load()'),
  'Do not decode retired skeleton WebP atlases at startup');
-assert(!source('alley-skeleton.js').includes('.webp'),
- 'All skeleton model variants must be taken from the live Blender GLBs');
-assert(source('alley-skeleton.js').includes('return {choose,encounters,fallback}'),
- 'The legacy sprite atlas is retired; the new visibility-safe silhouette is permitted');
+assert(source('alley-skeleton.js').includes('atlas-'+"'"+'+kit')||
+ source('alley-skeleton.js').includes("'beta/art/skeleton/atlas-'"),
+ 'Skeleton atlases must be built from the Guardian-derived GLBs');
+assert(source('alley-skeleton.js').includes('return {choose,encounters,load,hasBaked,loaded,sprite}')&&
+ !source('alley-skeleton.js').includes('safeImage('),
+ 'Only authentic baked Blender skeletons and live GLB may render');
 assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso)"));
 assert(html.includes("enemyRig?.beginFrame(renderStats.fps)"));
 assert(html.includes("only:enemyArtPreview?null:['sabre','bow']"));
