@@ -171,7 +171,8 @@
     const prison=window.RockyCoastPrison;
     let visible=part.level===0||reveal>0;
     if(prison?.enabled){
-     if(part.door)visible&&=part.door===window.AlleyGenerator.outdoorEntrance?prison.storey===1:prison.last;
+     if(part.downId)visible&&=vertical.connectorsAt(prison.storey-2).some(c=>c.id===part.downId);
+     else if(part.door)visible&&=part.door===window.AlleyGenerator.outdoorEntrance?prison.storey===1:prison.last;
      else if(part.connectorId)visible&&=vertical.connectors.some(c=>c.id===part.connectorId);
      else visible&&=vertical.hasStairs();
     }

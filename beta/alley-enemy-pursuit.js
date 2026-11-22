@@ -98,15 +98,17 @@ window.AlleyEnemyPursuit=(()=>{
   }
   function investigateFloorChange(e,hero,now){
    const targetFloor=destinationFloor();
-   if(targetFloor===ownFloor(e)||!e.alleyLastSeen||
+   if(targetFloor===ownFloor(e)||!e.alleyLastSeen||e.alleyLastSeen.floor===targetFloor||
       now-e.alleyLastSeen.time>3.3)return;
    // The guard remembers a visible stair entrance; it does not magically
    // know the player's position in an unseen room on another storey.
    const link=portals(ownFloor(e),targetFloor).find(connector=>{
     const before=targetFloor>ownFloor(e)?connector.bottom:connector.top,
      after=targetFloor>ownFloor(e)?connector.top:connector.bottom;
-    return d(e.alleyLastSeen,{x:before.x*48,y:before.y*48})<155&&
-     d(hero,{x:after.x*48,y:after.y*48})<205;
+    const witnessed=vertical.state.stairRide?connector.kind==='stairs':
+     vertical.state.transition?.connector?.id===connector.id;
+    return d(e.alleyLastSeen,{x:before.x*48,y:before.y*48})<155&&(witnessed||
+     d(hero,{x:after.x*48,y:after.y*48})<205);
    });
    if(!link)return;
    const exit=targetFloor>ownFloor(e)?link.top:link.bottom;

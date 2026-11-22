@@ -14,7 +14,7 @@ const document={currentScript:{src:'https://example.org/beta/alley-architecture.
 class Image{set src(value){this._src=value;}}
 const files=['alley-study-map.js','rocky-coast-prison.js','alley-generator.js',
  'alley-stair-geometry.js','alley-stair-navigation.js','alley-stair-controller.js',
- 'alley-vertical.js','alley-route.js','alley-architecture.js','alley-study.js',
+ 'alley-vertical.js','alley-enemy-pursuit.js','alley-route.js','alley-architecture.js','alley-study.js',
  'dungeon-isometric.js'];
 function setup(level,storey=1,entry='from-lower'){
  const query='?szene=gasse&modus=generator&region=rocky-coast&level='+level+
@@ -64,6 +64,20 @@ for(let level=1;level<=4;level++){
   if(storey<count){
    assert(vertical.connectors.length>=1&&vertical.connectors.length<=4);
    const flight=vertical.connectors,location=w.location.href;
+   const pursuit=w.AlleyEnemyPursuit.create(vertical,scene);
+   for(const link of flight){
+    const skeleton=link.kind==='ladder',entry={x:link.bottom.x*48,y:link.bottom.y*48};
+    const guard={...entry,alleyFloor:storey-1,skeleton,phase:0,hp:10};
+    vertical.state.floor=0;vertical.state.z=0;
+    pursuit.update(guard,entry,1/60,0,()=>{});
+    if(skeleton)vertical.state.transition={connector:link,up:true};
+    else vertical.state.stairRide={entry:'bottom'};
+    pursuit.update(guard,entry,1/60,.1,()=>{});
+    assert.equal(guard.alleyClimb?.connector.id,link.id,'Follow a witnessed ascent');
+    vertical.state.stairRide=vertical.state.transition=null;
+    for(let i=0;i<1200&&guard.alleyClimb;i++)pursuit.update(guard,entry,1/60,.2+i/60,()=>{});
+    assert.equal(guard.alleyFloor,storey);
+   }
    assert(w.RockyCoastPrison.changeStorey(1));
    vertical.state.floor=0;vertical.state.z=0;
    assert(scene.groundWalkable(climber.x,climber.y,14,false),'Walk off the upper landing');

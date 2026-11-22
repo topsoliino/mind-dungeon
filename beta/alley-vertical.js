@@ -435,6 +435,32 @@ function createLayers({project,polygon,line,cacheObject}){
   depth:project(ladder.bottom.x,ladder.bottom.y)[1]+.25,level:0};
  });
  // Separate upper-only details. They MUST NOT leak into the ground-floor view.
+ const descending=prison?connectors.map(link=>{
+  const steps=plan.steps.slice(-4);
+  const hatch=link.kind==='stairs'?steps.flatMap(s=>s.corners):(()=>{
+   const {x,y}=link.bottom;
+   return [{x:x-.38,y:y-.38},{x:x+.38,y:y-.38},{x:x+.38,y:y+.38},{x:x-.38,y:y+.38}];
+  })();
+  const image=cacheObject(boundsFor(hatch),8,ctx=>{
+   const openings=link.kind==='stairs'?steps.map(step=>step.corners):[hatch];
+   for(const points of openings)polygon(ctx,points.map(p=>project(p.x,p.y,0)),'#252b38','#535b66');
+   ctx.save();ctx.beginPath();
+   for(const points of openings){
+    points.forEach((p,i)=>ctx[i?'lineTo':'moveTo'](...project(p.x,p.y,0)));
+    ctx.closePath();
+   }
+   ctx.clip();
+   if(link.kind==='stairs'){
+    for(const step of steps)drawPrism(ctx,step.corners,step.z-HEIGHT,step.prev-HEIGHT);
+   }else{
+    const rails=link.contact.rails;
+    for(const rail of rails)line(ctx,[project(rail.x,rail.y,0),project(rail.x,rail.y,-40)],'#b39169',4);
+    for(const z of [-4,-15,-26])line(ctx,rails.map(p=>project(p.x,p.y,z)),'#ba9972',3);
+   }
+   ctx.restore();
+  });
+  return {kind:'descending-access',level:0,downId:link.id,image,depth:-500};
+ }):[];
  const upperLanding=cacheObject(stairs.area,HEIGHT+40,ctx=>{
   const top=plan.top,delta=.38;
   const caps=plan.landings.filter(l=>l.top);
@@ -445,7 +471,7 @@ function createLayers({project,polygon,line,cacheObject}){
   for(const corners of plates)drawPrism(ctx,corners,HEIGHT,HEIGHT-13,false);
  });
  return [
-  ...slabs,
+  ...descending,...slabs,
   ...stairObjects,...doorFrames,
   ...ladderLayers,
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}

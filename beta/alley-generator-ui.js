@@ -16,7 +16,7 @@ function mount({generator:g,player,iso}){
   '<strong id="iso-gen-level">GREYBOX · ERDGESCHOSS</strong><button id="iso-gen-toggle" aria-expanded="true">Karte −</button></div>'+
   '<div style="font-size:11px;color:#bac9d2;margin:6px 0">'+
   g.metadata.rooms+' Räume · '+g.metadata.corridors+' Gänge · '+g.metadata.doors+
-  ' Verbindungen · '+g.stairs.length+' Treppe(n) · '+(window.AlleyVertical?.enabled?1:0)+' Leiter</div>'+
+  ' Verbindungen <span id="iso-gen-access"></span></div>'+
   '<div style="font-size:11px;color:#d9c7b0;margin-bottom:7px">'+
   (g.metadata.stairTitle||(prison?.hasExit?'Ausgang zur Rocky Coast':'Treppenkonstruktion'))+'</div>'+
   '<div id="iso-gen-body"><canvas id="iso-gen-map" width="576" height="360" '+
@@ -121,6 +121,10 @@ function mount({generator:g,player,iso}){
  const colors=['#687182','#617d87','#827487','#707e75'];
  const vertical=window.AlleyVertical;
  function drawBackground(){
+  const links=vertical?.connectors||[];
+  const ladders=links.filter(link=>link.kind==='ladder').length;
+  panel.querySelector('#iso-gen-access').textContent=links.length?
+   '· 1 Treppe'+(ladders?' · '+ladders+(ladders===1?' Leiter':' Leitern'):''):'· Ausgang zur Küste';
   if(prison?.enabled)title.textContent='Stockwerk '+prison.storey+' / '+prison.count;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   for(const [u,v,r,b] of alley)poly(quad(u,v,r,b),'#495461','#8e9da3');

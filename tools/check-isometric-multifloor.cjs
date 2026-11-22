@@ -138,7 +138,7 @@ const html=read('index.html');
 assert(html.includes('const alleyEnemyPursuit=generationMode&&alleyVertical?'));
 assert(html.includes('!next&&!player.attack&&!player.dash'),
  'click-to-move must not spontaneously board a flight');
-assert(html.includes('const floor=hero?(alleyVertical?.state.floor??0):(actor.alleyFloor??0)'));
+assert(html.includes('const floor=hero?(alleyVertical?.state.floor??0):(rockyPrison?0:actor.alleyFloor??0)'));
 assert(html.includes('if(!enemySameFloor(e))continue'));
 assert(html.includes('(e.alleyFloor??0)===(shot.alleyFloor??0)'));
 console.log('Integrated gameplay: per-actor collision, right-click bypass and equal-floor damage guards OK');
