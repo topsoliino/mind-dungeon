@@ -215,7 +215,8 @@ const run=async()=>{
    {waitUntil:'domcontentloaded',timeout:45000});
   await playtest.waitForFunction(()=>
    window.__mindEnemyRig?.active?.length===2&&
-   window.__mindDiagnostics?.engine==='Phaser 3',null,{timeout:40000});
+   window.__mindDiagnostics?.engine==='Phaser 3'&&
+   window.__mindDiagnostics?.isPlaying,null,{timeout:40000});
   const benchmark=await playtest.evaluate(async()=>{
    const rig=window.__mindEnemyRig,initial=rig.stats.gpuRenders;
    const gameTimeStart=window.__mindDiagnostics.gameTime;
@@ -311,7 +312,9 @@ const run=async()=>{
   await canvasPage.goto(base+'?szene=gasse&modus=generator&seed=4148&renderer=canvas',
    {waitUntil:'domcontentloaded',timeout:45000});
   await canvasPage.waitForFunction(()=>
-   window.__mindGuardianRig&&window.__mindDiagnostics?.engine==='Canvas-Ersatzrenderer',
+   window.__mindGuardianRig&&
+   window.__mindDiagnostics?.engine==='Canvas-Ersatzrenderer'&&
+   window.__mindDiagnostics?.isPlaying,
    null,{timeout:40000});
   const canvasSample=await canvasPage.evaluate(async()=>{
    const times=[],start=performance.now();
