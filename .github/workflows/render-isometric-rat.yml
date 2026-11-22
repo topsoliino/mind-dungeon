@@ -7,7 +7,6 @@ on:
     paths:
       - .github/workflows/render-isometric-rat.yml
       - tools/build-isometric-rat.py
-      - tools/guardian-style.py
       - tools/check-isometric-rat-atlases.py
 
 permissions:
