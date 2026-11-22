@@ -1,6 +1,9 @@
 (() => {
 'use strict';
 const query=new URLSearchParams(window.location.search);
+const dungeonLevel=window.RockyCoastPrison?.enabled?window.RockyCoastPrison.level:0;
+const hasOutdoorEntrance=!dungeonLevel||dungeonLevel===1;
+const hasOutdoorExit=!dungeonLevel||dungeonLevel===4;
 if(query.get('szene')!=='gasse'||query.get('modus')!=='generator'||
    window.RockyCoastPrison?.isExterior){
  window.AlleyGenerator={enabled:false};return;
@@ -130,7 +133,10 @@ let result=null,actualSeed=seed;
 for(let i=0;i<15&&!result;i++){actualSeed=(seed+i*7919)>>>0;result=generate(actualSeed);}
 if(!result)throw Error('Generator: kein zusammenhängender 10-Raum-Grundriss möglich');
 const {rooms,doors,occ}=result;
-const openings=new Set(doors.flatMap(p=>p.edges.map(([a,b])=>edge(a,b))));
+// L2-L4 have no outward-facing entrance: the old threshold becomes a
+// solid, collidable greybox wall instead of a secret shortcut to the street.
+const activeDoors=hasOutdoorEntrance?doors:doors.filter(door=>door.from!==0);
+const openings=new Set(activeDoors.flatMap(p=>p.edges.map(([a,b])=>edge(a,b))));
 // The first two-cell threshold already leads from the street into the building.
 const entrance={name:'Eingang',roomId:1,x:12,y:5,dx:-1,dy:0};
 const depths=[0];
@@ -152,11 +158,11 @@ for(const room of rooms.filter(room=>room.kind==='raum')){
 }
 exteriorCandidates.sort((a,b)=>b.score-a.score);
 const exit=exteriorCandidates[0];
-if(!exit)throw Error('Kein freier Außenwandabschnitt für den Ausgang');
-exit.name='Ausgang';
-const exterior=new Set(exit.cells.map(cell=>key(...cell)));
-for(const [a,b] of exit.edges)openings.add(edge(a,b));
-const portals=[entrance,exit];
+if(!exit&&hasOutdoorExit)throw Error('Kein freier Außenwandabschnitt für den Ausgang');
+if(exit)exit.name='Ausgang';
+const exterior=new Set(hasOutdoorExit&&exit?exit.cells.map(cell=>key(...cell)):[]);
+if(hasOutdoorExit&&exit)for(const [a,b] of exit.edges)openings.add(edge(a,b));
+const portals=[...(hasOutdoorEntrance?[entrance]:[]),...(hasOutdoorExit&&exit?[exit]:[])];
 const segments=[];
 for(const room of rooms.slice(1))for(const [x,y] of room.cells)for(const [dx,dy,side] of dirs){
  const nx=x+dx,ny=y+dy,other=occ.get(key(nx,ny));
@@ -220,6 +226,8 @@ if(!stairs){
   if(stairs)break;
  }
 }
+// On L4 the next stage is the exterior through a door, never a stair.
+if(dungeonLevel===4)stairs=null;
 // Interior partitions are real structural walls, not randomly placed obstacles.
 // Each spans between two external boundaries; a one-cell doorway is cut into it.
 const innerWalls=[];
@@ -268,7 +276,7 @@ const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.length,
  corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,
  interiorWalls:innerWalls.length,stairs:stairs?[stairs]:[],depth,roomLinearScale:2,wallCutHeight:96};
 function extend(map){
- for(const [x,y] of exit.cells){
+ for(const [x,y] of hasOutdoorExit&&exit?exit.cells:[]){
   const area=[x,y,x+1,y+1];
   map.logic.walkable.push(area);
   map.art.ground.push({area,material:'court'});
@@ -287,7 +295,7 @@ function extend(map){
    if(i<sorted.length)start=end=sorted[i];
   }
  }
- for(const door of doors)for(const [a,b] of door.edges)
+ for(const door of activeDoors)for(const [a,b] of door.edges)
   map.logic.waypoints.push([(a[0]+b[0]+1)/2,(a[1]+b[1]+1)/2]);
  map.art.routeWalls=walls;
 }
@@ -317,7 +325,7 @@ function renderFloor(ctx,{project,polygon,line}){
   ctx.font='10px system-ui';ctx.fillStyle='#ddd3d4';
   ctx.fillText(room.kind==='gang'?'GANG':room.style.toUpperCase(),x,y+14);ctx.restore();
  }
- for(const door of doors)for(const [a,b] of door.edges){
+ for(const door of activeDoors)for(const [a,b] of door.edges){
   const u=(a[0]+b[0]+1)/2,v=(a[1]+b[1]+1)/2,du=a[0]!==b[0]?.13:.4,dv=a[1]!==b[1]?.13:.4;
   polygon(ctx,[project(u-du,v-dv),project(u+du,v-dv),project(u+du,v+dv),project(u-du,v+dv)],
    '#ad9b8a87','#dcc8aa');
@@ -440,7 +448,9 @@ function path(from,target,canWalk,floorOverride=null){
  return {goal,steps};
 }
 const generator={
- enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors,walls,portals,containsGround,
+ enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors:activeDoors,walls,portals,
+ outdoorEntrance:hasOutdoorEntrance?entrance:null,
+ outdoorExit:hasOutdoorExit?exit:null,dungeonLevel,containsGround,
  stairs:stairs?[stairs]:[],materials,metadata,seal:null,
  extend,blocked,areaAt,renderFloor,renderWall,
  renderSeal(){},renderProp(){},unlock(){},isUnlocked(){return true;},path,prewarm
