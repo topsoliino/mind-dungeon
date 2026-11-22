@@ -34,6 +34,8 @@ jobs:
           blender -b --factory-startup -t 4 --python-exit-code 1 \
             -P tools/build-isometric-skeleton.py
       - name: Verify generated Blender assets
+        env:
+          MIND_DUNGEON_REQUIRE_CURRENT_ATLAS: "1"
         run: |
           python3 -m venv /tmp/skeleton-qa
           /tmp/skeleton-qa/bin/python -m pip install --disable-pip-version-check Pillow
