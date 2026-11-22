@@ -75,7 +75,7 @@ const skeletonArt=window.AlleySkeleton,ratArt=window.AlleyRat,alleyRemains=[];
 let enemyRig=null;
 // Live Blender armatures rendered through the Guardian's Three.js pipeline.
 // Existing 32-view sprite sheets remain per-species fallback only.
-const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=5')
+const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=6')
  .then(module=>module.loadEnemyRigs()).then(renderer=>{
   enemyRig=renderer;window.__mindEnemyRig=renderer;
   console.info('Mind Dungeon live 3D enemy rigs:',renderer.active);

@@ -6,6 +6,7 @@ Run in the repository root:
 Each WebP sheet has animation frames on X and 32 directions on Y.
 """
 from pathlib import Path
+import importlib.util
 import math
 import bpy
 from mathutils import Vector, Euler, Matrix
@@ -22,6 +23,9 @@ try:
     scene.view_settings.look = 'Medium High Contrast'
 except TypeError:
     pass  # Some Blender versions omit this color-management preset.
+style_spec = importlib.util.spec_from_file_location("guardian_style", Path.cwd() / "tools" / "guardian-style.py")
+style = importlib.util.module_from_spec(style_spec)
+style_spec.loader.exec_module(style)
 V = Vector
 PI = math.pi
 VIEWS = 32
@@ -48,23 +52,23 @@ def mat(name, color, roughness=.83, metal=0):
     shader.inputs["Metallic"].default_value = metal
     return m
 
-fur = mat("Warm dark umber fur", (.255, .145, .105))
-fur_light = mat("Copper brown fur highlights", (.44, .275, .19))
-belly = mat("Warm grey belly", (.49, .385, .295))
+fur = mat("Warm dark umber fur", (.30, .18, .14), .69)
+fur_light = mat("Copper brown fur highlights", (.59, .375, .25), .64)
+belly = mat("Warm grey belly", (.63, .48, .36), .69)
 skin = mat("Russet pink paws and tail", (.61, .29, .30))
 ear = mat("Rose inner ears", (.78, .395, .39))
 eye = mat("Black glass eyes", (.012, .008, .014), .22)
 nose = mat("Dark wet nose", (.225, .065, .084), .27)
 teeth = mat("Small ivory incisors", (.77, .69, .50))
 whisker = mat("Pale whiskers", (.67, .58, .48))
-fur_shadow = mat("Dense charcoal underfur", (.13, .105, .12))
-fur_coat = mat("Dark matted dorsal coat", (.205, .14, .135))
-fur_gold = mat("Sparse warm guard hairs", (.53, .335, .22))
+fur_shadow = mat("Dense charcoal underfur", (.065, .047, .058), .78)
+fur_coat = mat("Dark matted dorsal coat", (.16, .10, .115), .76)
+fur_gold = mat("Sparse warm guard hairs", (.58, .365, .24), .68)
 ear_shadow = mat("Inner ear folds", (.39, .19, .20))
 claw = mat("Hard ivory claws", (.69, .61, .47))
 hide = mat("Weathered saddle-brown leather", (.20, .115, .074))
 brass = mat("Found dungeon brass", (.53, .33, .12), .52, .38)
-patch = mat("Ragged muted red cloth", (.34, .10, .12))
+patch = mat("Ragged muted red cloth", (.48, .145, .19), .70)
 tail_ring = mat("Tail joint dark folds", (.35, .16, .17))
 
 joints = {}
@@ -75,12 +79,13 @@ def joint(name, xyz, parent=None):
 
 def add_part(obj, name, bone, material):
     obj.name = name
-    obj.data.materials.append(material)
+    if not obj.data.materials:
+        obj.data.materials.append(material)
     parts.append((obj, bone))
     return obj
 
 def oval(name, bone, pos, scale, material, segments=12):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=12, location=pos)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=8, location=pos)
     o = bpy.context.object
     o.scale = scale
     return add_part(o, name, bone, material)
@@ -112,10 +117,43 @@ for i in range(6):
     joint("Tail"+str(i), (0, .41+i*.18, .29-max(0, i-1)*.032),
           "Root" if i == 0 else "Tail"+str(i-1))
 
-oval("Broad pear-shaped body", "Root", (0, .015, .36), (.33, .58, .31), fur)
-oval("Underbelly", "Root", (0, -.08, .21), (.267, .44, .16), belly)
-oval("Shoulder ruff", "Chest", (0, -.31, .38), (.275, .29, .235), fur_light)
-oval("Head", "Head", (0, -.59, .42), (.245, .255, .21), fur)
+# A continuous faceted pear-shaped body replaces the old stack of smooth
+# overlapping spheres. Planar sections, value bands and a ridged back are
+# deliberately visible at the Guardian's actual isometric game zoom.
+body_shell = style.profile_mesh("Broad pear-shaped body", [
+    (-.58,0,.35,.07,.07),
+    (-.46,0,.36,.225,.20),
+    (-.26,0,.37,.305,.27),
+    (.02,0,.37,.345,.308),
+    (.30,0,.355,.297,.279),
+    (.49,0,.335,.21,.190),
+    (.61,0,.30,.052,.055),
+], [fur,fur_light,fur_shadow,fur_coat], axis="y", sides=10,
+    face_material=lambda band,facet:
+        3 if facet in (1,2,3,4) and band>=2 else
+        2 if facet in (6,7) else
+        1 if facet in (0,5,9) and band in (1,2) else 0)
+add_part(body_shell,"Broad pear-shaped body","Root",fur)
+oval("Underbelly", "Root", (0, -.08, .185), (.255, .42, .125), belly)
+ruff = style.profile_mesh("Shoulder ruff", [
+    (-.59,0,.38,.11,.095),
+    (-.47,0,.40,.25,.202),
+    (-.29,0,.405,.288,.238),
+    (-.13,0,.40,.213,.16),
+    (-.07,0,.38,.075,.067),
+], [fur,fur_light,fur_shadow], axis="y", sides=10,
+    face_material=lambda band,facet: 1 if facet in (0,1,2,3,4) else 2 if facet in (6,7) else 0)
+add_part(ruff,"Shoulder ruff","Chest",fur)
+face_shell = style.profile_mesh("Sculpted planar head", [
+    (-.834,0,.375,.086,.078),
+    (-.745,0,.415,.182,.137),
+    (-.630,0,.425,.248,.205),
+    (-.485,0,.43,.238,.194),
+    (-.375,0,.415,.102,.095),
+], [fur,fur_light,fur_shadow], axis="y", sides=10,
+    face_material=lambda band,facet: 1 if facet in (0,1,2,3,4) and band<3 else
+                              2 if facet in (6,7) else 0)
+add_part(face_shell,"Sculpted planar head","Head",fur)
 oval("Long muzzle", "Head", (0, -.746, .345), (.115, .192, .085), fur_light)
 oval("Nose", "Nose", (0, -.915, .344), (.047, .038, .04), nose)
 oval("Jaw", "Jaw", (0, -.725, .295), (.102, .12, .035), belly)
@@ -167,7 +205,8 @@ def triangle(name,bone,points,material):
     add_part(o,name,bone,material)
 
 # Broad dark dorsal stripe, fur layering and natural shoulders/haunches.
-oval("Dense dark uppercoat", "Root",(0,.12,.59),(.275,.43,.116),fur_coat,20)
+# The faceted back above already carries dark-top coat material. A second
+# intersecting ellipsoid used to turn the silhouette into a muddy hump.
 oval("Rump underfur", "Root",(0,.37,.345),(.29,.29,.238),fur)
 oval("Cream chin and muzzle patch", "Head",(0,-.755,.315),
      (.137,.135,.077),belly,20)
@@ -216,12 +255,12 @@ for sign in (-1,1):
 
 # Layered guard hairs across the rump with two warm and dark values.
 # Tufts follow the body root; no random geometry flashing between frames.
-for row in range(10):
-    y=-.29+row*.108
+for row in range(6):
+    y=-.26+row*.164
     width=.15+.12*max(0,1-abs(y-.07)/.61)
     height=.714+.03*math.cos((y-.12)*2.5)
-    for col in range(7):
-        t=(col-3)/3
+    for col in range(5):
+        t=(col-2)/2
         x=t*width
         z=height-.025*t*t
         seed=(row*23+col*17)%7
@@ -287,6 +326,11 @@ bpy.context.view_layer.update()
 for obj, bone in parts:
     obj.data.transform(obj.matrix_world)
     obj.matrix_world = Matrix.Identity(4)
+    # The Guardian's armor has intentional edge glints, not rounded blobs.
+    # The rat keeps faceted anatomy but gains forged highlights on its gear.
+    if any(token in obj.name.lower() for token in (
+        "harness","buckle","saddle","leather","eyelet","claw")):
+        style.forged_hard_edges(obj, width=.003)
     group = obj.vertex_groups.new(name=bone)
     group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
     obj.select_set(False)

@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/render-isometric-skeleton.yml
       - tools/build-isometric-skeleton.py
+      - tools/guardian-style.py
 
 permissions:
   contents: write

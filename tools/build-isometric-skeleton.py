@@ -1,8 +1,9 @@
 """Run from repository root: blender -b -t 4 -P tools/build-isometric-skeleton.py.
-Build a detailed editable undead warrior rig and render eight solid, antialiased 3D animation atlases.
+Build a Guardian-style undead warrior rig and 32-view fallback animation atlases.
 Each sheet has animation time along X and camera-relative facing along Y.
 """
 import math
+import importlib.util
 from pathlib import Path
 import bpy
 from mathutils import Vector, Matrix, Euler
@@ -20,6 +21,9 @@ try:
     scene.view_settings.look = 'Medium High Contrast'
 except TypeError:
     pass  # Some Blender versions omit this color-management preset.
+style_spec = importlib.util.spec_from_file_location("guardian_style", Path.cwd() / "tools" / "guardian-style.py")
+style = importlib.util.module_from_spec(style_spec)
+style_spec.loader.exec_module(style)
 V = Vector
 pi = math.pi
 FACINGS = 32  # 360 degrees, independent baked 3D views; NO translucent view crossfades.
@@ -44,21 +48,21 @@ def material(name, color, metal=0, roughness=None):
     node.inputs['Roughness'].default_value = (
         roughness if roughness is not None else (.52 if metal >= .25 else .68))
     return m
-ivory = material('Weathered ivory', (.59,.51,.395))
-edge = material('Pale worn bone', (.78,.71,.55))
-dark = material('Deep sockets', (.024,.018,.021))
-teal = material('Faded petrol cloth', (.055,.15,.16))
+ivory = material('Weathered ivory', (.64,.55,.43))
+edge = material('Pale worn bone', (.89,.82,.68))
+dark = material('Deep sockets', (.012,.012,.020))
+teal = material('Faded oxblood cloth', (.37,.105,.15))
 bronze = material('Hammered bronze', (.44,.25,.085), .35)
-steel = material('Forged charcoal steel', (.29,.39,.43), .64)
+steel = material('Forged charcoal steel', (.39,.50,.58), .51)
 leather = material('Oxblood leather', (.19,.069,.034))
 wood = material('Yew', (.34,.155,.052))
-aged = material('Bone shadows and age lines', (.31,.265,.225))
-weathered = material('Oxidized armor plate', (.25,.31,.36), .42)
+aged = material('Bone shadows and age lines', (.23,.18,.15))
+weathered = material('Oxidized armor plate', (.29,.37,.46), .44)
 trim = material('Polished battered brass', (.64,.42,.16), .6)
-cloth_light = material('Worn teal cloth highlights', (.12,.25,.24))
-cloth_shadow = material('Tattered teal underskirt', (.042,.088,.115))
+cloth_light = material('Worn crimson cloth highlights', (.60,.255,.29))
+cloth_shadow = material('Tattered crimson underskirt', (.13,.038,.073))
 iron_dark = material('Dark recesses between armor plates', (.073,.075,.09), .28)
-sabre_edge = material('Sharpened steel cutting edge', (.67,.77,.79), .77)
+sabre_edge = material('Sharpened steel cutting edge', (.86,.91,.89), .48)
 scar = material('Bone fracture stains', (.20,.19,.175))
 parts = []
 joints = {}
@@ -66,10 +70,11 @@ def joint(name, pos, parent=None):
     joints[name] = (V(pos), parent)
 def part(obj, name, bone, mat, kit='both'):
     obj.name = name
-    obj.data.materials.append(mat)
+    if not obj.data.materials:
+        obj.data.materials.append(mat)
     parts.append((obj,bone,kit))
 def oval(name,bone,p,scale,mat=ivory,kit='both'):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=16,ring_count=10,location=p)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=8,location=p)
     obj=bpy.context.object
     obj.scale=scale
     part(obj,name,bone,mat,kit)
@@ -121,9 +126,34 @@ for i in range(9):
     z=1+i*.065
     oval('Vertebra','Chest',(0,.028,z),(.047,.052,.034))
 rod('Sternum','Chest',(0,-.107,1.19),(0,-.102,1.44),.027,.038)
-oval('Cranium','Skull',(0,0,1.72),(.158,.13,.168),edge)
-oval('Maxilla','Skull',(0,-.061,1.645),(.12,.095,.08))
-oval('Jaw','Skull',(0,-.052,1.573),(.113,.081,.043))
+# Unlike the old UV-sphere skull, this has deliberately cut planar
+# forehead, temples, cheek and crown facets at the Guardian's screen size.
+cranium = style.profile_mesh('Cranium', [
+    (1.550,0,.004,.070,.060),
+    (1.610,0,.004,.137,.106),
+    (1.728,0,.013,.159,.140),
+    (1.810,0,.014,.142,.124),
+    (1.875,0,.016,.085,.070),
+    (1.900,0,.014,.020,.021),
+], [ivory, edge, aged], axis='z', sides=10,
+    face_material=lambda band,side:
+        1 if band in (2,3,4) and side in (6,7,8,9) else
+        2 if side in (1,2) and band < 3 else 0)
+part(cranium,'Cranium','Skull',ivory)
+maxilla = style.profile_mesh('Maxilla', [
+    (1.585,0,-.071,.069,.051),
+    (1.622,0,-.066,.112,.095),
+    (1.687,0,-.055,.121,.091),
+    (1.713,0,-.049,.062,.060),
+], [ivory,edge], axis='z', sides=8,
+    face_material=lambda band,side: 1 if side in (5,6,7) else 0)
+part(maxilla,'Maxilla','Skull',ivory)
+jaw = style.profile_mesh('Angular lower jaw', [
+    (1.542,0,-.056,.066,.043),
+    (1.569,0,-.055,.113,.072),
+    (1.601,0,-.055,.096,.074),
+], [ivory,edge], axis='z', sides=8)
+part(jaw,'Angular lower jaw','Skull',ivory)
 for s in (-1,1):
     oval('Orbit','Skull',(s*.065,-.115,1.71),(.048,.023,.052),dark)
     rod('Brow','Skull',(s*.018,-.124,1.749),(s*.12,-.089,1.755),.022,.026,edge)
@@ -214,8 +244,14 @@ for side,sign in [('L',1),('R',-1)]:
     # Layered asymmetric shoulder guards contrast against the exposed ribs.
     oval('Leather shoulder underpad','Arm'+side,(sign*.245,.0,1.475),
          (.130,.125,.082),leather)
-    oval('Broken plate shoulder guard','Arm'+side,(sign*.265,-.008,1.51),
-         (.147,.116,.075),weathered if side=='R' else bronze)
+    shoulder = style.profile_mesh('Broken plate shoulder guard', [
+        (1.447,sign*.266,-.008,.110,.092),
+        (1.496,sign*.266,-.012,.150,.117),
+        (1.541,sign*.270,-.014,.137,.101),
+        (1.571,sign*.275,-.013,.080,.060),
+    ], [weathered if side=='R' else bronze, trim], axis='z', sides=8,
+        face_material=lambda band,facet: 1 if band==2 and facet in (5,6,7) else 0)
+    part(shoulder,'Broken plate shoulder guard','Arm'+side,weathered)
     oval('Forged shoulder rim','Arm'+side,(sign*.335,-.028,1.505),
          (.024,.098,.053),trim)
     for rivet in (-1,0,1):
@@ -310,8 +346,14 @@ forged_sabre()
 # It is a weapon prop in the same loadout collection (not ghostly/transparent).
 shield=(.34,-.15,1.16)
 oval('Buckler timber core','ForearmL',shield,(.218,.052,.251),wood,'sabre')
-oval('Buckler iron face','ForearmL',(.34,-.204,1.16),
-     (.204,.031,.237),weathered,'sabre')
+buckler_face = style.profile_mesh('Buckler iron face', [
+    (-.252,.34,1.16,.129,.168),
+    (-.233,.34,1.16,.198,.228),
+    (-.198,.34,1.16,.205,.238),
+    (-.184,.34,1.16,.155,.184),
+], [weathered,trim],axis='y',sides=12,
+    face_material=lambda band,facet: 1 if band==0 and facet in (1,2,3,4,5) else 0)
+part(buckler_face,'Buckler iron face','ForearmL',weathered,'sabre')
 oval('Buckler central boss','ForearmL',(.34,-.248,1.16),
      (.073,.047,.069),trim,'sabre')
 for side in (-1,1):
@@ -367,6 +409,13 @@ for obj,bone,kit in parts:
     if kit=='sabre' and bone=='HandR':
         world=Matrix.Translation(grip)@Matrix.Rotation(1.34,4,'X')@Matrix.Translation(-grip)@world
     obj.data.transform(world);obj.matrix_world=Matrix.Identity(4)
+    # Bake the same bevel + weighted-normal strategy as the Guardian's
+    # plated surfaces; leave anatomical shafts and sculpted facets crisp.
+    name=obj.name.lower()
+    if any(token in name for token in (
+        'plate','guard','buckler','cuff','buckle','forged swept',
+        'quiver','saber blade','saber crossguard','riveted')):
+        style.forged_hard_edges(obj, width=.0035)
     group=obj.vertex_groups.new(name=bone);group.add(list(range(len(obj.data.vertices))),1,'REPLACE')
     groups.setdefault(kit,[]).append(obj)
 meshes={}

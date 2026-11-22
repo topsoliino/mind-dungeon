@@ -33,7 +33,7 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=5')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=6')"));
 assert(html.includes('enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)'));
 assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso)"));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));
@@ -62,12 +62,27 @@ assert.equal(window.AlleyRat.choose(rat,rules,.9).clip,'death');
 const skeletonBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-skeleton.py'),'utf8');
 const ratBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-rat.py'),'utf8');
 const exporter=fs.readFileSync(path.join(__dirname,'export-enemy-rigs.py'),'utf8');
+const style=fs.readFileSync(path.join(__dirname,'guardian-style.py'),'utf8');
 for(const [label,script] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
  assert(script.includes('def srgb_to_linear(value):'),
   label+' must convert its authored palette like the Guardian');
  assert(script.includes('srgb_to_linear(v) for v in color'),
   label+' must assign linear palette to Principled BSDF');
 }
+assert(style.includes('def profile_mesh(')&&style.includes('def forged_hard_edges('),
+ 'Shared Guardian sculpt and weighted-normal finishing code must exist');
+for(const [label,builder] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
+ assert(builder.includes('style.profile_mesh('),
+  label+' must sculpt primary silhouettes using planar profiles');
+ assert(builder.includes('style.forged_hard_edges('),
+  label+' must bake Guardian-style bevels and weighted normals');
+ assert(builder.includes('guardian-style.py'),
+  label+' must import the common art-style helper');
+}
+assert(!ratBuilder.includes('oval("Broad pear-shaped body"'),
+ 'Rat body must not fall back to a smooth primitive');
+assert(!skeletonBuilder.includes("oval('Cranium'"),
+ 'Skeleton cranium must no longer be an oval primitive');
 assert(exporter.includes('"materialColorSpace": "srgb-to-linear"'),
  'GLB manifests must prevent correcting a corrected palette twice');
 console.log('Guardian renderer parity: high-contrast sRGB/linear palette, solid materials, matched pixels, 360-degree bones, corpses and fallback OK');

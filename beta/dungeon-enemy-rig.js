@@ -87,6 +87,9 @@ function prepareMaterials(root,settings){
     const c=material.color;
     c.setRGB(srgbToLinear(c.r),srgbToLinear(c.g),srgbToLinear(c.b));
    }
+   // The source meshes now have Guardian-like planar silhouettes and
+   // baked weighted normals. Preserve authored facets and material values,
+   // rather than applying an artificial global sharpening/contrast filter.
    // Enemy anatomy, cloth and weapons are solid, just like the Guardian.
    // Avoid accidental blend/depth sorting that makes them look translucent.
    material.opacity=1;
@@ -108,7 +111,7 @@ export async function loadEnemyRigs(){
  renderer.setClearColor(0,0);
  renderer.toneMapping=ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.13;
- const versions={sabre:2,bow:2,rat:2};
+ const versions={sabre:3,bow:3,rat:3};
  const files=[
   ['sabre','beta/art/skeleton/skeleton-sabre-rig.glb.gz',
    'beta/art/skeleton/skeleton-live.json','sabre'],
