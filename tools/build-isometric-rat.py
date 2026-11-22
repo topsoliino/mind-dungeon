@@ -52,21 +52,25 @@ def mat(name, color, roughness=.83, metal=0):
     shader.inputs["Metallic"].default_value = metal
     return m
 
-fur = mat("Warm dark umber fur", (.30, .18, .14), .69)
-fur_light = mat("Copper brown fur highlights", (.59, .375, .25), .64)
-belly = mat("Warm grey belly", (.63, .48, .36), .69)
+# Same dark/base/highlight/edge material hierarchy as the Guardian armor.
+fur = mat("Warm dark umber fur", (.34, .235, .22), .67)
+fur_light = mat("Copper brown fur highlights", (.64, .47, .37), .61)
+belly = mat("Warm grey belly", (.72, .62, .53), .68)
 skin = mat("Russet pink paws and tail", (.61, .29, .30))
 ear = mat("Rose inner ears", (.78, .395, .39))
 eye = mat("Black glass eyes", (.012, .008, .014), .22)
 nose = mat("Dark wet nose", (.225, .065, .084), .27)
 teeth = mat("Small ivory incisors", (.77, .69, .50))
 whisker = mat("Pale whiskers", (.67, .58, .48))
-fur_shadow = mat("Dense charcoal underfur", (.065, .047, .058), .78)
-fur_coat = mat("Dark matted dorsal coat", (.16, .10, .115), .76)
+fur_shadow = mat("Dense charcoal underfur", (.045, .042, .061), .78)
+fur_coat = mat("Dark matted dorsal coat", (.17, .135, .17), .74)
 fur_gold = mat("Sparse warm guard hairs", (.58, .365, .24), .68)
 ear_shadow = mat("Inner ear folds", (.39, .19, .20))
 claw = mat("Hard ivory claws", (.69, .61, .47))
-hide = mat("Weathered saddle-brown leather", (.20, .115, .074))
+hide = mat("Weathered saddle-brown leather", (.18, .105, .095), .7)
+iron = mat("Guardian gunmetal scavenger armor", (.34, .44, .53), .53, .25)
+silver = mat("Guardian silver scavenger facets", (.76, .81, .82), .50, .22)
+seams = mat("Graphite harness recesses", (.043, .054, .072), .70)
 brass = mat("Found dungeon brass", (.53, .33, .12), .52, .38)
 patch = mat("Ragged muted red cloth", (.48, .145, .19), .70)
 tail_ring = mat("Tail joint dark folds", (.35, .16, .17))
@@ -85,15 +89,13 @@ def add_part(obj, name, bone, material):
     return obj
 
 def oval(name, bone, pos, scale, material, segments=12):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=8, location=pos)
-    o = bpy.context.object
-    o.scale = scale
+    o=style.faceted_oval(name,pos,scale,material,sides=10)
     return add_part(o, name, bone, material)
 
 def rod(name, bone, start, end, radius, material, tip=None):
     a, b = V(start), V(end)
     bpy.ops.mesh.primitive_cone_add(
-        vertices=10, radius1=radius, radius2=radius if tip is None else tip,
+        vertices=8, radius1=radius, radius2=radius if tip is None else tip,
         depth=(b-a).length, location=(a+b)*.5)
     o = bpy.context.object
     o.rotation_euler = (b-a).to_track_quat("Z", "Y").to_euler()
@@ -154,18 +156,34 @@ face_shell = style.profile_mesh("Sculpted planar head", [
     face_material=lambda band,facet: 1 if facet in (0,1,2,3,4) and band<3 else
                               2 if facet in (6,7) else 0)
 add_part(face_shell,"Sculpted planar head","Head",fur)
-oval("Long muzzle", "Head", (0, -.746, .345), (.115, .192, .085), fur_light)
+snout=style.profile_mesh("Tapered faceted muzzle",[
+    (-.954,0,.345,.035,.035),
+    (-.860,0,.351,.081,.061),
+    (-.755,0,.355,.137,.088),
+    (-.660,0,.370,.139,.095),
+], [fur_light,belly,fur_shadow], axis="y", sides=8,
+    face_material=lambda band,facet:
+        1 if facet in (4,5,6) else 2 if facet in (1,2) else 0)
+add_part(snout,"Tapered faceted muzzle","Head",fur_light)
 oval("Nose", "Nose", (0, -.915, .344), (.047, .038, .04), nose)
 oval("Jaw", "Jaw", (0, -.725, .295), (.102, .12, .035), belly)
 for s in (-1, 1):
     oval("Glossy eye", "Head", (s*.177, -.722, .484), (.036, .041, .041), eye)
     oval("Brow", "Head", (s*.157, -.686, .533), (.068, .046, .026), fur_light)
     side = "L" if s > 0 else "R"
-    oval("Ear cartilage", "Ear"+side, (s*.193, -.505, .598), (.112, .052, .143), skin)
-    oval("Ear pink inside", "Ear"+side, (s*.193, -.555, .612), (.078, .023, .097), ear)
-    for k in range(3):
-        rod("Whisker", "Nose", (s*.045, -.866, .335+(k-1)*.02),
-            (s*(.30+k*.032), -.81+k*.036, .315+(k-1)*.072), .0037, whisker, .001)
+    # Full 3D pointed auricle with an actual inset; no overlapping circles.
+    ear_outer=style.front_plate("Angular auricle",[
+        (s*.110,.535),(s*.275,.540),(s*.332,.685),
+        (s*.249,.799),(s*.144,.716)], -.565,.041,fur,fur_shadow)
+    add_part(ear_outer,"Angular auricle","Ear"+side,fur)
+    ear_inner=style.front_plate("Inset ear leather",[
+        (s*.151,.573),(s*.253,.574),(s*.296,.683),
+        (s*.241,.746),(s*.177,.684)], -.579,.012,ear,ear_shadow)
+    add_part(ear_inner,"Inset ear leather","Ear"+side,ear)
+    for k in range(2):
+        rod("Whisker", "Nose", (s*.045, -.866, .338+(k-.5)*.038),
+            (s*(.33+k*.034), -.81+k*.042, .31+(k-.5)*.088),
+            .004, whisker, .001)
     for limb, lower, paw, front in [
         ("Shoulder"+side, "Foreleg"+side, "FrontPaw"+side, True),
         ("Hip"+side, "Hindleg"+side, "HindPaw"+side, False)
@@ -207,7 +225,8 @@ def triangle(name,bone,points,material):
 # Broad dark dorsal stripe, fur layering and natural shoulders/haunches.
 # The faceted back above already carries dark-top coat material. A second
 # intersecting ellipsoid used to turn the silhouette into a muddy hump.
-oval("Rump underfur", "Root",(0,.37,.345),(.29,.29,.238),fur)
+# Removed: the overlapping rump sphere obscured the main shell's readable
+# planar transitions and made the silhouette look soft and unstructured.
 oval("Cream chin and muzzle patch", "Head",(0,-.755,.315),
      (.137,.135,.077),belly,20)
 for sign in (-1,1):
@@ -220,23 +239,19 @@ for sign in (-1,1):
          (.032,.026,.032),eye,20)
     oval("Eye catchlight", "Head",(sign*.17,-.778,.507),
          (.009,.009,.012),teeth,12)
-    oval("Thick ear edge", "Ear"+side,(sign*.198,-.542,.611),
-         (.125,.048,.151),fur,16)
-    oval("Fleshy folded ear interior", "Ear"+side,
-         (sign*.198,-.574,.618),(.087,.023,.102),ear,16)
-    oval("Dark ear fold", "Ear"+side,
-         (sign*.19,-.596,.575),(.041,.010,.029),ear_shadow)
+    # Ear depth and rim are already actual geometry in the angular auricle.
     oval("Raised nasal whisker root", "Nose",
          (sign*.065,-.853,.329),(.036,.040,.030),fur_light)
-    for k in range(5):
-        level=k-2
+    # Broad readable whisker strokes, not tiny line noise at game scale.
+    for k in range(2):
+        level=k-.5
         rod("Fine curved whisker", "Nose",
-            (sign*.054,-.875,.341+level*.016),
-            (sign*(.34+abs(level)*.024),-.80+abs(level)*.024,
-             .328+level*.053),.0031,whisker,.0007)
+            (sign*.054,-.875,.341+level*.023),
+            (sign*.375,-.78,.333+level*.080),
+            .004,whisker,.001)
     # Cheek ruff silhouette: directional triangular locks, not a smooth egg.
-    for k in range(8):
-        yy=-.73+k*.045
+    for k in range(5):
+        yy=-.73+k*.069
         zz=.385+.045*math.sin(k*1.6)
         x=sign*(.18+.012*math.cos(k*1.7))
         triangle("Swept cheek fur tuft", "Head",[
@@ -284,8 +299,27 @@ for i in range(6):
             (n*(.049-i*.006),p.y+.089,p.z-.008)
         ],skin)
 
+# Readable armor-like plane transitions echo the Guardian's pauldrons.
+# This does NOT turn the rat into a knight: it remains a compact rodent,
+# but its scavenger harness is built with the same forged material vocabulary.
+for side in (-1,1):
+    flank=style.profile_mesh("Scavenger forged flank pauldron",[
+        (-.10,side*.244,.57,.075,.038),
+        (.01,side*.260,.610,.091,.066),
+        (.18,side*.247,.590,.085,.055),
+        (.25,side*.239,.56,.037,.025),
+    ], [iron,silver,seams], axis="y", sides=8,
+      face_material=lambda band,facet:
+         1 if facet in (0,1,7) else 2 if facet in (4,5) else 0)
+    add_part(flank,"Scavenger forged flank pauldron","Root",iron)
+    oval("Pauldron silver stud","Root",
+         (side*.255,.045,.666),(.019,.014,.022),silver)
+belt=style.front_plate("Red knight-inspired harness clasp",[
+    (-.107,.646),(.104,.646),(.082,.720),(-.097,.716)],
+    -.212,.024,patch,brass)
+add_part(belt,"Red knight-inspired harness clasp","Chest",patch)
+
 # Worn scavenger harness: two straps, brass buckles and a tiny torn patch.
-# This provides a strong visual identity without obscuring rat anatomy.
 for side in (-1,1):
     rod("Back harness strap","Root",
         (side*.241,-.13,.58),(side*.232,.17,.585),.027,hide,.023)
@@ -329,7 +363,8 @@ for obj, bone in parts:
     # The Guardian's armor has intentional edge glints, not rounded blobs.
     # The rat keeps faceted anatomy but gains forged highlights on its gear.
     if any(token in obj.name.lower() for token in (
-        "harness","buckle","saddle","leather","eyelet","claw")):
+        "harness","buckle","saddle","leather","eyelet","claw",
+        "forged","pauldron","auricle","clasp")):
         style.forged_hard_edges(obj, width=.003)
     group = obj.vertex_groups.new(name=bone)
     group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
@@ -491,7 +526,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/"rat.blend"),compress=True)
 # Pose batching: 1 render per animation, not 32 x frames individual renders.
 scene.render.engine="CYCLES"
 scene.cycles.samples=18
-scene.cycles.use_denoising=False
+scene.cycles.use_denoising=True
 scene.render.film_transparent=True
 scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="WEBP"
