@@ -5034,8 +5034,16 @@ function drawAlleyCanvas(){
    layers.push({depth:pose.depth,draw:()=>drawCanvasWeapon(pose,alpha)});
   }
  }
+ // Canvas fallback uses the identical foot-based painter ordering as
+ // Phaser; stone pots behind pillars must not float on top of them.
+ if(ghostFog)for(const vessel of soulVessels){
+  if(!regionVisibleAt(vessel.x,vessel.y))continue;
+  const p=iso.toView(vessel.x,vessel.y,vessel.z),foot=iso.toView(vessel.x,vessel.y,0).y;
+  layers.push({depth:(vessel.alleyFloor?7000:0)+foot+.6,draw:()=>
+   s.drawImage(ghostFog.vessel,p.x-26,p.y-67,52,78)});
+ }
  alley.drawLayers(s,player,save.opened.includes(0),layers);
- if(soulVessels.length)ghostFog?.draw(s,soulVessels,regionVisibleAt,(x,y,z)=>iso.toView(x,y,z),combatClock);
+ if(soulVessels.length)ghostFog?.draw(s,soulVessels,regionVisibleAt,(x,y,z)=>iso.toView(x,y,z),combatClock,false);
  drawAlleyHudEffects((x,y,r,color,opacity)=>{
   s.globalAlpha=opacity;s.fillStyle=color;s.beginPath();s.arc(x,y,r,0,TAU);s.fill();s.globalAlpha=1;
  },(x,y,health)=>{

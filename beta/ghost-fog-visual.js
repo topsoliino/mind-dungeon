@@ -114,9 +114,9 @@ function create(){
   }
   return result;
  }
- function draw(ctx,stones,visible,view,time){
+ function draw(ctx,stones,visible,view,time,drawPots=true){
   frame(time);
-  for(const v of stones??[]){
+  if(drawPots)for(const v of stones??[]){
    if(!visible(v.x,v.y))continue;
    const p=view(v.x,v.y,v.z);
    ctx.drawImage(vessel,p.x-26,p.y-67,52,78);
