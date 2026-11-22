@@ -59,10 +59,10 @@ rat.ratStalking=true;assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'s
 rat.ratMotion={name:'dodge-left',duration:.4,time:.2};
 assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'dodge-left');
 assert.equal(window.AlleyRat.choose(rat,rules,.9).clip,'death');
-const skeleton=fs.readFileSync(path.join(__dirname,'build-isometric-skeleton.py'),'utf8');
+const skeletonBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-skeleton.py'),'utf8');
 const ratBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-rat.py'),'utf8');
 const exporter=fs.readFileSync(path.join(__dirname,'export-enemy-rigs.py'),'utf8');
-for(const [label,script] of [['skeleton',skeleton],['rat',ratBuilder]]){
+for(const [label,script] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
  assert(script.includes('def srgb_to_linear(value):'),
   label+' must convert its authored palette like the Guardian');
  assert(script.includes('srgb_to_linear(v) for v in color'),
