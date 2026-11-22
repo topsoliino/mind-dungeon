@@ -218,6 +218,27 @@ const run=async()=>{
    window.__mindDiagnostics?.engine==='Phaser 3',null,{timeout:40000});
   const benchmark=await playtest.evaluate(async()=>{
    const rig=window.__mindEnemyRig,initial=rig.stats.gpuRenders;
+   const profile={};
+   const wrap=(object,method,name)=>{
+    if(!object||typeof object[method]!=='function')return;
+    const original=object[method];
+    profile[name]={calls:0,ms:0,max:0};
+    object[method]=function(...args){
+     const begin=performance.now();
+     try{return original.apply(this,args);}
+     finally{
+      const duration=performance.now()-begin;
+      const entry=profile[name];
+      entry.calls++;entry.ms+=duration;entry.max=Math.max(entry.max,duration);
+     }
+    };
+   };
+   const game=window.__mindPhaserGame,scene=game?.scene?.scenes?.[0];
+   wrap(window.__mindGuardianRig,'render','heroGLB');
+   wrap(scene,'renderAlley','alley');
+   wrap(scene,'update','sceneUpdate');
+   wrap(scene,'renderFrame','sceneRenderFrame');
+   wrap(game?.renderer,'render','phaserDraw');
    const samples=[],started=performance.now();
    await new Promise(resolve=>{
     let last=started;
@@ -239,6 +260,9 @@ const run=async()=>{
     gpuRenders:rig.stats.gpuRenders-initial,
     cacheHits:rig.stats.cacheHits,
     budgetSkips:rig.stats.budgetSkips,
+    profile:Object.fromEntries(Object.entries(profile).map(([k,v])=>
+     [k,{calls:v.calls,totalMs:Math.round(v.ms),
+       avgMs:Math.round(v.ms/Math.max(1,v.calls)),maxMs:Math.round(v.max)}])),
     seconds:Math.round(elapsed)/1000
    };
   });
