@@ -590,7 +590,7 @@ def sample_pose(kind,t):
                            0,.011*math.sin(phase))).to_matrix())
     nose_at=attached("Head",rest["Nose"][0])
     orient("Nose",nose_at,Euler((.045*math.sin(phase*2.3),
-         0,.028*math.sin(phase*.75)).to_matrix()))
+         0,.028*math.sin(phase*.75))).to_matrix())
     for side,sign in SIDES:
         ear=attached("Head",rest["Ear."+side][0])
         orient("Ear."+side,ear,Euler((
