@@ -5257,7 +5257,8 @@ class DungeonScene extends Phaser.Scene{
  const webgl=probe.getContext('webgl');
  const renderer=webgl?Phaser.WEBGL:Phaser.CANVAS;
  webgl?.getExtension('WEBGL_lose_context')?.loseContext();
- phaserGame=new Phaser.Game({type:renderer,audio:{noAudio:true},parent:'phaser-host',width:innerWidth,height:innerHeight,backgroundColor:'#080c18',render:{antialias:false,pixelArt:true,roundPixels:true},fps:{target:60,forceSetTimeOut:false},scene:[DungeonScene],scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});return true;
+ phaserGame=new Phaser.Game({type:renderer,audio:{noAudio:true},parent:'phaser-host',width:innerWidth,height:innerHeight,backgroundColor:'#080c18',render:{antialias:false,pixelArt:true,roundPixels:true},fps:{target:60,forceSetTimeOut:false},scene:[DungeonScene],scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});
+ window.__mindPhaserGame=phaserGame;return true;
  }catch(e){console.warn('Phaser konnte nicht gestartet werden; Canvas-Ersatzrenderer wird verwendet.',e);return false}}
 
 function switchToCanvas(error){
