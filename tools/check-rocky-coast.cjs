@@ -88,11 +88,11 @@ const fakeScene={textures,add:{image(x,y,key){const image={x,y,visible:true,
  setOrigin(){return this},setDepth(v){this.depth=v;return this},
  setVisible(v){this.visible=v;return this}};layers.push(image);return image}}};
 const arts=world.addLayers(fakeScene);
-assert.equal(arts.length,world.diagnostic.chunkCount+1,
- 'Building facade must be a separate depth-sorted greybox layer');
+assert.equal(arts.length,world.diagnostic.chunkCount+4,
+ 'Prison, fence, forest and cliff must render as depth-sorted greybox layers');
 world.refreshLayers(arts,world.spawn,false,{x:1e6,y:1e6,width:700,height:450,zoom:1});
 assert(arts.every(sprite=>!sprite.visible),'Out-of-view terrain must be culled');
-for(const name of ['rocky-coast-prison.js?v=1','rocky-coast-terrain.js?v=2',
+for(const name of ['rocky-coast-prison.js?v=1','rocky-coast-terrain.js?v=3',
  'rockyPrison?.link(player,window.AlleyGenerator)','rockyTerrain.slide(player',
  'triggerRockyDeath','rockyTerrain.mountDebug']){
  assert(game.includes(name),'Rocky Coast game integration missing: '+name);
