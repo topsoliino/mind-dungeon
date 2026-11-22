@@ -5,6 +5,7 @@ real keyed bone motion, matching 24 fps clip ranges, and a loadable GLB header.
 This rejects accidental static-prop GLBs or baked sprite-sheet substitutes.
 """
 import gzip
+import hashlib
 import json
 import struct
 from pathlib import Path
@@ -40,6 +41,20 @@ for asset,settings_path,variant,clips in PACKAGES:
     assert manifest["field"]>0 and manifest["targetHeight"]>0
     assert manifest.get("materialColorSpace")=="srgb-to-linear", (
         asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
+    assert manifest.get("artStyle")=="guardian-forged-v2", (asset,"wrong art generation")
+    source_blend=ROOT/("rat/rat.blend" if variant is None else "skeleton/skeleton.blend")
+    assert manifest.get("sourceBlendSha256")==hashlib.sha256(source_blend.read_bytes()).hexdigest(), (
+        asset,"Live rig does not use the current Blender source; rebuild GLB")
+    names={m.get("name","") for m in gltf["materials"]}
+    required=(
+        {"Graphite ribcage negative space","Guardian silver plate facets","Forged charcoal steel"}
+        if variant is not None else
+        {"Guardian gunmetal scavenger armor","Guardian silver scavenger facets","Graphite harness recesses"}
+    )
+    assert required<=names, (
+        asset,"Old rounded/low-contrast GLB still in use, missing "+str(required-names))
+    assert any("NORMAL" in p.get("attributes",{}) for m in gltf["meshes"] for p in m.get("primitives",[])), (
+        asset,"Finished surface normals must survive the skinned GLB export")
     print(f"{asset}: {len(data):,} bytes, {len(gltf['meshes'])} meshes, "
           f"{len(gltf['skins'])} skeletons, {len(channels)} bone channels, "
           f"{len(clips)} genuine 3D animation clips OK")
