@@ -1,5 +1,5 @@
-// New canonical skeleton adapter: only 3D GLBs may render a skeleton.
-// The old low-quality WebP atlas adapter is intentionally absent.
+// Original skinned Blender GLB only, sampled offline in 32 directions.
+// The handcrafted dummy and retired primitive WebP assets must not exist.
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
@@ -8,11 +8,14 @@ const source=fs.readFileSync(path.join(__dirname,'../beta/alley-skeleton.js'),'u
 const window={};
 vm.runInNewContext(source,{window});
 const skeleton=window.AlleySkeleton;
-assert(!source.includes('.webp'));
+assert(source.includes("'.webp?v='"),'Animated Blender atlas uses versioned WebP assets');
+assert(!source.includes('safeImage(')&&!source.includes('fallbackImages'),
+ 'No hand-drawn or procedural skeleton substitute may render');
 assert(!source.includes('sheets=new Map'));
-assert.equal(typeof skeleton.sprite,'undefined');
+assert.equal(typeof skeleton.sprite,'function');
 assert.equal(typeof skeleton.sprites,'undefined');
-assert.equal(typeof skeleton.load,'undefined');
+assert.equal(typeof skeleton.load,'function');
+assert.equal(typeof skeleton.hasBaked,'function');
 const rules={attacks:[{windup:.64,recovery:.54},{windup:.59,recovery:.44}]};
 const sword={x:100,y:100,skeleton:'sabre',type:1,size:1,phase:.4,
  moving:true,angle:0,hit:0,windup:0,runAttack:0,recover:0};
@@ -47,4 +50,4 @@ assert.deepEqual(Array.from(spawns,p=>p.skeleton),['sabre','bow','sabre','bow'])
 assert(spawns.every(p=>Math.hypot(p.x-24,p.y-24)>=168));
 assert.equal(JSON.stringify(spawns),JSON.stringify(skeleton.encounters({rooms},world)));
 assert.equal(skeleton.encounters({rooms:[]},world).length,0);
-console.log('Skeleton: sole live GLB animation selection, both cartwheel sides, deterministic spawns; legacy fallback removed: OK');
+console.log('Skeleton: authentic Blender 32-direction atlas, original animation and deterministic spawns; dummy removed: OK');
