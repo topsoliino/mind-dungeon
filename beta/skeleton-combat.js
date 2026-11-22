@@ -6,8 +6,8 @@ const TAU=Math.PI*2;
 function create(hooks){
  const {move,aim,advance,fireArrow,throwVessel,damage,blocked,random}=hooks;
  const clipDur={shoot:.49,'double-shoot':.83,throw:.75,flee:.46,
-   combo:1.15,slash:.82,overhead:.80,'cartwheel-enter':.28,
-   cartwheel:1.32,'cartwheel-exit':.29};
+   combo:1.15,slash:.82,overhead:.80,'cartwheel-enter':.36,
+   cartwheel:.97,'cartwheel-exit':.34};
  function begin(e,name){
   e.skeletonAction={name,age:0,duration:clipDur[name],hits:0};
   e.windup=0;e.runAttack=0;e.recover=0;
@@ -56,8 +56,12 @@ function create(hooks){
      if(crossed(.55)){shot(.045);a.hits++;}
     }
    }else if(a.name==='cartwheel'){
-    travel(e,angle+Math.PI*.5*(e.skeletonWheelSide||1),
-           spec.speed*1.52*3,dt,angle);
+    // One sideways gymnastics pass: slow palm plant, accelerated inverted
+    // scissor-kick, measured landing. Prevent the old constant-speed slide.
+    const u=Math.max(0,Math.min(1,a.age/a.duration));
+    const side=e.skeletonWheelSide||1;
+    const speed=spec.speed*(1.3+2.1*Math.sin(Math.PI*u)**2);
+    travel(e,angle+Math.PI*.5*side,speed,dt,angle);
     e.skeletonWheelContact=Math.max(0,(e.skeletonWheelContact||0)-dt);
     if(e.skeletonWheelContact<=0&&
        Math.hypot(e.x-hero.x,e.y-hero.y)<38){
