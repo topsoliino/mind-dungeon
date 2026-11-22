@@ -15,8 +15,8 @@ ROOT.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.context.preferences.filepaths.save_version = 0
 scene = bpy.context.scene
-# Consistent game-palette color management: AgX/Filmic desaturates dark
-# creatures compared with the high-contrast guardian's silver/red materials.
+# Keep the high-contrast atlas preset for WebP fallback frames.
+# Live rigs inherit the Guardian's ACES/lighting in Three.js.
 scene.view_settings.view_transform = 'Standard'
 try:
     scene.view_settings.look = 'Medium High Contrast'
@@ -31,13 +31,21 @@ SHEETS = {
     "bite": 9, "combo": 14, "dodge": 10, "dodge-left": 10, "death": 14
 }
 
-def mat(name, color, roughness=.83):
+def srgb_to_linear(value):
+    # Palette values are sRGB, exactly as in build-player-sprite-study.py.
+    # Blender shader sockets need scene-linear RGB for faithful GLB colors.
+    return value / 12.92 if value <= .04045 else ((value + .055) / 1.055) ** 2.4
+
+
+def mat(name, color, roughness=.83, metal=0):
     m = bpy.data.materials.new(name)
-    m.diffuse_color = (*color, 1)
+    linear = tuple(srgb_to_linear(v) for v in color)
+    m.diffuse_color = (*linear, 1)
     m.use_nodes = True
     shader = m.node_tree.nodes.get("Principled BSDF")
-    shader.inputs["Base Color"].default_value = (*color, 1)
+    shader.inputs["Base Color"].default_value = (*linear, 1)
     shader.inputs["Roughness"].default_value = roughness
+    shader.inputs["Metallic"].default_value = metal
     return m
 
 fur = mat("Warm dark umber fur", (.255, .145, .105))
@@ -55,7 +63,7 @@ fur_gold = mat("Sparse warm guard hairs", (.53, .335, .22))
 ear_shadow = mat("Inner ear folds", (.39, .19, .20))
 claw = mat("Hard ivory claws", (.69, .61, .47))
 hide = mat("Weathered saddle-brown leather", (.20, .115, .074))
-brass = mat("Found dungeon brass", (.53, .33, .12))
+brass = mat("Found dungeon brass", (.53, .33, .12), .52, .38)
 patch = mat("Ragged muted red cloth", (.34, .10, .12))
 tail_ring = mat("Tail joint dark folds", (.35, .16, .17))
 
