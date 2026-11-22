@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "source": {
+    "sabre": "080baec63b74c141af8ebf74ce78196da2ff8a6ec2630adc06d91575f208a49d",
+    "bow": "080baec63b74c141af8ebf74ce78196da2ff8a6ec2630adc06d91575f208a49d"
+  },
+  "cell": 112,
+  "views": 32,
+  "groundFraction": {
+    "sabre": 0.7553131723643973,
+    "bow": 0.7553131723643973
+  },
+  "clips": {
+    "sabre": {
+      "idle": 8,
+      "run": 8,
+      "strike": 10,
+      "combo": 12,
+      "combo-run": 10,
+      "slash": 10,
+      "slash-run": 10,
+      "overhead": 10,
+      "overhead-run": 10,
+      "cartwheel-enter": 10,
+      "cartwheel": 10,
+      "cartwheel-exit": 10,
+      "cartwheel-enter-left": 10,
+      "cartwheel-left": 10,
+      "cartwheel-exit-left": 10,
+      "throw": 10,
+      "throw-run": 10,
+      "death": 10
+    },
+    "bow": {
+      "idle": 8,
+      "run": 8,
+      "shoot": 10,
+      "flee": 10,
+      "shoot-run": 10,
+      "double-shoot": 12,
+      "double-shoot-run": 10,
+      "throw": 10,
+      "throw-run": 10,
+      "death": 10
+    }
+  }
+}
