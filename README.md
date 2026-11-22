@@ -4,11 +4,11 @@ Browserbasiertes isometrisches Lern-Action-RPG mit Psychologie-Fragen.
 
 ## 🎮 Aktuelle Playtest-Version
 
-### **[▶ Mind Dungeon jetzt playtesten](https://topsoliino.github.io/mind-dungeon/beta/)**
+### **[▶ Mind Dungeon jetzt playtesten](https://topsoliino.github.io/mind-dungeon/beta/latest.html)**
 
-**Direktlink:** https://topsoliino.github.io/mind-dungeon/beta/
+**Direktlink:** https://topsoliino.github.io/mind-dungeon/beta/latest.html
 
-Dieser Link führt zur **aktuellen Testversion** (in `beta/`) und bleibt auch bei zukünftigen Updates gleich. GitHub Pages veröffentlicht neue Änderungen aus `main` automatisch unter derselben Adresse.
+Dieser Link lädt die **neueste veröffentlichte Testversion**, inklusive frischer Skript-, Modell- und Animationsdateien, und bleibt auch bei künftigen Updates gleich. Auf dem Titelscreen zeigt das Spiel die lokale Build-ID, prüft den veröffentlichten Stand und bietet einen direkten Update-Button. GitHub Pages kann nach einem Commit noch kurz mit dem Deployment beschäftigt sein.
 
 Die [Hauptversion](https://topsoliino.github.io/mind-dungeon/) ist nicht der aktuelle Playtest-Einstieg.
 
@@ -38,7 +38,7 @@ Neun an Dark Souls III angelehnte Attribute: Vigor, Attunement, Endurance, Vital
 
 ## Fragenpakete
 
-Das KVT-III-Paket der [Beta](https://topsoliino.github.io/mind-dungeon/beta/) liegt in `questions/kvt3.json`. Es enthält 47 Textfragen und neun Bildkarten. Bildkarten öffnen sich auch direkt über **J → Bildkarten**.
+Das KVT-III-Paket der [Beta](https://topsoliino.github.io/mind-dungeon/beta/latest.html) liegt in `questions/kvt3.json`. Es enthält 47 Textfragen und neun Bildkarten. Bildkarten öffnen sich auch direkt über **J → Bildkarten**.
 
 ### Ein neues Skript als Dungeon vorbereiten
 

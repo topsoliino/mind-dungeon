@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mind Dungeon – neueste Beta wird geladen</title>
+<style>
+html,body{margin:0;min-height:100%;background:#0d101b;color:#f3e5c9;font:16px/1.6 system-ui,sans-serif}
+main{min-height:95vh;display:grid;place-content:center;text-align:center;padding:20px}
+h1{font:32px Georgia,serif;letter-spacing:.08em;color:#ffe1a3}
+p{max-width:480px;color:#d0c3d5}
+a{color:#ffdc90}
+</style>
+</head>
+<body>
+<main id="md-refresh-message">
+<h1>Mind Dungeon · Shadowbound</h1>
+<p>Die neueste veröffentlichte Beta wird direkt vom Server geladen. Auch Skelettmodelle und Animationsdateien werden aktualisiert.</p>
+<p role="status" id="md-refresh-status">Spielversion wird abgefragt …</p>
+</main>
+<script>
+(async function(){
+ const label=document.getElementById('md-refresh-status');
+ try{
+  const url=new URL('./index.html',location.href);
+  const stamp=Date.now().toString(36);
+  url.searchParams.set('__md_latest',stamp);
+  // Always revalidate the actual published GitHub Pages HTML. Never claim
+  // that a new commit is already deployed before Pages serves it.
+  const response=await fetch(url,{cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  let html=await response.text();
+  if(!html.includes('Mind Dungeon')||!html.includes('<base href="../">')||
+     !html.includes('function mdTitle()'))
+   throw Error('Ungültige oder unvollständige Beta-Datei');
+  // Force fresh top-level scripts/styles AND dynamic image/fetch requests.
+  // The browser can otherwise keep old *.webp and JSON/GLB files even when
+  // the HTML page was retrieved with a new query string.
+  const tag='<script src="beta/dungeon-fresh-assets.js?fresh='+stamp+'"><'+'/script>';
+  html=html.replace('<base href="../">','<base href="../">'+tag);
+  // All local scripts, module imports and style URLs get a per-load key.
+  html=html.replace(/(\?v=[0-9]+)(?=['"])/g,'$1&__fresh='+stamp);
+  document.open();
+  document.write(html);
+  document.close();
+ }catch(error){
+  label.textContent='Aktualisierung fehlgeschlagen: '+error.message;
+  const fallback=document.createElement('p');
+  fallback.innerHTML='<a href="./index.html">Beta ohne Cache-Aktualisierung öffnen</a> · '+
+   '<a href="./latest.html">Erneut versuchen</a>';
+  document.querySelector('main')?.append(fallback);
+ }
+})();
+</script>
+</body>
+</html>

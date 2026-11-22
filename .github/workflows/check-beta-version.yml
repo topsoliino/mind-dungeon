@@ -1,0 +1,26 @@
+name: Current beta launch and cache-busting regressions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - beta/index.html
+      - beta/latest.html
+      - beta/dungeon-version.js
+      - beta/dungeon-fresh-assets.js
+      - tools/check-beta-version.cjs
+      - .github/workflows/check-beta-version.yml
+
+permissions:
+  contents: read
+
+jobs:
+  latest-beta:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify version detection and fresh game assets
+        run: node tools/check-beta-version.cjs
