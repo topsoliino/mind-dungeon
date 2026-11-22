@@ -83,7 +83,7 @@ export async function loadEnemyRigs(){
    stage.action.play();
    stage.settings=settings;
    stage.model=model.scene;
-   stage.pivot.visible=false;
+   stage.pivot.visible=true;
    stages.set(id,stage);
   }catch(error){
    // A single bad export must not disable the dungeon or the other models.
