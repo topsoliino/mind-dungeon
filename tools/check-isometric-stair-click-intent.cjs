@@ -66,7 +66,7 @@ for(const kind of ['switchback','curved']){
  const pose=new Function('alleyVertical','player','alleySneaking',
   'alleyGaitBlend','alleyGait','frame','alleyHit','alleyChest','alleySwing',
   'heldAttack','consumeMove','combatClock','alleyNextLight',
-  'alleyGaitMode','guardian','alley',`${poseSource}
+  'alleyGaitMode','guardian','alley','rockyTerrain',`${poseSource}
  return alleyGuardianPose();`)(vertical,{moving:true,dir:0,moveAngle:0,
  dash:0},false,1,.32,10,null,null,null,null,null,0,'down','run',
  {atlas:{knockback:{}}},alley);

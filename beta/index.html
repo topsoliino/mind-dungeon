@@ -2510,9 +2510,10 @@ function aimAlleyStairFloor(screen,groundOnly=false){
  const upperTarget=iso.toWorld(screen.x,screen.y,vertical.height);
  const onDeck=!groundOnly&&vertical.state.z>vertical.height*.84&&
   vertical.insideTop(upperTarget.x/48,upperTarget.y/48,0);
- if(!onDeck&&!groundOnly&&vertical.state.z>vertical.height*.16)return false;
  const floor=onDeck?1:0,exit=floor?vertical.plan.top:vertical.plan.bottom;
  const target=onDeck?upperTarget:iso.toWorld(screen.x,screen.y,0);
+ if(!onDeck&&!groundOnly&&vertical.state.z>vertical.height*.16&&
+  vertical.overStair(target.x/48,target.y/48,.05))return false;
  let route;
  try{
   vertical.state.floor=floor;

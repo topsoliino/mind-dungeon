@@ -234,7 +234,22 @@ function select(generator,placeLadder){
       wall.area[1]<model.region[3]-.23&&wall.area[3]>model.region[1]+.23))continue;
      if(generator.blocked(model.bottom.x,model.bottom.y,.27)||
         generator.blocked(model.top.x,model.top.y,.27))continue;
-     if(doorCells.some(([u,v])=>blocksCandidate(model,u+.5,v+.5,.42)))continue;
+     // Reserve an approach and a step-off beyond the last visible riser.
+     if(window.RockyCoastPrison?.enabled){
+      const clearApron=(gate,lip)=>{
+       const dx=gate.x-lip.x,dy=gate.y-lip.y,d=Math.hypot(dx,dy);
+       for(const step of [.4,.85]){
+        const u=gate.x+dx/d*step,v=gate.y+dy/d*step;
+        if(!occupied.has(K(Math.floor(u),Math.floor(v)))||generator.blocked(u,v,.32))return false;
+       }
+       return true;
+      };
+      if(!clearApron(model.bottom,model.path[0])||
+         !clearApron(model.top,model.path.at(-1)))continue;
+     }
+     const [left,back,right,front]=model.region;
+     if(doorCells.some(([u,v])=>u+1>left&&u<right&&v+1>back&&v<front&&
+      blocksCandidate(model,u+.5,v+.5,.42)))continue;
      const clearance=doorCells.length?Math.min(...doorCells.map(c=>
       Math.min(dist(model.bottom,vec(c[0]+.5,c[1]+.5)),
        dist(model.top,vec(c[0]+.5,c[1]+.5))))):4;

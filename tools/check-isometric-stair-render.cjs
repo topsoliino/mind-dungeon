@@ -60,7 +60,7 @@ for(let seed=0;seed<expected.length;seed++){
  const last=all.slice(all.length-overlays-layers.length,all.length-overlays);
  assert.equal(last.length,layers.length);
  function view(floor,transition=null){
-  v.state.floor=floor;v.state.transition=transition;
+  v.state.floor=floor;v.state.transition=transition;v.state.z=floor*v.height;
   iso.refreshLayers(all,hero,false);
   return last.map(o=>({visible:o.visible,alpha:o.alpha,depth:o.depth}));
  }
@@ -74,8 +74,8 @@ for(let seed=0;seed<expected.length;seed++){
  assert(!descent[0].visible&&!descent.at(-1).visible);
  const treadIndex=layers.findIndex(part=>part.kind==='stair-tread');
  assert(treadIndex>=0);
- assert.equal(upper[treadIndex].depth-lower[treadIndex].depth,7000,
-  'treads must enter the same raised sorting plane as the Guardian on upper floors');
+ assert.equal(upper[treadIndex].depth,lower[treadIndex].depth,
+  'lower treads must remain below the guardian on the elevated landing');
  assert.equal(lower[treadIndex].depth,paintedTreads[0].depth,
   'the baked geometry remains unchanged despite dynamic scene depth');
  // Show/hide the top layer according to the PHYSICAL progress of the stair
