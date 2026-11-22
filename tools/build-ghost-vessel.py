@@ -15,7 +15,10 @@ bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)
 
 scene = bpy.context.scene
-scene.render.engine = "BLENDER_EEVEE"
+# CPU Cycles renders reliably on headless CI without a GPU or X server.
+scene.render.engine = "CYCLES"
+scene.cycles.samples = 20
+scene.cycles.use_denoising = True
 scene.render.film_transparent = True
 scene.render.resolution_x = 384
 scene.render.resolution_y = 576
@@ -36,7 +39,10 @@ def material(name, color, roughness=.83, emission=None):
     shader.inputs["Base Color"].default_value = (*color, 1)
     shader.inputs["Roughness"].default_value = roughness
     if emission:
-        shader.inputs["Emission"].default_value = (*emission, 1)
+        # Principled BSDF socket name changed between Blender 3 and 4.
+        socket = shader.inputs.get("Emission Color") or shader.inputs.get("Emission")
+        if socket:
+            socket.default_value = (*emission, 1)
     return mat
 
 stone = material("Slate grey blue pitted carved stone", (.23, .27, .32))
