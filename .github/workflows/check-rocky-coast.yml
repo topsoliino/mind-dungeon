@@ -1,0 +1,26 @@
+name: Rocky Coast Prison five-level terrain and movement regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - beta/rocky-coast-prison.js
+      - beta/rocky-coast-terrain.js
+      - beta/alley-generator.js
+      - beta/dungeon-isometric.js
+      - beta/index.html
+      - tools/check-rocky-coast.cjs
+      - .github/workflows/check-rocky-coast.yml
+
+permissions:
+  contents: read
+
+jobs:
+  rocky-coast:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify five dungeon levels and terrain movement
+        run: node tools/check-rocky-coast.cjs
