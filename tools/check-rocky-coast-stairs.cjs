@@ -32,7 +32,7 @@ for(let level=1;level<=4;level++){
   assert(scene.walkable(scene.spawn.x,scene.spawn.y,14),
    'Hero spawn in L'+level+' must be reachable without walls');
   if(level===4&&storey===count){
-   assert(!vertical.enabled,'L4 cannot lead up by stairs');
+   assert.equal(vertical.connectors.length,0,'L4 cannot lead up by stairs');
    const exit=w.AlleyGenerator.outdoorExit;
    assert(exit,'Last indoor stage needs exactly one exit');
    const p={x:exit.x*48,y:exit.y*48};
@@ -59,8 +59,23 @@ for(let level=1;level<=4;level++){
    'Stair head must land on real upper floor');
   const act={x:top.x*48,y:top.y*48};
   const progress=w.RockyCoastPrison.link(act,w.AlleyGenerator);
-  assert.equal(progress?.target,storey===count?level+1:level,'Physical 3D stair head must progress dungeon');
-  assert.equal(progress?.kind,storey===count?'stairs':'inside');
+  assert.equal(progress?.target,storey===count?level+1:undefined,'Physical 3D stair head must progress dungeon');
+  assert.equal(progress?.kind,storey===count?'stairs':undefined);
+  if(storey<count){
+   assert(vertical.connectors.length>=1&&vertical.connectors.length<=4);
+   const flight=vertical.connectors,location=w.location.href;
+   assert(w.RockyCoastPrison.changeStorey(1));
+   vertical.state.floor=0;vertical.state.z=0;
+   assert(scene.groundWalkable(climber.x,climber.y,14,false),'Walk off the upper landing');
+   assert.equal(w.location.href,location);
+   assert(w.RockyCoastPrison.changeStorey(-1));
+   assert.equal(vertical.connectors,flight);
+   vertical.state.floor=1;vertical.state.z=vertical.height;
+   assert(vertical.boardStairs(climber,false,bottom));
+   for(let i=0;i<1800&&vertical.state.stairRide;i++)
+    vertical.advanceStairs(climber,1/60,178,0,0,{running:true});
+   assert.equal(vertical.state.floor,0);
+  }
   console.log('Rocky Coast '+level+': climbable '+vertical.plan.kind+
    ' staircase / deck / ladder, storey '+storey+' / '+count);
  }

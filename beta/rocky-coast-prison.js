@@ -23,17 +23,17 @@
   return 2+((hash^(hash>>>16))>>>0)%3;
  }
  const count=storeysAt(level);
- const storey=Math.max(1,Math.min(count,Math.trunc(Number(q.get('storey')))||1));
- const layoutSeed=(runSeed+7919*level+104729*(storey-1))>>>0;
- const last=storey===count;
+ let storey=Math.max(1,Math.min(count,Math.trunc(Number(q.get('storey')))||1));
+ const layoutSeed=(runSeed+7919*level)>>>0;
+
  const title='Rocky Coast Prison';
  const portalDistance=84;
  const toPoint=portal=>({x:portal.x*48,y:portal.y*48});
- const hasEntrance=enabled&&level===1&&storey===1,hasExit=enabled&&level===4&&last;
- const hasAscent=enabled&&level>=1&&level<=3&&last;
+ const hasEntrance=enabled&&level===1,hasExit=enabled&&level===4;
+ const hasAscent=enabled&&level>=1&&level<=3;
  let routing=false;
  function ascentPosition(){
-  if(!hasAscent)return null;
+  if(!hasAscent||storey!==count)return null;
   const vertical=root.AlleyVertical;
   if(!vertical?.enabled||vertical.state.floor!==1||
    vertical.state.stairRide||vertical.state.transition||vertical.state.pending)return null;
@@ -48,16 +48,6 @@
   }
   const state=root.AlleyVertical?.state;
   if(state?.pending||state?.transition||state?.stairRide)return null;
-  if(storey>1&&!state?.floor){
-   const point=toPoint({x:14.5,y:5.5}),distance=Math.hypot(actor.x-point.x,actor.y-point.y);
-   if(distance<41)return {kind:'down',point,distance};
-  }
-  if(!last&&state?.floor===1){
-   for(const c of root.AlleyVertical.connectors){
-    const point=toPoint(c.top),distance=Math.hypot(actor.x-point.x,actor.y-point.y);
-    if(distance<41)return {kind:'inside',point,distance};
-   }
-  }
   const ascent=ascentPosition();
   if(ascent){
    const distance=Math.hypot(actor.x-ascent.x,actor.y-ascent.y);
@@ -65,7 +55,7 @@
   }
   // No entrance/exit on L2-L3; L4 is the sole exception with the
   // OUTGOING exit to the exterior. The starting doorway is never a shortcut.
-  const exit=hasExit?generator?.outdoorExit:null;
+  const exit=hasExit&&storey===count?generator?.outdoorExit:null;
   if(exit){
    if(root.AlleyVertical?.state?.floor===1)return null;
    const point=toPoint(exit),distance=Math.hypot(actor.x-point.x,actor.y-point.y);
@@ -76,11 +66,6 @@
  function link(actor,generator){
   const portal=nearest(actor,generator);
   if(!portal)return null;
-  if(portal.kind==='down'||portal.kind==='inside'){
-   const up=portal.kind==='inside',destination=storey+(up?1:-1);
-   return {kind:portal.kind,target:level,storey:destination,entry:up?'landing':q.get('entry')==='landing-ladder'?'down-ladder':'down-stairs',
-    label:'Zum '+destination+'. Stockwerk'};
-  }
   if(portal.kind==='advance')return {
    kind:'stairs',target:level+1,entry:'from-lower',
    label:'Goldene Treppe · Ebene '+(level+1)+' · '+levels[level].title
@@ -111,7 +96,7 @@
   return url.href;
  }
  function route(target,entry=target<level?'from-upper':'from-lower',destination){
-  if(!enabled||routing||(target===level&&Math.abs(destination-storey)!==1)||!Number.isInteger(target)||target<1||target>5)return false;
+  if(!enabled||routing||target===level||!Number.isInteger(target)||target<1||target>5)return false;
   routing=true;
   root.location.assign(href(target,entry,destination));
   return true;
@@ -119,7 +104,10 @@
  const entry=q.get('entry');
  root.RockyCoastPrison={
   enabled,isExterior:enabled&&level===5,level,entry,levels,nearest,link,href,
-  hasEntrance,hasExit,hasAscent,title,storey,count,last,layoutSeed,
+  hasEntrance,hasExit,get hasAscent(){return hasAscent&&storey===count;},title,
+  get storey(){return storey;},count,get last(){return storey===count;},layoutSeed,
+  changeStorey(delta){if(Math.abs(delta)!==1||storey+delta<1||storey+delta>count)return false;
+   storey+=delta;return true;},
   id:'rocky-coast-prison-dungeon',
   region:{id:'rocky-coast',biome:'temperate-grassland',topography:'hills',
    traversability:'open',features:['wide-river','ocean','cliff'],

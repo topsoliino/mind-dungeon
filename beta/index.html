@@ -56,7 +56,7 @@ body.mobile-iso #game,body.mobile-iso #phaser-host{touch-action:none}
 .md-version-actions{display:flex;gap:8px;flex-wrap:wrap}
 .md-version-actions button{flex:1 1 135px;text-align:center;padding:10px}
 .md-version-panel small{display:block;margin-top:10px;color:#adabc1;font-size:11px;line-height:1.5}
-</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-controller.js?v=1"></script><script src="beta/dungeon-touch.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=5"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=12"></script><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small><small id="alley-help" hidden></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="controller-target" aria-hidden="true" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile" aria-label="Handysteuerung"><div id="mobile-stick" role="group" aria-label="Virtueller Bewegungsstick"><span id="mobile-stick-thumb"></span><span id="mobile-stick-label">BEWEGEN</span></div><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><div id="mobile-buttons"><button id="mobileNav" type="button" aria-label="Spielmenü">☰</button><button id="mobileSneak" type="button" aria-pressed="false">DUCKEN</button><button id="mobileInteract" type="button" aria-label="Interagieren und Leiter benutzen" hidden>E<span>AKTION</span></button><button id="mobileRoll" type="button" aria-label="Vorwärtsrolle">↷<span>ROLLE</span></button><button id="attack" type="button" aria-label="Angreifen">⚔<span>ANGRIFF</span></button></div></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-boss.js?v=6"></script><script src="beta/dungeon-boss-art.js?v=5"></script><script src="beta/dungeon-strata.js?v=13"></script><script src="beta/dungeon-strata-fx.js?v=6"></script><script src="beta/dungeon-stairs.js?v=3"></script><script src="beta/dungeon-sanctuary.js?v=6"></script><script src="beta/dungeon-temple.js?v=2"></script><script src="beta/dungeon-run.js?v=36"></script><script src="beta/dungeon-world.js?v=31"></script><script src="beta/dungeon-vision.js?v=13"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=21"></script><script src="beta/dungeon-items.js?v=32"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=26"></script><script src="beta/soul-vessels.js?v=2"></script><script src="beta/skeleton-combat.js?v=2"></script><script src="beta/ghost-fog-visual.js?v=7"></script><script src="beta/dungeon-enemy-sim.js?v=23"></script><script src="beta/dungeon-effects-art.js?v=25"></script><script src="beta/dungeon-equipment-art.js?v=3"></script><script src="beta/dungeon-art.js?v=47"></script><script src="beta/dungeon-hero-art.js?v=1"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-soundpack4-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=9"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-version.js?v=1"></script><script src="beta/dungeon-title.js?v=1"></script><script src="beta/alley-study-map.js?v=4"></script><script src="beta/rocky-coast-prison.js?v=2"></script><script src="beta/alley-generator.js?v=9"></script><script src="beta/alley-route.js?v=2"></script><script src="beta/alley-architecture.js?v=2"></script><script src="beta/alley-stair-geometry.js?v=8"></script><script src="beta/alley-stair-navigation.js?v=3"></script><script src="beta/alley-stair-controller.js?v=11"></script><script src="beta/alley-vertical.js?v=14"></script><script src="beta/alley-enemy-pursuit.js?v=2"></script><script src="beta/alley-study.js?v=11"></script><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script src="beta/rocky-coast-terrain.js?v=4"></script><script src="beta/dungeon-isometric.js?v=20"></script><script src="beta/alley-generator-ui.js?v=9"></script><script src="beta/alley-skeleton.js?v=15"></script><script src="beta/alley-rat.js?v=10"></script><script src="beta/dungeon-guardian.js?v=7"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
+</style></head><body><section id="dungeon-loading" aria-label="Ladebildschirm"><div class="loading-note"><h1>Mind Dungeon</h1><p data-tip></p><span class="loading-mark" aria-hidden="true">◆</span><span role="status" data-stage>Mind Dungeon wird geladen</span></div></section><script src="beta/dungeon-loading.js?v=1"></script><script src="beta/dungeon-controller.js?v=1"></script><script src="beta/dungeon-touch.js?v=1"></script><script src="beta/dungeon-coop.js?v=1"></script><script src="beta/dungeon-coop-motion.js?v=5"></script><script src="beta/dungeon-server-config.js?v=2"></script><script src="beta/dungeon-authority.js?v=12"></script><canvas id="game"></canvas><div id="phaser-host"></div><div id="hud" hidden><div id="health" role="meter" aria-label="Leben" aria-valuemin="0"><div id="healthfill"></div><div id="health-damage" aria-hidden="true"></div></div><div class="meter" id="stamina" hidden role="meter" aria-label="Ausdauer" aria-valuemin="0"><div id="staminafill"></div></div><div id="bleedMeter" role="meter" aria-label="Blutungsaufbau" aria-valuemin="0" aria-valuemax="100" hidden><div></div></div><div id="potionTimer" hidden></div></div><div class="panel" id="xpHud" hidden><div class="meter-label"><span id="statline"></span><span id="xpnum"></span></div><div class="meter" id="experience" aria-label="Erfahrung"><div id="xpfill"></div></div></div><div class="panel" id="right"><b id="zone"></b><br><small id="progress"></small><small id="alley-help" hidden></small></div><div id="wallet" class="panel" hidden aria-label="Geldbeutel"></div><div id="notice"></div><div id="coop-info" hidden></div><button id="coop-watch" hidden>Zuschauen · Umschalt+Y</button><div id="coop-peer-tag" hidden></div><div id="levelNotice" class="level-notice" hidden role="status"></div><div id="catHeart" aria-hidden="true" hidden>♥</div><div id="catSleep" aria-hidden="true" hidden>Zzz</div><div id="quickBar" aria-label="Schnellauswahl" hidden></div><div id="dungeonPrompt" hidden></div><div id="controller-target" aria-hidden="true" hidden></div><div id="soulPreview" class="panel" hidden></div><div id="perf" style="display:none;position:fixed;right:15px;bottom:72px;z-index:9;padding:7px 10px;background:#121528e6;border:1px solid #786c9a;border-radius:7px;font:12px monospace;color:#c5f5d8"></div><div id="mobile" aria-label="Handysteuerung"><div id="mobile-stick" role="group" aria-label="Virtueller Bewegungsstick"><span id="mobile-stick-thumb"></span><span id="mobile-stick-label">BEWEGEN</span></div><div id="dpad"><span></span><button data-key="ArrowUp">▲</button><span></span><button data-key="ArrowLeft">◀</button><span></span><button data-key="ArrowRight">▶</button><span></span><button data-key="ArrowDown">▼</button><span></span></div><div id="mobile-buttons"><button id="mobileNav" type="button" aria-label="Spielmenü">☰</button><button id="mobileSneak" type="button" aria-pressed="false">DUCKEN</button><button id="mobileInteract" type="button" aria-label="Interagieren und Leiter benutzen" hidden>E<span>AKTION</span></button><button id="mobileRoll" type="button" aria-label="Vorwärtsrolle">↷<span>ROLLE</span></button><button id="attack" type="button" aria-label="Angreifen">⚔<span>ANGRIFF</span></button></div></div><div id="modalWrap"><div id="modal"></div></div><input id="import" type="file" accept=".json,application/json"><script src="beta/dungeon-boss.js?v=6"></script><script src="beta/dungeon-boss-art.js?v=5"></script><script src="beta/dungeon-strata.js?v=13"></script><script src="beta/dungeon-strata-fx.js?v=6"></script><script src="beta/dungeon-stairs.js?v=3"></script><script src="beta/dungeon-sanctuary.js?v=6"></script><script src="beta/dungeon-temple.js?v=2"></script><script src="beta/dungeon-run.js?v=36"></script><script src="beta/dungeon-world.js?v=31"></script><script src="beta/dungeon-vision.js?v=13"></script><script src="beta/dungeon-expedition.js?v=16"></script><script src="beta/dungeon-balance.js?v=21"></script><script src="beta/dungeon-items.js?v=32"></script><script src="beta/dungeon-brewing.js?v=17"></script><script src="beta/dungeon-enemies.js?v=26"></script><script src="beta/soul-vessels.js?v=2"></script><script src="beta/skeleton-combat.js?v=2"></script><script src="beta/ghost-fog-visual.js?v=7"></script><script src="beta/dungeon-enemy-sim.js?v=23"></script><script src="beta/dungeon-effects-art.js?v=25"></script><script src="beta/dungeon-equipment-art.js?v=3"></script><script src="beta/dungeon-art.js?v=47"></script><script src="beta/dungeon-hero-art.js?v=1"></script><script src="beta/dungeon-sfx-bank.js?v=1"></script><script src="beta/dungeon-foley-bank.js?v=1"></script><script src="beta/dungeon-package-bank.js?v=1"></script><script src="beta/dungeon-elevenlabs-bank.js?v=1"></script><script src="beta/dungeon-soundpack4-bank.js?v=1"></script><script src="beta/dungeon-audio.js?v=9"></script><script>window.DungeonLoading?.prepareTitle(window.DungeonAudio);</script><script src="beta/dungeon-version.js?v=1"></script><script src="beta/dungeon-title.js?v=1"></script><script src="beta/alley-study-map.js?v=4"></script><script src="beta/rocky-coast-prison.js?v=3"></script><script src="beta/alley-generator.js?v=10"></script><script src="beta/alley-route.js?v=2"></script><script src="beta/alley-architecture.js?v=2"></script><script src="beta/alley-stair-geometry.js?v=8"></script><script src="beta/alley-stair-navigation.js?v=3"></script><script src="beta/alley-stair-controller.js?v=11"></script><script src="beta/alley-vertical.js?v=15"></script><script src="beta/alley-enemy-pursuit.js?v=3"></script><script src="beta/alley-study.js?v=12"></script><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script src="beta/rocky-coast-terrain.js?v=4"></script><script src="beta/dungeon-isometric.js?v=21"></script><script src="beta/alley-generator-ui.js?v=10"></script><script src="beta/alley-skeleton.js?v=15"></script><script src="beta/alley-rat.js?v=10"></script><script src="beta/dungeon-guardian.js?v=7"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script><script>
 (()=>{'use strict';
 window.DungeonVersion?.registerSource(document.currentScript?.textContent||'');
 const art=window.DungeonArt,run=window.DungeonRun,items=window.DungeonItems,brewing=window.DungeonBrewing,enemyRules=window.DungeonEnemies,effectArt=window.DungeonEffectsArt;
@@ -72,7 +72,7 @@ const isometricTest=!bossTest&&testParams.get('szene')==='gasse';
 const generationMode=isometricTest&&Boolean(window.AlleyGenerator?.enabled);
 const testRun=bossTest||isometricTest;
 const iso=window.DungeonIsometric,alley=isometricTest?iso.create():null;
-let alleyRoute=null,alleyMove=null,alleyMarker=null,alleyRoll=null,alleyZoom=1,guardian=null;
+let alleyRoute=null,alleyMove=null,alleyMarker=null,alleyRoll=null,alleyZoom=1.2,guardian=null;
 let alleyStairFloorGoal=null; // deferred ground route after descending the physical stairs
 let alleySwing=null,alleyQueuedLight=null,alleyHit=null,alleyChest=null,alleyNextLight='down',alleyGait=0,alleyGaitBlend=0;
 let alleySneaking=false,alleyGaitMode='run',alleyItemWalkUntil=0;
@@ -1064,14 +1064,14 @@ else if(alley){
   // Outside greybox: wildlife and encounter sets are added in later stages.
  }else if(generationMode){
   const skeletonSpawns=skeletonArt.encounters(window.AlleyGenerator,alley);
-  for(const spawn of skeletonSpawns){
+  for(const [index,spawn] of skeletonSpawns.entries()){
    const type=spawn.skeleton==='bow'?ARCHER:enemyRules.SKELETON,max=enemyHealth(type,false);
-   enemies.push({...spawn,id:'skeleton-'+spawn.roomId,type,hp:max,max,size:.98,
+   enemies.push({...spawn,alleyFloor:rockyPrison?index%rockyPrison.count:0,id:'skeleton-'+spawn.roomId,type,hp:max,max,size:.98,
     phase:spawn.roomId*.13,hit:0,attack:.65,windup:0,angle:Math.PI});
   }
   for(const spawn of ratArt.encounters(window.AlleyGenerator,alley,skeletonSpawns)){
    const max=enemyHealth(RAT,false);
-   enemies.push({...spawn,id:'rat-'+spawn.roomId,type:RAT,hp:max,max,size:.86,
+   enemies.push({...spawn,alleyFloor:rockyPrison?spawn.roomId%rockyPrison.count:0,id:'rat-'+spawn.roomId,type:RAT,hp:max,max,size:.86,
     phase:spawn.roomId*.17,hit:0,attack:1.0,windup:0,angle:Math.PI});
   }
  }else{
@@ -2479,12 +2479,12 @@ function alleyClickScreen(){
   y:view.y+ch/2+(mouse.y-ch/2)/zoom};
 }
 function alleyUpperExitMark(){
- if(!alleyVertical?.enabled)return null;
+ if(!alleyVertical?.hasStairs())return null;
  const at=alleyVertical.plan.top,center=iso.toView(at.x*48,at.y*48,alleyVertical.height);
  return {at,center};
 }
 function alleyUnderpassMark(){
- if(!alleyVertical?.enabled||alleyVertical.plan.kind!=='switchback')return null;
+ if(!alleyVertical?.hasStairs()||alleyVertical.plan.kind!=='switchback')return null;
  const landing=alleyVertical.plan.landings.find(l=>!l.top);
  if(!landing)return null;
  const p=landing.corners.reduce((sum,q)=>({x:sum.x+q.x/landing.corners.length,
@@ -2589,6 +2589,26 @@ function approachAlleyVertical(){
  finishAlleyApproach();
  return true;
 }
+function switchRockyStorey(delta){
+ if(!rockyPrison.changeStorey(delta))return;
+ const state=alleyVertical.state;
+ state.floor=delta>0?0:1;state.z=state.floor*alleyVertical.height;
+ cam.y+=delta*alleyVertical.height;
+ if(renderedView&&renderedView!==cam)renderedView.y+=delta*alleyVertical.height;
+ alleyRoute=alleyMove=alleyMarker=alleyStairFloorGoal=null;
+ tell('Stockwerk '+rockyPrison.storey+' / '+rockyPrison.count);
+}
+function descendAtLanding(){
+ if(!rockyPrison||rockyPrison.storey<=1||!alleyVertical)return false;
+ const s=alleyVertical.state;
+ if(s.floor||s.pending||s.transition||s.stairRide)return false;
+ const c=alleyVertical.connectorsAt(rockyPrison.storey-2).find(c=>Math.hypot(player.x-c.top.x*48,player.y-c.top.y*48)<27);
+ if(!c)return false;
+ switchRockyStorey(-1);
+ if(c.kind==='ladder'){s.transition={connector:c,up:false,age:0,duration:c.duration};return true;}
+ if(!alleyVertical.boardStairs(player,false,c.bottom)){switchRockyStorey(1);return false;}
+ return true;
+}
 function goRockyFloor(target,entry=target<rockyPrison.level?'from-upper':'from-lower',destination){
  if(!rockyPrison)return false;
  const hero={};
@@ -2604,6 +2624,7 @@ function goRockyFloor(target,entry=target<rockyPrison.level?'from-upper':'from-l
 }
 function interact(){if(bossIntro()||modalType||paused||vault||isConsuming()||heroFallProgress()>=0||mdNavigatingToNewCharacter)return;
 if(alley){
+ if(descendAtLanding())return;
  const passage=rockyPrison?.link(player,window.AlleyGenerator);
  if(passage){goRockyFloor(passage.target,passage.entry,passage.storey);return;}
  if(generationMode&&near?.kind!=='soul'){approachAlleyVertical();return;}
@@ -2968,7 +2989,7 @@ function updateAlleyActions(dt){
    // gold/red threshold to the NEXT generated dungeon floor. Never move
    // stages at a decorative building door, from a ladder or from floor 0.
    if(rockyPrison&&!rockyPrison.last&&result.floor===1){
-    goRockyFloor(rockyPrison.level,'landing',rockyPrison.storey+1);return;
+    switchRockyStorey(1);return;
    }
    if(rockyPrison?.hasAscent&&result.floor===1){
     goRockyFloor(rockyPrison.level+1,'from-lower');return;
@@ -2994,7 +3015,7 @@ function updateAlleyActions(dt){
    const final=task.up?task.connector.top:task.connector.bottom;
    player.x=final.x*48;player.y=final.y*48;state.transition=null;
    if(rockyPrison&&!rockyPrison.last&&task.up){
-    goRockyFloor(rockyPrison.level,'landing-'+task.connector.kind,rockyPrison.storey+1);return;
+    switchRockyStorey(1);return;
    }
    if(rockyPrison?.hasAscent&&task.up&&task.connector.kind==='stairs'){
     goRockyFloor(rockyPrison.level+1,'from-lower');return;
@@ -3385,7 +3406,7 @@ if(alley){
  const passage=rockyPrison?.link(player,window.AlleyGenerator);
  const hint=passage?'E: '+passage.label:
   rockyPrison?.hasAscent?'Goldrote Treppe → '+rockyPrison.levels[rockyPrison.level].title:
-  rockyPrison&&!rockyTerrain?(rockyPrison.hasExit?'Ausgang → Rocky Coast · E am Tor':'Treppe oder Leiter → Stockwerk '+(rockyPrison.storey+1)+' · E am Einstieg'):
+  rockyPrison&&!rockyTerrain?(rockyPrison.hasExit&&rockyPrison.last?'Ausgang → Rocky Coast · E am Tor':'Treppe oder Leiter → Stockwerk '+(rockyPrison.storey+1)+' · E am Einstieg'):
   rockyTerrain?'Rechtsklick: Gelände · WASD: bewegen · Hänge: Rutschen · Meer/Fluss: Todeszone · E: Gefängnistor':
   matchMedia('(pointer:coarse)').matches?
    'Stick bewegen · Welt antippen: Ziel setzen · ⚔ Angriff · ↷ Rolle · E Leiter/Treppe':
@@ -3534,7 +3555,7 @@ function moveActor(actor,dx,dy,knockback=false,origin){
     const hazard=rockyTerrain.dangerAt(x,y);
     if(hazard){triggerRockyDeath(hazard==='river'?'Fluss':'Meer');return;}
    }
-   const floor=hero?(alleyVertical?.state.floor??0):(actor.alleyFloor??0);
+   const floor=hero?(alleyVertical?.state.floor??0):(rockyPrison?0:actor.alleyFloor??0);
    // Collide each actor with its OWN storey, not the hero's current level.
    if(alley.walkableOnFloor(x,y,floor,radius)&&
       (hero||!enemySameFloor(actor)||clearsActor(actor,x,y,player))){
@@ -4745,7 +4766,7 @@ function regionVisibleAt(x,y,atFloor=null){
  if(!alley)return vision.sees(x,y);
  const current=alleyVertical?.state.floor??0;
  // Floor-specific mist must never bleed through solid second-storey slabs.
- if(atFloor!==null&&atFloor!==current)return false;
+ if(atFloor!==null&&atFloor!==current+(rockyPrison?.storey??1)-1)return false;
  // A stair ribbon is not ordinary walkable ground, but its smoke/pots
  // must remain visible during traversal of the actual navmesh.
  return alley.walkableOnFloor(x,y,current,0,false)||
@@ -5015,7 +5036,7 @@ function alleySprites(actor){
  // New GPU snapshots are limited to one per animation frame. Give the
  // nearest ACTIVE attack priority so the player's parry cues do not freeze
  // while distant idle skeletons consume the render slot.
- const visibleEnemies=enemies.filter(e=>onScreen(e));
+ const visibleEnemies=enemies.filter(e=>(!rockyPrison||e.alleyFloor===undefined||e.alleyFloor===rockyPrison.storey-1||e.alleyClimb&&Math.min(e.alleyClimb.from,e.alleyClimb.to)===rockyPrison.storey-1)&&onScreen(e));
  visibleEnemies.sort((a,b)=>{
   const fighting=(e)=>Boolean(e.skeletonAction)*3+Boolean(e.windup||e.runAttack)*2;
   const q=fighting(b)-fighting(a);
@@ -5047,7 +5068,7 @@ function alleySprites(actor){
   });
  }
  for(const {enemy,age} of alleyRemains){
-  if(!onScreen(enemy))continue;
+  if(!onScreen(enemy)||rockyPrison&&!enemySameFloor(enemy))continue;
   const kind=enemy.skeleton||'rat',selector=enemy.skeleton?skeletonArt:ratArt;
   if(enemy.skeleton){
    const baked=!enemyArtPreview?skeletonArt.sprite(enemy,iso,enemyRules,age):null;
@@ -5177,12 +5198,18 @@ function drawAlleyHudEffects(dot,bar){
    dot(under.center.x,under.center.y,5,'#b48cff',pulse);
   }
  }
+ if(rockyPrison?.storey>1&&alleyVertical&&!alleyVertical.state.stairRide&&!alleyVertical.state.transition){
+  for(const c of alleyVertical.connectorsAt(rockyPrison.storey-2)){
+   const p=iso.toView(c.top.x*48,c.top.y*48);
+   dot(p.x,p.y,8,'#65afdb',.72);
+  }
+ }
  for(const particle of particles){
   const point=iso.toView(particle.x,particle.y);
   dot(point.x,point.y,particle.r,particle.c,Math.min(1,particle.life/.5));
  }
  for(const e of enemies){
-  if(e.hp>=e.max)continue;
+  if(e.hp>=e.max||!enemySameFloor(e))continue;
   const p=iso.toView(e.x,e.y,foeDisplaySize(e)*.71);
   bar(p.x,p.y,e.hp/e.max);
  }

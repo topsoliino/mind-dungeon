@@ -253,6 +253,7 @@
   // A long wall spans many projected depth values. Split its RENDERING into
   // short immutable panels; physics still uses the unbroken structural wall.
   const renderWalls=(route?.walls??[]).flatMap(wall=>{
+   if(generatorMode&&(wall.side==='east'||wall.side==='south'))return [];
    if(!generatorMode||wall.axis==null)return [wall];
    const count=Math.ceil((wall.end-wall.start)/1.75);
    return Array.from({length:count},(_,i)=>{
@@ -392,7 +393,7 @@
     }
     for(const wall of wallPanels){
      result.push({image:wall.image,depth:wall.renderDepth,
-      alpha:(wall.wall.axis==='u'&&feet[0]>=wall.area[2]||
+      alpha:(generatorMode||wall.wall.axis==='u'&&feet[0]>=wall.area[2]||
        wall.wall.axis==='v'&&feet[1]>=wall.area[3])?1:wallVisibility(wall,x,heroY)});
     }
    }

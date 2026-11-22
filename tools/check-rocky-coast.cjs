@@ -25,14 +25,14 @@ for(let level=1;level<=4;level++){
   assert(g.enabled,'Dungeon interior greybox missing at level '+level);
   assert.equal(d.level,level);
   assert.equal(g.rooms.length,10,'Ten connected rooms on level '+level);
-  const entrances=level===1&&storey===1?1:0,exits=level===4&&storey===count?1:0;
+  const entrances=level===1?1:0,exits=level===4?1:0;
   assert.equal(g.portals.length,entrances+exits,
    'Only L1 may have an exterior entrance, only L4 may have an exit');
   assert.equal(Boolean(g.outdoorEntrance),Boolean(entrances));
   assert.equal(Boolean(g.outdoorExit),Boolean(exits));
   assert.equal(d.hasEntrance,Boolean(entrances));
   assert.equal(d.hasExit,Boolean(exits));
-  assert.equal(g.stairs.length,exits?0:1,
+  assert.equal(g.stairs.length,1,
    'Only L1-L3 have an upward physical stair');
   if(!entrances){
    assert.equal(g.doors.length,8,'Later levels have no starter alley doorway');
@@ -43,7 +43,7 @@ for(let level=1;level<=4;level++){
    assert.equal(d.link({x:g.outdoorEntrance.x*48,y:g.outdoorEntrance.y*48},g),null,
     'L1 entrance must not act as an exit or skip floors');
   }
-  if(exits){
+  if(exits&&storey===count){
    const exit=g.outdoorExit,near={x:exit.x*48,y:exit.y*48};
    assert.equal(d.link(near,g)?.target,5,'Only L4 has a door to exterior L5');
    assert.equal(d.link(near,g)?.kind,'exit');
@@ -58,10 +58,10 @@ for(let level=1;level<=4;level++){
     'Dungeon floor must never skip via the staircase until reached upstairs');
    root.AlleyVertical.state.floor=1;
    const next=d.link(hero,g);
-   assert.equal(next?.target,storey===count?level+1:level,'Completed real staircase leads to next level');
-   assert.equal(next?.kind,storey===count?'stairs':'inside');
+   assert.equal(next?.target,storey===count?level+1:undefined,'Completed real staircase leads to next level');
+   assert.equal(next?.kind,storey===count?'stairs':undefined);
    if(storey===count)assert.equal(next?.entry,'from-lower');
-   else assert.equal(next.storey,storey+1);
+   else assert.equal(next,null);
    root.AlleyVertical.state.stairRide={};
    assert.equal(d.link(hero,g),null,'Cannot skip dungeon floor mid-climb');
    root.AlleyVertical.state.stairRide=null;

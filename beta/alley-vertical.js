@@ -4,6 +4,7 @@ const generator=window.AlleyGenerator,grammar=window.AlleyStairGeometry;
 if(!generator?.enabled||!generator.stairs?.length||!grammar){
  window.AlleyVertical={enabled:false};return;
 }
+const prison=window.RockyCoastPrison?.enabled?window.RockyCoastPrison:null;
 const HEIGHT=grammar.height;
 const key=(u,v)=>u+','+v;
 const directions=[{id:'north',dx:0,dy:-1},{id:'west',dx:-1,dy:0},
@@ -75,19 +76,26 @@ function placeLadder(plan){
   }
  }
  candidates.sort((a,b)=>b.score-a.score);
- const picked=candidates.find(c=>{
-  // The gallery must approach the landing without crossing the ladder hatch.
-  const hatch=key(...c.cell);
-  for(let k=tile(c.top);k!==null;k=parent.get(k))if(k===hatch)return false;
-  return true;
- });
- if(!picked)return false;
- const ladder={...picked,id:'wall-ladder',kind:'ladder',height:HEIGHT};
- const ladderRoom=generator.rooms[ladder.roomId];
- for(const cell of ladderRoom.cells)upper.add(key(...cell));
- for(let k=tile(ladder.top);k!==null;k=parent.get(k))upper.add(k);
- upper.delete(key(...ladder.cell));
- plan.ladder=ladder;
+ const ladders=[];
+ for(const candidate of candidates){
+  if(ladders.some(other=>distance(other.bottom,candidate.bottom)<5))continue;
+  const hatch=key(...candidate.cell);
+  let valid=true;
+  for(let k=tile(candidate.top);k!==null;k=parent.get(k)){
+   if(k===hatch){valid=false;break;}
+  }
+  if(!valid)continue;
+  const id=ladders.length?'wall-ladder-'+(ladders.length+1):'wall-ladder';
+  ladders.push({...candidate,id,kind:'ladder',height:HEIGHT});
+  if(ladders.length===(prison?3:1))break;
+ }
+ if(!ladders.length)return false;
+ for(const ladder of ladders){
+  for(const cell of generator.rooms[ladder.roomId].cells)upper.add(key(...cell));
+  for(let k=tile(ladder.top);k!==null;k=parent.get(k))upper.add(k);
+ }
+ for(const ladder of ladders)upper.delete(key(...ladder.cell));
+ plan.ladders=ladders;plan.ladder=ladders[0];
  return true;
 }
 const plan=grammar.select(generator,placeLadder),room=plan.room;
@@ -96,11 +104,12 @@ const ladder=plan.ladder,upper=plan.upper;
 // The wall rails sit .38 of a cell outward from the ladder-cell centre.
 // The Blender wrists reach a rail 0.36 model-units in front of the body:
 // a root .30 cells inside the wall keeps the hands on the visible rungs.
+function contactFor(ladder){
 const ladderWall={
  x:ladder.cell[0]+.5+ladder.dx*.38,
  y:ladder.cell[1]+.5+ladder.dy*.38
 };
-const ladderContact={
+return {
  wall:ladderWall,
  climb:{x:ladderWall.x-ladder.dx*.30,y:ladderWall.y-ladder.dy*.30},
  rails:ladder.dx?[
@@ -111,6 +120,8 @@ const ladderContact={
   {x:ladder.cell[0]+.76,y:ladderWall.y}
  ]
 };
+}
+const ladderContact=contactFor(ladder);
 const occupied=new Set(room.cells.map(p=>key(...p)));
 const contains=(u,v)=>occupied.has(key(Math.floor(u),Math.floor(v)));
 const stairs=generator.stairs[0];
@@ -130,17 +141,25 @@ const stairsConnector={
  face:Math.atan2(plan.path[1].y-plan.path[0].y,plan.path[1].x-plan.path[0].x),
  duration:Math.max(2.1,plan.length*.19),variant:plan.kind
 };
-const ladderConnector={
- id:'wall-ladder',roomId:ladder.roomId,kind:'ladder',floorFrom:0,floorTo:1,
- bottom:ladder.bottom,top:ladder.top,face:ladder.face,duration:2.8
-};
-const connectors=[stairsConnector,ladderConnector];
+const ladders=plan.ladders??[ladder];
+const connectors=[stairsConnector,...ladders.map(l=>({
+ id:l.id,roomId:l.roomId,kind:'ladder',floorFrom:0,floorTo:1,
+ bottom:l.bottom,top:l.top,face:l.face,duration:2.8,contact:contactFor(l)
+}))];
+const floors=prison?Array.from({length:prison.count},(_,index)=>{
+ if(index===prison.count-1)return prison.level===4?[]:[stairsConnector];
+ const hash=Math.imul(generator.seed^(index+1),0x45d9f3b);
+ return connectors.slice(0,1+((hash^(hash>>>16))>>>0)%connectors.length);
+}):[connectors];
+const connectorsAt=index=>prison?(floors[index]??[]):connectors;
+const active=()=>connectorsAt((prison?.storey??1)-1);
+const hasStairs=()=>active().length>0;
 const insideTop=(u,v,r=0)=>[[u-r,v],[u+r,v],[u,v-r],[u,v+r]]
  .every(([x,y])=>upper.has(key(Math.floor(x),Math.floor(y))));
 const playerInChamber=actor=>contains(actor.x/48,actor.y/48);
 function nearby(actor,floor=0,maxDist=110){
  const point={x:actor.x/48,y:actor.y/48};
- return connectors.map(connector=>{
+ return active().map(connector=>{
   const target=floor===0?connector.bottom:connector.top;
   const dist=distance(target,point)*48;
   return {...connector,distance:dist,approach:{x:target.x*48,y:target.y*48}};
@@ -189,7 +208,9 @@ function overStair(u,v,r=0){
 const HEAD_CLEARANCE=92,SLAB_THICKNESS=13;
 const CROUCH_CLEARANCE=39;
 function blocksGround(u,v,r=0,crouching=state.crouching){
+ if(!hasStairs())return false;
  const p={x:u,y:v};
+ if(prison?.storey>1&&distance(plan.top,p)<.85+r)return false;
  if(distance(plan.bottom,p)<=.58+r*.65)return false;
  const clearance=crouching?CROUCH_CLEARANCE:HEAD_CLEARANCE;
  // Closed switchbacks have full-height infill, and support posts are never
@@ -210,7 +231,7 @@ function blocksTop(u,v,r=0){
 }
 // Pick actual visible isometric tread surfaces, not their misleading
 // flat-ground cursor projections. This lets right-click target a flight.
-function pickStair(screen,iso){return stairController.pick(screen,iso);}
+function pickStair(screen,iso){return hasStairs()?stairController.pick(screen,iso):null;}
 function walkStairs(progress){
  let left=totalLength*clamp(progress);
  for(let i=0;i<lengths.length;i++){
@@ -236,7 +257,7 @@ function pose(connector,up,t){
   current=walkStairs(up?phase:1-phase);
  }else{
   const from=up?connector.bottom:connector.top,to=up?connector.top:connector.bottom;
-  const contact=ladderContact.climb;
+  const contact=(connector.contact??ladderContact).climb;
   // Do not lerp XY between bottom and top for the WHOLE climb: that makes
   // the guardian drift diagonally away from the fixed wall-mounted ladder.
   // The first/last 15% is a physical approach/top-out; the middle 70%
@@ -386,8 +407,10 @@ function createLayers({project,polygon,line,cacheObject}){
    ctx.lineWidth=3;ctx.strokeStyle='#2c2423';ctx.strokeText(door.name,x,y);
    ctx.fillStyle='#ffe6b6';ctx.fillText(door.name,x,y);
   });
-  return {kind:'door-frame',level:0,image,depth:at(0,0)[1]+.5};
+  return {kind:'door-frame',door,level:0,image,depth:at(0,0)[1]+.5};
  });
+ const ladderLayers=ladders.map(ladder=>{
+ const ladderContact=contactFor(ladder);
  const cell=ladder.cell,ladderArea=ladder.wall==='north'||ladder.wall==='south'?
   [cell[0]+.15,cell[1]-.12,cell[0]+.85,cell[1]+1.12]:
   [cell[0]-.12,cell[1]+.15,cell[0]+1.12,cell[1]+.85];
@@ -408,6 +431,9 @@ function createLayers({project,polygon,line,cacheObject}){
   for(const rail of along)
    line(ctx,[project(...rail,HEIGHT+18),project(...rail,HEIGHT+40)],'#b08a58',4);
  });
+ return {kind:'ladder-3d',connectorId:ladder.id,image:ladderImage,
+  depth:project(ladder.bottom.x,ladder.bottom.y)[1]+.25,level:0};
+ });
  // Separate upper-only details. They MUST NOT leak into the ground-floor view.
  const upperLanding=cacheObject(stairs.area,HEIGHT+40,ctx=>{
   const top=plan.top,delta=.38;
@@ -421,8 +447,7 @@ function createLayers({project,polygon,line,cacheObject}){
  return [
   ...slabs,
   ...stairObjects,...doorFrames,
-  {kind:'ladder-3d',image:ladderImage,
-   depth:project(ladder.bottom.x,ladder.bottom.y)[1]+.25,level:0},
+  ...ladderLayers,
   {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
  ];
 }
@@ -457,13 +482,13 @@ const stairController=window.AlleyStairController.make({
  canExit:(floor,x,y)=>floor?insideTop(x,y,14/48):
   !blocksGround(x,y,14/48)&&!generator.blocked(x,y,14/48)
 });
-const boardStairs=(actor,up=true,target=null)=>stairController.board(actor,up,target);
+const boardStairs=(actor,up=true,target=null)=>hasStairs()&&stairController.board(actor,up,target);
 const aimStairs=part=>stairController.aim(part);
-const tryEnterStairs=(actor,dx,dy)=>stairController.enter(actor,dx,dy);
+const tryEnterStairs=(actor,dx,dy)=>hasStairs()&&stairController.enter(actor,dx,dy);
 const advanceStairs=(actor,dt,speed,dx=0,dy=0,options=null)=>
  stairController.advance(actor,dt,speed,dx,dy,options);
 const api={enabled:true,height:HEIGHT,roomId:room.id,room,stairs,plan,ladder,ladderContact,upper,
- connectors,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
+ get connectors(){return active();},connectorsAt,hasStairs,state,insideTop,playerInChamber,nearby,pose,createLayers,stairLength:totalLength,
  navigation,
  overStair,blocksGround,blocksTop,pickStair,speedOnStair,stairSpeed:STAIR_SPEED,
  boardStairs,aimStairs,targetAlongStairs,tryEnterStairs,advanceStairs};

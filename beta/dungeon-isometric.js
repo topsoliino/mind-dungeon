@@ -168,7 +168,13 @@
      (vertical?.state.floor===1?1:0);
    const raised=Boolean(vertical&&(vertical.state.floor===1||vertical.state.stairRide||vertical.state.transition));
    const verticalObjects=upperArchitecture.map(part=>{
-    const visible=part.level===0||reveal>0;
+    const prison=window.RockyCoastPrison;
+    let visible=part.level===0||reveal>0;
+    if(prison?.enabled){
+     if(part.door)visible&&=part.door===window.AlleyGenerator.outdoorEntrance?prison.storey===1:prison.last;
+     else if(part.connectorId)visible&&=vertical.connectors.some(c=>c.id===part.connectorId);
+     else visible&&=vertical.hasStairs();
+    }
     const alpha=part.level===1?reveal:1;
     // Treads and spiral pillars belong to the SAME sorting plane as the
     // Guardian while climbing. The previous 0-vs-7000 mismatch forced the

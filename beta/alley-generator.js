@@ -106,10 +106,13 @@ function generate(n){
  // the corridor footprints. The starter alley keeps its established scale.
  // Transform doors as *edges*, not just their centre points: every expanded
  // portal spans at least two full cells so the guardian can pass comfortably.
- const unit=2,expand=([x,y])=>[12+(x-12)*unit,4+(y-y0)*unit];
- const largerCells=cell=>{const [x,y]=expand(cell);return [
-  [x,y],[x+1,y],[x,y+1],[x+1,y+1]
- ];};
+ const unit=dungeonLevel?2.4:2;
+ const expand=([x,y])=>[12+Math.round((x-12)*unit),4+Math.round((y-y0)*unit)];
+ const largerCells=([x,y])=>{
+  const [u,v]=expand([x,y]),[right,back]=expand([x+1,y+1]),cells=[];
+  for(let i=u;i<right;i++)for(let j=v;j<back;j++)cells.push([i,j]);
+  return cells;
+ };
  const expandedOccupancy=new Map(start.cells.map(p=>[key(...p),0]));
  for(const room of rooms.slice(1)){
   room.cells=room.cells.flatMap(largerCells);
@@ -121,10 +124,11 @@ function generate(n){
   }
   portal.edges=portal.edges.flatMap(([a,b])=>{
    const [ax,ay]=expand(a),[bx,by]=expand(b),dx=b[0]-a[0],dy=b[1]-a[1];
-   if(dx===1)return [0,1].map(j=>[[ax+1,ay+j],[bx,by+j]]);
-   if(dx===-1)return [0,1].map(j=>[[ax,ay+j],[bx+1,by+j]]);
-   if(dy===1)return [0,1].map(j=>[[ax+j,ay+1],[bx+j,by]]);
-   return [0,1].map(j=>[[ax+j,ay],[bx+j,by+1]]);
+   const [endX,endY]=expand([a[0]+1,a[1]+1]);
+   return Array.from({length:dx?endY-ay:endX-ax},(_,j)=>
+    dx===1?[[bx-1,ay+j],[bx,ay+j]]:dx===-1?[[ax,ay+j],[ax-1,ay+j]]:
+    dy===1?[[ax+j,by-1],[ax+j,by]]:[[ax+j,ay],[ax+j,ay-1]]);
+
   });
  }
  return {rooms,doors,occ:expandedOccupancy};
@@ -227,7 +231,7 @@ if(!stairs){
  }
 }
 // On L4 the next stage is the exterior through a door, never a stair.
-if(dungeonLevel===4&&hasOutdoorExit)stairs=null;
+
 // Interior partitions are real structural walls, not randomly placed obstacles.
 // Each spans between two external boundaries; a one-cell doorway is cut into it.
 const innerWalls=[];
@@ -332,8 +336,8 @@ function renderFloor(ctx,{project,polygon,line}){
  }
  if(window.RockyCoastPrison?.enabled){
   const signs=[];
-  if(window.RockyCoastPrison.storey>1)signs.push([14.5,5.5,'↓ Treppenhaus · E']);
-  if(hasOutdoorExit&&exit)signs.push([exit.x,exit.y,'Rocky Coast · Ausgang · E']);
+  
+  if(!dungeonLevel&&hasOutdoorExit&&exit)signs.push([exit.x,exit.y,'Rocky Coast · Ausgang · E']);
   for(const [u,v,label] of signs){
    const [x,y]=project(u,v);
    ctx.save();ctx.font='bold 13px system-ui';ctx.textAlign='center';
@@ -378,7 +382,8 @@ function lineClear(a,b,canWalk){
  return true;
 }
 function prewarm(canWalk,floor=0){
- const found=navigation.get(floor);
+ const cacheKey=dungeonLevel?window.RockyCoastPrison.storey+':'+floor:floor;
+ const found=navigation.get(cacheKey);
  if(found&&found.canWalk===canWalk)return found;
  const cells=new Map();
  for(const [u,v,r,b] of window.AlleyStudyMap.logic.walkable)
@@ -399,13 +404,13 @@ function prewarm(canWalk,floor=0){
   }
  }
  const graph={cells,nodes:[...cells.values()],canWalk};
- navigation.set(floor,graph);
+ navigation.set(cacheKey,graph);
  return graph;
 }
 function path(from,target,canWalk,floorOverride=null){
  const stairState=window.AlleyVertical?.state,
   floor=floorOverride??(stairState?.floor===1?1:stairState?.crouching?'0-crouch':0),
-  {nodes}=prewarm(canWalk,floor);
+  {nodes,cells}=prewarm(canWalk,floor);
  const goal={x:target.x,y:target.y};
  if(!canWalk(goal.x,goal.y))return null;
  if(lineClear(from,goal,canWalk))return {goal,steps:[goal]};
@@ -445,7 +450,7 @@ function path(from,target,canWalk,floorOverride=null){
   }
  }
  if(!found)return null;
- const graph=navigation.get(floor).cells,ordered=[];
+ const graph=cells,ordered=[];
  for(let id=found;id!=null;id=prev.get(id))ordered.push(graph.get(id));
  ordered.reverse();
  const points=[from,...ordered,goal],steps=[];

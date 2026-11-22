@@ -146,12 +146,13 @@ function mount({generator:g,player,iso}){
    ctx.beginPath();ctx.arc(p[0],p[1],3.5,0,Math.PI*2);ctx.fillStyle='#f4d394';ctx.fill();
   }
   for(const door of g.portals){
+   if(prison?.enabled&&(door===g.outdoorEntrance?prison.storey!==1:!prison.last))continue;
    const [x,y]=xy(door.x,door.y);
    ctx.fillStyle='#ffe6b6';ctx.font='bold 13px system-ui';ctx.textAlign='center';
    ctx.strokeStyle='#30251f';ctx.lineWidth=3;
    ctx.strokeText(door.name,x,y-5);ctx.fillText(door.name,x,y-5);
   }
-  if(vertical?.enabled&&vertical.plan){
+  if(vertical?.enabled&&vertical.hasStairs()){
    for(const step of vertical.plan.steps)
     poly(step.corners.map(p=>xy(p.x,p.y)),
      step.z>vertical.height*.5?'#7da7b6':'#436777','#9db6c4');
@@ -170,15 +171,17 @@ function mount({generator:g,player,iso}){
      ctx.fillStyle='#b48cff';ctx.fill();ctx.strokeStyle='#fff';ctx.stroke();
     }
    }
-  }else for(const stair of g.stairs){
+  }else if(!vertical?.enabled)for(const stair of g.stairs){
    const [u,v,r,b]=stair.area;poly(quad(u,v,r,b),'#437c96','#d2e8f4');
   }
   if(vertical?.enabled){
-   const at=vertical.ladder.bottom,p=xy(at.x,at.y);
+   for(const ladder of vertical.connectors.filter(c=>c.kind==="ladder")){
+   const at=ladder.bottom,p=xy(at.x,at.y);
    ctx.beginPath();ctx.arc(p[0],p[1],6.5,0,Math.PI*2);
    ctx.fillStyle='#d3ae73';ctx.fill();
    ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#211a20';
    ctx.fillText('L',p[0],p[1]+3.7);
+   }
    panel.querySelector('#iso-gen-level').textContent=
     prison?.enabled?'Stockwerk '+Math.min(prison.count,prison.storey+vertical.state.floor)+' / '+prison.count:'GREYBOX · '+(vertical.state.floor?'OBERGESCHOSS':'ERDGESCHOSS');
   }
@@ -186,7 +189,7 @@ function mount({generator:g,player,iso}){
  let cachedFloor=null,lastX=null,lastY=null;
  function draw(){
   if(body.style.display==='none')return;
-  const floor=vertical?.state?.floor??0,hero=player();
+  const floor=(prison?.storey??0)*2+(vertical?.state?.floor??0),hero=player();
   if(cachedFloor===floor&&hero.x===lastX&&hero.y===lastY)return;
   if(cachedFloor!==floor){drawBackground();cachedFloor=floor;}
   lastX=hero.x;lastY=hero.y;
