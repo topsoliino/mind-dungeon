@@ -181,8 +181,7 @@ export async function loadEnemyRigs({only=null}={}){
  // tanking FPS even when most enemies shared the same locomotion cycle.
  // Cache quantized *actual 3D Blender poses* across every instance.
  const frames=new Map(),MAX_FRAMES=176;
- // Render an actual GLB idle pose per kit while still on the loading screen.
- // Concurrent enemy spawns can reuse this instead of multiple GPU readbacks.
+ // Pre-bake one real GLB reference pose per kit at loading time.
  for(const stage of stages.values()){
   const [start]=stage.settings.clips.idle;
   stage.pivot.rotation.y=0;
@@ -195,104 +194,100 @@ export async function loadEnemyRigs({only=null}={}){
  }
  const ghostProps=await bakeGhostVessel(renderer,pixels);
  const canvases=new WeakMap();
- const stats={gpuRenders:0,cacheHits:0,budgetSkips:0,frames:0};
- let nextId=0,renderedThisFrame=0,lastGpuTime=-1e6,targetFps=60;
+ const stats={gpuRenders:0,cacheHits:0,budgetSkips:0,frames:0,gpuCostMs:0};
+ let renderedThisFrame=0,lastGpuTime=-1e6,targetFps=60,gpuCostMs=6;
+ const poseKey=signature=>'alley-live-enemy-'+signature;
+ const neutralKey=kind=>'alley-live-enemy-'+kind+'-neutral';
  function beginFrame(fps=60){
   renderedThisFrame=0;
   stats.frames++;
   if(Number.isFinite(fps)&&fps>0)targetFps=fps;
  }
  function remember(signature,canvas){
+  frames.delete(signature);
   frames.set(signature,canvas);
-  // Hard memory cap: 176 x 128^2 RGBA snapshots around 11 MB.
   if(frames.size>MAX_FRAMES)frames.delete(frames.keys().next().value);
+ }
+ function cachedTextureKeys(){
+  return [...frames.keys()].map(poseKey)
+   .concat([...stages.keys()].map(neutralKey));
  }
  function draw(enemy,type,selection,iso,deathAge=null){
   const stage=stages.get(type);
   if(!stage||!selection)return null;
   let state=canvases.get(enemy);
   if(!state){
-   const canvas=document.createElement('canvas');
-   canvas.width=canvas.height=pixels;
-   state={id:++nextId,canvas,context:canvas.getContext('2d',{alpha:true}),
-    last:null,lastYaw:null};
+   state={last:null,lastKey:neutralKey(type),lastImage:stage.idleImage};
    canvases.set(enemy,state);
   }
   const {clips,fps,displaySize}=stage.settings;
   const spec=clips[selection.clip]||
    (type==='rat'?clips.run:type==='bow'?clips.shoot:clips.strike)||clips.idle;
   if(!spec)return null;
-  const [start,count]=spec;
-  const t=clamp(selection.t);
+  const [start,count]=spec,t=clamp(selection.t);
   const heading=Number.isFinite(enemy.facing)?enemy.facing:
    Number.isFinite(enemy.angle)?enemy.angle:0;
   const view=iso.viewAngle(heading);
-  // Exactly the Guardian's world-to-model yaw correction.
   const yaw=Math.atan2(Math.cos(view),Math.sin(view)/Math.sin(ELEVATION));
-  // At 32 facings and 12 action frames, displacement stays truly continuous
-  // in Phaser while the skinned pose comes from a reusable baked snapshot.
-  // Under load, quantize idle and run slightly more. Keep all 32 viewing
- // directions and the full attack/cartwheel pose resolution intact.
- const gait=selection.clip==='run'||selection.clip==='idle';
- const steps=!preview&&gait&&targetFps<45?7:12;
- const poseStep=preview?Math.round(t*120):Math.round(t*steps);
- const viewStep=preview?Math.round(yaw*300):Math.round(yaw/TAU*32);
- const sample=(start+(preview?t:poseStep/steps)*(count-1))/fps;
+  // Both attack telegraphs and 32 independent world-facing directions
+  // retain their full Blender samples. Reduce only idle/run under GPU load.
+  const gait=selection.clip==='run'||selection.clip==='idle';
+  const steps=!preview&&gait&&targetFps<45?7:12;
+  const poseStep=preview?Math.round(t*120):Math.round(t*steps);
+  const viewStep=preview?Math.round(yaw*300):Math.round(yaw/TAU*32);
+  const sample=(start+(preview?t:poseStep/steps)*(count-1))/fps;
   const facing=preview?yaw:viewStep*TAU/32;
-  const signature=type+'|'+selection.clip+'|'+poseStep+'|'+viewStep;
-  let changed=state.last!==signature;
-  if(changed){
-   let image=frames.get(signature);
-   if(!image){
+  const signature=type+'|'+selection.clip+'|'+steps+'|'+poseStep+'|'+viewStep;
+  if(state.last!==signature){
+   const cached=frames.get(signature);
+   if(cached){
+    stats.cacheHits++;
+    frames.delete(signature);frames.set(signature,cached);
+    state.last=signature;state.lastKey=poseKey(signature);
+    state.lastImage=cached;
+   }else{
     const now=performance.now();
-    // Deliberately cap GPU skinning+readback under load. A stale pose is
-     // preferable to another frame stall; XY locomotion still runs smoothly.
-     const delay=targetFps<20?410:targetFps<35?260:targetFps<48?165:92;
-    if(!preview&&(renderedThisFrame>=1||now-lastGpuTime<delay)&&
-        (state.last||stage.idleImage)){
-     // Keep the previous genuine live-GLB frame while movement continues.
-     // The first frame for a skeleton must always be rendered: there is no
-     // lower-quality legacy sprite model to fall back to any more.
+    // Budget by ACTUAL cost of GPU->CPU readback, not a fixed extremely
+    // slow 100-410ms timer that froze skeleton attack animations.
+    const safeBudget=targetFps<23?3.5:targetFps<35?5:targetFps<47?6.5:9;
+    const delay=Math.min(260,Math.max(26,gpuCostMs*1000/safeBudget));
+    if(!preview&&(renderedThisFrame>=1||now-lastGpuTime<delay)){
      stats.budgetSkips++;
-     // First visible frame uses this kit's real neutral GLB silhouette.
-     if(!state.last&&stage.idleImage)image=stage.idleImage;
-     else changed=false;
     }else{
      renderedThisFrame++;
-     lastGpuTime=now;
-     stats.gpuRenders++;
+     const started=performance.now();
      if(stage.fur.length)updateCreatureFur(stage.fur,enemy,selection,state);
      stage.pivot.rotation.y=facing;
      stage.action.paused=false;stage.action.enabled=true;
      stage.mixer.setTime(sample);
      renderer.render(stage.scene,stage.camera);
-     image=document.createElement('canvas');
+     const image=document.createElement('canvas');
      image.width=image.height=pixels;
      image.getContext('2d').drawImage(renderer.domElement,0,0);
+     const cost=performance.now()-started;
+     gpuCostMs=gpuCostMs*.84+Math.min(70,cost)*.16;
+     stats.gpuCostMs=Math.round(gpuCostMs*10)/10;
+     lastGpuTime=performance.now();
+     stats.gpuRenders++;
      remember(signature,image);
+     state.last=signature;state.lastKey=poseKey(signature);
+     state.lastImage=image;
     }
-   }else{
-    stats.cacheHits++;
-    // Refresh LRU without reallocating the image or the Phaser texture.
-    frames.delete(signature);frames.set(signature,image);
-   }
-   if(image){
-    state.last=signature;
-    state.context.clearRect(0,0,pixels,pixels);
-    state.context.drawImage(image,0,0);
    }
   }
   const p=iso.toView(enemy.x,enemy.y,enemy.alleyZ||0);
   const feet=iso.toView(enemy.x,enemy.y,0).y;
   const size=displaySize*(enemy.size||1);
   const alpha=deathAge===null?1:clamp((2.6-deathAge)/.55);
-  return {image:state.canvas,key:'alley-live-enemy-'+state.id,
+  // Immutable, shared 3D snapshot: Phaser uploads a given Blender pose ONCE
+  // for all skeletons, instead of re-uploading per-enemy canvases in combat.
+  return {image:state.lastImage,key:state.lastKey,
    x:p.x-size/2,y:p.y-size*stage.groundFraction,
    width:size,height:size,originX:0,originY:0,
    depth:(enemy.alleyFloor===1||enemy.alleyClimb?7000:0)+feet,
-   alpha,live:changed};
+   alpha,live:false};
  }
- return {draw,beginFrame,stats,ghostProps,has:kind=>stages.has(kind),
+ return {draw,beginFrame,stats,ghostProps,cachedTextureKeys,has:kind=>stages.has(kind),
   active:[...stages.keys()],
   dispose(){for(const stage of stages.values())stage.mixer.stopAllAction();
    frames.clear();renderer.dispose();renderer.forceContextLoss();}};
