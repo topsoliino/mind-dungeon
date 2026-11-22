@@ -54,7 +54,7 @@ function placeLadder(plan){
   }
  }
  const openings=new Set(generator.doors.flatMap(d=>d.edges.flatMap(pair=>pair.map(p=>key(...p)))));
- for(const p of generator.portals[1].edges)openings.add(key(...p[0]));
+ for(const p of generator.outdoorExit?.edges||[])openings.add(key(...p[0]));
  const candidates=[];
  for(const chamber of generator.rooms.filter(r=>r.kind==='raum'&&r!==room)){
   for(const [u,v] of chamber.cells)for(const dir of directions){
