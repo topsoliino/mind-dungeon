@@ -587,7 +587,7 @@ def sample_pose(kind,t):
           .013*math.sin(phase-1.0),-.36*yaw)).to_matrix())
     jaw=attached("Head",rest["Jaw"][0])
     orient("Jaw",jaw,Euler((.03+.54*load-.26*strike,
-                           0,.011*math.sin(phase)).to_matrix()))
+                           0,.011*math.sin(phase))).to_matrix())
     nose_at=attached("Head",rest["Nose"][0])
     orient("Nose",nose_at,Euler((.045*math.sin(phase*2.3),
          0,.028*math.sin(phase*.75)).to_matrix()))
