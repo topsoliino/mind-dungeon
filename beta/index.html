@@ -72,6 +72,14 @@ const enemySameFloor=e=>!alleyEnemyPursuit||
  (alleyEnemyPursuit.ownFloor(e)===alleyEnemyPursuit.heroFloor());
 const guardianArt=window.DungeonGuardian;
 const skeletonArt=window.AlleySkeleton,ratArt=window.AlleyRat,alleyRemains=[];
+let enemyRig=null;
+// Live Blender armatures rendered through the Guardian's Three.js pipeline.
+// Existing 32-view sprite sheets remain per-species fallback only.
+const enemyRigReady=alley?import('./dungeon-enemy-rig.js?v=1')
+ .then(module=>module.loadEnemyRigs()).then(renderer=>{
+  enemyRig=renderer;window.__mindEnemyRig=renderer;
+  console.info('Mind Dungeon live 3D enemy rigs:',renderer.active);
+ }).catch(error=>console.warn('3D enemy rig fallback:',error)):Promise.resolve();
 const skeletonReady=alley?skeletonArt.load():Promise.resolve();
 const ratReady=alley?ratArt.load():Promise.resolve();
 const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>{guardian=data;}).catch(error=>{
@@ -4680,10 +4688,14 @@ function alleySprites(actor){
  }
  for(const e of enemies){
   if(e.skeleton){
+   const rig=enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso);
+   if(rig){sprites.push(rig);continue;}
    const models=skeletonArt.sprites(e,iso,enemyRules);
    if(models.length){sprites.push(...models);continue;}
   }
   if(e.type===RAT){
+   const rig=enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso);
+   if(rig){sprites.push(rig);continue;}
    const models=ratArt.sprites(e,iso,enemyRules);
    if(models.length){sprites.push(...models);continue;}
   }
@@ -4694,7 +4706,10 @@ function alleySprites(actor){
   });
  }
  for(const {enemy,age} of alleyRemains){
-  sprites.push(...(enemy.skeleton?skeletonArt:ratArt).sprites(enemy,iso,enemyRules,age));
+  const kind=enemy.skeleton||'rat',selector=enemy.skeleton?skeletonArt:ratArt;
+  const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age);
+  if(rig)sprites.push(rig);
+  else sprites.push(...selector.sprites(enemy,iso,enemyRules,age));
  }
  const arrow=effectArt.frames.arrow[0];
  const shotSprite=(shot,lift,alpha=1)=>{
@@ -4720,7 +4735,8 @@ function drawAlleySprite(ctx,sprite){
  ctx.save();
  ctx.translate(x,y);ctx.rotate(angle);if(flip)ctx.scale(-1,1);
  ctx.globalAlpha=alpha;
- ctx.imageSmoothingEnabled=Boolean(sprite.frame)||sprite.key==='alley-guardian-rig';
+ ctx.imageSmoothingEnabled=Boolean(sprite.frame)||
+  sprite.key==='alley-guardian-rig'||sprite.key.startsWith('alley-live-enemy-');
  const left=-originX*width,top=-originY*height;
  if(sprite.frame)ctx.drawImage(image,sprite.sx,sprite.sy,sprite.w,sprite.h,left,top,width,height);
  else ctx.drawImage(image,left,top,width,height);
@@ -6391,7 +6407,7 @@ function finishLoading(){
  if(resumeMessage){sessionStorage.removeItem(RESUME_KEY+'-message');tell(resumeMessage);}
 }
 const accountReady=testRun?Promise.resolve():mdInit().then(()=>syncAccountPacks()).catch(err=>console.warn('Fragenpakete offline:',err.message));
-if(window.DungeonLoading)window.DungeonLoading.ready(finishLoading,Promise.allSettled([questionsReady,accountReady,guardianReady,skeletonReady,ratReady]));else finishLoading();
+if(window.DungeonLoading)window.DungeonLoading.ready(finishLoading,Promise.allSettled([questionsReady,accountReady,guardianReady,skeletonReady,ratReady,enemyRigReady]));else finishLoading();
 accountReady.then(async()=>{
  if(testRun)return;
  const confirmation=await mdHandleEmailConfirmation();
