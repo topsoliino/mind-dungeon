@@ -204,6 +204,53 @@ const run=async()=>{
   assert.equal(errors.length,0,'Game runtime JavaScript errors: '+errors.join('; '));
   console.log('Guardian-compatible live 3D enemy browser smoke:',JSON.stringify(result));
   console.log('All three animated GLB rigs render with genuine opaque pixels in Chromium WebGL.');
+  // Separate REAL playtest (no debug-art) performance smoke. The visual audit
+  // above intentionally forces every live GLB; it cannot verify that the
+  // production game actually uses baked 32-facing models and GPU throttling.
+  await page.close();
+  const playtest=await browser.newPage({viewport:{width:1100,height:800}});
+  const playErrors=[];
+  playtest.on('pageerror',err=>playErrors.push(err.message));
+  await playtest.goto(base+'?szene=gasse&modus=generator&seed=4148',
+   {waitUntil:'domcontentloaded',timeout:45000});
+  await playtest.waitForFunction(()=>
+   window.__mindEnemyRig?.active?.length===2&&
+   window.__mindDiagnostics?.engine==='Phaser 3',null,{timeout:40000});
+  const benchmark=await playtest.evaluate(async()=>{
+   const rig=window.__mindEnemyRig,initial=rig.stats.gpuRenders;
+   const samples=[],started=performance.now();
+   await new Promise(resolve=>{
+    let last=started;
+    function tick(now){
+     samples.push(now-last);last=now;
+     if(now-started>=2200)resolve();
+     else requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+   });
+   samples.sort((a,b)=>a-b);
+   const elapsed=performance.now()-started;
+   return {
+    engine:window.__mindDiagnostics.engine,
+    atlasRat:!rig.active.includes('rat'),
+    enemyCount:window.__mindDiagnostics.enemyCount,
+    sampledFps:Math.round(samples.length*1000/elapsed),
+    p95FrameMs:Math.round(samples[Math.floor(samples.length*.95)]||0),
+    gpuRenders:rig.stats.gpuRenders-initial,
+    cacheHits:rig.stats.cacheHits,
+    budgetSkips:rig.stats.budgetSkips,
+    seconds:Math.round(elapsed)/1000
+   };
+  });
+  assert.equal(benchmark.engine,'Phaser 3');
+  assert(benchmark.atlasRat,
+   'Normal playtest must use baked dense-fur rat, not live WebGL skinning');
+  assert(benchmark.gpuRenders<=Math.ceil(benchmark.seconds*18)+2,
+   'Enemy GPU render budget must remain capped, not scale with enemy count');
+  assert.equal(playErrors.length,0,
+   'Real production playtest errors: '+playErrors.join('; '));
+  console.log('PRODUCTION PLAYTEST FPS / FRAME COST:',JSON.stringify(benchmark));
+  await playtest.close();
  }finally{await browser.close();}
 };
 run().catch(err=>{console.error(err);process.exitCode=1;});
