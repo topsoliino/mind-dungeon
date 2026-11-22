@@ -3304,12 +3304,18 @@ $('#stamina').setAttribute('aria-valuenow',Math.ceil(player.stamina));$('#stamin
 $('#xpnum').textContent=String(save.xp).replace('.',',')+'/'+xpRequired()+' XP';$('#statline').textContent='Stufe '+save.level+(save.pendingLevels?' · L · +'+save.pendingLevels:'');updateWallet();
 if(alley){
  $('#zone').textContent=alley.zoneAt(player);
- $('#progress').textContent=generationMode?
+ $('#progress').textContent=rockyPrison?
+  ('Rocky Coast Prison · Dungeon-Ebene '+rockyPrison.level+'/5 · '+rockyPrison.title+
+   (rockyTerrain?' · Terrainhöhe & Normalmap':' · '+window.AlleyGenerator.metadata.rooms+' Räume · Seed '+window.AlleyGenerator.seed)):
+  generationMode?
   'Greybox · '+window.AlleyGenerator.metadata.rooms+' Räume · '+(alleyVertical?.state.floor?'Obergeschoss':'Erdgeschoss')+
   ' · '+window.AlleyGenerator.metadata.stairTitle+' · Seed '+window.AlleyGenerator.seed:
   save.isoLabDone?'Route geschafft · Protokoll gesichert':
   (alley.archiveUnlocked()?'Labor betreten und Versuch abschließen':'Archiv finden · Wissenssiegel öffnen');
- const hint=matchMedia('(pointer:coarse)').matches?
+ const passage=rockyPrison?.link(player,window.AlleyGenerator);
+ const hint=passage?'E: '+passage.label:
+  rockyTerrain?'Rechtsklick: Gelände · WASD: bewegen · Hänge: Rutschen · Meer/Fluss: Todeszone · E: Gefängnistor':
+  matchMedia('(pointer:coarse)').matches?
    'Stick bewegen · Welt antippen: Ziel setzen · ⚔ Angriff · ↷ Rolle · E Leiter/Treppe':
    generationMode?'Rechtsklick: zum sichtbaren Boden · Türkis: Aufgang zum Obergeschoss · Violett: offene U-Unterführung (Strg) · WASD: Rennen/Steuern · E: Einstieg/Stopp · Alt+Rechtsklick auf der Treppe: Erdgeschoss':
   'Strg Schleichen'+(alleySneaking?' (an)':'')+' · Rechtsklick Laufen · Umschalt Rolle · E Untersuchen';
@@ -5856,7 +5862,7 @@ function pauseMenu(){
 function mdTitle(){
  atTitle=true;authorityTitleWait=null;audio?.setAmbience({});
  if(alley){
-  show('<h2 class="md-title">'+(generationMode?'Greybox-Generator · 10 Räume':'Isometrische Route · Etappe 4a')+'</h2><div class="actions">'+
+  show('<h2 class="md-title">'+(rockyPrison?'Rocky Coast Prison Dungeon · Ebene '+rockyPrison.level+'/5':generationMode?'Greybox-Generator · 10 Räume':'Isometrische Route · Etappe 4a')+'</h2><div class="actions">'+
    '<button class="primary" id="alley-restart">Test neu starten</button><button id="alley-exit">Zum regulären Spiel</button></div>'+
    window.DungeonVersion.panel(),'title');
   mdButton('alley-restart',()=>location.reload());
@@ -5883,7 +5889,7 @@ function mdTitle(){
   '<button class="primary" id="md-continue">Fortsetzen</button><button id="md-create">Neuer Charakter</button>'+
   '<button id="md-coop">Online-Koop</button><p id="coop-warmup" class="coop-warmup" role="status"></p><button id="md-packs">Fragenpakete</button><button id="md-trophies">Trophäen</button><button id="md-saves">Spielstände</button>'+
   '<button id="md-journal">Lernjournal</button><button id="md-settings">Einstellungen</button><button id="md-login">Konto / Cloud</button>'+
-  '<button id="md-alley-test">Isometrische Route · Etappe 4a testen</button>'+ '<button id="md-generator-test">Prozedurale Ebene · 10 Räume testen</button>'+
+  '<button id="md-alley-test">Isometrische Route · Etappe 4a testen</button>'+ '<button id="md-generator-test">Prozedurale Ebene · 10 Räume testen</button>'+ '<button id="md-rocky-test">Rocky Coast Prison · 5 Ebenen (Greybox)</button>'+
   '</div></div></div></main>','title');
  unmountTitleGlow=window.DungeonTitle?.mount($('.title-glow'))??null;
  mountPortrait($('#md-title-portrait'),hero,save.equipment.weapon,save.equipment.armor);
@@ -5892,6 +5898,7 @@ function mdTitle(){
  mdButton('md-continue',()=>{if(save.completed){trophyMenu(true);return;}resumeGame();if(save.pendingLevels)setTimeout(()=>{if(!paused&&!modalType)levelMenu();},300);});
  mdButton('md-alley-test',()=>location.assign(location.pathname+'?szene=gasse'));
  mdButton('md-generator-test',()=>location.assign(location.pathname+'?szene=gasse&modus=generator&seed='+crypto.getRandomValues(new Uint32Array(1))[0]));
+ mdButton('md-rocky-test',()=>location.assign(location.pathname+'?szene=gasse&modus=generator&region=rocky-coast&level=1'));
  mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-coop',enterAuthorityLobby);mdButton('md-packs',()=>packMenu());
  mdButton('md-trophies',()=>trophyMenu());mdButton('md-journal',journal);mdButton('md-saves',mdSaves);mdButton('md-login',mdAccount);
 }
@@ -6802,6 +6809,12 @@ function finishLoading(){
    tell('Handy: Stick bewegen · ⚔ Angriff · ↷ Rolle · E Leiter/Treppe · Welt antippen zum Laufen');
  }
  if(generationMode)window.AlleyGeneratorUI?.mount({generator:window.AlleyGenerator,player:()=>player,iso});
+ if(rockyPrison){
+  const label=document.createElement('div');label.id='rocky-level-status';
+  label.style.cssText='position:fixed;top:12px;left:12px;z-index:18;background:#152028ed;border:1px solid #75858d;color:#d3e2e4;border-radius:7px;padding:7px 10px;font:12px system-ui';
+  label.textContent='ROCKY COAST PRISON · Ebene '+rockyPrison.level+'/5 · '+rockyPrison.title;
+  document.body.append(label);
+ }
  if(alley)tell(generationMode?'Generator-Test · 10 verbundene Räume · Seed '+window.AlleyGenerator.seed:
   guardian?'Etappe 4a · Hinter dem Torbogen führt der Weg zum Archiv und ins Behavioristen-Labor.':'Etappe 4a · Wächtergrafik konnte nicht geladen werden.');
  if(bossTest)tell('Boss-Test · Fallgitter im Laborflur links ist offen');
