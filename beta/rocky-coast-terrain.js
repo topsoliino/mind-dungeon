@@ -22,6 +22,8 @@ function borderAt(x,y){
  if(y>1280)return 'dense-forest';
  // Independent boulder/rock wall marks the upper-left ridge.
  if(x<300&&y<210)return 'rock-wall';
+ // The prison itself is solid. Only its exterior gate apron is walkable.
+ if(x>235&&x<397&&y>175&&y<300)return 'prison-wall';
  return null;
 }
 function gaussian(x,y,cx,cy,rx,ry){
@@ -71,7 +73,7 @@ function create(options){
  const normalMap=createNormalMap();
  const zoneNames={'world-edge':'Unpassierbare Grenze','prison-fence':'Gefängniszaun',
   'cliff-wall':'Unüberwindbare Felswand','dense-forest':'Undurchdringlicher Wald',
-  'rock-wall':'Felsbarriere'};
+  'rock-wall':'Felsbarriere','prison-wall':'Gefängnismauer'};
  function walkableOnFloor(x,y,floor=0,r=radius){
   if(floor!==0)return false;
   // A death zone is not an invisible collision wall: stepping into water
@@ -256,7 +258,7 @@ function create(options){
   ctx.fillStyle='#111923';ctx.fillRect(gate.x-9,gate.y-42,18,40);
   ctx.fillStyle='#e5e4dc';ctx.font='bold 12px system-ui';ctx.textAlign='center';
   ctx.fillText('ROCKY COAST PRISON',gate.x,gate.y-58);
-  return {canvas,x:minX,y:minY,depth:toView(381,305,0).y+.1,
+  return {canvas,x:minX,y:minY,depth:toView(335,285,0).y-.1,
    visible:true,alpha:1};
  }
  const prisonArt=makePrison(),artLayers=[...chunks,prisonArt];
