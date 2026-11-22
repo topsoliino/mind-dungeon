@@ -576,53 +576,65 @@ def sample_pose(kind,t):
             turn=.23+.56*smooth(t)
         else:
             turn=.79+.21*smooth(t)
+        # A gymnastics cartwheel pivots around two successive PALM CONTACTS.
+        # The hips do not act as a wheel hub: they lower into the first hand,
+        # rise with a long inverted leg split, then settle onto the trailing foot.
         theta=wheel_side*math.tau*turn
-        arch=abs(math.sin(theta))
-        # Center of gravity dips while the shoulders pass over planted hands.
-        # The actual 3x lateral travel is already handled by gameplay.
+        inverted=max(0.0,math.sin(pi*turn))**1.3
+        takeoff=smooth(turn/.16)
+        landing=smooth((turn-.80)/.20)
         hips=rest['Hips'][0]+V((
-            wheel_side*(.040*math.sin(pi*turn)+.023*math.sin(theta)),
-            -.022,
-            -.39*arch+.048*math.sin(pi*turn)**2
+            wheel_side*(.11*math.sin(pi*turn)+.055*math.sin(2*pi*turn)),
+            -.045*inverted,
+            -.29*abs(math.sin(theta))+.085*inverted
         ))
-        orient('Hips',hips,Euler((-.055*math.sin(theta),theta,0)).to_matrix())
-        # The torso/neck inherit the tilted hip frame. Reposition BOTH
-        # humeri and forearms with Guardian's 2-bone WORLD-space IK.
-        # The leading hand touches first, then the trailing hand takes weight.
+        orient('Hips',hips,Euler((-.10*math.sin(theta),theta,0)).to_matrix())
         leading='R' if wheel_side>0 else 'L'
+        # A first-hand -> second-hand support transfer. During each contact
+        # the wrist stays near a FIXED ground support, not attached to a
+        # rotating shoulder (which previously made both hands skate).
         for side,sign in SIDES:
             shoulder=attached('Chest',rest['Arm.'+side][0])
             first=side==leading
-            planted=(.13<=turn<=.53) if first else (.46<=turn<=.85)
-            if planted:
-                # World-z hand contact, so the pose actually supports weight
-                # rather than rotating an upright T-pose around its pelvis.
-                hand=V((shoulder.x+wheel_side*.105,
-                        shoulder.y-.145,.088))
-            else:
-                hand=attached('Hips',rest['Hand.'+side][0])
-                hand+=V((wheel_side*.06,-.095,.065))
+            start,end=(.105,.59) if first else (.40,.88)
+            engage=smooth((turn-start)/.105)
+            release=1-smooth((turn-(end-.105))/.105)
+            weight=max(0,min(1,engage*release))
+            planted_hand=V((
+                wheel_side*(-.29 if first else .26),
+                -.155 if first else -.13,
+                .055
+            ))
+            free=attached('Hips',rest['Hand.'+side][0])
+            free+=V((wheel_side*.09,-.12,.075))
+            hand=free.lerp(planted_hand,weight)
             wrist=bend_joint('Arm.'+side,'Forearm.'+side,
-                             shoulder,hand,(sign*.50,.27,-.06),1.08)
+                             shoulder,hand,(sign*.40,.30,-.045),1.12)
             point('Hand.'+side,wrist,wrist+V((0,-.070,
-                                            -.090 if planted else -.065)))
+                                            -.080 if weight>.5 else -.065)))
             if side=='R':
                 point('Grip.R',wrist,wrist+blade_vector(
-                      .3*wheel_side,.35 if planted else .66))
+                      .3*wheel_side,.30 if weight>.5 else .66))
             else:
                 point('Bow.L',wrist,wrist+V((0,-.08,.73)))
-        # Scissor legs through the inverted phase; plant the leading foot
-        # on takeoff and the trailing one on the actual exit, no rigid spin.
+        # A split-kick, not two rigid legs spinning together: the leading
+        # leg opens early, the trailing leg sweeps later over the shoulder.
         for side,sign in SIDES:
-            if turn<.045 or turn>.955:
+            if turn<.04 or turn>.965:
                 place_foot(side,sign,0,0,.015,.04)
             else:
                 hip=attached('Hips',rest['Thigh.'+side][0])
                 foot=attached('Hips',rest['Foot.'+side][0])
-                foot+=V((sign*.115*math.sin(theta+.7*sign),
-                         -.09,.070+.10*arch))
+                lag=(-.30 if side==leading else .26)
+                kick=math.sin(pi*max(0,min(1,turn+lag)))
+                foot+=V((
+                    wheel_side*(.18 if side==leading else -.16)*inverted
+                    +sign*.15*math.sin(theta+.7*sign),
+                    -.05-.05*inverted,
+                    .08+.23*kick+.08*inverted
+                ))
                 ankle=bend_joint('Thigh.'+side,'Shin.'+side,
-                    hip,foot,(sign*.16,-1,.10),1.07)
+                    hip,foot,(sign*.18,-1,.13),1.10)
                 point('Foot.'+side,ankle,ankle+V((0,-.13,-.03)))
         rig.pose.bones['Vessel'].scale=(.0001,)*3
         bpy.context.view_layer.update()
