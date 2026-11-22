@@ -112,8 +112,15 @@ function adaptGuardianQuality(dt){
  guardianFallbackPending=true;
  guardianArt.ensureFallback(guardian).then(ok=>{
   guardianBaked=Boolean(ok);
-  if(ok)console.info('Mind Dungeon: low FPS, Guardian switched to Blender-baked animations');
-  else guardianSlowSeconds=0;
+  if(ok){
+   // Never keep a dormant WebGL context or its skinned GPU buffers alive
+   // after switching this actor permanently to its pre-rendered Blender art.
+   guardian.rig?.dispose?.();
+   guardian.rig=null;
+   window.__mindGuardianRig=null;
+   updateArtStatus();
+   console.info('Mind Dungeon: Guardian switched to Blender-baked animation; 3D GPU released');
+  }else guardianSlowSeconds=0;
   guardianFallbackPending=false;
  });
 }
