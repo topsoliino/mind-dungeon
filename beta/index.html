@@ -80,8 +80,14 @@ const enemyRigReady=alley?import('./dungeon-enemy-rig.js?v=1')
   enemyRig=renderer;window.__mindEnemyRig=renderer;
   console.info('Mind Dungeon live 3D enemy rigs:',renderer.active);
  }).catch(error=>console.warn('3D enemy rig fallback:',error)):Promise.resolve();
-const skeletonReady=alley?skeletonArt.load():Promise.resolve();
-const ratReady=alley?ratArt.load():Promise.resolve();
+// High-resolution WebP atlases are only a fallback. Avoid downloading and
+// decoding 17 old sprite sheets when actual Guardian-style GLB rigs work.
+const skeletonReady=alley?enemyRigReady.then(()=>
+ enemyRig?.has('sabre')&&enemyRig?.has('bow')?null:skeletonArt.load()
+).catch(()=>skeletonArt.load()):Promise.resolve();
+const ratReady=alley?enemyRigReady.then(()=>
+ enemyRig?.has('rat')?null:ratArt.load()
+).catch(()=>ratArt.load()):Promise.resolve();
 const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(data=>{guardian=data;}).catch(error=>{
  console.warn('Mind Dungeon · Isometrische Gasse',error);
 }):Promise.resolve();
