@@ -43,7 +43,10 @@ const run=async()=>{
    const iso={viewAngle:angle=>angle,toView:()=>({x:90,y:110})};
    const kinds=['sabre','bow','rat'],out={active:renderer.active,visuals:[]};
    const checksum=canvas=>{
-    const ctx=canvas.getContext('2d'),pixels=ctx.getImageData(0,0,176,176).data;
+    const ctx=canvas.getContext('2d');
+    if(canvas.width!==208||canvas.height!==208)
+     throw Error('Live enemy resolution should match Guardian pixel density');
+    const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
     let alpha=0,hash=0;
     for(let i=0;i<pixels.length;i+=4)if(pixels[i+3]>20){
      alpha++;hash=((hash*33)^(pixels[i]*3+pixels[i+1]*5+
