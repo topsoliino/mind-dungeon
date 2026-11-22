@@ -343,7 +343,7 @@
    const depth=wall.renderDepth;
    // Behind-the-player walls are always fully opaque. Foreground panels fade
    // independently, so two or three overlapping panels can fade together.
-   if(depth<=heroY-footOffset+2)return 1;
+   if(depth<=heroY+1)return 1;
    return polygonOverlaps(wall.hull,{x1:heroX-29,x2:heroX+29,y1:heroY-94,y2:heroY+14})?.24:1;
   };
   const structureInfo=(image,area,height)=>({

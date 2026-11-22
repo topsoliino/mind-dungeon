@@ -20,9 +20,9 @@ function controller({plan,state,nav,length,speeds,curving}){
   // Reaching within almost a whole cell of the portal was causing the
   // floor switch to teleport the Guardian 35–50 pixels to the gate centre.
   // Keep broad lateral freedom, but complete only at the actual landing lip.
-  const corridor=lateral<plan.width/2+.18&&along>-.12&&along<.8;
-  const height=gate.floor===1?state.z>=H-rise*.65:state.z<=rise*.65;
-  const pressed=inputX*gate.out.x+inputY*gate.out.y>.24;
+  const corridor=lateral<plan.width/2+.18&&along>-(nav.RADIUS+.22)&&along<.8;
+  const height=gate.floor===1?state.z>=H-rise*1.15:state.z<=rise*1.15;
+  const pressed=inputX*gate.out.x+inputY*gate.out.y>.13;
   const click=ride.exitTarget===gate.floor;
   const enteredHere=ride.entry===(gate.floor?'top':'bottom');
   return corridor&&height&&(click||manual&&pressed)&&

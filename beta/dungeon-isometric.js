@@ -151,10 +151,16 @@
      (crossing.up?Math.max(0,Math.min(1,(liftProgress-.84)/.16)):
       Math.max(0,Math.min(1,(.18-liftProgress)/.18))):
      (vertical?.state.floor===1?1:0);
+   const raised=Boolean(vertical&&(vertical.state.floor===1||vertical.state.stairRide||vertical.state.transition));
    const verticalObjects=upperArchitecture.map(part=>{
     const visible=part.level===0||reveal>0;
     const alpha=part.level===1?reveal:1;
-    return {...part.image,depth:part.depth,alpha,visible};
+    // Treads and spiral pillars belong to the SAME sorting plane as the
+    // Guardian while climbing. The previous 0-vs-7000 mismatch forced the
+    // player in front of every step/column, regardless of physical position.
+    const stairPart=part.kind==='stair-tread'||part.kind==='stair-landing'||part.kind==='stair-spindle';
+    const depth=part.depth+(raised&&stairPart?7000:0);
+    return {...part.image,depth,alpha,visible};
    });
    return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),
     ...verticalObjects,...atmosphere];
