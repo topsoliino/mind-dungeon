@@ -13,11 +13,31 @@ const run=async()=>{
  ]});
  try{
   const page=await browser.newPage({viewport:{width:1100,height:800}});
-  const errors=[];
+  const errors=[],warnings=[],failed=[];
   page.on('pageerror',err=>errors.push(err.message));
+  page.on('console',msg=>{
+   if(msg.type()==='error'||msg.type()==='warning')warnings.push(msg.text());
+  });
+  page.on('requestfailed',request=>failed.push({
+   url:request.url(),reason:request.failure()?.errorText
+  }));
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
-  await page.waitForFunction(()=>window.__mindEnemyRig?.active?.length===3,
-   null,{timeout:90000});
+  try{
+   await page.waitForFunction(()=>window.__mindEnemyRig?.active?.length===3,
+    null,{timeout:35000});
+  }catch(error){
+   const diagnostics=await page.evaluate(()=>({
+    path:location.href,
+    rigStatus:window.__mindEnemyRig?.active??null,
+    gameEngine:window.__engine||null,
+    pageTitle:document.title,
+    loading:document.querySelector('#dungeon-loading')?.textContent?.slice(0,200)
+   })).catch(e=>({evaluationError:e.message}));
+   console.error('3D enemy load diagnostics:',
+    JSON.stringify({diagnostics,errors,warnings:warnings.slice(-20),
+     failed:failed.slice(-20)},null,2));
+   throw error;
+  }
   const result=await page.evaluate(()=>{
    const renderer=window.__mindEnemyRig;
    const iso={viewAngle:angle=>angle,toView:()=>({x:90,y:110})};
