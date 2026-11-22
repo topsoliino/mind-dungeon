@@ -35,5 +35,10 @@ jobs:
           python-version: '3.12'
       - name: Install image inspector
         run: python -m pip install --disable-pip-version-check Pillow
+      # Source changes launch the expensive Blender bake in a separate job.
+      # Validate binary atlases only when a WebP was actually published, or
+      # on a manually dispatched end-to-end verification. Otherwise new clip
+      # definitions incorrectly fail against the previous committed sprites.
       - name: Verify saved Blender rig and 32-view rat atlases
+        if: ${{ github.event_name == 'workflow_dispatch' || contains(toJSON(github.event.head_commit.modified), '.webp') || contains(toJSON(github.event.head_commit.added), '.webp') }}
         run: python tools/check-isometric-rat-atlases.py
