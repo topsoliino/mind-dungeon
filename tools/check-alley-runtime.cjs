@@ -72,7 +72,8 @@ const item=draw(enemy,'sabre',{clip:'idle',t:0},
  {viewAngle:a=>a,toView:(x,y,z)=>({x,y:y-z})});
 assert.equal(item.depth,150,'Enemy depth must resolve from its actual feet');
 
-assert(fog.includes('ghost-vessel-art.json'),'Ghost vessel needs a release manifest');
+assert(fog.includes('createPot()')&&fog.includes('canvas.width=canvas.height=48'),
+ 'The retired giant jar must render as a compact spherical orb');
 assert(!manifest.spriteReady||fs.existsSync('beta/art/props/ghost-vessel.png'),
  'Do not claim a Blender sprite is published before PNG exists');
 assert(html.includes('refreshLayers(this.alleyLayers,player,save.opened.includes(0),'),
@@ -80,6 +81,6 @@ assert(html.includes('refreshLayers(this.alleyLayers,player,save.opened.includes
 assert(rig.includes('stage.idleImage'),'Enemy spawn requires a cached Blender pose');
 assert(rig.includes('cachedTextureKeys')&&rig.includes('live:false'),
  'Skeleton 3D frames must be shared immutable Phaser textures');
-assert(rig.includes('bakeGhostVessel(renderer,pixels)'),
- 'Ghost vessels must use the shared GLB renderer');
+assert(rig.includes('const ghostProps=[]'),
+ 'Spherical ghost vessels must not pre-bake a giant pot into 24 GPU textures');
 console.log('Phaser movement crash, Canvas enemy depth, ghost pool lifecycle and GPU culling: OK');
