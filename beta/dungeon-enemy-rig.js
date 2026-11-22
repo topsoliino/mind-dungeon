@@ -34,7 +34,8 @@ function makeStage(field,targetHeight){
  return {scene,pivot,camera,groundFraction};
 }
 async function glb(url){
- const response=await fetch(url);
+ // Revalidate while Blender CI republishes the same GLB URLs.
+ const response=await fetch(url,{cache:'no-cache'});
  if(!response.ok)throw Error('Enemy 3D GLB unavailable: '+url);
  const bytes=await response.arrayBuffer(),signature=new Uint8Array(bytes,0,2);
  const compressed=signature[0]===0x1f&&signature[1]===0x8b;
@@ -120,7 +121,7 @@ export async function loadEnemyRigs(){
  await Promise.all(files.map(async ([id,url,manifest,variant])=>{
   try{
    const [model,response]=await Promise.all([
-    glb(url+'?v='+versions[id]),fetch(manifest+'?v='+versions[id])
+    glb(url+'?v='+versions[id]),fetch(manifest+'?v='+versions[id],{cache:'no-cache'})
    ]);
    if(!response.ok)throw Error('Enemy animation manifest unavailable');
    const json=await response.json(),settings=variant?json[variant]:json;
