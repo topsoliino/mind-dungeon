@@ -5164,6 +5164,16 @@ class DungeonScene extends Phaser.Scene{
    const sprites=alleySprites(actor);
    sprites.forEach((sprite,index)=>this.renderAlleySprite(sprite,index));
    for(let i=sprites.length;i<this.alleySprites.length;i++)this.alleySprites[i].setVisible(false);
+   // Dead/offscreen live enemies used to retain one private WebGL texture
+   // forever. Evict them when absent; canvases are re-uploaded if they
+   // return to the camera on a later frame.
+   const activeLiveKeys=new Set(sprites.filter(sprite=>
+    sprite.key.startsWith('alley-live-enemy-')).map(sprite=>sprite.key));
+   for(const key of this.previousLiveEnemyKeys||[]){
+    if(!activeLiveKeys.has(key)&&this.textures.exists(key))
+     this.textures.remove(key);
+   }
+   this.previousLiveEnemyKeys=activeLiveKeys;
    const color=hex=>Phaser.Display.Color.HexStringToColor(hex).color;
    this.alleyGround.clear();
    alleyGroundEffects((x,y,rx,ry,hex,alpha)=>{
