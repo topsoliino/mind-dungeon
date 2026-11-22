@@ -142,7 +142,7 @@ function adaptGuardianQuality(dt){
   guardianFallbackPending=false;
  });
 }
-const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=21')
+const enemyRigReady=alley?import('./beta/dungeon-enemy-rig.js?v=22')
  .then(module=>module.loadEnemyRigs({
   only:enemyArtPreview?null:['sabre','bow']
  })).then(renderer=>{
@@ -4879,8 +4879,17 @@ function alleySprites(actor){
    parts.forEach((part,i)=>sprites.push({...part,depth:(actor.renderDepth??actor.y)+i*.02,originX:0,originY:0}));
   }
  }
- for(const e of enemies){
-  if(!onScreen(e))continue;
+ // New GPU snapshots are limited to one per animation frame. Give the
+ // nearest ACTIVE attack priority so the player's parry cues do not freeze
+ // while distant idle skeletons consume the render slot.
+ const visibleEnemies=enemies.filter(e=>onScreen(e));
+ visibleEnemies.sort((a,b)=>{
+  const fighting=(e)=>Boolean(e.skeletonAction)*3+Boolean(e.windup||e.runAttack)*2;
+  const q=fighting(b)-fighting(a);
+  return q||Math.hypot(player.x-a.x,player.y-a.y)-
+   Math.hypot(player.x-b.x,player.y-b.y);
+ });
+ for(const e of visibleEnemies){
   if(e.skeleton){
    // SINGLE canonical skeleton visual source: the Guardian-derived 3D GLB
    // for idle, run, every attack, hand-planted cartwheels AND death.
@@ -5298,17 +5307,20 @@ class DungeonScene extends Phaser.Scene{
    const sprites=alleySprites(actor);
    sprites.forEach((sprite,index)=>this.renderAlleySprite(sprite,index));
    for(let i=sprites.length;i<this.alleySprites.length;i++)this.alleySprites[i].setVisible(false);
-   // Dead/offscreen live enemies used to retain one private WebGL texture
-   // forever. Evict them when absent; canvases are re-uploaded if they
-   // return to the camera on a later frame.
-   const activeLiveKeys=new Set();
+   // Keep ONE Phaser texture per cached 3D pose across every opponent;
+   // reclaim only snapshots evicted from the capped GLB pose LRU and not
+   // currently referenced by any visible sprite.
+   const retained=new Set(enemyRig?.cachedTextureKeys?.()||[]);
    for(const sprite of sprites)if(sprite.key.startsWith('alley-live-enemy-'))
-    activeLiveKeys.add(sprite.key);
-   for(const key of this.previousLiveEnemyKeys||[]){
-    if(!activeLiveKeys.has(key)&&this.textures.exists(key))
-     this.textures.remove(key);
+    retained.add(sprite.key);
+   this.liveEnemyTextures??=new Set();
+   for(const key of this.liveEnemyTextures){
+    if(retained.has(key))continue;
+    if(this.textures.exists(key))this.textures.remove(key);
+    this.liveEnemyTextures.delete(key);
    }
-   this.previousLiveEnemyKeys=activeLiveKeys;
+   for(const key of retained)if(this.textures.exists(key))
+    this.liveEnemyTextures.add(key);
    const color=hex=>Phaser.Display.Color.HexStringToColor(hex).color;
    this.alleyGround.clear();
    alleyGroundEffects((x,y,rx,ry,hex,alpha)=>{
