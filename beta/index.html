@@ -2979,7 +2979,7 @@ function updateAlleyActions(dt){
     alleyMarker={point:alleyStairFloorGoal.target,until:Infinity,valid:true};
    }
    alleyStairFloorGoal=null;
-   tell(result.floor?'Obergeschoss erreicht':'Erdgeschoss erreicht');
+   tell(rockyPrison?'Stockwerk '+rockyPrison.storey+' erreicht':result.floor?'Obergeschoss erreicht':'Erdgeschoss erreicht');
   }
  }
  if(alleyVertical?.state.transition){
@@ -2998,7 +2998,7 @@ function updateAlleyActions(dt){
    if(rockyPrison?.hasAscent&&task.up&&task.connector.kind==='stairs'){
     goRockyFloor(rockyPrison.level+1,'from-lower');return;
    }
-   tell(state.floor?'Obergeschoss erreicht · E zum Abstieg':'Erdgeschoss erreicht');
+   tell(rockyPrison?(state.floor?'Galerie · E zum Abstieg':'Stockwerk '+rockyPrison.storey+' erreicht'):state.floor?'Obergeschoss erreicht · E zum Abstieg':'Erdgeschoss erreicht');
   }
  }
  if(alleyHit){
@@ -6945,6 +6945,14 @@ function finishLoading(){
   $('#dpad').style.display='none';
   if(matchMedia('(pointer:coarse)').matches||document.body.classList.contains('touch-force'))
    tell('Handy: Stick bewegen · ⚔ Angriff · ↷ Rolle · E Leiter/Treppe · Welt antippen zum Laufen');
+ }
+ if(rockyContinuation&&alleyVertical&&rockyPrison.entry?.startsWith('down-')){
+  const connector=alleyVertical.connectors.find(c=>c.kind===rockyPrison.entry.slice(5));
+  if(connector?.kind==='stairs')alleyVertical.boardStairs(player,false,connector.bottom);
+  if(connector?.kind==='ladder'){
+   player.dir=connector.face;
+   alleyVertical.state.transition={connector,up:false,age:0,duration:connector.duration};
+  }
  }
  if(generationMode)window.AlleyGeneratorUI?.mount({generator:window.AlleyGenerator,player:()=>player,iso});
  if(rockyTerrain&&!rockyDebug)rockyDebug=rockyTerrain.mountDebug(()=>player);

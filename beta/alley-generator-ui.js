@@ -18,7 +18,7 @@ function mount({generator:g,player,iso}){
   g.metadata.rooms+' Räume · '+g.metadata.corridors+' Gänge · '+g.metadata.doors+
   ' Verbindungen · '+g.stairs.length+' Treppe(n) · '+(window.AlleyVertical?.enabled?1:0)+' Leiter</div>'+
   '<div style="font-size:11px;color:#d9c7b0;margin-bottom:7px">'+
-  (g.metadata.stairTitle||'Treppenkonstruktion')+'</div>'+
+  (g.metadata.stairTitle||(prison?.hasExit?'Ausgang zur Rocky Coast':'Treppenkonstruktion'))+'</div>'+
   '<div id="iso-gen-body"><canvas id="iso-gen-map" width="576" height="360" '+
   'aria-label="Isometrischer Grundriss und Spielerposition" style="width:100%;height:180px;'+
   'display:block;border:1px solid #75869c66;border-radius:6px;background:#111827"></canvas>'+
@@ -76,6 +76,7 @@ function mount({generator:g,player,iso}){
  });
  const styleSelect=panel.querySelector('#iso-gen-stair-style');
  if(styleSelect){
+  if(!g.stairs.length)styleSelect.parentElement.hidden=true;
   styleSelect.value=g.metadata.stairVariant;
   styleSelect.onchange=()=>{
    const url=new URL(window.location.href);
