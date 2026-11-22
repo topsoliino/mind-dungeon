@@ -1,490 +1,683 @@
-"""Run from repository root: blender -b -t 4 -P tools/build-isometric-skeleton.py.
-Build a Guardian-style undead warrior rig and 32-view fallback animation atlases.
-Each sheet has animation time along X and camera-relative facing along Y.
+"""Mind Dungeon: FRESH bare skeleton, built from the Guardian's original art pipeline.
+
+Replaces the former enemy entirely. Geometry comes from the Guardian builder's
+mesh/profile/limb/plate vocabulary (artist sRGB -> scene-linear BSDF, beveled
+faces, weighted normals), while motion uses the Guardian's actual two-bone IK,
+planted feet, counter-rotated trunk, torso-driven arms, and phase-keyed attacks.
+The old skeletal primitives, shader tweaks, armor and motion curves are gone.
+
+CLI from repository root:
+  MIND_DUNGEON_RIG_ONLY=1 blender -b --factory-startup -t 4 \
+    --python-exit-code 1 -P tools/build-isometric-skeleton.py
+
+The three downstream object names/actions are the stable gameplay API:
+  "Skeleton rig"; "Skeleton • both/sabre/bow";
+  "idle", "run", "strike", "shoot", "death".
 """
 import math
 import os
-import importlib.util
 from pathlib import Path
 import bpy
 from mathutils import Vector, Matrix, Euler
 
-
-out = Path.cwd() / 'beta/art/skeleton'
-out.mkdir(parents=True, exist_ok=True)
+out=Path.cwd()/'beta/art/skeleton'
+out.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
-bpy.context.preferences.filepaths.save_version = 0
-scene = bpy.context.scene
-# Retain the high-contrast atlas preset for the sprite fallback.
-# The live GLB uses the Guardian's Three.js ACES light rig instead.
-scene.view_settings.view_transform = 'Standard'
-try:
-    scene.view_settings.look = 'Medium High Contrast'
-except TypeError:
-    pass  # Some Blender versions omit this color-management preset.
-style_spec = importlib.util.spec_from_file_location("guardian_style", Path.cwd() / "tools" / "guardian-style.py")
-style = importlib.util.module_from_spec(style_spec)
-style_spec.loader.exec_module(style)
-V = Vector
-pi = math.pi
-FACINGS = 32  # 360 degrees, independent baked 3D views; NO translucent view crossfades.
-PIXELS = 128
-def srgb_to_linear(value):
-    # Match the Guardian builder: artist palette floats are sRGB, not
-    # linear radiometric values. Feeding them directly into the BSDF made
-    # our GLBs unnaturally bright/flat under the identical Three.js lights.
-    return value / 12.92 if value <= .04045 else ((value + .055) / 1.055) ** 2.4
+bpy.context.preferences.filepaths.save_version=0
+scene=bpy.context.scene
+scene.view_settings.view_transform='Standard'
+try:scene.view_settings.look='Medium High Contrast'
+except (TypeError,ValueError):pass
 
+pi=math.pi
+V=Vector
+FACINGS=32
+PIXELS=128
+def srgb_to_linear(v):
+    return v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4
 
-def material(name, color, metal=0, roughness=None):
-    m = bpy.data.materials.new(name)
-    linear = tuple(srgb_to_linear(v) for v in color)
-    m.diffuse_color = (*linear, 1)
-    m.use_nodes = True
-    node = m.node_tree.nodes.get('Principled BSDF')
-    node.inputs['Base Color'].default_value = (*linear, 1)
-    node.inputs['Metallic'].default_value = metal
-    # Guardian plates are roughness ~.48-.61. Formerly everything here
-    # was .75, causing steel, bronze and bone to read like dull clay.
-    node.inputs['Roughness'].default_value = (
-        roughness if roughness is not None else (.52 if metal >= .25 else .68))
+def material(name,hex_color,roughness=.67,metal=0):
+    # COPIED CONTRACT from Guardian's build-player-sprite-study.py.
+    rgb=[int(hex_color[i:i+2],16)/255 for i in (0,2,4)]
+    linear=tuple(srgb_to_linear(v) for v in rgb)
+    m=bpy.data.materials.new(name)
+    m.diffuse_color=(*linear,1)
+    m.use_nodes=True
+    shader=m.node_tree.nodes.get('Principled BSDF')
+    shader.inputs['Base Color'].default_value=(*linear,1)
+    shader.inputs['Roughness'].default_value=roughness
+    shader.inputs['Metallic'].default_value=metal
     return m
-# Hero reference: bright desaturated bone, cool blue forged steel and
-# graphite cavities. The old warm yellow bone blended into dungeon floors.
-ivory = material('Weathered ivory', (.83,.82,.79), roughness=.64)
-edge = material('Pale worn bone', (.95,.94,.91), roughness=.57)
-dark = material('Deep sockets', (.012,.012,.020))
-bronze = material('Hammered bronze', (.69,.52,.29), .29, .53)
-steel = material('Forged charcoal steel', (.47,.56,.64), .33, .51)
-leather = material('Oxblood leather', (.19,.069,.034))
-wood = material('Yew', (.34,.155,.052))
-aged = material('Bone shadows and age lines', (.23,.18,.15))
-trim = material('Polished battered brass', (.78,.65,.44), .26, .49)
-# Explicit same sRGB swatches as Guardian build-player-sprite-study.py:
-# Gunmetal insets #343f54; padded graphite #232534. The previous values
-# were nearly black (P10≈6), unlike the Guardian's readable P10≈38.
-iron_dark = material('Dark recesses between armor plates', (.204,.247,.329), .15, .61)
-graphite = material('Graphite ribcage negative space', (.137,.145,.204), roughness=.67)
-sabre_edge = material('Sharpened steel cutting edge', (.86,.91,.89), .48)
-scar = material('Bone fracture stains', (.20,.19,.175))
-parts = []
-joints = {}
-def joint(name, pos, parent=None):
-    joints[name] = (V(pos), parent)
-def part(obj, name, bone, mat, kit='both'):
-    obj.name = name
-    if not obj.data.materials:
-        obj.data.materials.append(mat)
-    parts.append((obj,bone,kit))
-def oval(name,bone,p,scale,mat=ivory,kit='both'):
-    obj=style.faceted_oval(name,p,scale,mat,sides=8)
-    part(obj,name,bone,mat,kit)
-def rod(name,bone,a,b,r,r2=None,mat=ivory,kit='both'):
-    a,b=V(a),V(b)
-    bpy.ops.mesh.primitive_cone_add(vertices=8,radius1=r,radius2=r if r2 is None else r2,
-                                   depth=(b-a).length,location=(a+b)/2)
-    obj=bpy.context.object
-    obj.rotation_euler=(b-a).to_track_quat('Z','Y').to_euler()
-    part(obj,name,bone,mat,kit)
-def strip(name,bone,coords,mat,kit):
-    mesh=bpy.data.meshes.new(name)
-    mesh.from_pydata(coords,[],[(i,i+1,i+3,i+2) for i in range(0,len(coords)-2,2)])
-    obj=bpy.data.objects.new(name,mesh)
-    scene.collection.objects.link(obj)
-    part(obj,name,bone,mat,kit)
 
-joint('Pelvis',(0,0,.89))
-joint('Chest',(0,0,1.03),'Pelvis')
-joint('Neck',(0,-.012,1.465),'Chest')
-joint('Skull',(0,-.015,1.57),'Neck')
-for side,s in [('R',-1),('L',1)]:
-    for name,p,parent in [('Thigh',(s*.13,0,.90),'Pelvis'),('Shin',(s*.14,-.035,.52),'Thigh'),
-                          ('Foot',(s*.14,.012,.12),'Shin'),('Arm',(s*.24,0,1.48),'Chest'),
-                          ('Forearm',(s*.32,.02,1.19),'Arm'),('Hand',(s*.34,-.03,.94),'Forearm')]:
-        joint(name+side,p,parent if parent in ('Pelvis','Chest') else parent+side)
-    for name,end in [('Thigh','Shin'),('Shin','Foot'),('Arm','Forearm'),('Forearm','Hand')]:
-        bone=name+side
-        a=joints[bone][0]; b=joints[end+side][0];rad=.046 if name=='Thigh' else .034
-        rod(name,bone,a,b,rad*1.1,rad*.72)
-        oval('Condyle',bone,b,(rad*1.35,rad,rad),edge)
-        if name in ('Shin','Forearm'):
-            offset=V((s*.038,0,0))
-            rod('Paired shaft',bone,a+offset*.65,b+offset,.017,.013)
-    oval('Patella','Shin'+side,(s*.14,-.065,.52),(.055,.042,.06),edge)
-    oval('Talus','Foot'+side,(s*.14,-.02,.09),(.063,.075,.049))
-    for i in range(4):
-        x=s*.14+(i-1.5)*.026
-        rod('Toe','Foot'+side,(x,-.04,.075),(x,-.16+abs(i-1)*.009,.045),.021,.013)
-    oval('Palm','Hand'+side,(s*.34,-.04,.91),(.05,.055,.055))
-    for i in range(3):
-        rod('Knuckle','Hand'+side,(s*.34+(i-1)*.025,-.068,.91),(s*.34+(i-1)*.025,-.082,.857),.014)
-    oval('Iliac wing','Pelvis',(s*.093,0,.945),(.107,.089,.103))
-    rod('Clavicle','Chest',(0,-.048,1.44),(s*.235,0,1.49),.026,.038,edge)
-    for i in range(5):
-        z=1.18+i*.055+s*.004*((i%3)-1)
-        w=(.147+.054*math.sin((i+1)*pi/7))*(1+.043*s*((i%3)-1))
-        arc=[(s*.025,.035,z+.036),(s*w*.8,.065,z+.026),(s*w,.005,z),(s*w*.81,-.085,z-.026),(s*.04,-.106,z-.035)]
-        for k,(a,b) in enumerate(zip(arc,arc[1:])):rod('Rib','Chest',a,b,.018,.016,edge)
-# The rib openings previously showed the floor, giving a transparent,
-# muddy appearance. A graphite cavity layer echoes the Guardian's dark
-# padded undercoat and makes each ivory rib a legible high-value shape.
-core=style.profile_mesh('Ribcage graphite shadow core',[
-    (1.025,0,.043,.115,.092),
-    (1.100,0,.043,.157,.106),
-    (1.260,0,.040,.173,.113),
-    (1.382,0,.044,.163,.113),
-    (1.465,0,.043,.106,.075),
-], [graphite,iron_dark], axis='z', sides=10,
-   face_material=lambda band,face: 1 if face in (1,2,3) else 0)
-part(core,'Ribcage graphite shadow core','Chest',graphite)
-for i in range(9):
-    z=1+i*.065
-    oval('Vertebra','Chest',(0,.028,z),(.047,.052,.034))
-rod('Sternum','Chest',(0,-.107,1.19),(0,-.102,1.44),.027,.038)
-# Imperfect cervical vertebrae and spinous processes follow their own Neck
-# bone: the skull can lag behind the loose rib cage instead of being welded.
-for i in range(5):
-    z=1.448+i*.022+(.004 if i in (1,4) else -.002)
-    x=(-1 if i%2 else 1)*(.005+.002*(i%3))
-    oval('Cervical vertebra body','Neck',(x,.012,z),
-         (.046-.004*i,.040,.015),edge if i in (1,3) else ivory)
-    oval('Cervical disc eroded recess','Neck',(x*.65,-.025,z-.010),
-         (.028,.011,.007),aged)
-    rod('Uneven cervical spinous process','Neck',
-        (x,.044,z-.003),(x+(.012 if i%2 else -.008),.083,z+.010),
-        .013,.005,ivory)
-    if i in (1,3):
-        rod('Cervical transverse wing','Neck',(x-.035,.020,z),
-            (x-.061,.027,z+.008),.013,.006,edge)
-for side,sign in [('L',1),('R',-1)]:
-    rod('Uneven scapular ridge','Arm'+side,
-        (sign*.19,.073,1.39),(sign*.31,.11,1.46+sign*.009),
-        .033,.017,ivory)
-    oval('Scapular chipped edge','Arm'+side,
-         (sign*.293,.079,1.481+sign*.010),(.048,.037,.029),edge)
-    rod('Clavicle worn protuberance','Chest',
-        (sign*.14,-.064,1.470),(sign*.19,-.071,1.477+sign*.008),
-        .022,.013,aged if sign<0 else edge)
-# Unlike the old UV-sphere skull, this has deliberately cut planar
-# forehead, temples, cheek and crown facets at the Guardian's screen size.
-cranium = style.profile_mesh('Cranium', [
-    (1.550,0,.004,.070,.060),
-    (1.610,0,.004,.137,.106),
-    (1.728,0,.013,.159,.140),
-    (1.810,-.008,.018,.143,.121),
-    (1.875,.009,.013,.087,.069),
-    (1.900,0,.014,.020,.021),
-], [ivory, edge, aged], axis='z', sides=10,
-    face_material=lambda band,side:
-        1 if band in (2,3,4) and side in (6,7,8,9) else
-        2 if side in (1,2) and band < 3 else 0)
-part(cranium,'Cranium','Skull',ivory)
-maxilla = style.profile_mesh('Maxilla', [
-    (1.585,0,-.071,.069,.051),
-    (1.622,0,-.066,.112,.095),
-    (1.687,0,-.055,.121,.091),
-    (1.713,0,-.049,.062,.060),
-], [ivory,edge], axis='z', sides=8,
-    face_material=lambda band,side: 1 if side in (5,6,7) else 0)
-part(maxilla,'Maxilla','Skull',ivory)
-jaw = style.profile_mesh('Angular lower jaw', [
-    (1.542,0,-.056,.066,.043),
-    (1.569,0,-.055,.113,.072),
-    (1.601,0,-.055,.096,.074),
-], [ivory,edge], axis='z', sides=8)
-part(jaw,'Angular lower jaw','Skull',ivory)
-for s in (-1,1):
-    oval('Orbit','Skull',(s*.065,-.115,1.71),(.048,.023,.052),dark)
-    rod('Brow','Skull',(s*.018,-.124,1.749),(s*.12,-.089,1.755),.022,.026,edge)
-    oval('Zygoma','Skull',(s*.103,-.099,1.653),(.042,.037,.034),edge)
-oval('Nasal cavity','Skull',(0,-.149,1.659),(.023,.015,.029),dark)
-for i in range(6):
-    oval('Tooth','Skull',((i-2.5)*.027,-.137+abs(i-2.5)*.004,1.609),(.013,.015,.024),edge)
-# First skeleton: no armor, padding, clothing, belts or shoulder plates.
-# Weapons are rigid attachments, with a separate flexing bowstring and nocked arrow.
-grip=joints['HandR'][0]
-def at(p,v):return tuple(p+V(v))
-rod('Wrapped grip','HandR',at(grip,(0,0,-.14)),at(grip,(0,0,.10)),.025,.026,leather,'sabre')
-rod('Quillon','HandR',at(grip,(-.09,0,.09)),at(grip,(.09,0,.09)),.021,.012,bronze,'sabre')
-blade=[]
-for h,w,bend in [(.10,.028,0),(.39,.039,-.014),(.61,.046,-.065),(.77,0,-.15)]:
-    blade.extend([at(grip,(0,bend-w,h)),at(grip,(0,bend+w,h))])
-strip('Curved falchion','HandR',blade,steel,'sabre')
-bevel=[]
-for a,b in zip(blade[::2],blade[1::2]):
-    bevel.extend([a,tuple((V(a)+V(b))/2+V((.018,0,0)))])
-strip('Ground bevel','HandR',bevel,edge,'sabre')
-bow=joints['HandL'][0]
-bowpts=[(0,.085,-.44),(0,-.005,-.35),(0,-.075,-.19),(0,-.02,0),(0,-.075,.19),(0,-.005,.35),(0,.085,.44)]
-for i,(a,b) in enumerate(zip(bowpts,bowpts[1:])):
-    rod('Bow limb','HandL',at(bow,a),at(bow,b),.014 if i in (0,5) else .021,mat=wood,kit='bow')
-for i,s in enumerate((-1,1)):
-    joint('String'+str(i),at(bow,(0,.085,s*.44)),'HandL')
-    rod('String','String'+str(i),at(bow,(0,.085,s*.44)),at(bow,(0,.085,0)),.006,mat=edge,kit='bow')
-joint('Arrow',at(bow,(0,.085,0)),'HandL')
-rod('Nocked arrow','Arrow',at(bow,(0,.085,0)),at(bow,(0,-.56,0)),.011,mat=wood,kit='bow')
-rod('Broadhead','Arrow',at(bow,(0,-.53,0)),at(bow,(0,-.62,0)),.031,0,steel,'bow')
+# One graphic value family, as with the Guardian's blue steel, ivory edge,
+# graphite recess, and restrained scarlet. NO armor or cloth at all.
+bone=material('Ossuary ivory bone','b9b7aa',.65)
+pale=material('Ossuary pale sunlit bone','e1dfd2',.59)
+worn=material('Ossuary mineral ochre seams','7d7770',.77)
+cavity=material('Ossuary graphite bone recess','292b32',.80)
+patina=material('Ossuary cool grey bone facet','979b9c',.69)
+steel=material('Ossuary forged sabre steel','778997',.51,.33)
+steel_edge=material('Ossuary honed sabre edge','ccd1ca',.48,.23)
+leather=material('Ossuary weapon grip','583633',.78)
+bronze=material('Ossuary guard brass','c4a577',.52,.26)
+wood=material('Ossuary bow yew','72513d',.77)
+stringmat=material('Ossuary bowstring','d1c9ab',.8)
 
+# Same world scale, anatomical pivots and elbow/knee targets as the Guardian;
+# its Hips/Chest/Arm/Forearm/Thigh/Shin/Boot solver can be used unchanged.
+SIDES=[('L',-1),('R',1)]
+design={
+ 'Hips':((0,0,.965),(0,0,1.17),None),
+ 'Chest':((0,0,1.16),(0,0,1.49),'Hips'),
+ 'Neck':((0,-.008,1.47),(0,-.009,1.625),'Chest'),
+ 'Head':((0,-.010,1.616),(0,-.010,1.895),'Neck'),
+}
+for side,sign in SIDES:
+    shoulder=(sign*.276,0,1.43)
+    elbow=(sign*.355,.012,1.168)
+    wrist=(sign*.373,-.036,.942)
+    hip=(sign*.13,0,.985)
+    knee=(sign*.146,-.045,.538)
+    ankle=(sign*.155,-.003,.115)
+    design.update({
+        'Arm.'+side:(shoulder,elbow,'Chest'),
+        'Forearm.'+side:(elbow,wrist,'Arm.'+side),
+        'Hand.'+side:(wrist,(wrist[0],wrist[1]-.045,wrist[2]-.086),'Forearm.'+side),
+        'Thigh.'+side:(hip,knee,'Hips'),
+        'Shin.'+side:(knee,ankle,'Thigh.'+side),
+        'Foot.'+side:(ankle,(ankle[0],-.145,.072),'Shin.'+side),
+    })
+right=design['Hand.R'][0]
+left=design['Hand.L'][0]
+design['Grip.R']=(right,(right[0],right[1],right[2]+.24),'Hand.R')
+design['Bow.L']=(left,(left[0],left[1],left[2]+.35),'Hand.L')
+design['String0']=( (left[0],left[1]+.04,left[2]-.41),
+                    (left[0],left[1]-.06,left[2]),'Bow.L')
+design['String1']=( (left[0],left[1]+.04,left[2]+.41),
+                    (left[0],left[1]-.06,left[2]),'Bow.L')
+design['Arrow']=( (left[0],left[1],left[2]),
+                  (left[0],left[1]-.5,left[2]),'Bow.L')
 
-# ---------------------------------------------------------------------------
-# Anatomical detailing remains on bones, never an armor overlay.
-# The visible wear is large enough to read from the isometric game camera.
-# ---------------------------------------------------------------------------
-def shape(name,bone,vertices,faces,mat,kit='both'):
-    mesh=bpy.data.meshes.new(name)
-    mesh.from_pydata(vertices, [], faces)
-    mesh.update()
-    obj=bpy.data.objects.new(name,mesh)
-    scene.collection.objects.link(obj)
-    part(obj,name,bone,mat,kit)
-    return obj
-for side,sign in [('L',1),('R',-1)]:
-    rod('Cranial fracture','Skull',(sign*.041,-.124,1.833),
-        (sign*.097,-.102,1.779+sign*.009),.009,.003,scar)
-    rod('Forked skull crack','Skull',(sign*.083,-.114,1.793),
-        (sign*.117,-.074,1.755),.005,.002,aged)
-    oval('Temporal bone chipped hollow','Skull',
-         (sign*.139,-.067,1.692+sign*.007),(.024,.018,.050),aged)
-    rod('Uneven zygomatic arch','Skull',(sign*.111,-.114,1.666),
-        (sign*.065,-.136,1.623+sign*.006),.020,.013,edge)
-    for rib_index in (1,3,4):
-        z=1.18+rib_index*.055+sign*.005
-        oval('Healed rib callus','Chest',
-             (sign*(.147+.018*(rib_index%2)),-.074,z),
-             (.023,.017,.017),edge if rib_index!=3 else aged)
-    oval('Pelvic rough iliac crest','Pelvis',
-         (sign*.127,-.019,.981+sign*.009),(.070,.058,.030),edge)
-    rod('Irregular pelvic ridge','Pelvis',(sign*.142,-.035,1.003),
-        (sign*.177,-.008,.925+sign*.010),.024,.010,ivory)
-    for bone,loc in [('Shin'+side,(sign*.142,-.051,.338)),
-                     ('Forearm'+side,(sign*.319,-.054,1.123))]:
-        oval('Old bone callus',bone,loc,(.043,.032,.047),edge)
-        rod('Old fracture line',bone,
-            (loc[0]-.026,loc[1]-.025,loc[2]+.040),
-            (loc[0]+.025,loc[1]-.020,loc[2]-.019),
-            .006,.002,aged)
-# ---------------------------------------------------------------------------
-# A dimensional saber blade, not a flat strip disappearing edge-on.
-# Widen the silhouette at its middle, form a swept tip and sharpen both
-# surfaces with real polygon thickness and a bright edge.
-def forged_sabre():
-    spine=[(0,-.020,.09),(.015,-.030,.23),(.021,-.047,.46),
-           (.045,-.080,.65),(.087,-.142,.84)]
-    cutting=[(.029,.031,.09),(.038,.032,.23),(.040,.023,.46),
-             (.027,-.016,.65),(.087,-.142,.84)]
-    z=.013
-    points=[]
-    for a,b in zip(spine,cutting):
-        points.extend([
-            at(grip,(a[0],a[1]-z,a[2])),
-            at(grip,(a[0],a[1]+z,a[2])),
-            at(grip,(b[0],b[1]-z*.35,b[2])),
-            at(grip,(b[0],b[1]+z*.35,b[2])),
-        ])
-    faces=[]
-    for i in range(len(spine)-1):
-        k=i*4
-        faces.extend([(k,k+4,k+6,k+2),
-                      (k+1,k+3,k+7,k+5),
-                      (k,k+1,k+5,k+4),
-                      (k+2,k+6,k+7,k+3)])
-    shape('Forged swept saber blade','HandR',points,faces,steel,'sabre')
-    for i in range(4):
-        a=at(grip,cutting[i]);b=at(grip,cutting[i+1])
-        rod('Ground saber cutting edge','HandR',a,b,.007,.004,sabre_edge,'sabre')
-    rod('Saber fuller groove','HandR',at(grip,(0,-.047,.18)),
-        at(grip,(.034,-.095,.64)),.008,.006,iron_dark,'sabre')
-    oval('Bronze pommel','HandR',at(grip,(0,0,-.17)),
-         (.042,.041,.048),trim,'sabre')
-    oval('Saber crossguard rivet','HandR',at(grip,(0,-.045,.09)),
-         (.028,.019,.029),trim,'sabre')
-
-# Hide the original wafer-thin falchion mesh: the new 3D forged version has
-# proper highlights in every facing and will never disappear edge-on.
-parts[:]=[(o,b,k) for (o,b,k) in parts if o.name not in
-         ('Curved falchion','Ground bevel')]
-for obj in list(bpy.data.objects):
-    if obj.name in ('Curved falchion','Ground bevel'):
-        bpy.data.objects.remove(obj,do_unlink=True)
-forged_sabre()
-
-# No shield, quiver or decoration: only weapon and bare bones.
-
-arm=bpy.data.armatures.new('Ossuary skeleton')
-rig=bpy.data.objects.new('Skeleton rig',arm);scene.collection.objects.link(rig)
+arm=bpy.data.armatures.new('Ossuary guardian-IK armature')
+rig=bpy.data.objects.new('Skeleton rig',arm)
+scene.collection.objects.link(rig)
 bpy.context.view_layer.objects.active=rig
+rig.select_set(True)
+rig.show_in_front=True
 bpy.ops.object.mode_set(mode='EDIT')
-for name,(p,parent) in joints.items():
-    b=arm.edit_bones.new(name);b.head=p;b.tail=p+V((0,.08,0))
-    if parent:b.parent=arm.edit_bones[parent]
+for name,(head,tail,parent) in design.items():
+    eb=arm.edit_bones.new(name)
+    eb.head=V(head)
+    eb.tail=V(tail)
+    if parent:eb.parent=arm.edit_bones[parent]
 bpy.ops.object.mode_set(mode='OBJECT')
-# Bind rest-space meshes to rigid bones. Keep two named weapon collections.
-bpy.context.view_layer.update()
+rest={n:(V(h),V(t),p) for n,(h,t,p) in design.items()}
+parts=[];soles={}
+
+def mesh(name,vertices,faces,mats,bind,bevel=.006,indices=None,kit='both'):
+    """Guardian mesh(): identical 2-segment angular bevel and weighted normals.
+
+    All vertices remain in world rest-pose coordinates for subsequent
+    rigid-to-bone skinning; unlike the Guardian's bone-parented art pieces,
+    export requires joined SKINNED meshes for the common enemy GLB loader.
+    """
+    data=bpy.data.meshes.new(name)
+    data.from_pydata(vertices,[],faces)
+    data.update()
+    obj=bpy.data.objects.new(name,data)
+    scene.collection.objects.link(obj)
+    for m in mats:data.materials.append(m)
+    if indices:
+        data.polygons.foreach_set('material_index',indices)
+    if bevel>0 and len(data.polygons)>=4:
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True);bpy.context.view_layer.objects.active=obj
+        modifier=obj.modifiers.new('Forged edges','BEVEL')
+        modifier.width=bevel
+        modifier.segments=2
+        modifier.limit_method='ANGLE'
+        modifier.angle_limit=.16
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        normal=obj.modifiers.new('Weighted normals','WEIGHTED_NORMAL')
+        normal.keep_sharp=True
+        bpy.ops.object.modifier_apply(modifier=normal.name)
+    parts.append((obj,bind,kit))
+    return obj
+
+def profile(name,levels,mats,bind,sides=8,phase=pi/8,kit='both',bevel=.006):
+    """Guardian profile(): rings and material-facing value breaks."""
+    vertices=[(cx+rx*math.cos(phase+i*math.tau/sides),
+               cy+ry*math.sin(phase+i*math.tau/sides),z)
+              for z,cx,cy,rx,ry in levels for i in range(sides)]
+    faces=[tuple(reversed(range(sides)))]
+    colors=[0]
+    for row in range(len(levels)-1):
+        for i in range(sides):
+            a=row*sides+i
+            b=row*sides+(i+1)%sides
+            faces.append((a,b,b+sides,a+sides))
+            colors.append((row+(1 if i in (2,3,4) else 0))%len(mats))
+    faces.append(tuple(range(len(vertices)-sides,len(vertices))))
+    colors.append(len(mats)-1)
+    return mesh(name,vertices,faces,mats,bind,bevel,colors,kit)
+
+def plate(name,points,thickness,mat,bind,bevel=.005,kit='both'):
+    front=list(points)
+    back=[(x,y+thickness,z) for x,y,z in front]
+    n=len(front)
+    faces=[tuple(range(n)),tuple(reversed(range(n,2*n)))]
+    faces.extend((i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n))
+    return mesh(name,front+back,faces,[mat],bind,bevel,kit=kit)
+
+def limb(name,a,b,widths,mats,bind,sides=8,kit='both',bevel=.005):
+    """Guardian limb(): a genuine tapered low-poly volume, not a cylinder."""
+    a,b=V(a),V(b)
+    axis=(b-a).normalized()
+    u=axis.cross(V((0,1,0)))
+    if u.length<.02:u=axis.cross(V((1,0,0)))
+    u.normalize()
+    v=axis.cross(u)
+    vertices=[tuple(a.lerp(b,f)+u*rx*math.cos(i*math.tau/sides)
+                       +v*ry*math.sin(i*math.tau/sides))
+              for f,rx,ry in widths for i in range(sides)]
+    faces=[tuple(reversed(range(sides)))]
+    colors=[0]
+    for row in range(len(widths)-1):
+        for i in range(sides):
+            k=row*sides+i
+            n=row*sides+(i+1)%sides
+            faces.append((k,n,n+sides,k+sides))
+            colors.append((i+row)%len(mats))
+    faces.append(tuple(range(len(vertices)-sides,len(vertices))))
+    colors.append(len(mats)-1)
+    return mesh(name,vertices,faces,mats,bind,bevel,colors,kit)
+
+def wear(name,center,rx,ry,rz,bind,material=bone):
+    x,y,z=center
+    return profile(name,[(z-rz,x,y,rx*.52,ry*.56),
+                         (z-rz*.27,x,y,rx,ry),
+                         (z+rz*.29,x,y,rx*.9,ry*.86),
+                         (z+rz,x,y,rx*.30,ry*.34)],
+                   [material,patina,pale],bind,8,bevel=.002)
+
+# Skeleton pelvis. Angular split iliac wings and a central sacrum are
+# anatomical bone, never dark gambeson or chest armor.
+profile('Sacrum and spine root',[(.886,0,.013,.077,.059),
+    (.957,0,.019,.095,.070),(1.025,0,.014,.056,.060)],
+    [worn,bone,pale],'Hips')
+for side,sign in SIDES:
+    plate('Uneven iliac wing '+side,[
+        (sign*.018,-.034,1.030),
+        (sign*.118,-.054,1.067+sign*.008),
+        (sign*.207,-.013,1.004),
+        (sign*.163,-.063,.903+sign*.011),
+        (sign*.075,-.066,.874)],.070,bone,'Hips',.008)
+    limb('Lower pelvic curved rim '+side,
+         (sign*.16,-.056,.916),(sign*.071,-.074,.875),
+         [(0,.028,.029),(.53,.031,.034),(1,.018,.019)],
+         [pale,bone],'Hips')
+    wear('Iliac irregular bone callus '+side,
+         (sign*.154,-.045,1.014+sign*.010),.026,.025,.026,'Hips',pale)
+
+# Rib cage with actual gaps. Strong ivory rib shapes frame a slender spine,
+# not a solid costume torso disguised as an organic skeleton.
+for i in range(7):
+    z=1.133+i*.052
+    x=(.004 if i%2 else -.003)
+    wear('Uneven thoracic vertebra '+str(i),(x,.075,z),.057,.044,.027,
+         'Chest',bone if i%3 else pale)
+    if i in (1,4):
+        limb('Exposed spinous process '+str(i),
+             (x,.090,z),(x+.012,.151,z+.012),
+             [(0,.026,.023),(.5,.018,.013),(1,.006,.008)],
+             [bone,worn],'Chest',6)
+for side,sign in SIDES:
+    for i in range(6):
+        z=1.185+i*.052+sign*.004*((i%3)-1)
+        width=(.137+.054*math.sin((i+1)*pi/7))*(1+sign*.025*(i%2))
+        arc=[
+            (sign*.045,.077,z+.029),
+            (sign*width*.73,.083,z+.027),
+            (sign*width,.005,z),
+            (sign*width*.78,-.090,z-.018),
+            (sign*.038,-.126,z-.026)]
+        for n,(a,b) in enumerate(zip(arc,arc[1:])):
+            limb('Anatomical rib %s %s:%d'%(side,i,n),a,b,
+                 [(0,.019,.019),(.5,.022,.019),(1,.016,.017)],
+                 [pale,bone,patina],'Chest',6,bevel=.003)
+        if i in (2,5):
+            wear('Healing rib callus '+side+str(i),
+                 (sign*width*.87,-.045,z-.010),.025,.018,.022,'Chest')
+# Sunlit hard-edged sternum, dark joints between bones, no artificial shirt.
+limb('Sternum',(0,-.119,1.176),(0,-.122,1.442),
+     [(0,.025,.029),(.4,.034,.026),(.8,.031,.023),(1,.018,.019)],
+     [bone,pale,worn],'Chest',8)
+for i in range(4):
+    wear('Sternum notch '+str(i),(0,-.134,1.23+i*.045),
+         .017,.008,.011,'Chest',worn)
+
+# Cervical vertebrae are separated, uneven, and belong to a moving neck.
+for i in range(5):
+    z=1.484+i*.028
+    s=(-1 if i%2 else 1)
+    wear('Neck vertebra %d'%i,
+         (s*(.004+i*.0009),.029,z),.043-.002*i,.036,.019,
+         'Neck',pale if i%2 else bone)
+    limb('Asymmetric cervical spine wing %d'%i,
+        (s*.014,.061,z),(s*.037,.093,z+.013),
+        [(0,.019,.014),(.6,.014,.011),(1,.006,.007)],
+        [bone,worn],'Neck',6,bevel=.002)
+    if i in (1,3):
+        wear('Cervical joint recess %d'%i,(0,-.006,z-.012),
+             .028,.011,.006,'Neck',worn)
+
+# Guardian HELMET geometry idiom reused as a skull, but with wide orbital
+# cavities, zygomatic arches and exposed teeth, not a white faceless helmet.
+profile('Ossuary cranium',[(1.552,0,.001,.066,.063),
+    (1.608,0,-.001,.115,.102),
+    (1.701,0,.012,.156,.137),
+    (1.784,0,.016,.160,.142),
+    (1.852,0,.020,.126,.113),
+    (1.916,0,.027,.055,.051)],
+    [worn,bone,pale,patina,bone],'Head',12,bevel=.009)
+profile('Cheek and jaw mass',[(1.540,0,-.042,.070,.048),
+    (1.583,0,-.065,.126,.083),
+    (1.628,0,-.058,.124,.105),
+    (1.658,0,-.052,.071,.080)],
+    [worn,bone,pale],'Head',8,bevel=.005)
+# Orbital depression is a deep graphite insert, bounded by ivory brow ridges.
+for side,sign in SIDES:
+    plate('Black orbital cavity '+side,[
+        (sign*.022,-.146,1.760),
+        (sign*.103,-.148,1.761),
+        (sign*.123,-.133,1.697),
+        (sign*.097,-.147,1.655),
+        (sign*.038,-.159,1.655)],
+        .009,cavity,'Head',.002)
+    limb('Brow ridge '+side,(sign*.015,-.149,1.770),
+        (sign*.131,-.136,1.767),
+        [(0,.020,.017),(.45,.027,.021),(1,.016,.018)],
+        [pale,bone],'Head',8)
+    limb('Cheekbone arch '+side,(sign*.128,-.117,1.675),
+        (sign*.066,-.157,1.618),
+        [(0,.025,.022),(.5,.026,.020),(1,.015,.013)],
+        [bone,pale],'Head')
+    limb('Hairline fracture '+side,(sign*.033,-.115,1.840),
+        (sign*.105,-.099,1.787+sign*.011),
+        [(0,.007,.005),(1,.002,.002)],[worn],'Head',6,bevel=.001)
+plate('Nasal black cavity',[
+    (-.020,-.176,1.675),(.019,-.176,1.675),
+    (.032,-.173,1.624),(0,-.181,1.611),(-.032,-.173,1.624)],
+    .006,cavity,'Head',.001)
+for i in range(6):
+    x=(i-2.5)*.029
+    plate('Enamel tooth %d'%i,[
+        (x-.010,-.157,1.607),(x+.010,-.158,1.607),
+        (x+.008,-.159,1.581),(x-.009,-.158,1.583)],
+        .009,pale,'Head',.001)
+
+for side,sign in SIDES:
+    shoulder,elbow,_=design['Arm.'+side]
+    wrist=design['Hand.'+side][0]
+    hip,knee,_=design['Thigh.'+side]
+    ankle=design['Foot.'+side][0]
+    limb('Humerus '+side,shoulder,elbow,
+        [(0,.055,.056),(.14,.063,.054),(.43,.034,.035),
+         (.78,.038,.036),(1,.053,.052)],
+        [pale,bone,patina],'Arm.'+side)
+    wear('Shoulder condyle '+side,shoulder,.066,.058,.064,'Arm.'+side)
+    wear('Distal humeral condyle '+side,elbow,.060,.053,.055,'Arm.'+side)
+    limb('Radius '+side,elbow,wrist,
+        [(0,.032,.030),(.16,.034,.027),(.72,.020,.021),
+         (1,.027,.031)],[bone,pale],'Forearm.'+side,8)
+    offset=V((sign*.025,.012,0))
+    limb('Ulna '+side,V(elbow)+offset*.5,V(wrist)+offset,
+        [(0,.026,.021),(.45,.019,.018),(1,.023,.025)],
+        [patina,bone],'Forearm.'+side,8)
+    wear('Carpal cluster '+side,wrist,.050,.045,.047,'Hand.'+side)
+    for finger in range(4):
+        dx=(finger-1.5)*.022
+        origin=V(wrist)+V((dx,-.057,-.048))
+        limb('Bare phalange '+side+str(finger),origin,
+            origin+V((0,-.027,-.043)),
+            [(0,.013,.012),(1,.007,.009)],[bone,pale],'Hand.'+side,6,.0)
+    # Hip bones are exposed, never shoulder or shin armor.
+    limb('Femur '+side,hip,knee,[
+        (0,.074,.073),(.13,.078,.068),(.46,.046,.047),
+        (.76,.041,.043),(1,.064,.060)],
+        [pale,bone,patina],'Thigh.'+side)
+    wear('Femoral condyle '+side,knee,.071,.054,.056,'Thigh.'+side)
+    limb('Tibia '+side,knee,ankle,[
+        (0,.049,.048),(.14,.046,.045),(.54,.029,.031),
+        (.84,.034,.033),(1,.044,.048)],
+        [bone,pale],'Shin.'+side)
+    limb('Fibula '+side,
+        V(knee)+V((sign*.037,.002,0)),
+        V(ankle)+V((sign*.032,.015,0)),
+        [(0,.019,.018),(.5,.015,.014),(1,.013,.015)],
+        [patina,bone],'Shin.'+side,6,bevel=.002)
+    wear('Uncovered ankle '+side,ankle,.054,.061,.047,'Foot.'+side)
+    foot=profile('Heel and metatarsals '+side,
+        [(.026,sign*.155,-.105,.074,.130),
+         (.060,sign*.155,-.083,.093,.147),
+         (.104,sign*.155,-.037,.078,.114),
+         (.151,sign*.155,-.007,.056,.089)],
+        [worn,bone,pale],'Foot.'+side,8)
+    soles[side]=[v.co.copy() for v in foot.data.vertices]
+    for toe in range(4):
+        x=sign*.155+(toe-1.5)*.032
+        limb('Phalanx toe %s%d'%(side,toe),(x,-.132,.052),
+            (x,-.205+.010*abs(toe-1.5),.041),
+            [(0,.016,.018),(.5,.017,.016),(1,.008,.010)],
+            [pale,bone],'Foot.'+side,6,bevel=.002)
+
+# Actual weapons, no shield and no costume. The sword is patterned after the
+# Guardian's thick forged blade and narrow, crisp, bright cutting edge.
+grip=V(right)
+limb('Saber wrapped grip',grip+V((0,0,-.115)),
+    grip+V((0,0,.14)),
+    [(0,.034,.033),(.2,.029,.027),(.80,.028,.028),(1,.029,.027)],
+    [leather,bronze],'Grip.R',8,'sabre',.004)
+limb('Saber swept crossguard',grip+V((-.115,-.02,.14)),
+    grip+V((.115,-.02,.14)),
+    [(0,.012,.019),(.21,.026,.027),(.79,.026,.027),(1,.012,.020)],
+    [steel,bronze,steel_edge],'Grip.R',8,'sabre')
+limb('Heavy sabre blade',grip+V((0,-.01,.145)),
+    grip+V((.080,-.11,.78)),
+    [(0,.044,.023),(.16,.050,.030),(.51,.050,.026),
+     (.78,.036,.018),(1,.002,.003)],
+    [steel,steel_edge,steel],'Grip.R',8,'sabre',.008)
+limb('Saber sharpened cutting edge',grip+V((-.028,-.018,.22)),
+    grip+V((.068,-.126,.765)),
+    [(0,.008,.007),(.55,.012,.008),(1,.002,.002)],
+    [steel_edge],'Grip.R',6,'sabre',.003)
+wear('Saber pommel',tuple(grip+V((0,0,-.137))),
+     .041,.040,.045,'Grip.R',bronze)
+
+bow=V(left)
+# Bow arcs in x/z with actual depth, not a 2D line.
+bowpts=[(-.12,.41),(-.11,.31),(-.065,.16),(-.020,0),
+        (-.065,-.16),(-.11,-.31),(-.12,-.41)]
+for i,((y0,z0),(y1,z1)) in enumerate(zip(bowpts,bowpts[1:])):
+    a=bow+V((0,y0,z0))
+    b=bow+V((0,y1,z1))
+    limb('Bow yew limb %d'%i,a,b,
+         [(0,.014,.016),(.5,.023,.022),(1,.014,.016)],
+         [wood,worn],'Bow.L',8,'bow',.002)
+limb('Bow handle',bow+V((0,-.027,-.12)),
+     bow+V((0,-.027,.12)),[(0,.028,.027),(1,.028,.027)],
+     [leather,wood],'Bow.L',8,'bow')
+for i,sign in enumerate((-1,1)):
+    head=V(design['String'+str(i)][0])
+    tail=V(design['String'+str(i)][1])
+    limb('Bow live string %d'%i,head,tail,
+         [(0,.005,.005),(1,.005,.005)],[stringmat],
+         'String'+str(i),6,'bow',.0)
+limb('Nocked arrow',bow+V((0,-.01,0)),bow+V((0,-.61,0)),
+     [(0,.011,.010),(.5,.010,.010),(1,.008,.009)],
+     [wood],'Arrow',8,'bow',.0)
+limb('Arrow barbed head',bow+V((0,-.59,0)),bow+V((0,-.67,0)),
+     [(0,.028,.018),(.6,.021,.015),(1,.001,.001)],
+     [steel_edge],'Arrow',8,'bow',.002)
+
+# Bind geometry with vertex groups to the same armature and apply Guardian
+# bevels / weighted normals BEFORE export. The other enemy and Guardian both
+# use one continuous AnimationMixer track rather than sprite blending.
 groups={}
-for obj,bone,kit in parts:
-    world=obj.matrix_world.copy()
-    if kit=='sabre' and bone=='HandR':
-        world=Matrix.Translation(grip)@Matrix.Rotation(1.34,4,'X')@Matrix.Translation(-grip)@world
-    obj.data.transform(world);obj.matrix_world=Matrix.Identity(4)
-    # Bake the same bevel + weighted-normal strategy as the Guardian's
-    # plated surfaces; leave anatomical shafts and sculpted facets crisp.
-    name=obj.name.lower()
-    if any(token in name for token in (
-        'plate','guard','buckler','cuff','buckle','forged swept',
-        'cuirass','greave','quiver','saber blade','saber crossguard','riveted')):
-        style.forged_hard_edges(obj, width=.0035)
-    group=obj.vertex_groups.new(name=bone);group.add(list(range(len(obj.data.vertices))),1,'REPLACE')
+for obj,bone_name,kit in parts:
+    obj.data.transform(obj.matrix_world)
+    obj.matrix_world=Matrix.Identity(4)
+    group=obj.vertex_groups.new(name=bone_name)
+    group.add(list(range(len(obj.data.vertices))),1,'REPLACE')
     groups.setdefault(kit,[]).append(obj)
 meshes={}
 for kit,objs in groups.items():
     bpy.ops.object.select_all(action='DESELECT')
     for obj in objs:obj.select_set(True)
-    bpy.context.view_layer.objects.active=objs[0];bpy.ops.object.join()
-    ob=objs[0];ob.name='Skeleton • '+kit;ob.parent=rig
-    mod=ob.modifiers.new('Skeleton joints','ARMATURE');mod.object=rig;meshes[kit]=ob
-# Bind-pose coordinates face -Y. FK limb rotations use X for the stride and
-# Z for torso twist. During a collapse each bone gets an independent floor pose.
-clips={'idle':6,'run':10,'strike':10,'shoot':10,'death':10}
+    bpy.context.view_layer.objects.active=objs[0]
+    bpy.ops.object.join()
+    ob=objs[0]
+    ob.name='Skeleton • '+kit
+    ob.parent=rig
+    modifier=ob.modifiers.new('Guardian-pattern rigid bone skin','ARMATURE')
+    modifier.object=rig
+    meshes[kit]=ob
 
-def rotation(x=0,y=0,z=0):return Euler((x,y,z)).to_matrix().to_4x4()
-def ease(x):x=max(0,min(1,x));return x*x*(3-2*x)
-orig={name:Matrix.Translation(p) for name,(p,parent) in joints.items()}
-def sample(clip,t):
-    phase=2*pi*t;swing=math.sin(phase);cycle=math.cos(phase)
-    local={n:Matrix.Identity(4) for n in joints}
-    run=clip=='run';shoot=clip=='shoot'
-    if run:
-        # Loose but coherent locomotion: pelvis leads, shoulders counter,
-        # cervical vertebrae and skull follow with delayed momentum.
-        bounce=.023+.041*(1-math.cos(2*phase))*.5
-        local['Pelvis']=Matrix.Translation((.030*swing,-.018*cycle,bounce))@rotation(
-            .047*cycle,.033*swing,.112*swing)
-        local['Chest']=rotation(.105+.058*math.sin(phase+.44),
-            .061*cycle,-.156*math.sin(phase-.26))
-        local['Neck']=rotation(-.043-.067*math.sin(phase-.51),
-            .028*math.cos(phase-.42),.059*math.sin(phase-.50))
-        local['Skull']=rotation(-.067+.079*math.sin(phase-.75),
-            .025*cycle,-.056*math.sin(phase-.82))
+def orient(name,position,rotation):
+    anchor=rest[name][0]
+    matrix=Matrix.Translation(position)@rotation.to_4x4()@Matrix.Translation(-anchor)
+    rig.pose.bones[name].matrix=matrix@rig.data.bones[name].matrix_local
+    bpy.context.view_layer.update()
+
+def attached(name,position):
+    frame=rig.pose.bones[name].matrix@rig.data.bones[name].matrix_local.inverted()
+    return frame@position
+
+def point(name,head,tail,stretch=1):
+    start,end,_=rest[name]
+    forward=(end-start).normalized()
+    travel=V(tail)-V(head)
+    if travel.length<.00001:return
+    transform=forward.rotation_difference(travel).to_matrix()
+    if stretch!=1:
+        scale=Matrix.Identity(3)
+        for row in range(3):
+            for column in range(3):
+                scale[row][column]+=(stretch-1)*forward[row]*forward[column]
+        transform@=scale
+    orient(name,V(head),transform)
+
+def bend_joint(upper,lower,a,end,bias,stretch=1):
+    """Guardian two-link IK, preserving segment lengths and knee bend."""
+    a,end=V(a),V(end)
+    ab=(rest[upper][1]-rest[upper][0]).length
+    bc=(rest[lower][1]-rest[lower][0]).length
+    delta=end-a
+    scale=max(1,min(stretch,(delta.length+.001)/(ab+bc)))
+    ab*=scale;bc*=scale
+    axis=delta.normalized() if delta.length>.001 else V((0,-1,0))
+    distance=max(abs(ab-bc)+.001,min(ab+bc-.001,delta.length))
+    offset=(ab*ab-bc*bc+distance*distance)/(2*distance)
+    normal=V(bias)-axis*axis.dot(V(bias))
+    if normal.length<.001:normal=axis.cross(V((1,0,0)))
+    normal.normalize()
+    knee=a+axis*offset+normal*math.sqrt(max(0,ab*ab-offset*offset))
+    goal=a+axis*distance
+    point(upper,a,knee,scale)
+    point(lower,knee,goal,scale)
+    return goal
+
+def smooth(t):
+    t=max(0,min(1,t))
+    return t*t*(3-2*t)
+
+def sample(keys,t):
+    for (a,*start),(b,*end) in zip(keys,keys[1:]):
+        if t<=b:
+            k=smooth((t-a)/max(.00001,b-a))
+            return [v+(w-v)*k for v,w in zip(start,end)]
+    return keys[-1][1:]
+
+def gait_foot(phase,stride=.44,stance=.60,clearance=.16):
+    """Guardian stance/swing solver, re-tuned for bonier, less damped feet."""
+    if phase<stance:
+        travel=stride*(phase/stance-.5)
+        lift=0
+        pitch,=sample([(0,-12),(.20,0),(.63,0),(1,28)],phase/stance)
     else:
-        local['Pelvis']=Matrix.Translation((.008*swing,0,.007*cycle))@rotation(
-            .015*swing,0,.012*cycle)
-        local['Chest']=rotation(.034+.021*swing,.015*cycle,-.028*swing)
-        local['Neck']=rotation(-.026+.041*math.sin(phase-.65),0,.038*math.sin(phase-.6))
-        local['Skull']=rotation(.031*math.sin(phase-.9),.020*cycle,
-                               -.035*math.sin(phase-1.0))
-    for side,sign in [('R',1),('L',-1)]:
-        stride=sign*swing;flight=max(0,-stride)
-        local['Thigh'+side]=rotation(
-            .74*stride-.07 if run else -.025+.012*sign*swing,
-            .034*sign if run else 0,.023*sign*cycle if run else 0)
-        local['Shin'+side]=rotation(.10+.90*flight if run else .065+.019*sign*swing)
-        local['Foot'+side]=rotation(
-            -.43*stride-.46*flight if run else -.018+.015*cycle)
-        local['Arm'+side]=rotation(
-            -.14-(.49 if side=='R' else .44)*sign*math.sin(phase+.18)
-            if run else -.10+.065*sign*swing,
-            .085*sign,.045*sign*cycle if run else .012*sign)
-        local['Forearm'+side]=rotation(
-            -.24-.15*sign*math.sin(phase-.30) if run
-            else -.26+.032*math.sin(phase+.35*sign))
-        local['Hand'+side]=rotation(
-            .10*math.sin(phase-.6*sign) if run else .022*swing)
-    if clip=='strike':
-        # Readable anticipation + static hold through attack windup;
-        # ballistic cut, extended follow-through and visible recovery.
-        wind=ease((t-.025)/.38);cut=ease((t-.48)/.17)
-        recover=ease((t-.76)/.24)
-        recoil=max(0,math.sin(pi*ease((t-.46)/.33)))
-        local['Pelvis']=Matrix.Translation((
-            -.071*wind+.114*cut-.043*recover,
-            .065*wind-.185*recoil,
-            -.102*wind+.164*recoil-.065*recover))@rotation(
-            -.11*wind+.29*cut-.18*recover,0,
-            -.20*wind+.38*cut-.18*recover)
-        local['Chest']=rotation(-.23*wind+.76*cut-.53*recover,
-            -.14*wind+.18*cut,-.74*wind+1.72*cut-.98*recover)
-        local['Neck']=rotation(.17*wind-.31*cut+.14*recover,
-            -.08*wind,.18*wind-.29*cut+.11*recover)
-        local['Skull']=rotation(.18*wind-.39*cut+.21*recover,
-            0,-.21*wind+.27*cut-.06*recover)
-        local['ArmR']=rotation(-.42-2.68*wind+2.96*cut-.28*recover,
-            -.83*wind+1.15*cut-.32*recover,
-            -.28*wind+.55*cut-.27*recover)
-        local['ForearmR']=rotation(-.39-.84*wind+1.55*cut-.71*recover)
-        local['HandR']=rotation(-.30*wind+.53*cut-.23*recover)
-        local['ArmL']=rotation(-.18+.50*wind-.93*cut+.34*recover,
-            .31*wind-.23*cut,.22*wind-.38*cut+.16*recover)
-        local['ForearmL']=rotation(-.20-.45*wind+.64*cut-.19*recover)
-        local['ThighL']=rotation(-.37*wind+.64*cut-.27*recover)
-        local['ThighR']=rotation(.26*wind-.48*cut+.22*recover)
-        local['ShinL']=rotation(.32*wind-.38*cut)
-        local['ShinR']=rotation(.24*wind+.19*cut-.28*recover)
-    # Lower bow hand in locomotion, shoulder-high at full draw. Solve both
-    # two-link arms to keep the drawing fingers on the nock.
-    desired={}
-    for n,(p,parent) in joints.items():
-        desired[n]=(desired[parent]@orig[parent].inverted() if parent else Matrix.Identity(4))@orig[n]@local[n]
-    if shoot:
-        # Bow is an articulated held object: left arm stabilizes its rise,
-        # right fingers draw, breath holds, then a fast release and follow-through.
-        draw=ease((t-.035)/.43);release=ease((t-.64)/.07)
-        lower=ease((t-.83)/.17)
-        local['Pelvis']=Matrix.Translation((-.028*draw,.046*draw,-.025*draw))
-        local['Chest']=rotation(-.18*draw+.34*release,0,-.30*draw+.25*release)
-        local['Neck']=rotation(-.08*draw+.15*release,0,.07*draw)
-        local['Skull']=rotation(-.16*draw+.21*release,0,-.12*draw+.10*release)
-        # Recompute FK after bow torso pose: original IK was anchored to
-        # the idle chest, making arms float apart during the bow draw.
-        desired={}
-        for n,(p,parent) in joints.items():
-            desired[n]=(desired[parent]@orig[parent].inverted()
-                        if parent else Matrix.Identity(4))@orig[n]@local[n]
-        level=draw*(1-lower)
-        left=V((.21,-.17-.36*level,1.17+.37*level))
-        nock=left+V((0,.080+.47*draw*(1-release),0))
-        right=nock+V((-.105-.13*release,.19*release,.035*release))
-        for side,target,pole in [('L',left,V((.8,.1,1.12))),('R',right,V((-.72,.35,1.42)))]:
-            a=desired['Arm'+side].translation;d=target-a;axis=d.normalized()
-            l=(joints['Arm'+side][0]-joints['Forearm'+side][0]).length
-            m=(joints['Hand'+side][0]-joints['Forearm'+side][0]).length
-            length=min(d.length,l+m-.001);along=(l*l-m*m+length*length)/(2*length)
-            bend=pole-a; bend=(bend-axis*bend.dot(axis)).normalized()
-            elbow=a+axis*along+bend*math.sqrt(max(0,l*l-along*along))
-            for limb,nextjoint,start,end in [('Arm','Forearm',a,elbow),('Forearm','Hand',elbow,target)]:
-                vec=joints[nextjoint+side][0]-joints[limb+side][0]
-                desired[limb+side]=Matrix.Translation(start)@vec.rotation_difference(end-start).to_matrix().to_4x4()
-            desired['Hand'+side]=Matrix.Translation(target)
+        t=(phase-stance)/(1-stance)
+        arc=math.sin(pi*t)
+        carry=(1-stance)/(math.tau*stance)
+        progress=smooth(t)-carry*math.sin(math.tau*t)*(1-.65*arc)-.095*arc*arc
+        travel=stride*(.5-progress)
+        lift=clearance*arc**1.35
+        pitch,=sample([(0,26),(.3,16),(.55,2),(.82,-12),(1,-12)],t)
+    return travel+.075,lift,math.radians(pitch)
+
+def place_foot(side,sign,travel,lift,pitch,width=0):
+    name='Foot.'+side
+    ankle=rest[name][0]
+    rotation=Euler((pitch,0,sign*.04)).to_matrix()
+    lowest=min((rotation@(v-ankle)).z for v in soles[side])
+    end=V((ankle.x+sign*width,travel,.012+lift-lowest))
+    hip=attached('Hips',rest['Thigh.'+side][0])
+    pos=bend_joint('Thigh.'+side,'Shin.'+side,
+                   hip,end,(sign*.14,-1,.055),1.035)
+    orient(name,pos,rotation)
+
+def blade_vector(yaw,angle):
+    return V((math.sin(yaw)*math.cos(angle),
+             -math.cos(yaw)*math.cos(angle),math.sin(angle)))
+
+def sample_pose(kind,t):
+    """Guardian's torso->head->planted-feet->IK-hands evaluation order."""
+    for pb in rig.pose.bones:
+        pb.matrix_basis=Matrix.Identity(4)
+        pb.rotation_mode='QUATERNION'
+        pb.scale=(1,1,1)
+    bpy.context.view_layer.update()
+    phase=math.tau*t
+    swing=math.cos(phase)
+    locomotion=kind=='run'
+    sword=kind=='strike'; archery=kind=='shoot'
+    if locomotion:
+        bob=.020+.029*(1-math.cos(phase*2))/2
+        hips=rest['Hips'][0]+V((-.037*math.sin(phase-.13),-.018,bob-.062))
+        pelvic_yaw=.096*math.cos(phase+.15)
+        thorax_yaw=-.132*math.cos(phase-.38)
+        pitch=.12+.029*math.sin(phase-.17)
+    else:
+        hips=rest['Hips'][0]+V((.013*math.sin(phase),0,-.034+.007*math.sin(phase)))
+        pelvic_yaw=.020*math.sin(phase)
+        thorax_yaw=-.027*math.sin(phase-.3)
+        pitch=.032+.010*math.sin(phase)
+    if sword:
+        # Anticipation and contact are distinct deliberate cinematic poses.
+        yaw,fore,drop,lean,handx,handy,handz,blade_yaw,blade_elev=sample([
+         (0,0,0,0,.055, -.36,-.095,1.01,.25,-.27),
+         (.16,-.28,.028,.055,-.12,-.37,.06,1.04,1.65,1.10),
+         (.43,-.70,.090,.108,-.25,-.43,.13,1.48,2.58,1.40),
+         (.48,-.73,.093,.112,-.27,-.44,.11,1.50,2.63,1.36),
+         (.58,.36,-.146,.048,.20,-.39,-.43,1.12,-1.23,-.16),
+         (.70,.91,-.105,.090,.31,-.18,-.49,.87,-1.69,-.57),
+         (.82,.31,-.026,.040,.18,-.31,-.19,.93,-.81,-.38),
+         (1,0,0,0,.055,-.36,-.095,1.01,.25,-.27)],t)
+        hips=rest['Hips'][0]+V((yaw*.055,fore,-drop))
+        pelvic_yaw=yaw*.56
+        thorax_yaw=yaw
+        pitch=lean
+    elif archery:
+        draw=smooth((t-.035)/.42)
+        release=smooth((t-.63)/.075)
+        recovery=smooth((t-.83)/.17)
+        load=draw*(1-recovery)
+        hips=rest['Hips'][0]+V((-.022*load,.042*load,-.034))
+        pelvic_yaw=-.15*load+.11*release
+        thorax_yaw=-.32*load+.27*release
+        pitch=-.16*load+.20*release
+    orient('Hips',hips,Euler((pitch*.35,.034*math.sin(phase),pelvic_yaw)).to_matrix())
+    chest=attached('Hips',rest['Chest'][0])
+    chest_rotation=Euler((pitch,.028*math.sin(phase-.3),thorax_yaw)).to_matrix()
+    orient('Chest',chest,chest_rotation)
+    neck=attached('Chest',rest['Neck'][0])
+    neckrot=Euler((pitch*.52-.037*math.sin(phase-.38),
+                    .016*math.sin(phase-.7),thorax_yaw*.65)).to_matrix()
+    orient('Neck',neck,neckrot)
+    head=attached('Neck',rest['Head'][0])
+    headrot=Euler((pitch*.24-.037*math.sin(phase-.83),
+                    .022*math.sin(phase-1.1),thorax_yaw*.35)).to_matrix()
+    orient('Head',head,headrot)
+    for side,sign in SIDES:
+        if locomotion:
+            footphase=(t+(0 if sign<0 else .5))%1
+            travel,lift,footpitch=gait_foot(footphase)
+        elif sword:
+            travel,lift,footpitch=(-.12 if sign<0 else .13),0,.14 if sign>0 else 0
+        elif archery:
+            travel,lift,footpitch=(.13 if sign<0 else -.07),0,0
+        else:
+            travel,lift,footpitch=sign*.06,0,0
+        place_foot(side,sign,travel,lift,footpitch,.025)
+        shoulder=attached('Chest',rest['Arm.'+side][0])
+        if sword and sign>0:
+            wrist=V((handx,handy,handz))
+        elif sword:
+            wrist=shoulder+V((-.044,-.095,-.384+.085*abs(yaw)))
+        elif archery:
+            if sign<0:
+                wrist=V((-.30,-.17-.34*load,1.12+.35*load))
+            else:
+                wrist=V((-.34,-.14+.46*draw*(1-release),1.13+.33*load))
+        else:
+            lean=math.cos(phase-.45)
+            legphase=lean*sign
+            reach=.18 if locomotion else .027
+            wrist=shoulder+V((sign*.052,-.09+reach*legphase,
+                               -.365+.03*math.sin(phase-.24)*sign))
+        end=bend_joint('Arm.'+side,'Forearm.'+side,
+                       shoulder,wrist,(sign*.52,.76,-.1),1.05)
+        point('Hand.'+side,end,end+V((0,-.052,-.102)))
+        if side=='R':
+            if sword:
+                direction=blade_vector(blade_yaw,blade_elev)
+            elif locomotion:
+                direction=blade_vector(.45+.12*math.sin(phase-.7),-.38)
+            else:
+                direction=blade_vector(.32,-.36)
+            point('Grip.R',end,end+direction)
+        else:
+            # The bow is vertical, following left hand and shoulder pose.
+            point('Bow.L',end,end+V((0,-.08,.95)))
+    if archery:
+        bowhead=attached('Bow.L',rest['Bow.L'][0])
+        bowquat=rig.pose.bones['Bow.L'].matrix.to_quaternion()
+        # The two string halves remain curved to the visible drawing hand.
+        nock=bowhead+V((0,.08+.42*draw*(1-release),.0))
         for i,sign in enumerate((-1,1)):
-            tip=left+V((0,.085,sign*.44));d=nock-tip;rest=V((0,0,-sign*.44))
-            desired['String'+str(i)]=Matrix.Translation(tip)@rest.rotation_difference(d).to_matrix().to_4x4()@Matrix.Diagonal((1,1,d.length/.44,1))
-        desired['Arrow']=Matrix.Translation(nock)@Matrix.Scale(.0001 if t>=.68 else 1,4)
-    if clip=='death':
-        for i,(name,(p,parent)) in enumerate(joints.items()):
-            if name.startswith(('String','Arrow')):continue
-            fall=ease((t-(i%4)*.028)/.71)
-            rad=.10+.26*((i*7)%11)/10;ang=i*2.40
-            end=V((p.x*.85+rad*math.cos(ang),rad*math.sin(ang),.08+(.09 if name=='Skull' else 0)))
-            loc=desired[name].translation.lerp(end,fall)
-            loc.z+=.055*abs(math.sin((t-.70)*pi*4))*max(0,1-(t-.70)/.30) if t>.70 else 0
-            if name.startswith('Hand'):
-                desired[name]=Matrix.Translation(loc)@rotation(0,1.48*fall,ang*fall)
-                continue
-            desired[name]=Matrix.Translation(loc)@rotation((1.46 if 'Foot' not in name else .2)*fall,.3*math.sin(i)*fall,ang*fall)
-        for n in ('String0','String1','Arrow'):
-            desired[n]=desired['HandL']@orig['HandL'].inverted()@orig[n]
-    for n,(p,parent) in joints.items():
-        basis=(desired[parent]@orig[parent].inverted()@orig[n] if parent else orig[n]).inverted()@desired[n]
-        pb=rig.pose.bones[n];pb.matrix_basis=basis
-        for prop in ('location','rotation_quaternion','scale'):pb.keyframe_insert(data_path=prop,frame=1+round(t*48))
-for clip,count in clips.items():
-    action=bpy.data.actions.new(clip);action.use_fake_user=True
+            tip=attached('Bow.L',rest['String'+str(i)][0])
+            point('String'+str(i),tip,nock)
+        point('Arrow',nock,nock+V((0,-.62,0)))
+        if t>=.71:
+            rig.pose.bones['Arrow'].scale=(.0001,.0001,.0001)
+    if kind=='death':
+        fall=smooth((t-.08)/.70)
+        for i,(name,(anchor,tail,parent)) in enumerate(rest.items()):
+            if name in ('String0','String1','Arrow'):continue
+            rot=(2.3*i + .3)
+            dist=.11+.16*((i*5)%7)/7
+            floor=V((anchor.x*.87+dist*math.cos(rot),
+                     anchor.y*.32+dist*math.sin(rot),
+                     .085+(.085 if name=='Head' else .025)))
+            where=attached(name,anchor).lerp(floor,fall)
+            rotation=Euler((1.3*fall,.17*math.sin(i)*fall,.85*math.sin(rot)*fall)).to_matrix()
+            orient(name,where,rotation)
+    bpy.context.view_layer.update()
+
+clips={'idle':8,'run':12,'strike':12,'shoot':12,'death':12}
+for clip in clips:
+    action=bpy.data.actions.new(clip)
+    action.use_fake_user=True
     rig.animation_data_create().action=action
-    for i in range(25):sample(clip,i/24)
-scene.frame_end=49;scene.render.fps=48
-rig.animation_data.action=bpy.data.actions['idle'];scene.frame_set(1)
-meshes['bow'].hide_viewport=True;meshes['bow'].hide_render=True
-bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);bpy.context.view_layer.objects.active=rig
+    for i in range(25):
+        t=i/24
+        scene.frame_set(1+2*i)
+        sample_pose(clip,t)
+        for pb in rig.pose.bones:
+            pb.keyframe_insert(data_path='location',frame=1+2*i)
+            pb.keyframe_insert(data_path='rotation_quaternion',frame=1+2*i)
+            pb.keyframe_insert(data_path='scale',frame=1+2*i)
+
+scene.frame_end=49
+scene.render.fps=48
+rig.animation_data.action=bpy.data.actions['idle']
+scene.frame_set(1)
+meshes['bow'].hide_viewport=True
+meshes['bow'].hide_render=True
+bpy.ops.object.select_all(action='DESELECT')
+rig.select_set(True)
+bpy.context.view_layer.objects.active=rig
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'skeleton.blend'),compress=True)
+
 # CI can publish new live GLBs without waiting for the expensive Cycles
 # 32-facing fallback atlases. Default keeps full atlas generation unchanged.
 if os.environ.get("MIND_DUNGEON_RIG_ONLY") != "1":
