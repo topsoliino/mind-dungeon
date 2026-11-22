@@ -33,7 +33,7 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=3')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=4')"));
 assert(html.includes('enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)'));
 assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso)"));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));
