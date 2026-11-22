@@ -133,6 +133,7 @@ def skeleton():
                 key: [i * (SAMPLES + GAP), SAMPLES]
                 for i, key in enumerate(clips)
             }, "displaySize": 132, "field": 3.23, "targetHeight": 1.01,
+            "materialColorSpace": "srgb-to-linear",
         }
     (ROOT / "skeleton" / "skeleton-live.json").write_text(
         json.dumps(manifests, separators=(",", ":")) + "\n")
@@ -151,6 +152,7 @@ def rat():
         "clips": {key: [i * (SAMPLES + GAP), SAMPLES]
                   for i, key in enumerate(clips)},
         "displaySize": 106, "field": 2.3, "targetHeight": 0.39,
+        "materialColorSpace": "srgb-to-linear",
     }
     (ROOT / "rat" / "rat-live.json").write_text(
         json.dumps(manifest, separators=(",", ":")) + "\n")
