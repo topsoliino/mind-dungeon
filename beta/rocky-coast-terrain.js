@@ -297,6 +297,15 @@ function create(options){
    ctx.drawImage(layer.canvas,layer.x,layer.y);
   }
  }
+ function uphillBlocked(from,x,y){
+  const terrain=surfaceAt(from.x,from.y);
+  if(terrain.slope<32)return false;
+  // Movement against gravity on a slope too steep to stand on is suppressed,
+  // while downhill and lateral steering remain possible. Sliding still uses
+  // the same continuous heightfield and collision surfaces.
+  const uphill=(x-from.x)*terrain.normal.dx+(y-from.y)*terrain.normal.dy;
+  return uphill>.004;
+ }
  function slide(actor,dt,tryMove,onDanger){
   const zone=surfaceAt(actor.x,actor.y),n=zone.normal;
   actor.alleyZ=zone.height;
@@ -365,7 +374,7 @@ function create(options){
  const noop=()=>false;
  return {
   region:REGION,exterior:true,spawn,prison,normalMap,mountDebug,heightAt,normalAt,
-  surfaceAt,dangerAt,borderAt,slide,nearestTerrainPoint,level:5,
+  surfaceAt,dangerAt,borderAt,slide,uphillBlocked,nearestTerrainPoint,level:5,
   walkable,walkableOnFloor,groundWalkable:walkable,
   routeTo,routeToFloor:routeTo,clearLine:(x,y,u,v)=>line({x,y},{x:u,y:v}),
   clearLineOnFloor:(x,y,u,v)=>line({x,y},{x:u,y:v}),
