@@ -38,6 +38,8 @@ for asset,settings_path,variant,clips in PACKAGES:
     assert tuple(manifest["clips"])==clips,(asset,manifest["clips"])
     assert all(count==25 for start,count in manifest["clips"].values())
     assert manifest["field"]>0 and manifest["targetHeight"]>0
+    assert manifest.get("materialColorSpace")=="srgb-to-linear", (
+        asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
     print(f"{asset}: {len(data):,} bytes, {len(gltf['meshes'])} meshes, "
           f"{len(gltf['skins'])} skeletons, {len(channels)} bone channels, "
           f"{len(clips)} genuine 3D animation clips OK")
