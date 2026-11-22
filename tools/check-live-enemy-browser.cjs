@@ -335,6 +335,46 @@ const run=async()=>{
   });
   console.log('SOFTWARE CANVAS COMPARISON:',JSON.stringify(canvasSample));
   await canvasPage.close();
+
+  // Actual title-screen update path, not just static source checks:
+  // loading latest.html must replace the document with a fresh Beta and
+  // attach a unique revision to all real script/image requests.
+  const latestPage=await browser.newPage({viewport:{width:1100,height:800}});
+  const updateErrors=[];
+  latestPage.on('pageerror',error=>updateErrors.push(error.message));
+  await latestPage.goto(base+'latest.html',{waitUntil:'domcontentloaded',timeout:45000});
+  await latestPage.waitForFunction(()=>
+   window.__mindFreshToken&&window.__mindBuildId&&
+   document.querySelector('#md-version-panel #md-version-load')&&
+   window.DungeonVersion?.latestURL,
+   null,{timeout:45000});
+  const before=await latestPage.evaluate(()=>({
+   token:window.__mindFreshToken,build:window.__mindBuildId,
+   check:document.querySelector('#md-version-check')?.textContent,
+   script:document.querySelector('script[src*="dungeon-version.js"]')?.src,
+   action:document.querySelector('#md-version-load')?.textContent,
+   latest:window.DungeonVersion.latestURL().pathname
+  }));
+  assert.equal(before.build.length,12);
+  assert(before.script.includes('__fresh='));
+  assert(before.latest.endsWith('/beta/latest.html'));
+  assert(before.action.includes('Neueste Beta laden'));
+  await latestPage.locator('#md-version-load').click();
+  await latestPage.waitForFunction(previous=>
+    window.__mindFreshToken&&window.__mindFreshToken!==previous&&
+    window.__mindBuildId&&document.querySelector('#md-version-panel'),
+    before.token,{timeout:45000});
+  const after=await latestPage.evaluate(()=>({
+   token:window.__mindFreshToken,build:window.__mindBuildId,
+   status:document.querySelector('#md-version-status')?.textContent
+  }));
+  assert.equal(before.build,after.build,
+   'A fresh reload of the same published version must keep the same build ID');
+  assert.notEqual(before.token,after.token,
+   'Latest-button navigation must invalidate asset URLs');
+  assert.deepEqual(updateErrors,[],'Latest beta entrypoint must have no JavaScript errors');
+  console.log('LATEST BETA TITLE UPDATE:',JSON.stringify({before,after}));
+  await latestPage.close();
  }finally{await browser.close();}
 };
 run().catch(err=>{console.error(err);process.exitCode=1;});
