@@ -1,7 +1,7 @@
 // Blender-exported 360-degree directional atlases with continuous view interpolation.
 window.AlleySkeleton=(()=>{
  'use strict';
- const sheets=new Map(),cell=128,deathDuration=.78,assetVersion=7,turn=Math.PI*2;
+ const sheets=new Map(),cell=128,deathDuration=.78,assetVersion=8,turn=Math.PI*2;
  async function load(){
   sheets.clear();
   await Promise.all(['sabre','bow'].flatMap(kit=>
