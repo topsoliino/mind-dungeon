@@ -56,8 +56,26 @@ async function glb(url){
 function srgbToLinear(value){
  return value<=.04045?value/12.92:Math.pow((value+.055)/1.055,2.4);
 }
+function hasLegacyPalette(root,settings){
+ // A render workflow may publish the manifest before freshly rebuilt .blend
+ // sources finish. Detect the actual GLB material values, not only metadata.
+ // The two stable palette probes differ by >2x in linear RGB.
+ const isRat=settings.field<3;
+ const name=isRat?'Warm dark umber fur':'Weathered ivory';
+ let red=null;
+ root.traverse(node=>{
+  if(!node.isMesh)return;
+  for(const material of Array.isArray(node.material)?node.material:[node.material]){
+   if(red===null&&material?.name?.startsWith(name)&&material.color){
+    red=material.color.r;
+   }
+  }
+ });
+ return red===null?settings.materialColorSpace!=='srgb-to-linear':
+  red>(isRat?.14:.43);
+}
 function prepareMaterials(root,settings){
- const legacyPalette=settings.materialColorSpace!=='srgb-to-linear';
+ const legacyPalette=hasLegacyPalette(root,settings);
  const prepared=new Set();
  root.traverse(node=>{
   if(!node.isMesh)return;
