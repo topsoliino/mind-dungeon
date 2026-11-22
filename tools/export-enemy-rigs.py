@@ -92,9 +92,15 @@ def export_model(output, rig, meshes, clips):
     rig.select_set(True)
     for obj in bpy.data.objects:
         if obj.type == "MESH":
-            obj.hide_set(obj not in meshes)
-            obj.hide_render = obj not in meshes
-            obj.select_set(obj in meshes)
+            # The Blender source keeps the inactive bow kit hidden in
+            # the viewport. glTF ignores hidden meshes unless we clear
+            # BOTH hide_viewport and hide_render for selected kit meshes.
+            # Otherwise "skeleton-bow" silently exports naked bone only.
+            selected = obj in meshes
+            obj.hide_viewport = not selected
+            obj.hide_set(not selected)
+            obj.hide_render = not selected
+            obj.select_set(selected)
     bpy.context.view_layer.objects.active = rig
 
     with TemporaryDirectory() as tmp:
