@@ -35,11 +35,16 @@
   const scene=window.AlleyStudyMap,art=createArt(),map=scene.logic,route=window.AlleyRoute;
   const procedural=Boolean(window.AlleyGenerator?.enabled);
   const vertical=procedural&&window.AlleyVertical?.enabled?window.AlleyVertical:null;
-  const returnGate=window.RockyCoastPrison?.enabled&&
-   window.RockyCoastPrison.entry==='from-upper'&&
-   window.AlleyGenerator?.portals?.[1];
+  const prison=window.RockyCoastPrison;
+  const returnGate=prison?.enabled&&prison.entry==='from-upper'&&
+   window.AlleyGenerator?.outdoorExit;
+  // Floors 2-4 start INSIDE their own generated building, not in the
+  // original outdoor alley or through an invisible/forbidden entrance.
+  // The first interior corridor always occupies [12..,4..7].
+  const innerSpawn=prison?.enabled&&prison.level>1&&prison.level<=4?
+   {x:14.5*tile,y:5.5*tile}:null;
   const spawn=returnGate?{x:(returnGate.x-returnGate.dx*.70)*tile,
-    y:(returnGate.y-returnGate.dy*.70)*tile}:unit(map.spawn);
+    y:(returnGate.y-returnGate.dy*.70)*tile}:innerSpawn||unit(map.spawn);
   const chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
   // These are the same ground footprints as the neutral props in the art pass.
   const props=procedural?[]:[
