@@ -33,7 +33,7 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=9')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=10')"));
 assert(!enemy.includes("function hasLegacyPalette("),
  'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
 assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
@@ -87,14 +87,26 @@ for(const [label,builder] of [['skeleton',skeletonBuilder],['rat',ratBuilder]]){
  assert(builder.includes('guardian-style.py'),
   label+' must import the common art-style helper');
 }
-assert(!ratBuilder.includes('oval("Ear cartilage"')&&
- !ratBuilder.includes('oval("Rump underfur"')&&
- ratBuilder.includes('Tapered faceted muzzle')&&
- ratBuilder.includes('Scavenger forged flank pauldron'),
- 'Rat must have nonblob angular muzzle, ears and readable gear planes');
-assert(skeletonBuilder.includes('Ribcage graphite shadow core')&&
- skeletonBuilder.includes('Broken cuirass main plate'),
- 'Skeleton must have real dark rib recesses and broad Guardian-style metal');
+assert(ratBuilder.includes('Slate blue-grey main coat')&&
+ ratBuilder.includes('Low shaggy dorsal fur clump')&&
+ ratBuilder.includes('Shaggy flank fur layer')&&
+ !ratBuilder.includes('Scavenger forged flank pauldron')&&
+ !ratBuilder.includes('Scavenger narrow forged back strap')&&
+ !ratBuilder.includes('Harness centre buckle'),
+ 'Small blue-grey rat must have true bristled fur and absolutely no equipment');
+assert(skeletonBuilder.includes("joint('Neck'")&&
+ skeletonBuilder.includes("Cervical vertebra body")&&
+ skeletonBuilder.includes("Uneven scapular ridge")&&
+ skeletonBuilder.includes("local['Neck']")&&
+ !skeletonBuilder.includes('Broken cuirass main plate')&&
+ !skeletonBuilder.includes('Buckler timber core')&&
+ !skeletonBuilder.includes('Tattered tabard front'),
+ 'Bare skeleton must have articulated uneven bones and no plated armor');
+assert(skeletonBuilder.includes('cut=ease((t-.48)/.17)')&&
+ skeletonBuilder.includes('release=ease((t-.64)/.07)'),
+ 'Skeleton sword and bow attacks need clear anticipation and fast release');
+assert(ratBuilder.includes('contacts=[.48] if clip=="bite" else [.34,.69]'),
+ 'Rat bite/combo must have a readable crouch-pounce telegraph');
 assert(!ratBuilder.includes('oval("Broad pear-shaped body"'),
  'Rat body must not fall back to a smooth primitive');
 assert(!skeletonBuilder.includes("oval('Cranium'"),

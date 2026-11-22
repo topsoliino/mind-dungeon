@@ -135,7 +135,7 @@ def skeleton():
                 for i, key in enumerate(clips)
             }, "displaySize": 116, "field": 3.23, "targetHeight": 1.01,
             "materialColorSpace": "srgb-to-linear",
-            "artStyle": "guardian-forged-v2",
+            "artStyle": "guardian-natural-enemies-v3",
             "sourceBlendSha256": hashlib.sha256(
                 (ROOT / "skeleton" / "skeleton.blend").read_bytes()).hexdigest(),
         }
@@ -155,9 +155,9 @@ def rat():
         "fps": FPS,
         "clips": {key: [i * (SAMPLES + GAP), SAMPLES]
                   for i, key in enumerate(clips)},
-        "displaySize": 92, "field": 2.3, "targetHeight": 0.39,
+        "displaySize": 82, "field": 2.3, "targetHeight": 0.39,
         "materialColorSpace": "srgb-to-linear",
-        "artStyle": "guardian-forged-v2",
+        "artStyle": "guardian-natural-enemies-v3",
         "sourceBlendSha256": hashlib.sha256(
             (ROOT / "rat" / "rat.blend").read_bytes()).hexdigest(),
     }

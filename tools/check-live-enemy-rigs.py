@@ -41,18 +41,36 @@ for asset,settings_path,variant,clips in PACKAGES:
     assert manifest["field"]>0 and manifest["targetHeight"]>0
     assert manifest.get("materialColorSpace")=="srgb-to-linear", (
         asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
-    assert manifest.get("artStyle")=="guardian-forged-v2", (asset,"wrong art generation")
+    assert manifest.get("artStyle")=="guardian-natural-enemies-v3", (asset,"wrong art generation")
     source_blend=ROOT/("rat/rat.blend" if variant is None else "skeleton/skeleton.blend")
     assert manifest.get("sourceBlendSha256")==hashlib.sha256(source_blend.read_bytes()).hexdigest(), (
         asset,"Live rig does not use the current Blender source; rebuild GLB")
     names={m.get("name","") for m in gltf["materials"]}
     required=(
-        {"Graphite ribcage negative space","Guardian silver plate facets","Forged charcoal steel"}
+        {"Weathered ivory","Pale worn bone","Bone shadows and age lines"}
         if variant is not None else
-        {"Guardian gunmetal scavenger armor","Guardian silver scavenger facets","Graphite harness recesses"}
+        {"Slate blue-grey main coat","Cold silver-grey fur facets",
+         "Deep slate underfur","Dark dorsal blue-grey coat"}
     )
     assert required<=names, (
-        asset,"Old rounded/low-contrast GLB still in use, missing "+str(required-names))
+        asset,"Wrong skeleton/rat color generation; missing "+str(required-names))
+    )
+    if variant is not None:
+        assert "Neck" in {n.get("name","") for n in gltf.get("nodes",[])}, (
+            asset,"Bare skeleton must have separate animated cervical neck")
+        armor={"Oxidized armor plate","Guardian silver plate facets",
+               "Faded oxblood cloth","Tattered crimson underskirt",
+               "Graphite harness recesses"}
+        assert names.isdisjoint(armor), (asset,"Skeleton still wears armor")
+    else:
+        assert manifest["displaySize"]<=84, (asset,"Rat must render smaller")
+        assert not any(
+            float(m.get("pbrMetallicRoughness",{}).get("metallicFactor",0))>.01
+            for m in gltf["materials"]), (asset,"Rat still has metallic equipment")
+        banned=("scavenger","harness","saddle","buckle","pauldron","leather",
+                "iron","brass","cloth","armor","fur gold")
+        assert not any(any(word in name.lower() for word in banned)
+            for name in names), (asset,"Rat still has costume materials")
     assert any("NORMAL" in p.get("attributes",{}) for m in gltf["meshes"] for p in m.get("primitives",[])), (
         asset,"Finished surface normals must survive the skinned GLB export")
     print(f"{asset}: {len(data):,} bytes, {len(gltf['meshes'])} meshes, "

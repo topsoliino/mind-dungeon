@@ -1,7 +1,7 @@
 // Blender-baked small rat: editable armature, 32 independent 3D views/animation.
 window.AlleyRat=(()=>{
  'use strict';
- const CELL=128,VIEWS=32,TAU=Math.PI*2,VERSION=4;
+ const CELL=128,VIEWS=32,TAU=Math.PI*2,VERSION=5;
  const files=['idle','run','stalk','jump','bite','combo','dodge','dodge-left','death'];
  const sheets=new Map();
  const DEATH_SECONDS=1.15;
@@ -55,7 +55,7 @@ window.AlleyRat=(()=>{
   const p=iso.toView(e.x,e.y,e.alleyZ||0);
   const alpha=deathAge===null?1:clamp((2.6-deathAge)/.55);
   return {image,key:'rat-'+clip,frame:row+'-'+col,sx:col*textureCell,sy:row*textureCell,
-   w:textureCell,h:textureCell,width:128*(e.size||1),height:128*(e.size||1),
+   w:textureCell,h:textureCell,width:114*(e.size||1),height:114*(e.size||1),
    x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.65,alpha};
  }
  function sprites(e,iso,rules,deathAge=null){
