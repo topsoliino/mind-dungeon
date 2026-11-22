@@ -182,7 +182,9 @@ beltPlate=style.front_plate('Belt frontal clasp',
 part(beltPlate,'Belt frontal clasp','Pelvis',steel)
 oval('Buckle','Pelvis',(0,-.151,.966),(.037,.014,.026),bronze)
 strip('Split tabard','Pelvis',[(-.12,-.08,.95),(.10,-.09,.95),(-.1,-.116,.73),(.065,-.13,.69),(-.07,-.11,.64),(.04,-.13,.66)],teal,'both')
-oval('Pauldron','ArmL',(.245,.002,1.48),(.112,.101,.081),bronze)
+# The former golden orb on the shoulder contradicted the Guardian's
+# silver/graphite plate hierarchy, and read like a soft padded blob.
+oval('Pauldron shadow liner','ArmL',(.245,.002,1.48),(.112,.101,.081),iron_dark)
 # Weapons are rigid attachments, with a separate flexing bowstring and nocked arrow.
 grip=joints['HandR'][0]
 def at(p,v):return tuple(p+V(v))
@@ -272,7 +274,7 @@ for side,sign in [('L',1),('R',-1)]:
         (1.496,sign*.266,-.012,.150,.117),
         (1.541,sign*.270,-.014,.137,.101),
         (1.571,sign*.275,-.013,.080,.060),
-    ], [weathered if side=='R' else bronze, trim], axis='z', sides=8,
+    ], [weathered, steel_edge], axis='z', sides=8,
         face_material=lambda band,facet: 1 if band==2 and facet in (5,6,7) else 0)
     part(shoulder,'Broken plate shoulder guard','Arm'+side,weathered)
     oval('Forged shoulder rim','Arm'+side,(sign*.335,-.028,1.505),

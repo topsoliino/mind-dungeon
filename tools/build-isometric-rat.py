@@ -123,13 +123,14 @@ for i in range(6):
 # overlapping spheres. Planar sections, value bands and a ridged back are
 # deliberately visible at the Guardian's actual isometric game zoom.
 body_shell = style.profile_mesh("Broad pear-shaped body", [
-    (-.58,0,.35,.07,.07),
-    (-.46,0,.36,.225,.20),
-    (-.26,0,.37,.305,.27),
-    (.02,0,.37,.345,.308),
-    (.30,0,.355,.297,.279),
-    (.49,0,.335,.21,.190),
-    (.61,0,.30,.052,.055),
+    (-.58,0,.36,.070,.067),
+    (-.46,0,.375,.220,.178),
+    (-.30,0,.393,.298,.250),
+    (-.09,0,.386,.340,.286),
+    (.13,0,.357,.319,.265),
+    (.32,0,.327,.265,.225),
+    (.49,0,.294,.170,.144),
+    (.61,0,.276,.045,.040),
 ], [fur,fur_light,fur_shadow,fur_coat], axis="y", sides=10,
     face_material=lambda band,facet:
         3 if facet in (1,2,3,4) and band>=2 else
