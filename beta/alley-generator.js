@@ -1,11 +1,14 @@
 (() => {
 'use strict';
 const query=new URLSearchParams(window.location.search);
-if(query.get('szene')!=='gasse'||query.get('modus')!=='generator'){
+if(query.get('szene')!=='gasse'||query.get('modus')!=='generator'||
+   window.RockyCoastPrison?.isExterior){
  window.AlleyGenerator={enabled:false};return;
 }
 const input=Number(query.get('seed'));
-const seed=Number.isSafeInteger(input)&&input>=0?input>>>0:4147;
+const defaultSeed=window.RockyCoastPrison?.enabled?
+ window.RockyCoastPrison.levels[window.RockyCoastPrison.level-1].seed:4147;
+const seed=Number.isSafeInteger(input)&&input>=0?input>>>0:defaultSeed;
 const key=(x,y)=>x+','+y;
 const edge=(a,b)=>[key(...a),key(...b)].sort().join('|');
 const dirs=[[1,0,'east'],[-1,0,'west'],[0,1,'south'],[0,-1,'north']];

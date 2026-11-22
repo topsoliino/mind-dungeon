@@ -30,10 +30,17 @@
   return canvas;
  }
  function create(){
+  if(window.RockyCoastPrison?.isExterior)
+   return window.RockyCoastTerrain.create({tile,radius,toView,toWorld,viewAngle});
   const scene=window.AlleyStudyMap,art=createArt(),map=scene.logic,route=window.AlleyRoute;
   const procedural=Boolean(window.AlleyGenerator?.enabled);
   const vertical=procedural&&window.AlleyVertical?.enabled?window.AlleyVertical:null;
-  const spawn=unit(map.spawn),chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
+  const returnGate=window.RockyCoastPrison?.enabled&&
+   window.RockyCoastPrison.entry==='from-upper'&&
+   window.AlleyGenerator?.portals?.[1];
+  const spawn=returnGate?{x:(returnGate.x-returnGate.dx*.70)*tile,
+    y:(returnGate.y-returnGate.dy*.70)*tile}:unit(map.spawn);
+  const chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
   // These are the same ground footprints as the neutral props in the art pass.
   const props=procedural?[]:[
    {kind:'chest',point:chest,half:[.26,.36]},
