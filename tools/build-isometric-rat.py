@@ -1,517 +1,647 @@
-"""Build the editable small-rat armature and 32-view animation atlases.
-Run in the repository root:
-    blender -b --factory-startup -t 4 --python-exit-code 1 -P tools/build-isometric-rat.py
+"""Mind Dungeon quadruped rat: NEW Guardian-derived character production.
 
-32 camera-relative directions (11.25° steps), no 2D sprite rotation.
-Each WebP sheet has animation frames on X and 32 directions on Y.
+Full replacement for the previous rat model and pose system. The original
+Guardian builder's hex-sRGB materials, beveled polygonal profile/limb meshes,
+weighted normals, joint-space point/bend_joint inverse kinematics, foot
+planting, and pose-keyframe baking are adapted to a four-legged animal.
+This is not a resized Guardian: the animal has a sculpted, shaggy body, real
+paws, short ears, a flexible segmented tail and absolutely no equipment.
+
+MIND_DUNGEON_RIG_ONLY=1 blender -b --factory-startup -t 4 \
+  --python-exit-code 1 -P tools/build-isometric-rat.py
+
+Stable game/export API: "Rat rig • editable", "Small rat • fully weighted skin",
+and nine Blender actions rat_idle, rat_run, rat_stalk, rat_jump, rat_bite,
+rat_combo, rat_dodge, rat_dodge-left, rat_death. WebGL uses the Guardian lights.
 """
-from pathlib import Path
-import importlib.util
 import math
 import os
+from pathlib import Path
 import bpy
 from mathutils import Vector, Euler, Matrix
 
-ROOT = Path.cwd() / "beta/art/rat"
-ROOT.mkdir(parents=True, exist_ok=True)
+ROOT=Path.cwd()/"beta/art/rat"
+ROOT.mkdir(parents=True,exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
-bpy.context.preferences.filepaths.save_version = 0
-scene = bpy.context.scene
-# Keep the high-contrast atlas preset for WebP fallback frames.
-# Live rigs inherit the Guardian's ACES/lighting in Three.js.
-scene.view_settings.view_transform = 'Standard'
-try:
-    scene.view_settings.look = 'Medium High Contrast'
-except TypeError:
-    pass  # Some Blender versions omit this color-management preset.
-style_spec = importlib.util.spec_from_file_location("guardian_style", Path.cwd() / "tools" / "guardian-style.py")
-style = importlib.util.module_from_spec(style_spec)
-style_spec.loader.exec_module(style)
-V = Vector
-PI = math.pi
-VIEWS = 32
-CELL = 128
-SHEETS = {
-    "idle": 8, "run": 10, "stalk": 10, "jump": 12,
-    "bite": 9, "combo": 14, "dodge": 10, "dodge-left": 10, "death": 14
+bpy.context.preferences.filepaths.save_version=0
+scene=bpy.context.scene
+scene.view_settings.view_transform="Standard"
+try:scene.view_settings.look="Medium High Contrast"
+except (TypeError,ValueError):pass
+
+V=Vector
+PI=math.pi
+VIEWS=32
+CELL=128
+SHEETS={
+    "idle":8,"run":10,"stalk":10,"jump":12,"bite":9,
+    "combo":14,"dodge":10,"dodge-left":10,"death":14,
 }
 
-def srgb_to_linear(value):
-    # Palette values are sRGB, exactly as in build-player-sprite-study.py.
-    # Blender shader sockets need scene-linear RGB for faithful GLB colors.
-    return value / 12.92 if value <= .04045 else ((value + .055) / 1.055) ** 2.4
+def srgb_to_linear(v):
+    return v/12.92 if v<=.04045 else ((v+.055)/1.055)**2.4
 
-
-def mat(name, color, roughness=.83, metal=0):
-    m = bpy.data.materials.new(name)
-    linear = tuple(srgb_to_linear(v) for v in color)
-    m.diffuse_color = (*linear, 1)
-    m.use_nodes = True
-    shader = m.node_tree.nodes.get("Principled BSDF")
-    shader.inputs["Base Color"].default_value = (*linear, 1)
-    shader.inputs["Roughness"].default_value = roughness
-    shader.inputs["Metallic"].default_value = metal
+def material(name,hex_color,roughness=.79,metal=0):
+    """The actual Guardian build-player-sprite-study.py material() contract."""
+    rgb=[int(hex_color[i:i+2],16)/255 for i in (0,2,4)]
+    linear=tuple(srgb_to_linear(v) for v in rgb)
+    m=bpy.data.materials.new(name)
+    m.diffuse_color=(*linear,1)
+    m.use_nodes=True
+    shader=m.node_tree.nodes.get("Principled BSDF")
+    shader.inputs["Base Color"].default_value=(*linear,1)
+    shader.inputs["Roughness"].default_value=roughness
+    shader.inputs["Metallic"].default_value=metal
     return m
 
-# Cool blue-grey rat, no clothing or equipment. Maintain the Guardian's
-# deep/mid/light graphic value structure, with entirely non-metallic fur.
-fur = mat("Slate blue-grey main coat", (.34,.42,.51), .83)
-fur_light = mat("Cold silver-grey fur facets", (.47,.55,.63), .81)
-belly = mat("Smoky grey belly", (.45,.51,.57), .86)
-skin = mat("Muted slate-rose paws and tail", (.35,.31,.38), .82)
-ear = mat("Dusty grey-pink inner ears", (.48,.41,.48), .82)
-eye = mat("Black glass eyes", (.012,.018,.032), .21)
-nose = mat("Dark wet nose", (.16,.16,.23), .29)
-teeth = mat("Small ivory incisors", (.79,.78,.73), .77)
-whisker = mat("Pale cold whiskers", (.65,.68,.70), .79)
-fur_shadow = mat("Deep slate underfur", (.115,.16,.23), .83)
-fur_coat = mat("Dark dorsal blue-grey coat", (.265,.335,.427), .85)
-fur_gold = mat("Bristled cold fur tips", (.43,.52,.60), .84)
-ear_shadow = mat("Inner ear folds", (.23,.24,.32), .84)
-claw = mat("Hard weathered claws", (.45,.48,.52), .74)
-tail_ring = mat("Dark slate tail folds", (.23,.22,.30), .86)
+# The Guardian's broad graphite -> mid-blue -> silver-edge value language.
+# Every single surface is anatomical: blue-grey fur, claws, teeth and skin.
+coat=material("Guardian rat slate-blue fur","667b90",.81)
+mane=material("Guardian rat graphite underfur","34495f",.86)
+high=material("Guardian rat silver guard hairs","a3b1bd",.78)
+mid=material("Guardian rat cool flank fur","8799a8",.83)
+belly=material("Guardian rat shaded belly","778692",.88)
+muzzle=material("Guardian rat pale snout fur","92a1af",.83)
+skin=material("Guardian rat muted skin","756975",.87)
+ears=material("Guardian rat ear lining","a28f98",.83)
+eye=material("Guardian rat glass-black eyes","131a28",.24)
+nose=material("Guardian rat graphite nose","333545",.35)
+teeth=material("Guardian rat ivory incisors","e1dfd2",.66)
+claw=material("Guardian rat weathered claw","aaa7a3",.67)
+tailshade=material("Guardian rat ringed tail folds","534e61",.88)
 
-joints = {}
-parts = []
+SIDES=(("L",-1),("R",1))
+# +X is screen right; -Y is forward, identical to Guardian/skeleton world.
+design={
+    "Root":((0,0,.326),(0,-.235,.351),None),
+    "Chest":((0,-.32,.373),(0,-.535,.413),"Root"),
+    "Neck":((0,-.525,.400),(0,-.633,.407),"Chest"),
+    "Head":((0,-.627,.422),(0,-.814,.373),"Neck"),
+    "Jaw":((0,-.706,.309),(0,-.832,.279),"Head"),
+    "Nose":((0,-.829,.369),(0,-.957,.326),"Head"),
+}
+for side,sign in SIDES:
+    shoulder=(sign*.222,-.361,.312)
+    knee_front=(sign*.278,-.397,.165)
+    paw_front=(sign*.280,-.474,.060)
+    hip=(sign*.265,.316,.330)
+    knee_hind=(sign*.310,.408,.182)
+    paw_hind=(sign*.312,.473,.063)
+    design.update({
+        "Ear."+side:((sign*.164,-.579,.580),
+                     (sign*.222,-.551,.690),"Head"),
+        "Shoulder."+side:(shoulder,knee_front,"Chest"),
+        "Foreleg."+side:(knee_front,paw_front,"Shoulder."+side),
+        "FrontPaw."+side:(paw_front,(paw_front[0],-.585,.049),"Foreleg."+side),
+        "Hip."+side:(hip,knee_hind,"Root"),
+        "Hindleg."+side:(knee_hind,paw_hind,"Hip."+side),
+        "HindPaw."+side:(paw_hind,(paw_hind[0],.555,.049),"Hindleg."+side),
+    })
+for i in range(6):
+    joint=(0,.448+i*.171,.276-.026*max(0,i-1))
+    next_joint=(0,.619+i*.171,.264-.027*max(0,i))
+    design["Tail%d"%i]=(joint,next_joint,
+         "Root" if i==0 else "Tail%d"%(i-1))
 
-def joint(name, xyz, parent=None):
-    joints[name] = (V(xyz), parent)
+arm=bpy.data.armatures.new("Guardian IK rat quadruped")
+rig=bpy.data.objects.new("Rat rig • editable",arm)
+scene.collection.objects.link(rig)
+bpy.context.view_layer.objects.active=rig
+rig.select_set(True)
+rig.show_in_front=True
+bpy.ops.object.mode_set(mode="EDIT")
+for name,(head,tip,parent) in design.items():
+    eb=arm.edit_bones.new(name)
+    eb.head=V(head)
+    eb.tail=V(tip)
+    if parent:eb.parent=arm.edit_bones[parent]
+bpy.ops.object.mode_set(mode="OBJECT")
+rest={n:(V(h),V(t),p) for n,(h,t,p) in design.items()}
+parts=[]
+paw_soles={}
 
-def add_part(obj, name, bone, material):
-    obj.name = name
-    if not obj.data.materials:
-        obj.data.materials.append(material)
-    parts.append((obj, bone))
+def mesh(name,vertices,faces,mats,bone,bevel=.005,indices=None,soft=False):
+    """Guardian mesh: 2-segment angle bevel, weighted normals, explicit facets."""
+    data=bpy.data.meshes.new(name)
+    data.from_pydata(vertices,[],faces)
+    data.update()
+    obj=bpy.data.objects.new(name,data)
+    scene.collection.objects.link(obj)
+    for m in mats:data.materials.append(m)
+    if indices:
+        data.polygons.foreach_set("material_index",indices)
+    if bevel>0 and len(data.polygons)>=4:
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active=obj
+        mod=obj.modifiers.new("Forged edges","BEVEL")
+        mod.width=bevel
+        mod.segments=2
+        mod.limit_method="ANGLE"
+        mod.angle_limit=.16
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+        if hasattr(data,"use_auto_smooth"):
+            data.use_auto_smooth=True
+            data.auto_smooth_angle=.64
+        for polygon in data.polygons:polygon.use_smooth=soft
+        normals=obj.modifiers.new("Weighted normals","WEIGHTED_NORMAL")
+        normals.keep_sharp=True
+        bpy.ops.object.modifier_apply(modifier=normals.name)
+    else:
+        for polygon in data.polygons:polygon.use_smooth=soft
+    parts.append((obj,bone))
     return obj
 
-def oval(name, bone, pos, scale, material, segments=12):
-    o=style.faceted_oval(name,pos,scale,material,sides=10)
-    return add_part(o, name, bone, material)
+def profile(name,levels,mats,bone,sides=8,phase=PI/8,bevel=.005,soft=False):
+    """Guardian profile: horizontal ring levels and authored material bands."""
+    coords=[(cx+rx*math.cos(phase+i*math.tau/sides),
+             cy+ry*math.sin(phase+i*math.tau/sides),z)
+             for z,cx,cy,rx,ry in levels for i in range(sides)]
+    faces=[tuple(reversed(range(sides)))]
+    ids=[0]
+    for j in range(len(levels)-1):
+        for i in range(sides):
+            a=j*sides+i
+            b=j*sides+(i+1)%sides
+            faces.append((a,b,b+sides,a+sides))
+            ids.append((j+(1 if i in (2,3,4) else 0))%len(mats))
+    faces.append(tuple(range(len(coords)-sides,len(coords))))
+    ids.append(len(mats)-1)
+    return mesh(name,coords,faces,mats,bone,bevel,ids,soft)
 
-def rod(name, bone, start, end, radius, material, tip=None):
-    a, b = V(start), V(end)
-    bpy.ops.mesh.primitive_cone_add(
-        vertices=8, radius1=radius, radius2=radius if tip is None else tip,
-        depth=(b-a).length, location=(a+b)*.5)
-    o = bpy.context.object
-    o.rotation_euler = (b-a).to_track_quat("Z", "Y").to_euler()
-    return add_part(o, name, bone, material)
+def limb(name,a,b,widths,mats,bone,sides=8,bevel=.004,soft=False):
+    """Guardian limb: tapered longitudinal volume around arbitrary bone axis."""
+    a,b=V(a),V(b)
+    axis=(b-a).normalized()
+    u=axis.cross(V((0,1,0)))
+    if u.length<.01:u=axis.cross(V((1,0,0)))
+    u.normalize()
+    v=axis.cross(u)
+    coords=[tuple(a.lerp(b,t)+u*rx*math.cos(i*math.tau/sides)+
+                  v*ry*math.sin(i*math.tau/sides))
+            for t,rx,ry in widths for i in range(sides)]
+    faces=[tuple(reversed(range(sides)))]
+    ids=[0]
+    for row in range(len(widths)-1):
+        for i in range(sides):
+            k=row*sides+i;n=row*sides+(i+1)%sides
+            faces.append((k,n,n+sides,k+sides))
+            ids.append((row+i)%len(mats))
+    faces.append(tuple(range(len(coords)-sides,len(coords))))
+    ids.append(len(mats)-1)
+    return mesh(name,coords,faces,mats,bone,bevel,ids,soft)
 
-# The rat faces -Y, matching the skeleton and player baked camera convention.
-joint("Root", (0, 0, .28))
-joint("Chest", (0, -.29, .35), "Root")
-joint("Head", (0, -.59, .39), "Chest")
-joint("Jaw", (0, -.70, .28), "Head")
-joint("Nose", (0, -.82, .34), "Head")
-for n, s in (("L", 1), ("R", -1)):
-    joint("Ear"+n, (s*.19, -.53, .57), "Head")
-    joint("Shoulder"+n, (s*.245, -.39, .31), "Chest")
-    joint("Foreleg"+n, (s*.29, -.41, .15), "Shoulder"+n)
-    joint("FrontPaw"+n, (s*.28, -.49, .055), "Foreleg"+n)
-    joint("Hip"+n, (s*.27, .32, .29), "Root")
-    joint("Hindleg"+n, (s*.32, .41, .13), "Hip"+n)
-    joint("HindPaw"+n, (s*.32, .45, .055), "Hindleg"+n)
+def plate(name,points,thickness,mat,bone,bevel=.003):
+    """Guardian plate for thin organic ear flaps, not armor."""
+    n=len(points)
+    verts=list(points)+[(x,y+thickness,z) for x,y,z in points]
+    faces=[tuple(range(n)),tuple(reversed(range(n,n*2)))]
+    faces.extend((i,(i+1)%n,n+(i+1)%n,n+i) for i in range(n))
+    return mesh(name,verts,faces,[mat],bone,bevel)
+
+def longitudinal_profile(name,rings,mats,bone,sides=14,bevel=.005,soft=False):
+    """Guardian mesh/profile system, rotated into a quadruped's long axis.
+
+    Each cross-section is (y,cx,cz,rx,rz). Top-and-side swatches are authored
+    per face so fur reads clearly at the Guardian's small isometric scale.
+    No overlapping UV spheres or generic cylinders.
+    """
+    coords=[]
+    for y,x,z,rx,rz in rings:
+        for i in range(sides):
+            angle=(i+.5)*math.tau/sides
+            coords.append((x+rx*math.cos(angle),y,z+rz*math.sin(angle)))
+    faces=[tuple(range(sides))]
+    ids=[0]
+    for row in range(len(rings)-1):
+        for i in range(sides):
+            a=row*sides+i;b=row*sides+(i+1)%sides
+            faces.append((a,a+sides,b+sides,b))
+            # Broad subtle dorsal stripe, lighter lateral fur and deep
+            # creases underneath. No armor-like chunky patches.
+            ids.append(1 if i in (2,3,4) else
+                       2 if i in (1,5,6,13) and row%3!=0 else
+                       3 if i in (8,9,10) else 0)
+    faces.append(tuple(reversed(range(len(coords)-sides,len(coords)))))
+    ids.append(0)
+    return mesh(name,coords,faces,mats,bone,bevel,ids,soft)
+
+def tuft(name,origin,direction,bone,mat,thick=.016):
+    """Short swept fur lock integrated into the body surface."""
+    a=V(origin);b=a+V(direction)
+    return limb(name,a,b,[(0,thick,thick*.74),
+          (.37,thick*.82,thick*.6),(1,.001,.001)],
+          [mat],bone,6,bevel=.001,soft=True)
+
+def mass(name,at,widths,bone,mats):
+    x,y,z=at
+    return profile(name,[(z-widths[2],x,y,widths[0]*.30,widths[1]*.32),
+           (z-widths[2]*.38,x,y,widths[0]*.79,widths[1]*.8),
+           (z+widths[2]*.25,x,y,widths[0],widths[1]),
+           (z+widths[2],x,y,widths[0]*.42,widths[1]*.44)],
+           mats,bone,10,bevel=.004,soft=True)
+
+# Main pear-shaped rodent torso. Shoulder narrows toward the muzzle,
+# haunches are broad and slightly taller, not a squared-off armor block.
+torso=longitudinal_profile("Shaggy slate-blue torso",[
+    (-.565,0,.364,.065,.065),
+    (-.456,0,.377,.169,.141),
+    (-.29,0,.388,.251,.214),
+    (-.055,0,.371,.303,.255),
+    (.18,0,.390,.342,.289),
+    (.365,0,.376,.307,.260),
+    (.530,0,.331,.198,.160),
+    (.615,0,.287,.043,.044),
+], [coat,mane,mid,belly],"Root",16,bevel=.007,soft=True)
+mass("Fur-covered chest",(0,-.346,.385),(.204,.17,.172),
+     "Chest",[coat,mid,mane])
+mass("Underside and belly",(0,-.04,.231),(.245,.355,.108),
+     "Root",[belly,coat])
+neck=mass("Furry neck",(0,-.526,.402),(.152,.116,.122),
+     "Neck",[coat,mane,mid])
+# More natural rat anatomy: long broad cheeks taper into a pointed snout.
+head=longitudinal_profile("Guardian sculpted rat head",[
+    (-.875,0,.343,.026,.024),
+    (-.823,0,.369,.081,.067),
+    (-.742,0,.404,.159,.124),
+    (-.645,0,.436,.217,.165),
+    (-.532,0,.437,.207,.163),
+    (-.444,0,.418,.083,.070)
+], [coat,mane,mid,belly],"Head",14,bevel=.006,soft=True)
+limb("Tapered bone-supported snout",(0,-.749,.367),
+     (0,-.940,.323),
+     [(0,.109,.092),(.37,.086,.065),(.75,.052,.044),(1,.022,.019)],
+     [muzzle,coat],"Head",10,bevel=.003,soft=True)
+mass("Graphite nose",(0,-.943,.323),(.047,.036,.033),
+     "Nose",[nose])
+mass("Small exposed jaw",(0,-.759,.280),(.092,.095,.037),
+     "Jaw",[belly,coat])
+for i in range(2):
+    x=(i-.5)*.036
+    limb("Visible incisors %d"%i,(x,-.815,.271),(x,-.856,.241),
+        [(0,.015,.014),(1,.009,.008)],[teeth],"Jaw",6,bevel=.001)
+for side,sign in SIDES:
+    eye_x=sign*.156
+    mass("Dark ocular fur "+side,(eye_x,-.727,.489),(.050,.046,.039),
+         "Head",[mane])
+    mass("Glassy black eye "+side,(sign*.170,-.760,.495),(.027,.031,.027),
+         "Head",[eye])
+    mass("Raised cheek pad "+side,(sign*.161,-.664,.385),(.075,.083,.071),
+         "Head",[coat,mid])
+    # The small triangular ears have actual thickness, shadow folds and
+    # muted inner skin; they remain fully three-dimensional from every view.
+    plate("Thick ear outer "+side,[
+        (sign*.114,-.566,.534),(sign*.248,-.559,.537),
+        (sign*.263,-.550,.627),(sign*.213,-.548,.695),
+        (sign*.137,-.557,.667)],.036,coat,"Ear."+side,.005)
+    plate("Inset ear skin "+side,[
+        (sign*.152,-.579,.558),(sign*.222,-.578,.561),
+        (sign*.236,-.570,.626),(sign*.206,-.568,.658),
+        (sign*.164,-.575,.632)],.008,ears,"Ear."+side,.002)
+    # A few deliberate fur silhouettes, not 200 noisy hairs.
+    for row,(y,z) in enumerate(((-.705,.406),(-.654,.439),(-.579,.458))):
+        tuft("Swept cheek ruff %s%d"%(side,row),
+            (sign*.192,y,z),
+            (sign*(.049+.009*(row%2)),.048,-.012), "Head",
+            high if row==1 else coat,.015)
+    for j in range(2):
+        x=sign*.050
+        z=.330+(j-.5)*.031
+        limb("Face whisker %s%d"%(side,j),(x,-.893,z),
+             (sign*(.265+j*.033),-.792+j*.030,z+.028*(j-.5)),
+             [(0,.0038,.0038),(1,.001,.001)],
+             [high],"Nose",6,bevel=0)
+    shoulder,elbow,_=rest["Shoulder."+side]
+    forepaw=rest["FrontPaw."+side][0]
+    hip,knee,_=rest["Hip."+side]
+    hindpaw=rest["HindPaw."+side][0]
+    # Quadruped limbs attach to coherent shoulder/hip volumes. Guardian
+    # tapered limb surfaces replace the old spheres and cones.
+    limb("Ruff-covered shoulder "+side,shoulder,elbow,[
+        (0,.077,.070),(.22,.088,.078),(.56,.062,.057),(1,.047,.043)],
+        [coat,mid,mane],"Shoulder."+side,10,soft=True)
+    limb("Anterior foreleg "+side,elbow,forepaw,[
+        (0,.047,.042),(.44,.039,.034),(1,.028,.027)],
+        [coat,mid],"Foreleg."+side,8,soft=True)
+    limb("Furred haunch "+side,hip,knee,[
+        (0,.123,.111),(.34,.127,.115),(.65,.087,.078),(1,.059,.058)],
+        [coat,mane,mid],"Hip."+side,10,soft=True)
+    limb("Posterior hindleg "+side,knee,hindpaw,[
+        (0,.052,.049),(.42,.047,.041),(1,.032,.029)],
+        [coat,mid],"Hindleg."+side,8,soft=True)
+    mass("Anterior naked paw "+side,tuple(forepaw),(.069,.076,.034),
+         "FrontPaw."+side,[skin,belly])
+    mass("Posterior naked paw "+side,tuple(hindpaw),(.078,.089,.036),
+         "HindPaw."+side,[skin,belly])
+    # Guardian's sole geometry provides actual planted-paw ground contact.
+    for front,label,paw in [(True,"FrontPaw."+side,forepaw),
+                            (False,"HindPaw."+side,hindpaw)]:
+        contact=[]
+        for index in range(3):
+            x=paw.x+(index-1)*.039
+            endpoint=(x,paw.y+(-.116 if front else .123),.034)
+            toe=limb("Individual toe %s %d"%(label,index),
+                (x,paw.y,.053),endpoint,
+                [(0,.017,.015),(.62,.015,.014),(1,.007,.008)],
+                [skin],label,6,bevel=.001)
+            contact.extend([v.co.copy() for v in toe.data.vertices])
+            limb("Distinct keratin claw %s%d"%(label,index),
+                endpoint,(x+sign*.006,endpoint[1]+(-.023 if front else .023),.022),
+                [(0,.009,.009),(1,.001,.001)],[claw],
+                label,6,bevel=.001)
+        paw_soles[label]=contact
+# The hair is embedded along flanks and haunches, with offset, direction
+# and length defined by actual anatomy. No cloth, metal or accessory objects.
+for row,(y,width,z) in enumerate((
+    (-.31,.215,.493),(-.17,.261,.533),(.045,.302,.554),
+    (.25,.331,.566),(.41,.281,.530))):
+    for side,sign in SIDES:
+        x=sign*width
+        tuft("Compact flank guard hairs %s%d"%(side,row),
+             (x*.92,y,z-.038),
+             (sign*(.037+.006*(row%2)),.058,-.012),
+             "Root",mid if row in (0,3) else coat,.018)
+        if row%2==0:
+            tuft("Dark short undercoat tuft %s%d"%(side,row),
+                 (x*.87,y,z-.067),
+                 (sign*.046,.047,-.027),
+                 "Root",mane,.014)
+# Flexible tail with six articulated tapered segments and darker skin folds.
 for i in range(6):
-    joint("Tail"+str(i), (0, .41+i*.18, .29-max(0, i-1)*.032),
-          "Root" if i == 0 else "Tail"+str(i-1))
+    a,b,_=rest["Tail%d"%i]
+    radius=.050-.0066*i
+    limb("Living segmented tail %d"%i,a,b,
+         [(0,radius,radius*.91),(.5,radius*.83,radius*.78),
+          (1,max(.007,radius-.010),max(.006,radius-.012))],
+         [skin,tailshade],"Tail%d"%i,10,bevel=.002,soft=True)
+    if i<5:
+        limb("Tail ring texture %d"%i,a+V((0,.024,0)),
+             a+V((0,.041,0)),
+             [(0,radius+.003,radius*.93), (1,radius*.92,radius*.85)],
+             [tailshade],"Tail%d"%i,10,bevel=.001)
 
-# A continuous faceted pear-shaped body replaces the old stack of smooth
-# overlapping spheres. Planar sections, value bands and a ridged back are
-# deliberately visible at the Guardian's actual isometric game zoom.
-body_shell = style.profile_mesh("Broad pear-shaped body", [
-    # Natural rodent body mass: narrow neck, broad hindquarters and a
-    # rising rump. Former radius peaks were at the shoulders, causing an
-    # almost rectangular torso in the actual side-on game camera.
-    (-.60,0,.332,.067,.063),
-    (-.48,0,.345,.156,.143),
-    (-.28,0,.355,.228,.198),
-    (-.04,0,.362,.289,.243),
-    (.22,0,.371,.340,.283),
-    (.40,0,.352,.310,.255),
-    (.54,0,.320,.204,.162),
-    (.64,0,.283,.067,.053),
-], [fur,fur_light,fur_shadow,fur_coat], axis="y", sides=16,
-    face_material=lambda band,facet:
-        3 if facet in (2,3,4) and band in (2,3,4,5) else
-        2 if facet in (10,11,12) else
-        1 if facet in (0,15) and band in (1,2,3) else 0)
-# Smooth *only* the fur primary volume, not teeth/eyes/ears/claws. The old
-# flat-shaded 10-sided body looked like an armor-clad mechanical box.
-for polygon in body_shell.data.polygons:
-    polygon.use_smooth=True
-add_part(body_shell,"Broad pear-shaped body","Root",fur)
-# Short directional clumps sit inside the existing surface volume. Every
-# bristle is real skinned 3D geometry, anchored in the silhouette rather
-# than painted decals or detached roof-spikes. Deliberately varied lengths.
-for row,(y,rx,back_z) in enumerate((
-    (-.40,.19,.484),(-.25,.24,.532),(-.07,.30,.574),
-    (.12,.32,.593),(.31,.30,.580),(.46,.22,.518))):
-    for sign in (-1,1):
-        x=sign*rx*.75
-        off=(row%3)*.008
-        rod("Low shaggy dorsal fur clump","Root",
-            (x,y,back_z-.030),
-            (sign*(abs(x)+.027+off*.5),y+.055+.007*(row%2),
-             back_z-.010+off*.35),
-            .022,fur_light if row in (1,4) else fur_coat,.002)
-        if row in (1,3,5):
-            rod("Short side fur lock","Root",
-                (sign*rx*.89,y+.018,back_z-.083),
-                (sign*(rx+.019),y+.076,back_z-.077),
-                .019,fur_gold,.002)
-oval("Underbelly", "Root", (0, -.08, .185), (.255, .42, .125), belly)
-ruff = style.profile_mesh("Shoulder ruff", [
-    (-.59,0,.365,.085,.073),
-    (-.47,0,.383,.177,.152),
-    (-.29,0,.391,.242,.205),
-    (-.13,0,.390,.216,.166),
-    (-.07,0,.376,.073,.057),
-], [fur,fur_light,fur_shadow], axis="y", sides=12,
-    face_material=lambda band,facet: 1 if facet in (0,1) and band<=1 else
-                              2 if facet in (8,9) else 0)
-for polygon in ruff.data.polygons:
-    polygon.use_smooth=True
-add_part(ruff,"Shoulder ruff","Chest",fur)
-face_shell = style.profile_mesh("Sculpted planar head", [
-    (-.834,0,.375,.086,.078),
-    (-.745,0,.415,.182,.137),
-    (-.630,0,.425,.248,.205),
-    (-.485,0,.43,.238,.194),
-    (-.375,0,.415,.102,.095),
-], [fur,fur_light,fur_shadow], axis="y", sides=12,
-    face_material=lambda band,facet: 1 if facet in (0,1) and band<2 else
-                              2 if facet in (8,9) else 0)
-for polygon in face_shell.data.polygons:
-    polygon.use_smooth=True
-add_part(face_shell,"Sculpted planar head","Head",fur)
-snout=style.profile_mesh("Tapered faceted muzzle",[
-    (-.954,0,.345,.035,.035),
-    (-.860,0,.351,.081,.061),
-    (-.755,0,.355,.137,.088),
-    (-.660,0,.370,.139,.095),
-], [fur_light,belly,fur_shadow], axis="y", sides=8,
-    face_material=lambda band,facet:
-        1 if facet in (4,5,6) else 2 if facet in (1,2) else 0)
-add_part(snout,"Tapered faceted muzzle","Head",fur_light)
-oval("Nose", "Nose", (0, -.915, .344), (.047, .038, .04), nose)
-oval("Jaw", "Jaw", (0, -.725, .295), (.102, .12, .035), belly)
-for s in (-1, 1):
-    oval("Glossy eye", "Head", (s*.177, -.722, .484), (.036, .041, .041), eye)
-    oval("Brow", "Head", (s*.157, -.686, .533), (.068, .046, .026), fur_light)
-    side = "L" if s > 0 else "R"
-    # Full 3D pointed auricle with an actual inset; no overlapping circles.
-    ear_outer=style.front_plate("Angular auricle",[
-        (s*.120,.525),(s*.257,.535),(s*.274,.605),
-        (s*.260,.668),(s*.205,.695),(s*.149,.662)], -.559,.033,fur,fur_shadow)
-    add_part(ear_outer,"Angular auricle","Ear"+side,fur)
-    ear_inner=style.front_plate("Inset ear leather",[
-        (s*.151,.557),(s*.235,.562),(s*.251,.620),
-        (s*.225,.660),(s*.177,.630)], -.576,.010,ear,ear_shadow)
-    add_part(ear_inner,"Inset ear leather","Ear"+side,ear)
-    for k in range(2):
-        rod("Whisker", "Nose", (s*.045, -.866, .338+(k-.5)*.038),
-            (s*(.33+k*.034), -.81+k*.042, .31+(k-.5)*.088),
-            .004, whisker, .001)
-    for limb, lower, paw, front in [
-        ("Shoulder"+side, "Foreleg"+side, "FrontPaw"+side, True),
-        ("Hip"+side, "Hindleg"+side, "HindPaw"+side, False)
-    ]:
-        a, b, c = joints[limb][0], joints[lower][0], joints[paw][0]
-        oval("Thigh" if not front else "Upper arm", limb, a,
-             (.104, .132, .144) if not front else (.088, .105, .115), fur)
-        rod("Shin", lower, a, b, .065, fur_light, .044)
-        rod("Ankle", paw, b, c, .040, skin, .027)
-        oval("Paw", paw, c+(V((0, -.028 if front else .026, -.012))),
-             (.076, .098, .031), skin)
-        for toe in range(3):
-            x=c.x+(toe-1)*.039
-            y=c.y+(-.065 if front else .070)
-            rod("Toe", paw, (x,c.y,.037), (x,y,.027), .014, skin, .008)
-
-for k in range(2):
-    rod("Incisor", "Jaw", ((k-.5)*.043, -.820, .289),
-        ((k-.5)*.043, -.852, .248), .016, teeth, .008)
-
-# A five-joint tail flexes naturally rather than behaving like a single rigid line.
-for i in range(6):
-    a = joints["Tail"+str(i)][0]
-    b = a+V((0, .19, -.026 if i>0 else .004))
-    rod("Tapered tail", "Tail"+str(i), a, b, .062-i*.008, skin,
-        max(.012, .053-i*.008))
-
-
-# Production-model detailing pass: rat anatomy, fur silhouette, expression.
-# Each strand/tuft is a real weighted Blender mesh, not a painted 2D overlay.
-def triangle(name,bone,points,material):
-    mesh=bpy.data.meshes.new(name)
-    mesh.from_pydata(points, [], [(0,1,2)])
-    mesh.update()
-    o=bpy.data.objects.new(name,mesh)
-    scene.collection.objects.link(o)
-    add_part(o,name,bone,material)
-
-# Broad dark dorsal stripe, fur layering and natural shoulders/haunches.
-# The faceted back above already carries dark-top coat material. A second
-# intersecting ellipsoid used to turn the silhouette into a muddy hump.
-# Removed: the overlapping rump sphere obscured the main shell's readable
-# planar transitions and made the silhouette look soft and unstructured.
-oval("Cream chin and muzzle patch", "Head",(0,-.755,.315),
-     (.137,.135,.077),belly,20)
-for sign in (-1,1):
-    side="L" if sign>0 else "R"
-    oval("Sculpted cheek pad", "Head",(sign*.174,-.657,.365),
-         (.112,.149,.120),fur_light,18)
-    oval("Sculpted eye socket", "Head",(sign*.177,-.717,.478),
-         (.051,.047,.050),fur_shadow,16)
-    oval("Glass eye iris", "Head",(sign*.181,-.754,.488),
-         (.032,.026,.032),eye,20)
-    oval("Eye catchlight", "Head",(sign*.17,-.778,.507),
-         (.009,.009,.012),teeth,12)
-    # Ear depth and rim are already actual geometry in the angular auricle.
-    oval("Raised nasal whisker root", "Nose",
-         (sign*.065,-.853,.329),(.036,.040,.030),fur_light)
-    # Broad readable whisker strokes, not tiny line noise at game scale.
-    for k in range(2):
-        level=k-.5
-        rod("Fine curved whisker", "Nose",
-            (sign*.054,-.875,.341+level*.023),
-            (sign*.375,-.78,.333+level*.080),
-            .004,whisker,.001)
-    # Cheek ruff silhouette: directional triangular locks, not a smooth egg.
-    for k in range(5):
-        yy=-.73+k*.069
-        zz=.385+.045*math.sin(k*1.6)
-        x=sign*(.18+.012*math.cos(k*1.7))
-        triangle("Swept cheek fur tuft", "Head",[
-            (x,yy,zz+.032),(x,yy+.055,zz-.015),
-            (sign*(.305+.035*(k%3)/3),yy+.075,zz-.027)
-        ],fur_light if k%3 else fur_shadow)
-    # Distinct black claws and webbing between paws.
-    for front,paw in ((True,"FrontPaw"+side),(False,"HindPaw"+side)):
-        pos=joints[paw][0]
-        for i in range(3):
-            x=pos.x+(i-1)*.039
-            y=pos.y+(-.125 if front else .127)
-            rod("Sharp ivory paw claw",paw,(x,y,.032),
-                (x+sign*.007,y+(-.038 if front else .038),.012),
-                .010,claw,.0005)
-
-# No floating roof spikes: all long-range coat variation is encoded in
-# the major body-shell facets. Detached triangles were visible above the
-# outline as random horns rather than integrated fur at the actual game zoom.
-
-# The long tail has rings, creases and an organic silhouette.
-for i in range(6):
-    p=joints["Tail"+str(i)][0]
-    rod("Tail annular skin fold","Tail"+str(i),
-        p+V((0,.019,0)),p+V((0,.038,0)),
-        .062-i*.008+.004,tail_ring,
-        .060-i*.008+.003)
-    for n in (-1,1):
-        triangle("Tail scar","Tail"+str(i),[
-            (n*(.049-i*.006),p.y+.055,p.z),
-            (n*(.052-i*.006),p.y+.073,p.z+.012),
-            (n*(.049-i*.006),p.y+.089,p.z-.008)
-        ],skin)
-
-# Fully natural exterior. No saddle, pauldrons, bridle, tags, metal studs,
-# buckles, leather straps or dyed cloth. Silhouette comes only from the
-# anatomical profiles, asymmetrical cheek ruffs and short bristled tufts.
-for sign in (-1,1):
-    for index,y in enumerate((-.29,-.13,.09,.29)):
-        rod("Shaggy flank fur layer","Root",
-            (sign*(.205+.05*int(index>1)),y,.49+.023*int(index>1)),
-            (sign*(.254+.052*int(index>1)),y+.054,
-             .50+.027*int(index>1)),
-            .031,fur_light if index%3==0 else fur_coat,.003)
-
-# More expressive animation curves: independent ear flicks, snout twitching
-# and raised hackles. These details read during both idle and locomotion.
-
-arm = bpy.data.armatures.new("Small rat armature")
-rig = bpy.data.objects.new("Rat rig • editable", arm)
-scene.collection.objects.link(rig)
-bpy.context.view_layer.objects.active = rig
-bpy.ops.object.mode_set(mode="EDIT")
-for name, (p, parent) in joints.items():
-    b = arm.edit_bones.new(name)
-    b.head = p
-    b.tail = p+V((0, .12, 0))
-    if parent:
-        b.parent = arm.edit_bones[parent]
-bpy.ops.object.mode_set(mode="OBJECT")
-bpy.context.view_layer.update()
-
-# Apply mesh world transforms and rigidly skin each low-poly part to its bone.
-for obj, bone in parts:
+# Export contract remains exactly the same as before: one fully skinned mesh.
+# New geometry is NOT descended from the previous Rat builder.
+for obj,bone in parts:
     obj.data.transform(obj.matrix_world)
-    obj.matrix_world = Matrix.Identity(4)
-    # Only eye-claw/ear anatomy receives micro-beveled transitions. No
-    # metal, no gear or costume elements remain in this character.
-    if any(token in obj.name.lower() for token in ("auricle","claw")):
-        style.forged_hard_edges(obj, width=.002)
-    group = obj.vertex_groups.new(name=bone)
-    group.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
-    obj.select_set(False)
+    obj.matrix_world=Matrix.Identity(4)
+    group=obj.vertex_groups.new(name=bone)
+    group.add(list(range(len(obj.data.vertices))),1.0,"REPLACE")
 bpy.ops.object.select_all(action="DESELECT")
-for obj, bone in parts:
-    obj.select_set(True)
-bpy.context.view_layer.objects.active = parts[0][0]
+for obj,_ in parts:obj.select_set(True)
+bpy.context.view_layer.objects.active=parts[0][0]
 bpy.ops.object.join()
-body = parts[0][0]
-body.name = "Small rat • fully weighted skin"
-body.parent = rig
-mod = body.modifiers.new("Bone skin", "ARMATURE")
-mod.object = rig
+body=parts[0][0]
+body.name="Small rat • fully weighted skin"
+body.parent=rig
+modifier=body.modifiers.new("Guardian-pattern four-legged bone skin","ARMATURE")
+modifier.object=rig
 
-def clamp(v):
-    return max(0.0, min(1.0, v))
-def smooth(v):
-    x=clamp(v)
-    return x*x*(3-2*x)
-def bell(t, at, width):
-    return max(0, 1-abs(t-at)/width)**2
+def orient(name,position,rotation):
+    anchor=rest[name][0]
+    matrix=Matrix.Translation(position)@rotation.to_4x4()@Matrix.Translation(-anchor)
+    rig.pose.bones[name].matrix=matrix@rig.data.bones[name].matrix_local
+    bpy.context.view_layer.update()
 
-def pose(clip, t):
-    # Every pose is rebuilt from rest so actions can be edited in Blender.
-    for pb in rig.pose.bones:
-        pb.rotation_mode = "XYZ"
-        pb.rotation_euler = (0, 0, 0)
-        pb.location = (0, 0, 0)
-    root=rig.pose.bones["Root"]
-    chest=rig.pose.bones["Chest"]
-    head=rig.pose.bones["Head"]
-    jaw=rig.pose.bones["Jaw"]
+def attached(name,point):
+    frame=rig.pose.bones[name].matrix@rig.data.bones[name].matrix_local.inverted()
+    return frame@point
+
+def point(name,head,tail,stretch=1):
+    a,b,_=rest[name]
+    initial=(b-a).normalized()
+    direction=V(tail)-V(head)
+    if direction.length<.0001:return
+    mat=initial.rotation_difference(direction).to_matrix()
+    if stretch!=1:
+        stretch_matrix=Matrix.Identity(3)
+        for row in range(3):
+            for col in range(3):
+                stretch_matrix[row][col]+=(stretch-1)*initial[row]*initial[col]
+        mat@=stretch_matrix
+    orient(name,V(head),mat)
+
+def bend_joint(upper,lower,a,end,bias,stretch=1):
+    """Guardian two-bone leg solver, scaled to quadruped shoulder and hock."""
+    a,end=V(a),V(end)
+    ab=(rest[upper][1]-rest[upper][0]).length
+    bc=(rest[lower][1]-rest[lower][0]).length
+    delta=end-a
+    scale=max(1,min(stretch,(delta.length+.001)/(ab+bc)))
+    ab*=scale;bc*=scale
+    axis=delta.normalized() if delta.length>.001 else V((0,-1,0))
+    distance=max(abs(ab-bc)+.001,min(ab+bc-.001,delta.length))
+    offset=(ab*ab-bc*bc+distance*distance)/(2*distance)
+    normal=V(bias)-axis*axis.dot(V(bias))
+    if normal.length<.001:normal=axis.cross(V((1,0,0)))
+    normal.normalize()
+    knee=a+axis*offset+normal*math.sqrt(max(0,ab*ab-offset*offset))
+    goal=a+axis*distance
+    point(upper,a,knee,scale)
+    point(lower,knee,goal,scale)
+    return goal
+
+def smooth(t):
+    t=max(0,min(1,t))
+    return t*t*(3-2*t)
+
+def sample(keys,t):
+    """Phase-keyed Guardian attack interpolation; deliberate held poses."""
+    for (a,*p),(b,*q) in zip(keys,keys[1:]):
+        if t<=b:
+            k=smooth((t-a)/max(.001,b-a))
+            return [v+(w-v)*k for v,w in zip(p,q)]
+    return keys[-1][1:]
+
+def pulse(t,start,peak,end):
+    return smooth((t-start)/max(.001,peak-start))*smooth(
+        (end-t)/max(.001,end-peak))
+
+def gait_foot(phase,stride,stance,clearance):
+    """Guardian stance / swing trajectory fitted to rapid four-beat scurry."""
+    if phase<stance:
+        travel=stride*(phase/stance-.5)
+        height=0
+        pitch,=sample([(0,-.09),(.21,.02),(.67,0),(1,.14)],phase/stance)
+    else:
+        t=(phase-stance)/(1-stance)
+        arc=math.sin(PI*t)
+        carry=(1-stance)/(2*PI*stance)
+        progress=smooth(t)-carry*math.sin(2*PI*t)*(1-.55*arc)-.05*arc*arc
+        travel=stride*(.5-progress)
+        height=clearance*arc**1.36
+        pitch,=sample([(0,.14),(.34,.13),(.58,.01),(.86,-.07),(1,-.09)],t)
+    return travel,height,pitch
+
+def place_paw(name,phase,stride,stance,clearance,crouch=0,spread=0):
+    side=name.split(".")[-1]
+    sign=-1 if side=="L" else 1
+    front=name.startswith("Front")
+    travel,lift,pitch=gait_foot(phase,stride,stance,clearance)
+    ankle=rest[name][0]
+    # Compute actual paw sole at every stance frame like Guardian's boots,
+    # rather than rotating limbs in place and skating over the floor.
+    rotation=Euler((pitch,0,sign*.05)).to_matrix()
+    lowest=min((rotation@(p-ankle)).z for p in paw_soles[name])
+    position=V((ankle.x+sign*spread,
+                ankle.y+travel,
+                max(.014,.012+lift-lowest-.016*crouch)))
+    upper="Shoulder."+side if front else "Hip."+side
+    lower="Foreleg."+side if front else "Hindleg."+side
+    root=attached("Chest" if front else "Root",rest[upper][0])
+    elbow=bend_joint(upper,lower,root,position,
+                     (sign*.15,-1 if front else 1,.08),1.06)
+    orient(name,elbow,rotation)
+
+def sample_pose(kind,t):
+    """Same Guardian evaluation order: trunk -> head -> paws -> accessories.
+
+    The adaptation respects a rodent's long spine and diagonal footfall
+    timing instead of reusing humanoid biped movement.
+    """
+    for bone in rig.pose.bones:
+        bone.matrix_basis=Matrix.Identity(4)
+        bone.rotation_mode="QUATERNION"
+        bone.scale=(1,1,1)
+    bpy.context.view_layer.update()
     phase=2*PI*t
-    # A living animal even while idle: respiration, asymmetric sniffs,
-    # tiny whisker twitches and independent tail vertebrae.
-    sniff=math.sin(phase*2.3)
-    root.location.z=.008*math.sin(phase)
-    root.rotation_euler.y=.025*math.sin(phase*.67)
-    chest.rotation_euler.x=.042*math.sin(phase)
-    head.rotation_euler.x=.055*math.sin(phase+.8)
-    head.rotation_euler.z=.045*math.sin(phase*.42)
-    rig.pose.bones["Nose"].rotation_euler.x=.035*sniff
-    jaw.rotation_euler.x=.045+max(0,math.sin(phase*.5))*.09
+    moving=kind in ("run","stalk")
+    stalk=kind=="stalk"
+    # Small breaths and vigilance are always present, even in attacks.
+    shift=.012*math.sin(phase-.22)
+    bob=.006*math.sin(phase*1.8)
+    root_pitch=.025+.012*math.sin(phase-.4)
+    chest_pitch=.013*math.sin(phase+.45)
+    neck_pitch=-.016*math.sin(phase-.56)
+    skull_pitch=.028*math.sin(phase-.72)
+    load=0
+    strike=0
+    combo_second=0
+    settle=0
+    if moving:
+        stride=.26 if stalk else .49
+        lift=.052 if stalk else .102
+        bob=.009+.034*(1-math.cos(4*PI*t))*.5
+        root_pitch=.032+.043*math.sin(phase+.25)
+        chest_pitch=.061+.047*math.sin(phase+.50)
+        skull_pitch=-.064-.048*math.sin(phase+.16)
+        shift=.021*math.sin(phase+.1)
+    elif kind=="jump":
+        load=pulse(t,.01,.15,.26)
+        strike=pulse(t,.17,.53,.91)
+        bob=-.104*load+.36*strike
+        root_pitch=-.18*load+.23*strike
+        chest_pitch=-.28*load+.30*strike
+        skull_pitch=.29*load-.27*strike
+    elif kind in ("bite","combo"):
+        if kind=="bite":
+            load,hit,recover=sample([
+                (0,0,0,0),(.18,.85,0,0),
+                (.35,1,0,0),(.42,1,.06,0),
+                (.52,0,1,0),(.63,0,.35,.15),
+                (.80,0,0,.65),(1,0,0,0)],t)
+        else:
+            load,hit,recover=sample([
+                (0,0,0,0),(.13,1,0,0),(.25,1,0,0),
+                (.36,0,1,0),(.44,.15,.1,.15),
+                (.54,.83,0,0),(.60,1,.04,0),
+                (.71,0,1,0),(.82,0,.1,.6),
+                (1,0,0,0)],t)
+        strike=hit
+        settle=recover
+        bob=-.104*load+.091*hit-.016*recover
+        root_pitch=-.18*load+.18*hit-.06*recover
+        chest_pitch=-.31*load+.65*hit-.14*recover
+        skull_pitch=.49*load-.73*hit+.24*recover
+        shift=.020*load-.068*hit
+    elif kind in ("dodge","dodge-left"):
+        side=-1 if kind=="dodge-left" else 1
+        v=math.sin(PI*t)
+        bob=.12*v
+        shift=side*.055*v
+        root_pitch=-.12*v
+        chest_pitch=.11*v
+        skull_pitch=-.1*v
+    elif kind=="death":
+        fall=smooth((t-.12)/.67)
+        bob=-.22*fall+.034*max(0,math.sin(8*PI*t))*(1-fall)
+        root_pitch=.70*fall
+        chest_pitch=.44*fall
+        skull_pitch=-.23*fall
+        shift=.07*fall
+    body_position=rest["Root"][0]+V((shift,
+           (-.026 if moving else 0)+(-.022*load+.028*strike),
+           bob))
+    yaw=.038*math.sin(phase) if moving else .014*math.sin(phase)
+    if kind=="death":yaw=.38*smooth(t/.73)
+    orient("Root",body_position,
+           Euler((root_pitch,0,yaw)).to_matrix())
+    chest=attached("Root",rest["Chest"][0])
+    orient("Chest",chest,Euler((chest_pitch,.018*math.sin(phase-.4),
+                                -.40*yaw)).to_matrix())
+    neck=attached("Chest",rest["Neck"][0])
+    orient("Neck",neck,Euler((neck_pitch,
+           .014*math.sin(phase-.6),.33*yaw)).to_matrix())
+    head=attached("Neck",rest["Head"][0])
+    orient("Head",head,Euler((skull_pitch,
+          .013*math.sin(phase-1.0),-.36*yaw)).to_matrix())
+    jaw=attached("Head",rest["Jaw"][0])
+    orient("Jaw",jaw,Euler((.03+.54*load-.26*strike,
+                           0,.011*math.sin(phase)).to_matrix()))
+    nose_at=attached("Head",rest["Nose"][0])
+    orient("Nose",nose_at,Euler((.045*math.sin(phase*2.3),
+         0,.028*math.sin(phase*.75)).to_matrix()))
+    for side,sign in SIDES:
+        ear=attached("Head",rest["Ear."+side][0])
+        orient("Ear."+side,ear,Euler((
+            -.20*load+.17*strike+.056*math.sin(phase+sign*.8),
+            .050*sign*math.sin(phase*1.31),0)).to_matrix())
+        for front in (True,False):
+            paw=("FrontPaw." if front else "HindPaw.")+side
+            if moving:
+                # Four-beat alternating footfalls with staggered front/hind.
+                offset=(0 if side=="L" else .5) + (0 if front else .25)
+                travel_phase=(t+offset)%1
+                place_paw(paw,travel_phase,stride,.65 if stalk else .58,lift,
+                          spread=.012 if stalk else .029)
+            else:
+                # Plant all four paws during windup and keep them stable
+                # during the rapid bite instead of waving them in the air.
+                offset=0 if side=="L" else .5
+                place_paw(paw,(.24+offset)%1,
+                          .045, .82,0.003,crouch=load)
+        # Regenerate the actual chain from parented skeleton matrices.
     for i in range(6):
-        tail=rig.pose.bones["Tail"+str(i)]
-        tail.rotation_euler.z=.10*math.sin(phase-i*.55)
-        tail.rotation_euler.x=.042*math.sin(phase*.82-i*.8)
-    for n, sign in (("L",1),("R",-1)):
-        rig.pose.bones["Ear"+n].rotation_euler.y=.08*math.sin(phase+sign)
-        rig.pose.bones["Shoulder"+n].rotation_euler.x=.025*sign
-        rig.pose.bones["Hip"+n].rotation_euler.x=.025*sign
-        rig.pose.bones["Foreleg"+n].rotation_euler.x=-.055
-        rig.pose.bones["Hindleg"+n].rotation_euler.x=.06
-    if clip in ("run", "stalk"):
-        stalk=clip=="stalk"
-        stride=.19 if stalk else .49
-        bob=.016 if stalk else .063
-        # Four-beat scurry with a compressing spine and slight nose lead.
-        # No jumping up/down like a human biped.
-        root.location.z=(.015 if stalk else .024)+bob*.60*(1-math.cos(2*phase))*.5
-        chest.rotation_euler.x=(.10 if stalk else .19)+.10*math.sin(phase+.55)
-        head.rotation_euler.x=(-.18 if stalk else -.12)-.09*math.sin(phase+.25)
-        head.rotation_euler.z=.05*math.sin(phase+.45)
-        root.rotation_euler.z=.024*math.sin(phase)
-        root.location.y=.016*math.sin(phase+.5)
-        for n, sign in (("L",1),("R",-1)):
-            swing=math.sin(phase+sign*PI/2)
-            rig.pose.bones["Shoulder"+n].rotation_euler.x=stride*swing
-            rig.pose.bones["Hip"+n].rotation_euler.x=-stride*swing
-            rig.pose.bones["Foreleg"+n].rotation_euler.x=-.2-.24*max(0,swing)
-            rig.pose.bones["Hindleg"+n].rotation_euler.x=.22+.30*max(0,-swing)
-            rig.pose.bones["FrontPaw"+n].rotation_euler.x=-.19*max(0,swing)
-            rig.pose.bones["HindPaw"+n].rotation_euler.x=.14*max(0,-swing)
-        for i in range(6):
-            rig.pose.bones["Tail"+str(i)].rotation_euler.z=(.08 if stalk else .21)*math.sin(phase-i*.60)
-        if stalk:
-            root.location.z-=.075
-            root.location.y=-.035
-            head.rotation_euler.x=-.20
-    elif clip=="jump":
-        ready=1-smooth(t/.18) if t<.18 else 0
-        lift=max(0,math.sin(PI*clamp((t-.16)/.72)))
-        root.location.z=-.12*ready+.45*lift
-        # Runtime physics already advances the world-space leap. Preserve
-        # in-place animation (vertical take-off only), avoiding double travel.
-        root.location.y=-.055*math.sin(PI*smooth((t-.20)/.65))
-        chest.rotation_euler.x=-.2*ready+.28*lift
-        head.rotation_euler.x=.26*ready-.26*lift
-        for n in ("L","R"):
-            rig.pose.bones["Shoulder"+n].rotation_euler.x=-.46*lift+.30*ready
-            rig.pose.bones["Hip"+n].rotation_euler.x=.62*lift-.24*ready
-            rig.pose.bones["Foreleg"+n].rotation_euler.x=-.42*lift
-            rig.pose.bones["Hindleg"+n].rotation_euler.x=-.65*lift
-        for i in range(6):
-            rig.pose.bones["Tail"+str(i)].rotation_euler.x=-.26*lift
-    elif clip in ("bite","combo"):
-        # Readable crouch + backward snout pull -> rapid bite/pounce ->
-        # suspended follow-through and recovery. Two separately readable
-        # contacts in the combo, without advancing world position twice.
-        contacts=[.48] if clip=="bite" else [.34,.69]
-        snap=sum(bell(t,contact,.075) for contact in contacts)
-        first=contacts[0]
-        anticipate=smooth(t/.16)*(1-smooth((t-first+.080)/.12))
-        if clip=="combo":
-            anticipate=max(anticipate,
-                .70*smooth((t-.46)/.065)*(1-smooth((t-.65)/.055)))
-        settle=smooth((t-(contacts[-1]+.055))/.19)
-        chest.rotation_euler.x=-.51*anticipate+1.02*snap-.21*settle
-        head.rotation_euler.x=.62*anticipate-.96*snap+.21*settle
-        jaw.rotation_euler.x=.91*anticipate-.39*snap-.20*settle
-        for n in ("L","R"):
-            rig.pose.bones["Ear"+n].rotation_euler.x=-.38*anticipate+.15*snap
-        root.location.y=.067*anticipate-.116*snap
-        root.location.z=-.115*anticipate+.123*snap-.015*settle
-        for n in ("L","R"):
-            rig.pose.bones["Shoulder"+n].rotation_euler.x=.44*anticipate-.65*snap
-            rig.pose.bones["Foreleg"+n].rotation_euler.x=-.37*anticipate+.26*snap
-            rig.pose.bones["Hip"+n].rotation_euler.x=-.34*anticipate+.17*snap
-        for i in range(6):
-            rig.pose.bones["Tail"+str(i)].rotation_euler.x=(
-                -.28*anticipate+.30*snap)*max(.4,1-i*.09)
-    elif clip in ("dodge", "dodge-left"):
-        across=smooth(t/.56)
-        # Side dodge advances through the collision system in gameplay.
-        # Do not bake a second 0.5-metre root displacement into its atlas.
-        root.location.x=(-.065 if clip=="dodge-left" else .065)*math.sin(PI*t)
-        root.location.z=.12*math.sin(PI*t)
-        root.rotation_euler.y=( -.19 if clip=="dodge-left" else .19)*math.sin(PI*t)
-        chest.rotation_euler.z=(-.24 if clip=="dodge-left" else .24)*math.sin(PI*t)
-        for n,sign in (("L",1),("R",-1)):
-            rig.pose.bones["Shoulder"+n].rotation_euler.x=.30*sign*math.sin(PI*t)
-            rig.pose.bones["Hip"+n].rotation_euler.x=-.35*sign*math.sin(PI*t)
-        for i in range(6):
-            rig.pose.bones["Tail"+str(i)].rotation_euler.z=-.30*math.sin(PI*t)
-    elif clip=="death":
-        fall=smooth(t/.76)
-        bounce=.065*math.sin(PI*4*t)*max(0, 1-t) if t>.67 else 0
-        root.location.z=-.19*fall+abs(bounce)
-        root.rotation_euler.y=1.23*fall
-        root.rotation_euler.x=.15*fall
-        chest.rotation_euler.x=-.55*fall
-        head.rotation_euler.x=.60*fall
-        jaw.rotation_euler.x=.40*fall
-        for n,sign in (("L",1),("R",-1)):
-            rig.pose.bones["Shoulder"+n].rotation_euler.x=1.06*fall
-            rig.pose.bones["Hip"+n].rotation_euler.x=-.86*fall
-            rig.pose.bones["Foreleg"+n].rotation_euler.z=sign*.30*fall
-            rig.pose.bones["Hindleg"+n].rotation_euler.x=.56*fall
-        for i in range(6):
-            tail=rig.pose.bones["Tail"+str(i)]
-            tail.rotation_euler.z=.27*math.sin(i*1.7)*fall
-            tail.rotation_euler.x=-.34*fall
-    for pb in rig.pose.bones:
-        pb.keyframe_insert(data_path="location", frame=1+round(t*48))
-        pb.keyframe_insert(data_path="rotation_euler", frame=1+round(t*48))
+        name="Tail%d"%i
+        point_at=attached(rest[name][2],rest[name][0])
+        wag=.11*math.sin(phase-i*.54)
+        pitch=.062*math.sin(phase*.82-i*.5)
+        if moving:
+            wag+=.15*math.sin(phase-0.5*i)
+            pitch+=.095*math.sin(phase-0.4*i)
+        elif kind in ("bite","combo"):
+            wag+=.19*load*math.sin(i*.55)-.16*strike
+            pitch-=.17*load
+        elif kind=="death":
+            wag*=1-smooth(t/.8)
+            pitch-=.22*smooth(t/.8)
+        orient(name,point_at,Euler((pitch,0,wag)).to_matrix())
+    bpy.context.view_layer.update()
 
+# One readable keyframed Blender action for each existing gameplay clip.
+# The same exported 24fps packed GLB and 32-direction atlas API are preserved.
 for clip in SHEETS:
     action=bpy.data.actions.new("rat_"+clip)
     action.use_fake_user=True
     rig.animation_data_create().action=action
-    for i in range(25):
-        pose(clip, i/24)
+    for index in range(25):
+        t=index/24
+        scene.frame_set(1+2*index)
+        sample_pose(clip,t)
+        for pb in rig.pose.bones:
+            pb.keyframe_insert(data_path="location",frame=1+2*index)
+            pb.keyframe_insert(data_path="rotation_quaternion",frame=1+2*index)
+            pb.keyframe_insert(data_path="scale",frame=1+2*index)
 rig.animation_data.action=bpy.data.actions["rat_idle"]
 scene.frame_end=49
 scene.render.fps=48
