@@ -275,6 +275,32 @@ const run=async()=>{
    'Real production playtest errors: '+playErrors.join('; '));
   console.log('PRODUCTION PLAYTEST FPS / FRAME COST:',JSON.stringify(benchmark));
   await playtest.close();
+  // Compare actual alternate renderer under identical software-GPU hardware.
+  // This is a diagnostic, not an automatic recommendation or fake 60fps.
+  const canvasPage=await browser.newPage({viewport:{width:1100,height:800}});
+  await canvasPage.goto(base+'?szene=gasse&modus=generator&seed=4148&renderer=canvas',
+   {waitUntil:'domcontentloaded',timeout:45000});
+  await canvasPage.waitForFunction(()=>
+   window.__mindGuardianRig&&window.__mindDiagnostics?.engine==='Canvas-Ersatzrenderer',
+   null,{timeout:40000});
+  const canvasSample=await canvasPage.evaluate(async()=>{
+   const times=[],start=performance.now();
+   await new Promise(done=>{
+    let last=start;
+    function tick(now){
+     times.push(now-last);last=now;
+     if(now-start>2100)done();else requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+   });
+   times.sort((a,b)=>a-b);
+   return {engine:window.__mindDiagnostics.engine,
+    fps:Math.round(times.length*1000/(performance.now()-start)),
+    p95FrameMs:Math.round(times[Math.floor(times.length*.95)]||0),
+    enemyCount:window.__mindDiagnostics.enemyCount};
+  });
+  console.log('SOFTWARE CANVAS COMPARISON:',JSON.stringify(canvasSample));
+  await canvasPage.close();
  }finally{await browser.close();}
 };
 run().catch(err=>{console.error(err);process.exitCode=1;});
