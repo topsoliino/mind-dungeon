@@ -96,7 +96,7 @@ export async function loadEnemyRigs({only=null}={}){
  // skinned 3D work for the specialized skeleton attack telegraphs.
  const preview=new URLSearchParams(location.search).get('debug-art')==='1'||
   new URLSearchParams(location.search).get('enemy3d')==='1';
- const pixels=preview?RENDER_SIZE:152;
+ const pixels=preview?RENDER_SIZE:128;
  const renderer=new WebGLRenderer({alpha:true,antialias:false,preserveDrawingBuffer:true});
  renderer.setSize(pixels,pixels,false);
  renderer.setPixelRatio(1);
@@ -201,7 +201,9 @@ export async function loadEnemyRigs({only=null}={}){
    let image=frames.get(signature);
    if(!image){
     const now=performance.now();
-    const delay=targetFps<25?180:targetFps<40?115:65;
+    // Deliberately cap GPU skinning+readback under load. A stale pose is
+     // preferable to another frame stall; XY locomotion still runs smoothly.
+     const delay=targetFps<20?330:targetFps<35?200:targetFps<48?130:80;
     if(!preview&&state.last&&(renderedThisFrame>=1||now-lastGpuTime<delay)){
      // Keep the previous genuine live-GLB frame while movement continues.
      // The first frame for a skeleton must always be rendered: there is no
@@ -239,7 +241,7 @@ export async function loadEnemyRigs({only=null}={}){
   return {image:state.canvas,key:'alley-live-enemy-'+state.id,
    x:p.x-size/2,y:p.y-size*stage.groundFraction,
    width:size,height:size,originX:0,originY:0,
-   depth:(enemy.alleyFloor===1||enemy.alleyClimb?7000:0)+p.y,
+   depth:(enemy.alleyFloor===1||enemy.alleyClimb?7000:0)+feet,
    alpha,live:changed};
  }
  return {draw,beginFrame,stats,has:kind=>stages.has(kind),
