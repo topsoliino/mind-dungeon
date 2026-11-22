@@ -9,6 +9,7 @@ intervals just like the current Guardian rig. The runtime samples the actual
 bones with THREE.AnimationMixer, using precisely the Guardian's lights/camera.
 """
 import gzip
+import hashlib
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -132,8 +133,11 @@ def skeleton():
             "fps": FPS, "clips": {
                 key: [i * (SAMPLES + GAP), SAMPLES]
                 for i, key in enumerate(clips)
-            }, "displaySize": 132, "field": 3.23, "targetHeight": 1.01,
+            }, "displaySize": 116, "field": 3.23, "targetHeight": 1.01,
             "materialColorSpace": "srgb-to-linear",
+            "artStyle": "guardian-forged-v2",
+            "sourceBlendSha256": hashlib.sha256(
+                (ROOT / "skeleton" / "skeleton.blend").read_bytes()).hexdigest(),
         }
     (ROOT / "skeleton" / "skeleton-live.json").write_text(
         json.dumps(manifests, separators=(",", ":")) + "\n")
@@ -151,8 +155,11 @@ def rat():
         "fps": FPS,
         "clips": {key: [i * (SAMPLES + GAP), SAMPLES]
                   for i, key in enumerate(clips)},
-        "displaySize": 106, "field": 2.3, "targetHeight": 0.39,
+        "displaySize": 92, "field": 2.3, "targetHeight": 0.39,
         "materialColorSpace": "srgb-to-linear",
+        "artStyle": "guardian-forged-v2",
+        "sourceBlendSha256": hashlib.sha256(
+            (ROOT / "rat" / "rat.blend").read_bytes()).hexdigest(),
     }
     (ROOT / "rat" / "rat-live.json").write_text(
         json.dumps(manifest, separators=(",", ":")) + "\n")
