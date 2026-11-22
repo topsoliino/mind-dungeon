@@ -16,7 +16,7 @@ function mount({generator:g,player,iso}){
   '<strong id="iso-gen-level">GREYBOX · ERDGESCHOSS</strong><button id="iso-gen-toggle" aria-expanded="true">Karte −</button></div>'+
   '<div style="font-size:11px;color:#bac9d2;margin:6px 0">'+
   g.metadata.rooms+' Räume · '+g.metadata.corridors+' Gänge · '+g.metadata.doors+
-  ' Verbindungen · 1 Treppe · 1 Leiter</div>'+
+  ' Verbindungen · '+g.stairs.length+' Treppe(n) · '+(window.AlleyVertical?.enabled?1:0)+' Leiter</div>'+
   '<div style="font-size:11px;color:#d9c7b0;margin-bottom:7px">'+
   (g.metadata.stairTitle||'Treppenkonstruktion')+'</div>'+
   '<div id="iso-gen-body"><canvas id="iso-gen-map" width="576" height="360" '+
@@ -101,7 +101,7 @@ function mount({generator:g,player,iso}){
  const alley=[[1,2.75,12,6.85],[4.5,6.8,8.1,9.4],[9.5,.8,12,2.75]];
  const vertices=[...alley.flatMap(([u,v,r,b])=>[[u,v],[r,b]]),
   ...g.rooms.slice(1).flatMap(room=>room.cells.flatMap(([u,v])=>[[u,v],[u+1,v+1]])),
-  ...g.portals[1].cells.flatMap(([u,v])=>[[u,v],[u+1,v+1]])];
+  ...(g.outdoorExit?.cells||[]).flatMap(([u,v])=>[[u,v],[u+1,v+1]])];
  const projected=vertices.map(([u,v])=>iso.toView(u*48,v*48));
  const minX=Math.min(...projected.map(p=>p.x)),maxX=Math.max(...projected.map(p=>p.x));
  const minY=Math.min(...projected.map(p=>p.y)),maxY=Math.max(...projected.map(p=>p.y));
@@ -138,7 +138,7 @@ function mount({generator:g,player,iso}){
    ctx.strokeStyle=wall.height>20?'#e3d6c6':'#7d8b9c';
    ctx.lineWidth=wall.height>20?2.6:1.3;ctx.stroke();
   }
-  for(const [x,y] of g.portals[1].cells)poly(quad(x,y,x+1,y+1),'#776047');
+  for(const [x,y] of g.outdoorExit?.cells||[])poly(quad(x,y,x+1,y+1),'#776047');
   for(const door of g.doors)for(const [a,b] of door.edges){
    const p=xy((a[0]+b[0]+1)/2,(a[1]+b[1]+1)/2);
    ctx.beginPath();ctx.arc(p[0],p[1],3.5,0,Math.PI*2);ctx.fillStyle='#f4d394';ctx.fill();
