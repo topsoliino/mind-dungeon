@@ -25,7 +25,7 @@ function borderAt(x,y){
  return null;
 }
 function gaussian(x,y,cx,cy,rx,ry){
- return Math.exp(-((x-cx)/rx)**2-((y-cy)/ry)**2);
+ return Math.exp(-(((x-cx)/rx)**2)-(((y-cy)/ry)**2));
 }
 function heightAt(x,y){
  const coastEdge=coast(y);
