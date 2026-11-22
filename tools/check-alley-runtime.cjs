@@ -30,7 +30,7 @@ assert(poolInit>=0&&earlyAlley>=0&&poolInit<earlyAlley,
 const renderMethod=method(html,'renderGhostVisuals(isometric=false){');
 const stones=[];
 const visual={frame:()=>true,cells:()=>[{x:18,y:23,depth:20,alpha:.5,size:45}],
- vesselRevision:0};
+ vesselRevision:0,modelRevision:0,modelFrames:[],modelIndex:()=>-1};
 const iso={toView:(x,y,z)=>({x,y:y-z})};
 const makeRenderer=new Function('ghostFog','soulVessels','combatClock','iso',
  'H','TILE','regionVisibleAt','return function '+renderMethod);
@@ -41,11 +41,11 @@ function image(){
   setVisible(value){this.visible=value;return this;},
   setPosition(){return this;},setDepth(){return this;},
   setDisplaySize(){return this;},setAlpha(){return this;},
-  setOrigin(){return this;}};
+  setOrigin(){return this;},setTexture(key){this.texture={key};return this;}};
  sprites.push(sprite);return sprite;
 }
 const phaser={ghostFogSprites:[],ghostVesselSprites:[],vesselArtRevision:-1,
- add:{image},textures:{get:()=>({refresh(){}})}};
+ add:{image},textures:{exists:()=>true,addCanvas:()=>({refresh(){}}),get:()=>({refresh(){}})}};
 render.call(phaser,true); // No smoke yet: MUST NOT crash when walking.
 assert.equal(sprites.length,0,'Empty dungeon should allocate no ghost sprites');
 stones.push({x:42,y:64,z:7,alleyFloor:0});
@@ -61,7 +61,8 @@ assert(sprites.every(sprite=>sprite.visible===false),
 const drawMethod=method(rig,'function draw(enemy,type,selection,iso,deathAge=null){');
 const enemy={x:105,y:150,alleyFloor:0,size:1,facing:0};
 const states=new WeakMap();
-states.set(enemy,{id:1,canvas:{},last:'sabre|idle|0|8'});
+states.set(enemy,{id:1,last:'sabre|idle|12|0|8',
+ lastKey:'alley-live-enemy-sabre|idle|12|0|8',lastImage:{}});
 const draw=new Function('stages','canvases','clamp','TAU','ELEVATION',
  'preview','targetFps','pixels','frames','return '+drawMethod)(
  new Map([['sabre',{settings:{clips:{idle:[0,25]},fps:24,displaySize:116},

@@ -53,7 +53,7 @@ assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),is
 assert(html.includes("enemyRig?.beginFrame(renderStats.fps)"));
 assert(html.includes("only:enemyArtPreview?null:['sabre','bow']"));
 assert(enemy.includes('const frames=new Map(),MAX_FRAMES=176'));
-assert(enemy.includes('state.lastImage=stage.idleImage')&&
+assert(enemy.includes('lastImage:stage.idleImage')&&
  enemy.includes('const cached=frames.get(signature)'),
  'Every enemy must reuse the shared genuine 3D GLB pose cache');
 assert(enemy.includes('cachedTextureKeys')&&enemy.includes('live:false')&&
