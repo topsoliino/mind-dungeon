@@ -39,19 +39,34 @@ jobs:
             -P tools/build-isometric-rat.py
       - name: Inspect actual Blender source and rendered WebP sheets
         run: python3 tools/check-isometric-rat-atlases.py
-      - name: Commit rendered fallback atlases (canonical Blender source comes from fast rig build)
+      - name: Publish ONLY current 32-direction rat fallback atlases
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add beta/art/rat/*.webp
-          # The rig-only workflow owns the canonical .blend; discard the
-          # regenerated, untracked-in-commit copy before rebasing atlases.
-          git restore -- beta/art/rat/rat.blend
-          if ! git diff --cached --quiet; then
-            git commit -m "Blender: publish 32 facing rat fallback atlases"
+          build_base=$(git rev-parse HEAD)
+          temp_dir=$(mktemp -d)
+          trap 'rm -rf "$temp_dir"' EXIT
+          cp beta/art/rat/*.webp "$temp_dir/"
+          for attempt in 1 2 3 4 5 6; do
             git fetch origin main
-            git rebase origin/main
-            git push origin HEAD:main
-          else
-            echo "Rat geometry and atlases unchanged."
-          fi
+            if ! git diff --quiet "$build_base" origin/main -- tools/build-isometric-rat.py; then
+              echo "Newer rat sculpt detected; discarding obsolete atlases."
+              exit 0
+            fi
+            # Preserve newer source and the canonical Blender rig even if a
+            # second job published it during this expensive atlas bake.
+            git reset --hard origin/main
+            cp "$temp_dir/"*.webp beta/art/rat/
+            git add beta/art/rat/*.webp
+            if git diff --cached --quiet; then
+              echo "Rat atlases already current."
+              exit 0
+            fi
+            git commit -m "Blender: publish Guardian-rat 32-direction atlases"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          echo "Unable to publish rat fallback atlases."
+          exit 1

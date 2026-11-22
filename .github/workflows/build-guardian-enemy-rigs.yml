@@ -44,21 +44,44 @@ jobs:
         run: |
           PYTHONPATH=/usr/lib/python3/dist-packages blender -b --factory-startup -t 4 --python-exit-code 1 -P tools/export-enemy-rigs.py
           python3 tools/check-live-enemy-rigs.py
-      - name: Publish canonical Blender sources and playable live GLBs
+      - name: Publish ONLY current Blender sources and live GLBs
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add beta/art/skeleton/skeleton.blend beta/art/rat/rat.blend
-          git add beta/art/skeleton/skeleton-*-rig.glb.gz beta/art/skeleton/skeleton-live.json
-          git add beta/art/rat/rat-live-rig.glb.gz beta/art/rat/rat-live.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Blender: publish Guardian-forged enemy geometry and canonical 3D rigs"
-            for attempt in 1 2 3 4 5 6; do
-              git fetch origin main
-              git rebase origin/main
-              if git push origin HEAD:main; then exit 0; fi
-              sleep 2
-            done
-            echo "Unable to publish fresh 3D rigs" >&2
-            exit 1
-          fi
+          build_base=$(git rev-parse HEAD)
+          temp_dir=$(mktemp -d)
+          trap 'rm -rf "$temp_dir"' EXIT
+          mkdir -p "$temp_dir/skeleton" "$temp_dir/rat"
+          cp beta/art/skeleton/skeleton.blend beta/art/skeleton/skeleton-*-rig.glb.gz beta/art/skeleton/skeleton-live.json "$temp_dir/skeleton/"
+          cp beta/art/rat/rat.blend beta/art/rat/rat-live-rig.glb.gz beta/art/rat/rat-live.json "$temp_dir/rat/"
+          for attempt in 1 2 3 4 5 6; do
+            git fetch origin main
+            # Never let an older long-running Blender job overwrite a newer
+            # script/rig. Bot-generated binaries may race, but their source
+            # definitions must not have advanced since this job started.
+            if ! git diff --quiet "$build_base" origin/main -- \
+              tools/build-isometric-skeleton.py tools/build-isometric-rat.py \
+              tools/export-enemy-rigs.py; then
+              echo "Newer Blender source detected; discarding stale render."
+              exit 0
+            fi
+            # Binary .blend/.gz files cannot be rebased. Reset to the latest
+            # branch BEFORE overlaying only generated assets. Never stage or
+            # overwrite any source code belonging to newer commits.
+            git reset --hard origin/main
+            cp "$temp_dir/skeleton/"* beta/art/skeleton/
+            cp "$temp_dir/rat/"* beta/art/rat/
+            git add beta/art/skeleton/skeleton.blend beta/art/skeleton/skeleton-*-rig.glb.gz beta/art/skeleton/skeleton-live.json
+            git add beta/art/rat/rat.blend beta/art/rat/rat-live-rig.glb.gz beta/art/rat/rat-live.json
+            if git diff --cached --quiet; then
+              echo "Assets already match current source."
+              exit 0
+            fi
+            git commit -m "Blender: publish Guardian-derived live enemy rigs"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          echo "Failed to publish current 3D renders without racing."
+          exit 1
