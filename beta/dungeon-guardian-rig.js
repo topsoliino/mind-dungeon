@@ -167,6 +167,12 @@ export async function loadRig(url,clips={}){
     context.clearRect(0,0,renderSize,renderSize);
     context.drawImage(renderer.domElement,0,0);
     return true;
+   },
+   dispose(){
+    action.stop();
+    mixer.uncacheRoot(gltf.scene);
+    renderer.dispose();
+    renderer.forceContextLoss();
    }
   };
  }catch(error){
