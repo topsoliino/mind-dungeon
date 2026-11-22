@@ -55,9 +55,9 @@ def mat(name, color, roughness=.83, metal=0):
 
 # Cool blue-grey rat, no clothing or equipment. Maintain the Guardian's
 # deep/mid/light graphic value structure, with entirely non-metallic fur.
-fur = mat("Slate blue-grey main coat", (.32,.40,.50), .76)
-fur_light = mat("Cold silver-grey fur facets", (.57,.64,.70), .73)
-belly = mat("Smoky grey belly", (.54,.59,.63), .81)
+fur = mat("Slate blue-grey main coat", (.34,.42,.51), .83)
+fur_light = mat("Cold silver-grey fur facets", (.47,.55,.63), .81)
+belly = mat("Smoky grey belly", (.45,.51,.57), .86)
 skin = mat("Muted slate-rose paws and tail", (.35,.31,.38), .82)
 ear = mat("Dusty grey-pink inner ears", (.48,.41,.48), .82)
 eye = mat("Black glass eyes", (.012,.018,.032), .21)
@@ -65,8 +65,8 @@ nose = mat("Dark wet nose", (.16,.16,.23), .29)
 teeth = mat("Small ivory incisors", (.79,.78,.73), .77)
 whisker = mat("Pale cold whiskers", (.65,.68,.70), .79)
 fur_shadow = mat("Deep slate underfur", (.115,.16,.23), .83)
-fur_coat = mat("Dark dorsal blue-grey coat", (.21,.28,.38), .78)
-fur_gold = mat("Bristled cold fur tips", (.49,.57,.64), .76)
+fur_coat = mat("Dark dorsal blue-grey coat", (.265,.335,.427), .85)
+fur_gold = mat("Bristled cold fur tips", (.43,.52,.60), .84)
 ear_shadow = mat("Inner ear folds", (.23,.24,.32), .84)
 claw = mat("Hard weathered claws", (.45,.48,.52), .74)
 tail_ring = mat("Dark slate tail folds", (.23,.22,.30), .86)
@@ -130,11 +130,15 @@ body_shell = style.profile_mesh("Broad pear-shaped body", [
     (.40,0,.352,.310,.255),
     (.54,0,.320,.204,.162),
     (.64,0,.283,.067,.053),
-], [fur,fur_light,fur_shadow,fur_coat], axis="y", sides=10,
+], [fur,fur_light,fur_shadow,fur_coat], axis="y", sides=16,
     face_material=lambda band,facet:
-        3 if facet in (1,2,3,4) and band>=2 else
-        2 if facet in (6,7) else
-        1 if facet in (0,5,9) and band in (1,2) else 0)
+        3 if facet in (2,3,4) and band in (2,3,4,5) else
+        2 if facet in (10,11,12) else
+        1 if facet in (0,15) and band in (1,2,3) else 0)
+# Smooth *only* the fur primary volume, not teeth/eyes/ears/claws. The old
+# flat-shaded 10-sided body looked like an armor-clad mechanical box.
+for polygon in body_shell.data.polygons:
+    polygon.use_smooth=True
 add_part(body_shell,"Broad pear-shaped body","Root",fur)
 # Short directional clumps sit inside the existing surface volume. Every
 # bristle is real skinned 3D geometry, anchored in the silhouette rather
@@ -146,15 +150,15 @@ for row,(y,rx,back_z) in enumerate((
         x=sign*rx*.75
         off=(row%3)*.008
         rod("Low shaggy dorsal fur clump","Root",
-            (x,y,back_z-.035),
-            (sign*(abs(x)+.038+off),y+.045+.011*(row%2),
-             back_z+.014+off),
-            .032,fur_light if row in (1,4) else fur_coat,.003)
+            (x,y,back_z-.030),
+            (sign*(abs(x)+.027+off*.5),y+.055+.007*(row%2),
+             back_z-.010+off*.35),
+            .022,fur_light if row in (1,4) else fur_coat,.002)
         if row in (1,3,5):
             rod("Short side fur lock","Root",
-                (sign*rx*.92,y+.018,back_z-.09),
-                (sign*(rx+.025),y+.079,back_z-.072),
-                .025,fur_gold,.003)
+                (sign*rx*.89,y+.018,back_z-.083),
+                (sign*(rx+.019),y+.076,back_z-.077),
+                .019,fur_gold,.002)
 oval("Underbelly", "Root", (0, -.08, .185), (.255, .42, .125), belly)
 ruff = style.profile_mesh("Shoulder ruff", [
     (-.59,0,.365,.085,.073),
@@ -162,8 +166,11 @@ ruff = style.profile_mesh("Shoulder ruff", [
     (-.29,0,.391,.242,.205),
     (-.13,0,.390,.216,.166),
     (-.07,0,.376,.073,.057),
-], [fur,fur_light,fur_shadow], axis="y", sides=10,
-    face_material=lambda band,facet: 1 if facet in (0,1,2,3,4) else 2 if facet in (6,7) else 0)
+], [fur,fur_light,fur_shadow], axis="y", sides=12,
+    face_material=lambda band,facet: 1 if facet in (0,1) and band<=1 else
+                              2 if facet in (8,9) else 0)
+for polygon in ruff.data.polygons:
+    polygon.use_smooth=True
 add_part(ruff,"Shoulder ruff","Chest",fur)
 face_shell = style.profile_mesh("Sculpted planar head", [
     (-.834,0,.375,.086,.078),
@@ -171,9 +178,11 @@ face_shell = style.profile_mesh("Sculpted planar head", [
     (-.630,0,.425,.248,.205),
     (-.485,0,.43,.238,.194),
     (-.375,0,.415,.102,.095),
-], [fur,fur_light,fur_shadow], axis="y", sides=10,
-    face_material=lambda band,facet: 1 if facet in (0,1,2,3,4) and band<3 else
-                              2 if facet in (6,7) else 0)
+], [fur,fur_light,fur_shadow], axis="y", sides=12,
+    face_material=lambda band,facet: 1 if facet in (0,1) and band<2 else
+                              2 if facet in (8,9) else 0)
+for polygon in face_shell.data.polygons:
+    polygon.use_smooth=True
 add_part(face_shell,"Sculpted planar head","Head",fur)
 snout=style.profile_mesh("Tapered faceted muzzle",[
     (-.954,0,.345,.035,.035),
