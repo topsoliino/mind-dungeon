@@ -22,7 +22,7 @@ window.AlleySkeleton=(()=>{
     }
    })));
  }
- function sprite(e,iso,rules,deathAge=null){
+ function choose(e,rules,deathAge=null){
   const spec=rules.attacks[e.type],bow=e.skeleton==='bow';
   if(!spec||!e.skeleton)return null;
   let clip=e.moving?'run':'idle',t=(e.phase*(e.moving?1.65:.8))%1;
@@ -31,9 +31,15 @@ window.AlleySkeleton=(()=>{
    clip=bow?'shoot':'strike';
    const boundary=bow?.62:.47;
    t=e.windup>0?boundary*(1-e.windup/spec.windup):
-    e.runAttack>0?boundary+(.89-boundary)*(1-e.runAttack/e.runDuration):
-    .89+.11*(1-e.recover/spec.recovery);
+    e.runAttack>0?boundary+(.89-boundary)*(1-e.runAttack/Math.max(.01,e.runDuration)):
+    .89+.11*(1-e.recover/Math.max(.01,spec.recovery));
   }
+  return {clip,t:Math.max(0,Math.min(1,t)),kit:e.skeleton};
+ }
+ function sprite(e,iso,rules,deathAge=null){
+  const selected=choose(e,rules,deathAge);
+  if(!selected)return null;
+  const {clip,t}=selected;
   const key=e.skeleton+'-'+clip,image=sheets.get(key);
   if(!image)return null;
   const textureCell=image.height/32;
@@ -78,5 +84,5 @@ window.AlleySkeleton=(()=>{
   }
   return encounters;
  }
- return {load,sprite,sprites,encounters};
+ return {load,sprite,sprites,choose,encounters};
 })();
