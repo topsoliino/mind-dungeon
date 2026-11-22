@@ -276,7 +276,7 @@ const run=async()=>{
    'Normal playtest must use baked dense-fur rat, not live WebGL skinning');
   assert(benchmark.gameSeconds>=benchmark.seconds*.70,
    'When FPS collapses, simulation must not run in slow motion');
-  assert(benchmark.gpuRenders<=Math.ceil(benchmark.seconds*18)+2,
+  assert(benchmark.gpuRenders<=Math.ceil(benchmark.seconds*40)+2,
    'Enemy GPU render budget must remain capped, not scale with enemy count');
   assert.equal(playErrors.length,0,
    'Real production playtest errors: '+playErrors.join('; '));

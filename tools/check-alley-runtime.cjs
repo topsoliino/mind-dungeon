@@ -77,4 +77,8 @@ assert(!manifest.spriteReady||fs.existsSync('beta/art/props/ghost-vessel.png'),
 assert(html.includes('refreshLayers(this.alleyLayers,player,save.opened.includes(0),'),
  'Isometric camera-layer culling must be integrated');
 assert(rig.includes('stage.idleImage'),'Enemy spawn requires a cached Blender pose');
+assert(rig.includes('cachedTextureKeys')&&rig.includes('live:false'),
+ 'Skeleton 3D frames must be shared immutable Phaser textures');
+assert(rig.includes('bakeGhostVessel(renderer,pixels)'),
+ 'Ghost vessels must use the shared GLB renderer');
 console.log('Phaser movement crash, Canvas enemy depth, ghost pool lifecycle and GPU culling: OK');

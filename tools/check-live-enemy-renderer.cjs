@@ -33,7 +33,7 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=21')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=22')"));
 assert(!enemy.includes("function hasLegacyPalette("),
  'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
 assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
@@ -53,7 +53,15 @@ assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),is
 assert(html.includes("enemyRig?.beginFrame(renderStats.fps)"));
 assert(html.includes("only:enemyArtPreview?null:['sabre','bow']"));
 assert(enemy.includes('const frames=new Map(),MAX_FRAMES=176'));
-assert(enemy.includes('(state.last||stage.idleImage)'),'First visible enemy must reuse a genuine pre-baked GLB pose if GPU is busy');
+assert(enemy.includes('state.lastImage=stage.idleImage')&&
+ enemy.includes('const cached=frames.get(signature)'),
+ 'Every enemy must reuse the shared genuine 3D GLB pose cache');
+assert(enemy.includes('cachedTextureKeys')&&enemy.includes('live:false')&&
+ html.includes('enemyRig?.cachedTextureKeys?.()'),
+ 'Phaser needs a bounded immutable pose-texture cache, not per-enemy uploads');
+assert(enemy.includes('const ghostProps=await bakeGhostVessel(renderer,pixels)')&&
+ html.includes('ghostFog?.set3DFrames(renderer.ghostProps)'),
+ '3D ghost-vessel model must be rendered from the shared WebGL context');
 assert(enemy.includes('cacheHits:0'));
 assert(html.includes('if(!onScreen(e))continue'));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));
