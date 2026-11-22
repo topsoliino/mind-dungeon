@@ -57,10 +57,12 @@ const run=async()=>{
    // On source commits the previous GLB may legitimately still be deployed.
    const skeletonManifest=await (await fetch(
     'beta/art/skeleton/skeleton-live.json',{cache:'no-cache'})).json();
-   if(skeletonManifest.sabre?.artStyle==='guardian-rebuilt-skeleton-v6'){
+   if(skeletonManifest.sabre?.artStyle==='guardian-rebuilt-skeleton-v7'){
     out.specialClips=[];
     for(const [kind,names] of [['sabre',['combo','slash','overhead',
-       'cartwheel-enter','cartwheel','cartwheel-exit','throw','combo-run']],
+       'cartwheel-enter','cartwheel','cartwheel-exit',
+       'cartwheel-enter-left','cartwheel-left','cartwheel-exit-left',
+       'throw','combo-run']],
        ['bow',['double-shoot','flee','throw','shoot-run','double-shoot-run']]]){
      for(const clip of names){
       const enemy={x:100,y:100,size:1,facing:.12,phase:.2,moving:true};

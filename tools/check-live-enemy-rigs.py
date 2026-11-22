@@ -15,7 +15,8 @@ PACKAGES=[
  ("skeleton/skeleton-sabre-rig.glb.gz","skeleton/skeleton-live.json","sabre",
   ("idle","run","strike","combo","combo-run","slash","slash-run",
     "overhead","overhead-run","cartwheel-enter","cartwheel",
-    "cartwheel-exit","throw","throw-run","death")),
+    "cartwheel-exit","cartwheel-enter-left","cartwheel-left",
+    "cartwheel-exit-left","throw","throw-run","death")),
  ("skeleton/skeleton-bow-rig.glb.gz","skeleton/skeleton-live.json","bow",
   ("idle","run","shoot","flee","shoot-run","double-shoot",
     "double-shoot-run","throw","throw-run","death")),
@@ -46,7 +47,7 @@ for asset,settings_path,variant,clips in PACKAGES:
     assert manifest.get("materialColorSpace")=="srgb-to-linear", (
         asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
     assert manifest.get("artStyle")==(
-       "guardian-rebuilt-skeleton-v6" if variant is not None
+       "guardian-rebuilt-skeleton-v7" if variant is not None
        else "guardian-rebuilt-rat-v7"), (asset,"wrong art generation")
     source_blend=ROOT/("rat/rat.blend" if variant is None else "skeleton/skeleton.blend")
     assert manifest.get("sourceBlendSha256")==hashlib.sha256(source_blend.read_bytes()).hexdigest(), (

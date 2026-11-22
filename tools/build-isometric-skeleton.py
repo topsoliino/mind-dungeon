@@ -557,34 +557,73 @@ def sample_pose(kind,t):
     phase=math.tau*t
     swing=math.cos(phase)
     action=kind[:-4] if kind.endswith('-run') else kind
+    wheel_side=-1 if action.endswith('-left') else 1
+    if wheel_side<0:action=action[:-5]
     locomotion=kind in ('run','flee') or kind.endswith('-run')
     sword=action in ('strike','combo','slash','overhead')
     archery=action in ('shoot','double-shoot')
     throwing=action=='throw'
     if action in ('cartwheel-enter','cartwheel','cartwheel-exit'):
-        # Full-body lateral somersault: roll around the long forward axis.
-        # A separate start/end clip gives the wheel a real preparation/landing.
-        u=smooth(t)
-        if action=='cartwheel-enter':angle=(pi*.46)*u
-        elif action=='cartwheel-exit':angle=pi*.46+(pi*1.54)*u
-        else:angle=pi*.46+math.tau*t
-        # Rotate in WORLD Y, the body's front-back axis. Bone-local Y
-        # is its long axis and would merely SPIN it upright, not cartwheel.
-        tilt=math.sin(angle)
-        rise=.11*abs(math.sin(angle))-.08*math.sin(pi*t)**2
-        orient('Hips',rest['Hips'][0]+V((.035*tilt,0,rise)),
-               Euler((0,angle,0)).to_matrix())
-        # Reaching hands and split legs give a recognizable handstand
-        # silhouette at the quarter-turn, rather than a rigid bone barrel.
+        # SPORT CLASS CARTWHEEL (Radschlag), not a rigid-object axial spin.
+        # Full 360 degrees split into THREE time-contiguous clips:
+        # foot launch -> first planted hand -> inverted hand-to-hand support
+        # -> scissoring legs -> last planted foot -> upright recovery.
+        #
+        # Left/right skills use genuine mirrored baked IK, not a sprite flip.
+        if action=='cartwheel-enter':
+            turn=.23*smooth(t)
+        elif action=='cartwheel':
+            turn=.23+.56*smooth(t)
+        else:
+            turn=.79+.21*smooth(t)
+        theta=wheel_side*math.tau*turn
+        arch=abs(math.sin(theta))
+        # Center of gravity dips while the shoulders pass over planted hands.
+        # The actual 3x lateral travel is already handled by gameplay.
+        hips=rest['Hips'][0]+V((
+            wheel_side*(.040*math.sin(pi*turn)+.023*math.sin(theta)),
+            -.022,
+            -.39*arch+.048*math.sin(pi*turn)**2
+        ))
+        orient('Hips',hips,Euler((-.055*math.sin(theta),theta,0)).to_matrix())
+        # The torso/neck inherit the tilted hip frame. Reposition BOTH
+        # humeri and forearms with Guardian's 2-bone WORLD-space IK.
+        # The leading hand touches first, then the trailing hand takes weight.
+        leading='R' if wheel_side>0 else 'L'
         for side,sign in SIDES:
-            rig.pose.bones['Arm.'+side].rotation_quaternion=Euler(
-                (-.57,sign*.12,sign*.60)).to_quaternion()
-            rig.pose.bones['Forearm.'+side].rotation_quaternion=Euler(
-                (-.21,0,sign*.17)).to_quaternion()
-            rig.pose.bones['Thigh.'+side].rotation_quaternion=Euler(
-                (.36,0,sign*.34)).to_quaternion()
-            rig.pose.bones['Shin.'+side].rotation_quaternion=Euler(
-                (-.24,0,0)).to_quaternion()
+            shoulder=attached('Chest',rest['Arm.'+side][0])
+            first=side==leading
+            planted=(.13<=turn<=.53) if first else (.46<=turn<=.85)
+            if planted:
+                # World-z hand contact, so the pose actually supports weight
+                # rather than rotating an upright T-pose around its pelvis.
+                hand=V((shoulder.x+wheel_side*.105,
+                        shoulder.y-.145,.088))
+            else:
+                hand=attached('Hips',rest['Hand.'+side][0])
+                hand+=V((wheel_side*.06,-.095,.065))
+            wrist=bend_joint('Arm.'+side,'Forearm.'+side,
+                             shoulder,hand,(sign*.50,.27,-.06),1.08)
+            point('Hand.'+side,wrist,wrist+V((0,-.070,
+                                            -.090 if planted else -.065)))
+            if side=='R':
+                point('Grip.R',wrist,wrist+blade_vector(
+                      .3*wheel_side,.35 if planted else .66))
+            else:
+                point('Bow.L',wrist,wrist+V((0,-.08,.73)))
+        # Scissor legs through the inverted phase; plant the leading foot
+        # on takeoff and the trailing one on the actual exit, no rigid spin.
+        for side,sign in SIDES:
+            if turn<.045 or turn>.955:
+                place_foot(side,sign,0,0,.015,.04)
+            else:
+                hip=attached('Hips',rest['Thigh.'+side][0])
+                foot=attached('Hips',rest['Foot.'+side][0])
+                foot+=V((sign*.115*math.sin(theta+.7*sign),
+                         -.09,.070+.10*arch))
+                ankle=bend_joint('Thigh.'+side,'Shin.'+side,
+                    hip,foot,(sign*.16,-1,.10),1.07)
+                point('Foot.'+side,ankle,ankle+V((0,-.13,-.03)))
         rig.pose.bones['Vessel'].scale=(.0001,)*3
         bpy.context.view_layer.update()
         return
@@ -770,6 +809,8 @@ clips={'idle':8,'run':12,'strike':12,'shoot':12,'death':12,
        'flee':12,'double-shoot':12,'throw':12,
        'combo':16,'slash':12,'overhead':12,
        'cartwheel-enter':12,'cartwheel':20,'cartwheel-exit':12,
+       'cartwheel-enter-left':12,'cartwheel-left':20,
+       'cartwheel-exit-left':12,
        'shoot-run':12,'double-shoot-run':12,'throw-run':12,
        'combo-run':16,'slash-run':12,'overhead-run':12}
 for clip in clips:

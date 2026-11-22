@@ -137,7 +137,8 @@ def skeleton():
             if weapon=="bow" else
             ("idle","run","strike","combo","combo-run","slash","slash-run",
              "overhead","overhead-run","cartwheel-enter","cartwheel",
-             "cartwheel-exit","throw","throw-run","death")
+             "cartwheel-exit","cartwheel-enter-left","cartwheel-left",
+             "cartwheel-exit-left","throw","throw-run","death")
         )
         clips = {name:name for name in names}
         export_model(ROOT / "skeleton" / f"skeleton-{weapon}-rig.glb.gz",
@@ -149,7 +150,7 @@ def skeleton():
                 for i, key in enumerate(clips)
             }, "displaySize": 116, "field": 3.23, "targetHeight": 1.01,
             "materialColorSpace": "srgb-to-linear",
-            "artStyle": "guardian-rebuilt-skeleton-v6",
+            "artStyle": "guardian-rebuilt-skeleton-v7",
             "sourceBlendSha256": hashlib.sha256(
                 (ROOT / "skeleton" / "skeleton.blend").read_bytes()).hexdigest(),
         }

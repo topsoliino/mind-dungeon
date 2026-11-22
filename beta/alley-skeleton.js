@@ -30,6 +30,8 @@ window.AlleySkeleton=(()=>{
   else if(e.skeletonAction){
    const a=e.skeletonAction;
    clip=a.name;
+   if(clip.startsWith('cartwheel')&&e.skeletonWheelSide<0)
+    clip+='-left';
    if(e.moving&&['shoot','double-shoot','throw','combo','slash','overhead'].includes(clip))
     clip+='-run';
    t=a.age/Math.max(.001,a.duration);
@@ -47,7 +49,7 @@ window.AlleySkeleton=(()=>{
   if(!selected)return null;
   const {clip,t}=selected;
   const key=e.skeleton+'-'+clip;
-  const fallback=e.skeleton+'-'+(clip==='idle'||clip==='run'||clip==='death'?clip:
+  const fallback=e.skeleton+'-'+(clip==='idle'||clip==='run'||clip==='death'||clip==='flee'?clip==='flee'?'run':clip:
    e.skeleton==='bow'?'shoot':'strike');
   // The new live GLB is authoritative; old directional atlases remain a
   // visual fallback until the new specialized batches are rendered.
