@@ -28,7 +28,7 @@ async function test(){
  const e={type:13,x:100,y:120,phase:.1,angle:0,moving:false,size:.86,hit:0,
   windup:0,runAttack:0,recover:0};
  assert.equal(rat.sprite(e,iso,rules).key,'rat-idle');
- assert.equal(rat.sprite(e,iso,rules).width,128*.86,'larger rat silhouette');
+ assert.equal(rat.sprite(e,iso,rules).width,114*.86,'smaller rat silhouette');
  e.moving=true;e.ratStalking=true;
  assert.equal(rat.sprite(e,iso,rules).key,'rat-stalk');
  e.ratStalking=false;
