@@ -6,9 +6,9 @@ on:
     branches: [main]
     paths:
       - .github/workflows/export-enemy-rigs.yml
-      - tools/export-enemy-rigs.py
-      - tools/check-live-enemy-rigs.py
-      - tools/check-live-enemy-renderer.cjs
+      # Source script changes are rebuilt by build-guardian-enemy-rigs.yml.
+      # Running this export job before the .blend rebuild caused false
+      # failures due to manifests referencing a newer Blender source.
       - beta/art/skeleton/skeleton.blend
       - beta/art/rat/rat.blend
 
