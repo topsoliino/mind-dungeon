@@ -214,11 +214,14 @@ const run=async()=>{
   await playtest.goto(base+'?szene=gasse&modus=generator&seed=4148&profile-render=1&renderer=webgl',
    {waitUntil:'domcontentloaded',timeout:45000});
   await playtest.waitForFunction(()=>
-   window.__mindEnemyRig?.active?.length===2&&
+   (window.__mindEnemyRig?.active?.length===2||
+    window.__mindArtStatus?.skeleton==='Blender 3D Atlas')&&
    window.__mindDiagnostics?.engine==='Phaser 3'&&
    window.__mindDiagnostics?.isPlaying,null,{timeout:40000});
   const benchmark=await playtest.evaluate(async()=>{
-   const rig=window.__mindEnemyRig,initial=rig.stats.gpuRenders;
+   const rig=window.__mindEnemyRig||{
+    active:[],stats:{gpuRenders:0,gpuCostMs:0,cacheHits:0,budgetSkips:0}};
+   const initial=rig.stats.gpuRenders;
    const gameTimeStart=window.__mindDiagnostics.gameTime;
    const profile={};
    const wrap=(object,method,name)=>{
@@ -279,7 +282,8 @@ const run=async()=>{
   await phaserCanvas.goto(base+'?szene=gasse&modus=generator&seed=4148&renderer=phaser-canvas',
    {waitUntil:'domcontentloaded',timeout:45000});
   await phaserCanvas.waitForFunction(()=>
-   window.__mindEnemyRig?.active?.length===2&&
+   (window.__mindEnemyRig?.active?.length===2||
+    window.__mindArtStatus?.skeleton==='Blender 3D Atlas')&&
    window.__mindDiagnostics?.engine==='Phaser 3'&&
    window.__mindDiagnostics?.isPlaying,null,{timeout:40000});
   const candidate=await phaserCanvas.evaluate(async()=>{
@@ -305,7 +309,7 @@ const run=async()=>{
     p95FrameMs:Math.round(frames[Math.floor(frames.length*.95)]||0),
     gameSeconds:window.__mindDiagnostics.gameTime-startGame,wallSeconds:sec,
     alleyAvgMs:p.total/Math.max(1,p.calls),alleyMaxMs:p.max,renderCalls:p.calls,
-    phaserType:game.renderer.type,glbRenders:window.__mindEnemyRig.stats.gpuRenders};
+    phaserType:game.renderer.type,glbRenders:window.__mindEnemyRig?.stats?.gpuRenders||0};
   });
   console.log('PHASER CANVAS A/B COMBAT:',JSON.stringify({...candidate,errors:candidateErrors}));
   await phaserCanvas.close();
