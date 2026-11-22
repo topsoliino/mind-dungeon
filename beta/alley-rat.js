@@ -1,7 +1,7 @@
 // Blender-baked small rat: editable armature, 32 independent 3D views/animation.
 window.AlleyRat=(()=>{
  'use strict';
- const CELL=128,VIEWS=32,TAU=Math.PI*2,VERSION=5;
+ const CELL=128,VIEWS=32,TAU=Math.PI*2,VERSION=6;
  const files=['idle','run','stalk','jump','bite','combo','dodge','dodge-left','death'];
  const sheets=new Map();
  const DEATH_SECONDS=1.15;

@@ -33,7 +33,7 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=11')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=12')"));
 assert(!enemy.includes("function hasLegacyPalette("),
  'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
 assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
@@ -91,12 +91,31 @@ assert(!skeletonBuilder.includes('style.profile_mesh(')&&
  !skeletonBuilder.includes('Broken cuirass main plate')&&
  !skeletonBuilder.includes('Buckler timber core'),
  'Legacy skeleton architecture and armor must be deleted, not restyled');
-assert(ratBuilder.includes('Slate blue-grey main coat')&&
- ratBuilder.includes('Low shaggy dorsal fur clump')&&
- ratBuilder.includes('Shaggy flank fur layer')&&
- !ratBuilder.includes('Scavenger forged flank pauldron')&&
- ratBuilder.includes('guardian-style.py'),
- 'Keep current approved rat exactly as it is');
+for(const helper of ['def mesh(', 'def profile(', 'def limb(', 'def plate(',
+ 'def point(', 'def bend_joint(', 'def attached(', 'def gait_foot(']){
+ assert(ratBuilder.includes(helper),
+  'New rat must use the Guardian source geometry/IK helper: '+helper);
+}
+assert(ratBuilder.includes('def material(name,hex_color')&&
+ ratBuilder.includes('srgb_to_linear(v) for v in rgb')&&
+ ratBuilder.includes('Guardian IK rat quadruped')&&
+ ratBuilder.includes('Guardian rat slate-blue fur')&&
+ ratBuilder.includes('Guardian rat graphite underfur')&&
+ ratBuilder.includes('Guardian rat silver guard hairs')&&
+ ratBuilder.includes('Shaggy slate-blue torso')&&
+ ratBuilder.includes('Compact flank guard hairs')&&
+ ratBuilder.includes('def sample_pose('),
+ 'The old rat must be discarded and replaced with the genuine Guardian pipeline');
+assert(!ratBuilder.includes('style.profile_mesh(')&&
+ !ratBuilder.includes('guardian-style.py')&&
+ !ratBuilder.includes('Scavenger forged')&&
+ !ratBuilder.includes('saddle')&&
+ !ratBuilder.includes('pauldron'),
+ 'No legacy rat sculpt pipeline or equipment may survive');
+assert(ratBuilder.includes('"rat_"+clip')&&
+ ratBuilder.includes('MIND_DUNGEON_RIG_ONLY')&&
+ ratBuilder.includes('def place_paw('),
+ 'Retain all existing 3D clip names with Guardian planted-paw animation');
 assert(exporter.includes('"materialColorSpace": "srgb-to-linear"'),
  'Exporter must not gamma-correct live rigs twice');
 console.log('Guardian original-model skeleton and unchanged rat contracts OK');

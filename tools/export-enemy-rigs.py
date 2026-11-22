@@ -163,7 +163,7 @@ def rat():
                   for i, key in enumerate(clips)},
         "displaySize": 82, "field": 2.3, "targetHeight": 0.39,
         "materialColorSpace": "srgb-to-linear",
-        "artStyle": "guardian-natural-enemies-v3",
+        "artStyle": "guardian-rebuilt-rat-v5",
         "sourceBlendSha256": hashlib.sha256(
             (ROOT / "rat" / "rat.blend").read_bytes()).hexdigest(),
     }

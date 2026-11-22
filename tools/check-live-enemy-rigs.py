@@ -43,7 +43,7 @@ for asset,settings_path,variant,clips in PACKAGES:
         asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
     assert manifest.get("artStyle")==(
        "guardian-rebuilt-skeleton-v4" if variant is not None
-       else "guardian-natural-enemies-v3"), (asset,"wrong art generation")
+       else "guardian-rebuilt-rat-v5"), (asset,"wrong art generation")
     source_blend=ROOT/("rat/rat.blend" if variant is None else "skeleton/skeleton.blend")
     assert manifest.get("sourceBlendSha256")==hashlib.sha256(source_blend.read_bytes()).hexdigest(), (
         asset,"Live rig does not use the current Blender source; rebuild GLB")
@@ -52,8 +52,8 @@ for asset,settings_path,variant,clips in PACKAGES:
         {"Ossuary ivory bone","Ossuary pale sunlit bone","Ossuary graphite bone recess",
          "Ossuary forged sabre steel" if variant=="sabre" else "Ossuary bow yew"}
         if variant is not None else
-        {"Slate blue-grey main coat","Cold silver-grey fur facets",
-         "Deep slate underfur","Dark dorsal blue-grey coat"}
+        {"Guardian rat slate-blue fur","Guardian rat graphite underfur",
+         "Guardian rat silver guard hairs","Guardian rat cool flank fur"}
     )
     assert required<=names, (
         asset,"Wrong skeleton/rat color generation; missing "+str(required-names))
@@ -65,6 +65,10 @@ for asset,settings_path,variant,clips in PACKAGES:
             for name in names), (asset,"Deleted skeleton armor returned")
     else:
         assert manifest["displaySize"]<=84, (asset,"Rat must render smaller")
+        assert {"Root","Chest","Neck","Head","FrontPaw.L","FrontPaw.R",
+                "HindPaw.L","HindPaw.R","Tail0","Tail5"} <=
+               {n.get("name","") for n in gltf.get("nodes",[])}, (
+                   asset,"New Guardian quadruped IK rig missing animated bone chain")
         assert not any(
             float(m.get("pbrMetallicRoughness",{}).get("metallicFactor",0))>.01
             for m in gltf["materials"]), (asset,"Rat still has metallic equipment")
