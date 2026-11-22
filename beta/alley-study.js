@@ -355,7 +355,9 @@
   const archPanel=structureInfo(gateway,gate.area,gate.height);
   const sealPanel=labSeal?structureInfo(labSeal,route.seal,88):null;
   function drawGround(ctx,time){
-   if(generatorMode){
+   if(combinedGround){
+    for(const part of bakedGround[0])ctx.drawImage(part.canvas,part.x,part.y);
+   }else if(generatorMode){
     const paint=parts=>{for(const part of parts)ctx.drawImage(part.canvas,part.x,part.y);};
     if(enabled('background'))paint(bakedGround[0]);
     if(enabled('ground'))paint(bakedGround[1]);
@@ -455,7 +457,12 @@
    }
    return out;
   };
-  const bakedGround=generatorMode?[
+  // The live prison has no layer switches. Composite its four static ground
+  // passes once per chunk instead of retaining four full-map canvas sets.
+  const combinedGround=generatorMode&&window.RockyCoastPrison?.enabled&&!sceneControls;
+  const bakedGround=combinedGround?[chunks(ctx=>{
+   drawUnderlay(ctx);drawFloor(ctx);drawDetails(ctx,groundDetails);drawGroundLight(ctx,0);
+  },-4,true)]:generatorMode?[
    chunks(drawUnderlay,-4,true),
    chunks(drawFloor,-3),
    chunks(ctx=>drawDetails(ctx,groundDetails),-2),

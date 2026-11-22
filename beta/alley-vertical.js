@@ -460,7 +460,7 @@ function createLayers({project,polygon,line,cacheObject}){
    }
    ctx.restore();
   });
-  return {kind:'descending-access',level:0,downId:link.id,image,depth:-500};
+  return {kind:'descending-access',level:0,downId:link.id,image,depth:0};
  }):[];
  const upperLanding=cacheObject(stairs.area,HEIGHT+40,ctx=>{
   const top=plan.top,delta=.38;

@@ -235,9 +235,8 @@
     if(image.visible!==drawn)image.setVisible(drawn);
    });
   }
+  let canvasLayers=null;
   function drawLayers(ctx,player,opened,actors){
-   const ordered=layers(player,opened).filter(layer=>layer.visible!==false).concat(actors);
-   ordered.sort((a,b)=>a.depth-b.depth);
    // The Canvas fallback previously submitted EVERY baked building / floor
    // surface, even tens of rooms beyond the camera. On software GPUs
    // drawImage() for a huge off-screen transparent layer can still trigger
@@ -248,11 +247,19 @@
     right:(ctx.canvas.width-m.e)/m.a+20,
     bottom:(ctx.canvas.height-m.f)/m.d+20
    }:null;
+   const state=vertical?.state,stable=prison?.enabled&&!state?.stairRide&&!state?.transition;
+   const previous=canvasLayers;
+   if(!stable||!previous||previous.x!==player.x||previous.y!==player.y||
+      previous.storey!==prison.storey||previous.floor!==state?.floor||previous.opened!==opened){
+    canvasLayers={x:player.x,y:player.y,storey:prison?.storey,floor:state?.floor,opened,
+     layers:layers(player,opened).filter(layer=>layer.visible!==false)};
+   }
+   const ordered=canvasLayers.layers.filter(layer=>!visible||!(layer.x>visible.right||
+    layer.y>visible.bottom||layer.x+layer.canvas.width<visible.left||
+    layer.y+layer.canvas.height<visible.top)).concat(actors);
+   ordered.sort((a,b)=>a.depth-b.depth);
    for(const layer of ordered){
     if(layer.draw){layer.draw();continue;}
-    if(visible&&(layer.x>visible.right||layer.y>visible.bottom||
-       layer.x+layer.canvas.width<visible.left||
-       layer.y+layer.canvas.height<visible.top))continue;
     ctx.globalAlpha=layer.alpha??1;
     ctx.drawImage(layer.canvas,layer.x,layer.y);
     ctx.globalAlpha=1;
