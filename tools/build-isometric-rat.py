@@ -56,12 +56,12 @@ def material(name,hex_color,roughness=.79,metal=0):
 
 # The Guardian's broad graphite -> mid-blue -> silver-edge value language.
 # Every single surface is anatomical: blue-grey fur, claws, teeth and skin.
-coat=material("Guardian rat slate-blue fur","667b90",.81)
-mane=material("Guardian rat graphite underfur","34495f",.86)
+coat=material("Guardian rat slate-blue fur","617488",.84)
+mane=material("Guardian rat graphite underfur","45596e",.88)
 high=material("Guardian rat silver guard hairs","a3b1bd",.78)
-mid=material("Guardian rat cool flank fur","76899b",.84)
-belly=material("Guardian rat shaded belly","687888",.88)
-muzzle=material("Guardian rat pale snout fur","92a1af",.83)
+mid=material("Guardian rat cool flank fur","697d91",.86)
+belly=material("Guardian rat shaded belly","5d7184",.88)
+muzzle=material("Guardian rat pale snout fur","8395a5",.84)
 skin=material("Guardian rat muted skin","756975",.87)
 ears=material("Guardian rat ear lining","a28f98",.83)
 eye=material("Guardian rat glass-black eyes","131a28",.24)
@@ -255,11 +255,11 @@ def mass(name,at,widths,bone,mats):
 torso=longitudinal_profile("Shaggy slate-blue torso",[
     (-.565,0,.364,.065,.065),
     (-.456,0,.377,.169,.141),
-    (-.29,0,.388,.251,.214),
-    (-.055,0,.371,.303,.255),
-    (.18,0,.390,.342,.289),
-    (.365,0,.376,.307,.260),
-    (.530,0,.331,.198,.160),
+    (-.29,0,.388,.241,.205),
+    (-.055,0,.371,.288,.241),
+    (.18,0,.390,.325,.275),
+    (.365,0,.376,.289,.242),
+    (.530,0,.331,.185,.153),
     (.615,0,.287,.043,.044),
 ], [coat,mane,mid,belly],"Root",16,bevel=.007,soft=True)
 mass("Fur-covered chest",(0,-.346,.385),(.204,.17,.172),
