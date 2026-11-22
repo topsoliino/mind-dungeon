@@ -181,18 +181,33 @@ export async function loadEnemyRigs({only=null}={}){
  // tanking FPS even when most enemies shared the same locomotion cycle.
  // Cache quantized *actual 3D Blender poses* across every instance.
  const frames=new Map(),MAX_FRAMES=176;
- // Pre-bake one real GLB reference pose per kit at loading time.
- for(const stage of stages.values()){
+ // Verify that each actual Blender rig renders NON-TRANSPARENT pixels.
+ // A successful GLB fetch alone does not guarantee a visible skeleton.
+ for(const [kind,stage] of stages){
   const [start]=stage.settings.clips.idle;
   stage.pivot.rotation.y=0;
   stage.mixer.setTime(start/stage.settings.fps);
   renderer.render(stage.scene,stage.camera);
   const snapshot=document.createElement('canvas');
   snapshot.width=snapshot.height=pixels;
-  snapshot.getContext('2d').drawImage(renderer.domElement,0,0);
+  const context=snapshot.getContext('2d',{willReadFrequently:true});
+  context.drawImage(renderer.domElement,0,0);
+  const alpha=context.getImageData(0,0,pixels,pixels).data;
+  let visible=false;
+  for(let i=3;i<alpha.length;i+=4)if(alpha[i]>30){visible=true;break;}
+  if(!visible){
+   console.warn('Mind Dungeon: transparent enemy GLB frame, use visible fallback:',kind);
+   stages.delete(kind);continue;
+  }
   stage.idleImage=snapshot;
  }
- const ghostProps=await bakeGhostVessel(renderer,pixels);
+ if(!stages.size){
+  renderer.dispose();renderer.forceContextLoss();
+  throw Error('Enemy GLBs produced no visible frames');
+ }
+ // The giant Blender ghost pot was retired. Poison spheres use one small
+ // shared canvas and must not incur 24 GPU render/readback passes at startup.
+ const ghostProps=[];
  const canvases=new WeakMap();
  const stats={gpuRenders:0,cacheHits:0,budgetSkips:0,frames:0,gpuCostMs:0};
  let renderedThisFrame=0,lastGpuTime=-1e6,targetFps=60,gpuCostMs=6;
