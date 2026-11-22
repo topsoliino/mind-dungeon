@@ -63,7 +63,7 @@ assert.equal(world.borderAt(550,1300),'dense-forest');
 assert.equal(world.borderAt(1460,650),'cliff-wall');
 assert.equal(world.borderAt(340,225),'prison-wall');
 assert(!world.walkable(340,225),'Greybox prison must be solid');
-const hill=world.surfaceAt(200,220),cliff=world.surfaceAt(220,220);
+const hill=world.surfaceAt(200,220),cliff=world.surfaceAt(210,220);
 assert.equal(hill.zone,'slide','Must have walk-to-slide slopes');
 assert.equal(cliff.zone,'cliff-slide','Must have cliffs with forced descent');
 assert.equal(world.surfaceAt(world.spawn.x,world.spawn.y).zone,'walk');
