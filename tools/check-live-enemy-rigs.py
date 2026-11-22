@@ -54,7 +54,6 @@ for asset,settings_path,variant,clips in PACKAGES:
     )
     assert required<=names, (
         asset,"Wrong skeleton/rat color generation; missing "+str(required-names))
-    )
     if variant is not None:
         assert "Neck" in {n.get("name","") for n in gltf.get("nodes",[])}, (
             asset,"Bare skeleton must have separate animated cervical neck")
