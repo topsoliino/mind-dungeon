@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><base href="../">
+<title>Offline Blender skeleton atlas baker</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script>
+</head><body><p>Build-time 3D rig atlas renderer (never loaded by players).</p>
+<script type="module">
+import {bakeSkeletonAtlas,disposeSkeletonAtlasBakers} from './beta/dungeon-enemy-rig.js';
+window.__mindBakeSkeletonAtlas=bakeSkeletonAtlas;
+window.__mindCloseSkeletonBakers=disposeSkeletonAtlasBakers;
+</script></body></html>
