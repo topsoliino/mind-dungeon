@@ -70,7 +70,7 @@ assert.equal(world.surfaceAt(world.spawn.x,world.spawn.y).zone,'walk');
 const across=world.routeTo({x:1070,y:680},{x:1070,y:1080});
 assert(across&&across.steps.length,'A safe route must cross the river on the bridge');
 assert(!world.routeTo(world.spawn,{x:610,y:m.river(610)}),'Pathfinding must reject deep water');
-const player={x:200,y:220,dash:0,moving:false},startX=player.x;
+const player={x:720,y:300,dash:0,moving:false},startX=player.x;
 let fall=null;
 world.slide(player,.04,(dx,dy)=>{player.x+=dx;player.y+=dy},cause=>{fall=cause});
 assert(player.rockySlide||fall,'Sliding requires a live physics state');
