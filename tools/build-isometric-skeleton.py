@@ -54,22 +54,17 @@ def material(name, color, metal=0, roughness=None):
 ivory = material('Weathered ivory', (.83,.82,.79), roughness=.64)
 edge = material('Pale worn bone', (.95,.94,.91), roughness=.57)
 dark = material('Deep sockets', (.012,.012,.020))
-teal = material('Faded oxblood cloth', (.37,.105,.15))
 bronze = material('Hammered bronze', (.69,.52,.29), .29, .53)
 steel = material('Forged charcoal steel', (.47,.56,.64), .33, .51)
 leather = material('Oxblood leather', (.19,.069,.034))
 wood = material('Yew', (.34,.155,.052))
 aged = material('Bone shadows and age lines', (.23,.18,.15))
-weathered = material('Oxidized armor plate', (.467,.537,.592), .33, .53)
 trim = material('Polished battered brass', (.78,.65,.44), .26, .49)
-cloth_light = material('Worn crimson cloth highlights', (.60,.255,.29))
-cloth_shadow = material('Tattered crimson underskirt', (.13,.038,.073))
 # Explicit same sRGB swatches as Guardian build-player-sprite-study.py:
 # Gunmetal insets #343f54; padded graphite #232534. The previous values
 # were nearly black (P10≈6), unlike the Guardian's readable P10≈38.
 iron_dark = material('Dark recesses between armor plates', (.204,.247,.329), .15, .61)
 graphite = material('Graphite ribcage negative space', (.137,.145,.204), roughness=.67)
-steel_edge = material('Guardian silver plate facets', (.79,.83,.84), .25, .49)
 sabre_edge = material('Sharpened steel cutting edge', (.86,.91,.89), .48)
 scar = material('Bone fracture stains', (.20,.19,.175))
 parts = []
@@ -386,11 +381,11 @@ def sample(clip,t):
         local['Foot'+side]=rotation(
             -.43*stride-.46*flight if run else -.018+.015*cycle)
         local['Arm'+side]=rotation(
-            -.14-(.49 if side=='R' else .44)*math.sin(phase+sign*pi+.18)
+            -.14-(.49 if side=='R' else .44)*sign*math.sin(phase+.18)
             if run else -.10+.065*sign*swing,
             .085*sign,.045*sign*cycle if run else .012*sign)
         local['Forearm'+side]=rotation(
-            -.24-.15*math.sin(phase+sign*pi-.30) if run
+            -.24-.15*sign*math.sin(phase-.30) if run
             else -.26+.032*math.sin(phase+.35*sign))
         local['Hand'+side]=rotation(
             .10*math.sin(phase-.6*sign) if run else .022*swing)
