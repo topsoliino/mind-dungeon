@@ -97,7 +97,7 @@ export async function loadEnemyRigs(){
  renderer.setClearColor(0,0);
  renderer.toneMapping=ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.13;
- const versions={sabre:9,bow:9,rat:8};
+ const versions={sabre:10,bow:10,rat:9};
  const files=[
   ['sabre','beta/art/skeleton/skeleton-sabre-rig.glb.gz',
    'beta/art/skeleton/skeleton-live.json','sabre'],

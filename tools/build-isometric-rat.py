@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 import bpy
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from creature_fur import groom_coat
+from creature_fur import groom_coat, groom_limb
 from mathutils import Vector, Euler, Matrix
 
 ROOT=Path.cwd()/"beta/art/rat"
@@ -66,17 +66,34 @@ high=material("Guardian rat silver guard hairs","a3b1bd",.78)
 mid=material("Guardian rat cool flank fur","697d91",.86)
 belly=material("Guardian rat shaded belly","5d7184",.88)
 muzzle=material("Guardian rat pale snout fur","8395a5",.84)
-skin=material("Guardian rat muted skin","756975",.87)
-ears=material("Guardian rat ear lining","a28f98",.83)
+# The only exposed pink skin is on the paw pads/toes, nose, and tail.
+skin=material("Guardian rat exposed warm-pink paws and tail","b8879c",.86)
+ears=material("Guardian rat fur-colored ear lining","737d8d",.86)
 eye=material("Guardian rat glass-black eyes","131a28",.24)
-nose=material("Guardian rat graphite nose","333545",.35)
+nose=material("Guardian rat warm pink nose","ce91a2",.54)
 teeth=material("Guardian rat ivory incisors","e1dfd2",.66)
 claw=material("Guardian rat weathered claw","aaa7a3",.67)
-tailshade=material("Guardian rat ringed tail folds","534e61",.88)
+tailshade=material("Guardian rat pink tail folds","986c80",.89)
 # Reusable opaque groom swatches: no transparent cards or metallic costume.
-fur_shadow=material("Creature fur | blue-grey undercoat","405166",.97)
-fur_body=material("Creature fur | slate guard hairs","708397",.92)
-fur_silver=material("Creature fur | silver tips","98a8b5",.89)
+fur_shadow=material("Creature fur | blue-grey undercoat","48596e",.98)
+fur_body=material("Creature fur | slate guard hairs","738697",.96)
+fur_silver=material("Creature fur | silver tips","a1b0bd",.94)
+# Fur is groomed across anatomy, not placed as broad scalp-like patches.
+FUR_LIVE=os.environ.get("MIND_DUNGEON_RIG_ONLY")=="1"
+def density(live,fallback):
+    return live if FUR_LIVE else fallback
+def add_coat(name,rings,bone,live,preview,**options):
+    obj=groom_coat("Creature fur | "+name,rings,
+                   [fur_shadow,fur_body,fur_silver],
+                   count=density(live,preview),**options)
+    parts.append((obj,bone))
+    return obj
+def add_limb_fur(name,a,b,r0,r1,bone,live,preview,**options):
+    obj=groom_limb("Creature fur | "+name,a,b,r0,r1,
+                   [fur_shadow,fur_body,fur_silver],
+                   count=density(live,preview),**options)
+    parts.append((obj,bone))
+    return obj
 
 SIDES=(("L",-1),("R",1))
 # +X is screen right; -Y is forward, identical to Guardian/skeleton world.
@@ -272,12 +289,15 @@ TORSO_RINGS=[
 ]
 torso=longitudinal_profile("Shaggy slate-blue torso",TORSO_RINGS,
     [coat,mane,mid,belly],"Root",16,bevel=.007,soft=True)
-# Deterministic, surface-conforming strand geometry, skinned with the body.
-# Atlases are a lower-detail fallback; live 3D keeps the full groom.
-fur_count=420 if os.environ.get("MIND_DUNGEON_RIG_ONLY")!="1" else 700
-fur=groom_coat("Creature fur | rat coat",TORSO_RINGS,
-    [fur_shadow,fur_body,fur_silver],count=fur_count,seed=713)
-parts.append((fur,"Root"))
+# Dense full-circumference undercoat: back, sides, FLANKS AND BELLY.
+# A separate longer guard-hair groom creates an unbroken fuzzy silhouette.
+# Both use genuine opaque, bone-weighted tapered strands (no transparency).
+add_coat("Rat torso dense underwool",TORSO_RINGS,"Root",
+         4700,300,seed=713,length=(.034,.070),
+         base_width=(.0026,.0048),brush=(0,.34,.05))
+add_coat("Rat torso fluffy guard hairs",TORSO_RINGS,"Root",
+         1900,125,seed=821,length=(.060,.115),
+         base_width=(.0031,.0056),brush=(0,.51,.18))
 mass("Fur-covered chest",(0,-.346,.385),(.204,.17,.172),
      "Chest",[coat,mid,mane])
 # No overlapping belly ellipsoid: the former bright continuous horizontal
@@ -285,6 +305,14 @@ mass("Fur-covered chest",(0,-.346,.385),(.204,.17,.172),
 # is now a controlled dark/blue-grey region of the single torso shell.
 neck=mass("Furry neck",(0,-.526,.402),(.152,.116,.122),
      "Neck",[coat,mane,mid])
+add_coat("Neck undercoat",[
+    (-.646,0,.402,.050,.059),(-.610,0,.412,.111,.096),
+    (-.533,0,.412,.151,.121),(-.443,0,.394,.133,.095)],
+    "Neck",800,65,seed=1010,length=(.033,.067),margin=.011)
+add_coat("Chest undercoat",[
+    (-.512,0,.386,.061,.063),(-.431,0,.388,.158,.119),
+    (-.345,0,.385,.201,.165),(-.253,0,.387,.146,.124)],
+    "Chest",560,44,seed=1012,length=(.026,.059),margin=.012)
 # More natural rat anatomy: long broad cheeks taper into a pointed snout.
 head=longitudinal_profile("Guardian sculpted rat head",[
     (-.875,0,.343,.026,.024),
@@ -294,10 +322,31 @@ head=longitudinal_profile("Guardian sculpted rat head",[
     (-.532,0,.437,.207,.163),
     (-.444,0,.418,.083,.070)
 ], [coat,mane,mid,belly],"Head",14,bevel=.006,soft=True)
+HEAD_RINGS=[
+    (-.875,0,.343,.026,.024),(-.823,0,.369,.081,.067),
+    (-.742,0,.404,.159,.124),(-.645,0,.436,.217,.165),
+    (-.532,0,.437,.207,.163),(-.444,0,.418,.083,.070)
+]
+def eye_clearance(root,normal):
+    # Preserve glassy eyes instead of carpeting over them.
+    return not (-.805<root.y<-.694 and abs(root.x)>.119 and root.z>.445)
+add_coat("Fully furred skull and cheeks",HEAD_RINGS,"Head",
+         2050,160,seed=1251,length=(.025,.056),
+         brush=(0,.56,.06),mask=eye_clearance,margin=.013)
+add_coat("Fluffy cheek and brow guard hairs",HEAD_RINGS,"Head",
+         700,46,seed=1261,length=(.046,.083),
+         brush=(0,.58,.10),mask=eye_clearance,margin=.018)
 limb("Tapered bone-supported snout",(0,-.749,.367),
      (0,-.940,.323),
      [(0,.109,.092),(.37,.086,.065),(.75,.052,.044),(1,.022,.019)],
      [muzzle,coat],"Head",10,bevel=.003,soft=True)
+# Bridge of the muzzle is furred, but roots stop before the exposed nose.
+add_coat("Short muzzle fur",[
+    (-.918,0,.328,.019,.020),(-.889,0,.340,.048,.045),
+    (-.837,0,.351,.068,.061),(-.765,0,.365,.092,.081),
+    (-.731,0,.372,.106,.088)],"Head",
+    460,36,seed=1417,length=(.017,.038),
+    brush=(0,.48,.03),margin=.012)
 mass("Graphite nose",(0,-.943,.323),(.047,.036,.033),
      "Nose",[nose])
 mass("Small exposed jaw",(0,-.759,.280),(.092,.095,.037),
@@ -314,6 +363,12 @@ for side,sign in SIDES:
          "Head",[eye])
     mass("Raised cheek pad "+side,(sign*.161,-.664,.385),(.075,.083,.071),
          "Head",[coat,mid])
+    # Around the cheek and ear base, keep the anatomy visibly plush.
+    add_limb_fur("Ear root fur "+side,
+        rest["Ear."+side][0],rest["Ear."+side][1],
+        .051,.028,"Ear."+side,160,14,
+        seed=2100+(0 if sign<0 else 1),length=(.022,.049),
+        start=.04,end=.78)
     # The small triangular ears have actual thickness, shadow folds and
     # muted inner skin; they remain fully three-dimensional from every view.
     plate("Thick ear outer "+side,[
@@ -346,15 +401,31 @@ for side,sign in SIDES:
     limb("Ruff-covered shoulder "+side,shoulder,elbow,[
         (0,.077,.070),(.22,.088,.078),(.56,.062,.057),(1,.047,.043)],
         [coat,mid,mane],"Shoulder."+side,10,soft=True)
+    add_limb_fur("Upper foreleg coat "+side,shoulder,elbow,
+                 .082,.046,"Shoulder."+side,350,26,
+                 seed=2500+(0 if sign<0 else 1),
+                 length=(.028,.065),start=.03,end=.95)
     limb("Anterior foreleg "+side,elbow,forepaw,[
         (0,.047,.042),(.44,.039,.034),(1,.028,.027)],
         [coat,mid],"Foreleg."+side,8,soft=True)
+    add_limb_fur("Lower foreleg fur "+side,elbow,forepaw,
+                 .047,.029,"Foreleg."+side,260,22,
+                 seed=2600+(0 if sign<0 else 1),
+                 length=(.021,.043),start=.02,end=.83)
     limb("Furred haunch "+side,hip,knee,[
         (0,.123,.111),(.34,.127,.115),(.65,.087,.078),(1,.059,.058)],
         [coat,mane,mid],"Hip."+side,10,soft=True)
+    add_limb_fur("Fluffy haunch fur "+side,hip,knee,
+                 .132,.059,"Hip."+side,400,30,
+                 seed=2700+(0 if sign<0 else 1),
+                 length=(.035,.084),start=.02,end=.95)
     limb("Posterior hindleg "+side,knee,hindpaw,[
         (0,.052,.049),(.42,.047,.041),(1,.032,.029)],
         [coat,mid],"Hindleg."+side,8,soft=True)
+    add_limb_fur("Lower hindleg coat "+side,knee,hindpaw,
+                 .052,.032,"Hindleg."+side,250,21,
+                 seed=2800+(0 if sign<0 else 1),
+                 length=(.020,.048),start=.02,end=.82)
     mass("Anterior naked paw "+side,tuple(forepaw),(.069,.076,.034),
          "FrontPaw."+side,[skin,belly])
     mass("Posterior naked paw "+side,tuple(hindpaw),(.078,.089,.036),
@@ -406,6 +477,9 @@ for i in range(6):
              [(0,radius+.003,radius*.93), (1,radius*.92,radius*.85)],
              [tailshade],"Tail%d"%i,10,bevel=.001)
 
+# Capture groom statistics BEFORE Blender's join removes source objects.
+fur_fiber_total=sum(int(obj.get("fur_groom_count",0)) for obj,_ in parts)
+fur_region_total=sum(1 for obj,_ in parts if obj.get("fur_groom_count",0))
 # Export contract remains exactly the same as before: one fully skinned mesh.
 # New geometry is NOT descended from the previous Rat builder.
 for obj,bone in parts:
@@ -419,6 +493,12 @@ bpy.context.view_layer.objects.active=parts[0][0]
 bpy.ops.object.join()
 body=parts[0][0]
 body.name="Small rat • fully weighted skin"
+# Persist objective fur coverage metrics into GLB mesh-node extras.
+body["furFiberCount"]=fur_fiber_total
+body["furRegionCount"]=fur_region_total
+body["furExclusions"]="only-paws-nose-tail"
+print("RAT DENSE COAT:",body["furFiberCount"],
+      "fibers across",body["furRegionCount"],"regions",flush=True)
 body.parent=rig
 modifier=body.modifiers.new("Guardian-pattern four-legged bone skin","ARMATURE")
 modifier.object=rig

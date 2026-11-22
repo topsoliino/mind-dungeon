@@ -568,12 +568,23 @@ def sample_pose(kind,t):
         if action=='cartwheel-enter':angle=(pi*.46)*u
         elif action=='cartwheel-exit':angle=pi*.46+(pi*1.54)*u
         else:angle=pi*.46+math.tau*t
-        hips=rig.pose.bones['Hips']
-        hips.rotation_quaternion=Euler((0,angle,0)).to_quaternion()
-        hips.location=V((0,0,-.14*math.sin(pi*t)**2))
+        # Rotate in WORLD Y, the body's front-back axis. Bone-local Y
+        # is its long axis and would merely SPIN it upright, not cartwheel.
+        tilt=math.sin(angle)
+        rise=.11*abs(math.sin(angle))-.08*math.sin(pi*t)**2
+        orient('Hips',rest['Hips'][0]+V((.035*tilt,0,rise)),
+               Euler((0,angle,0)).to_matrix())
+        # Reaching hands and split legs give a recognizable handstand
+        # silhouette at the quarter-turn, rather than a rigid bone barrel.
         for side,sign in SIDES:
-            rig.pose.bones['Arm.'+side].rotation_quaternion=Euler((-.48,0,sign*.42)).to_quaternion()
-            rig.pose.bones['Thigh.'+side].rotation_quaternion=Euler((.28,0,sign*.24)).to_quaternion()
+            rig.pose.bones['Arm.'+side].rotation_quaternion=Euler(
+                (-.57,sign*.12,sign*.60)).to_quaternion()
+            rig.pose.bones['Forearm.'+side].rotation_quaternion=Euler(
+                (-.21,0,sign*.17)).to_quaternion()
+            rig.pose.bones['Thigh.'+side].rotation_quaternion=Euler(
+                (.36,0,sign*.34)).to_quaternion()
+            rig.pose.bones['Shin.'+side].rotation_quaternion=Euler(
+                (-.24,0,0)).to_quaternion()
         rig.pose.bones['Vessel'].scale=(.0001,)*3
         bpy.context.view_layer.update()
         return
@@ -592,8 +603,7 @@ def sample_pose(kind,t):
         # Six rapid crossing cuts or a powerful overhead/single advance.
         # Evaluate the blade on a complete cycle while the legs may scurry.
         cut_t=(t*6)%1 if action=='combo' else t
-        if action=='overhead':
-            cut_t=t*.79
+        cut_index=min(5,int(t*6)) if action=='combo' else 0
         # Anticipation and contact are distinct deliberate cinematic poses.
         yaw,fore,drop,lean,handx,handy,handz,blade_yaw,blade_elev=sample([
          (0,0,0,0,.055, -.36,-.095,1.01,.25,-.27),
@@ -604,6 +614,41 @@ def sample_pose(kind,t):
          (.70,.91,-.105,.090,.31,-.18,-.49,.87,-1.69,-.57),
          (.82,.31,-.026,.040,.18,-.31,-.19,.93,-.81,-.38),
          (1,0,0,0,.055,-.36,-.095,1.01,.25,-.27)],cut_t)
+        if action=='combo':
+            # Six DIFFERENT slashes, not six copies of the same loop:
+            # forehand, backhand, thrust, rising cut, reverse cut, finisher.
+            # The contact clock remains 6 evenly spaced quick strikes.
+            strikes=(
+                (1.0,.0,0,0),(-1.0,.13,0,0),
+                (.35,-.22,.20,-.16),(-.68,.08,.25,.30),
+                (-1.0,.12,-.10,-.13),(1.20,-.28,.12,.08))
+            side,depth,lift,twist=strikes[cut_index]
+            yaw=yaw*side+twist
+            handx=handx*side+.045*math.sin(cut_index*2.1)
+            handy+=depth
+            handz+=lift
+            blade_yaw=blade_yaw*side
+            blade_elev+=lift*1.8
+            fore+=.05*cut_index/6
+        elif action=='overhead':
+            # Distinct two-handed-looking high vertical swing and heavy
+            # follow-through, NOT the first 79% of the basic horizontal cut.
+            yaw,fore,drop,lean,handx,handy,handz,blade_yaw,blade_elev=sample([
+                (0,0,0,0,.06,-.35,-.12,.88,-.26,.0),
+                (.20,-.14,.01,-.13,.26,-.25,.42,.10,.38,1.35),
+                (.40,-.23,.025,-.12,.30,-.23,.57,.06,.12,1.66),
+                (.51,.10,-.17,.22,.32,-.50,-.50,.93,.08,-1.19),
+                (.71,.24,-.12,.24,.26,-.60,-.59,.96,.15,-.91),
+                (1,0,0,.01,.07,-.34,-.12,.92,.01,-.28)],t)
+        elif action=='slash':
+            # Powerful advancing cut followed by TWO rapid backwards steps.
+            yaw,fore,drop,lean,handx,handy,handz,blade_yaw,blade_elev=sample([
+                (0,-.2,0,-.08,.12,-.24,.30,.91,.35,1.12),
+                (.24,-.41,.025,-.10,.18,-.33,.46,1.02,.51,1.42),
+                (.42,.32,-.13,.18,.44,-.67,-.29,1.24,-1.33,-.38),
+                (.55,.22,-.10,.11,.25,-.55,-.43,1.04,-.92,-.60),
+                (.74,.03,0,-.06,.18,-.31,-.10,.95,.13,-.27),
+                (1,0,0,0,.06,-.36,-.09,1.01,.25,-.27)],t)
         hips=rest['Hips'][0]+V((yaw*.055,fore if not locomotion else -.045,-drop*.4 if locomotion else -drop))
         pelvic_yaw=yaw*.56
         thorax_yaw=yaw
@@ -641,6 +686,11 @@ def sample_pose(kind,t):
             footphase=(t+(0 if sign<0 else .5))%1
             travel,lift,footpitch=gait_foot(footphase,.37 if kind=='flee' else .44)
             if kind=='flee':travel=-travel
+        elif sword and action=='slash' and t>.51:
+            # Visible two-step recovery, synchronized with gameplay backsteps.
+            retreat=((t-.51)*2.15+(0 if sign<0 else .5))%1
+            travel,lift,footpitch=gait_foot(retreat,.29,.53,.11)
+            travel=-travel
         elif sword:
             travel,lift,footpitch=(-.12 if sign<0 else .13),0,.14 if sign>0 else 0
         elif archery:
@@ -650,7 +700,7 @@ def sample_pose(kind,t):
         place_foot(side,sign,travel,lift,footpitch,.025)
         shoulder=attached('Chest',rest['Arm.'+side][0])
         if sword and sign>0:
-            wrist=V((handx,handy,handz+(.32 if action=='overhead' else 0)))
+            wrist=V((handx,handy,handz))
         elif sword:
             wrist=shoulder+V((-.044,-.095,-.384+.085*abs(yaw)))
         elif throwing:

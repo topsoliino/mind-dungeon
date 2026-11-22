@@ -46,8 +46,8 @@ for asset,settings_path,variant,clips in PACKAGES:
     assert manifest.get("materialColorSpace")=="srgb-to-linear", (
         asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
     assert manifest.get("artStyle")==(
-       "guardian-rebuilt-skeleton-v5" if variant is not None
-       else "guardian-rebuilt-rat-v6"), (asset,"wrong art generation")
+       "guardian-rebuilt-skeleton-v6" if variant is not None
+       else "guardian-rebuilt-rat-v7"), (asset,"wrong art generation")
     source_blend=ROOT/("rat/rat.blend" if variant is None else "skeleton/skeleton.blend")
     assert manifest.get("sourceBlendSha256")==hashlib.sha256(source_blend.read_bytes()).hexdigest(), (
         asset,"Live rig does not use the current Blender source; rebuild GLB")
@@ -74,8 +74,17 @@ for asset,settings_path,variant,clips in PACKAGES:
             for name in names), (asset,"Deleted skeleton armor returned")
     else:
         assert manifest["displaySize"]<=84, (asset,"Rat must render smaller")
-        assert manifest.get("furSystem")=="skinned-solid-strands-spring-v1", (
+        assert manifest.get("furSystem")=="opaque-anatomical-full-coat-v2", (
             asset,"Live fur dynamics contract missing")
+        assert manifest.get("furStrands",0)>=14000, (
+            asset,"Rat must have a dense full-body coat, not 700 dorsal hairs")
+        assert manifest.get("furRegions",0)>=17, (
+            asset,"Fur must cover belly, skull, muzzle, neck, ears and all legs")
+        assert manifest.get("bareSkin")==["paws","nose","tail"], (
+            asset,"Only paws, nose and tail may show pink skin")
+        assert any(n.get("extras",{}).get("furFiberCount",0)>=14000
+                   for n in gltf.get("nodes",[])), (
+            asset,"Real GLB must include the complete dense groom geometry")
         assert any("TEXCOORD_0" in p.get("attributes",{})
                    for m in gltf["meshes"] for p in m.get("primitives",[])), (
             asset,"Fur tip weights must survive in UV0 for the GPU spring")

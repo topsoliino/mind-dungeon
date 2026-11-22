@@ -149,7 +149,7 @@ def skeleton():
                 for i, key in enumerate(clips)
             }, "displaySize": 116, "field": 3.23, "targetHeight": 1.01,
             "materialColorSpace": "srgb-to-linear",
-            "artStyle": "guardian-rebuilt-skeleton-v5",
+            "artStyle": "guardian-rebuilt-skeleton-v6",
             "sourceBlendSha256": hashlib.sha256(
                 (ROOT / "skeleton" / "skeleton.blend").read_bytes()).hexdigest(),
         }
@@ -171,8 +171,11 @@ def rat():
                   for i, key in enumerate(clips)},
         "displaySize": 82, "field": 2.3, "targetHeight": 0.39,
         "materialColorSpace": "srgb-to-linear",
-        "artStyle": "guardian-rebuilt-rat-v6",
-        "furSystem": "skinned-solid-strands-spring-v1",
+        "artStyle": "guardian-rebuilt-rat-v7",
+        "furSystem": "opaque-anatomical-full-coat-v2",
+        "furStrands": int(mesh.get("furFiberCount",0)),
+        "furRegions": int(mesh.get("furRegionCount",0)),
+        "bareSkin": ["paws","nose","tail"],
         "sourceBlendSha256": hashlib.sha256(
             (ROOT / "rat" / "rat.blend").read_bytes()).hexdigest(),
     }
