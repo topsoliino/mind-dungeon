@@ -48,20 +48,24 @@ def material(name, color, metal=0, roughness=None):
     node.inputs['Roughness'].default_value = (
         roughness if roughness is not None else (.52 if metal >= .25 else .68))
     return m
-ivory = material('Weathered ivory', (.64,.55,.43))
-edge = material('Pale worn bone', (.89,.82,.68))
+# Hero reference: bright desaturated bone, cool blue forged steel and
+# graphite cavities. The old warm yellow bone blended into dungeon floors.
+ivory = material('Weathered ivory', (.73,.70,.63), roughness=.64)
+edge = material('Pale worn bone', (.91,.89,.82), roughness=.57)
 dark = material('Deep sockets', (.012,.012,.020))
 teal = material('Faded oxblood cloth', (.37,.105,.15))
-bronze = material('Hammered bronze', (.44,.25,.085), .35)
-steel = material('Forged charcoal steel', (.39,.50,.58), .51)
+bronze = material('Hammered bronze', (.69,.52,.29), .29, .53)
+steel = material('Forged charcoal steel', (.47,.56,.64), .33, .51)
 leather = material('Oxblood leather', (.19,.069,.034))
 wood = material('Yew', (.34,.155,.052))
 aged = material('Bone shadows and age lines', (.23,.18,.15))
-weathered = material('Oxidized armor plate', (.29,.37,.46), .44)
-trim = material('Polished battered brass', (.64,.42,.16), .6)
+weathered = material('Oxidized armor plate', (.38,.47,.56), .33, .53)
+trim = material('Polished battered brass', (.78,.65,.44), .26, .49)
 cloth_light = material('Worn crimson cloth highlights', (.60,.255,.29))
 cloth_shadow = material('Tattered crimson underskirt', (.13,.038,.073))
-iron_dark = material('Dark recesses between armor plates', (.073,.075,.09), .28)
+iron_dark = material('Dark recesses between armor plates', (.045,.055,.075), .15, .67)
+graphite = material('Graphite ribcage negative space', (.055,.061,.085), roughness=.72)
+steel_edge = material('Guardian silver plate facets', (.79,.83,.84), .25, .49)
 sabre_edge = material('Sharpened steel cutting edge', (.86,.91,.89), .48)
 scar = material('Bone fracture stains', (.20,.19,.175))
 parts = []
@@ -74,13 +78,11 @@ def part(obj, name, bone, mat, kit='both'):
         obj.data.materials.append(mat)
     parts.append((obj,bone,kit))
 def oval(name,bone,p,scale,mat=ivory,kit='both'):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=8,location=p)
-    obj=bpy.context.object
-    obj.scale=scale
+    obj=style.faceted_oval(name,p,scale,mat,sides=8)
     part(obj,name,bone,mat,kit)
 def rod(name,bone,a,b,r,r2=None,mat=ivory,kit='both'):
     a,b=V(a),V(b)
-    bpy.ops.mesh.primitive_cone_add(vertices=12,radius1=r,radius2=r if r2 is None else r2,
+    bpy.ops.mesh.primitive_cone_add(vertices=8,radius1=r,radius2=r if r2 is None else r2,
                                    depth=(b-a).length,location=(a+b)/2)
     obj=bpy.context.object
     obj.rotation_euler=(b-a).to_track_quat('Z','Y').to_euler()
@@ -122,6 +124,18 @@ for side,s in [('R',-1),('L',1)]:
         z=1.18+i*.055; w=.147+.054*math.sin((i+1)*pi/7)
         arc=[(s*.025,.035,z+.036),(s*w*.8,.065,z+.026),(s*w,.005,z),(s*w*.81,-.085,z-.026),(s*.04,-.106,z-.035)]
         for k,(a,b) in enumerate(zip(arc,arc[1:])):rod('Rib','Chest',a,b,.018,.016,edge)
+# The rib openings previously showed the floor, giving a transparent,
+# muddy appearance. A graphite cavity layer echoes the Guardian's dark
+# padded undercoat and makes each ivory rib a legible high-value shape.
+core=style.profile_mesh('Ribcage graphite shadow core',[
+    (1.025,0,.043,.115,.092),
+    (1.100,0,.043,.157,.106),
+    (1.260,0,.040,.173,.113),
+    (1.382,0,.044,.163,.113),
+    (1.465,0,.043,.106,.075),
+], [graphite,iron_dark], axis='z', sides=10,
+   face_material=lambda band,face: 1 if face in (1,2,3) else 0)
+part(core,'Ribcage graphite shadow core','Chest',graphite)
 for i in range(9):
     z=1+i*.065
     oval('Vertebra','Chest',(0,.028,z),(.047,.052,.034))
@@ -162,7 +176,11 @@ oval('Nasal cavity','Skull',(0,-.149,1.659),(.023,.015,.029),dark)
 for i in range(6):
     oval('Tooth','Skull',((i-2.5)*.027,-.137+abs(i-2.5)*.004,1.609),(.013,.015,.024),edge)
 oval('Belt','Pelvis',(0,-.004,.965),(.177,.104,.043),leather)
-oval('Buckle','Pelvis',(0,-.105,.966),(.045,.014,.033),bronze)
+beltPlate=style.front_plate('Belt frontal clasp',
+    [(-.064,.926),(.064,.926),(.073,.987),(-.073,.987)],
+    -.126,.026,steel,steel_edge)
+part(beltPlate,'Belt frontal clasp','Pelvis',steel)
+oval('Buckle','Pelvis',(0,-.151,.966),(.037,.014,.026),bronze)
 strip('Split tabard','Pelvis',[(-.12,-.08,.95),(.10,-.09,.95),(-.1,-.116,.73),(.065,-.13,.69),(-.07,-.11,.64),(.04,-.13,.66)],teal,'both')
 oval('Pauldron','ArmL',(.245,.002,1.48),(.112,.101,.081),bronze)
 # Weapons are rigid attachments, with a separate flexing bowstring and nocked arrow.
@@ -232,6 +250,11 @@ for side,sign in [('L',1),('R',-1)]:
              (.010,.013,.016),edge)
     # Iron greaves and fastened leather shin guards: separate, readable plates.
     cuff('Shin'+side,(sign*.14,-.014,.35),.052,.095,weathered)
+    shin_plate=style.front_plate('Forged greave frontal facet',[
+        (sign*.089,.278),(sign*.196,.278),(sign*.190,.480),
+        (sign*.142,.505),(sign*.103,.471)],-.093,.023,
+        weathered,steel_edge)
+    part(shin_plate,'Forged greave frontal facet','Shin'+side,weathered)
     rod('Leg guard fastener','Shin'+side,(sign*.098,-.083,.40),
         (sign*.183,-.074,.40),.014,mat=leather)
     oval('Worn boot cap','Foot'+side,(sign*.14,-.07,.094),
@@ -259,8 +282,21 @@ for side,sign in [('L',1),('R',-1)]:
              (sign*(.265+rivet*.037),-.113,1.52),
              (.011,.009,.012),trim)
 
-# Shoulder-to-hip harness, buckles and a broken pectoral armor plaque.
-# The rib cage is deliberately visible between these fixtures.
+# The hero is readable through *large* plated surfaces. Add two dimensional
+# half-cuirasses, exposing the bone and graphite sternum between them.
+for side in (-1,1):
+    chest_fragment=style.front_plate('Broken cuirass main plate',[
+        (side*.125,1.122),(side*.247,1.112),
+        (side*.256,1.351),(side*.196,1.435),
+        (side*.117,1.386)], -.157,.040,steel,steel_edge)
+    part(chest_fragment,'Broken cuirass main plate','Chest',steel)
+    inner=style.front_plate('Cuirass dark inset',[
+        (side*.146,1.191),(side*.213,1.194),
+        (side*.210,1.324),(side*.160,1.352)],
+        -.204,.008,iron_dark,aged)
+    part(inner,'Cuirass dark inset','Chest',iron_dark)
+
+# The remaining shoulder-to-hip harness and buckles leave the sternum readable.
 rod('Diagonal leather band','Chest',(-.18,-.110,1.43),
     (.16,-.114,1.04),.034,mat=leather)
 rod('Band bright seam','Chest',(-.18,-.143,1.42),
@@ -414,7 +450,7 @@ for obj,bone,kit in parts:
     name=obj.name.lower()
     if any(token in name for token in (
         'plate','guard','buckler','cuff','buckle','forged swept',
-        'quiver','saber blade','saber crossguard','riveted')):
+        'cuirass','greave','quiver','saber blade','saber crossguard','riveted')):
         style.forged_hard_edges(obj, width=.0035)
     group=obj.vertex_groups.new(name=bone);group.add(list(range(len(obj.data.vertices))),1,'REPLACE')
     groups.setdefault(kit,[]).append(obj)
@@ -536,7 +572,7 @@ bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);bpy.context.vi
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'skeleton.blend'),compress=True)
 # Batch evaluated Blender geometry into an orthographic contact sheet so one
 # Cycles render covers every facing and sample of a clip.
-scene.render.engine='CYCLES';scene.cycles.samples=26;scene.cycles.use_denoising=False
+scene.render.engine='CYCLES';scene.cycles.samples=26;scene.cycles.use_denoising=True
 scene.render.image_settings.file_format='WEBP';scene.render.image_settings.color_mode='RGBA'
 scene.render.image_settings.quality=96
 scene.render.film_transparent=True;scene.render.resolution_percentage=100
