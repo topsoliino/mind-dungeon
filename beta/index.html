@@ -3443,6 +3443,7 @@ function clearsActor(actor,x,y,other){
 function triggerRockyDeath(cause){
  if(!rockyTerrain||player.fall||paused)return;
  player.fall={remaining:fallSeconds,origin:cause,heading:player.dir};
+ player.rockySlide=null;
  player.dash=0;player.attack=0;player.moving=false;
  alleyMove=alleyRoute=alleyMarker=null;
  clearHeldAttack();
@@ -4730,7 +4731,8 @@ function characterFrame(bank,look,armor,actor,{pose,falling,heading,air,dashTime
  return bank.get(look,armor,direction,actor.moving?'walk':'idle',actor.moving?walk:frame*2.6,0,false,textures);
 }
 function alleyActor(){
- const z=alleyVertical?.state.z??rockyTerrain?.heightAt(player.x,player.y)??0,
+ const terrainZ=rockyTerrain?.heightAt(player.x,player.y)??0,
+  z=alleyVertical?.state.z??(terrainZ-(player.fall?44*Math.pow(heroFallProgress(),2):0)),
   point=iso.toView(player.x,player.y,z);
  const feet=iso.toView(player.x,player.y,0).y;
  const raised=alleyVertical&&(alleyVertical.state.floor===1||alleyVertical.state.transition||alleyVertical.state.stairRide);
@@ -4858,6 +4860,7 @@ function drawCanvasCharacter(sprite,actor,lift,fall=null,alpha=1){
  s.restore();
 }
 function alleyGuardianPose(){
+ if(rockyTerrain&&player.fall)return {clip:'hit-down',progress:heroFallProgress(),angle:player.fall.heading??player.dir};
  if(alleyVertical?.state.transition){
   const task=alleyVertical.state.transition;
   const ratio=task.age/task.duration;
@@ -5110,6 +5113,7 @@ function drawAlleyCanvas(){
    ghostFog.drawVessel(s,vessel,(x,y,z)=>iso.toView(x,y,z))});
  }
  alley.drawLayers(s,player,save.opened.includes(0),layers);
+ rockyDebug?.draw(performance.now());
  if(soulVessels.length)ghostFog?.draw(s,soulVessels,regionVisibleAt,(x,y,z)=>iso.toView(x,y,z),combatClock,false);
  drawAlleyHudEffects((x,y,r,color,opacity)=>{
   s.globalAlpha=opacity;s.fillStyle=color;s.beginPath();s.arc(x,y,r,0,TAU);s.fill();s.globalAlpha=1;
