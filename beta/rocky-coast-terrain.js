@@ -261,7 +261,56 @@ function create(options){
   return {canvas,x:minX,y:minY,depth:toView(335,285,0).y-.1,
    visible:true,alpha:1};
  }
- const prisonArt=makePrison(),artLayers=[...chunks,prisonArt];
+ // Physical map limits are also legible in the greybox: a real fence,
+ // an impassable thicket and a cliff wall, each baked into one static canvas.
+ function borderArtwork(kind,positions,topHeight){
+  const feet=positions.map(([x,y])=>toView(x,y,heightAt(x,y)));
+  const tops=positions.map(([x,y])=>toView(x,y,heightAt(x,y)+topHeight));
+  const all=[...feet,...tops];
+  const minX=Math.floor(Math.min(...all.map(p=>p.x)))-33,
+   minY=Math.floor(Math.min(...all.map(p=>p.y)))-33,
+   maxX=Math.ceil(Math.max(...all.map(p=>p.x)))+33,
+   maxY=Math.ceil(Math.max(...all.map(p=>p.y)))+33;
+  const canvas=document.createElement('canvas');canvas.width=maxX-minX;canvas.height=maxY-minY;
+  const ctx=canvas.getContext('2d');ctx.translate(-minX,-minY);
+  for(let i=0;i<positions.length;i++){
+   const p=feet[i],top=tops[i];
+   if(kind==='fence'){
+    ctx.strokeStyle='#d2bd9d';ctx.lineWidth=7;
+    ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(top.x,top.y);ctx.stroke();
+    ctx.strokeStyle='#48505b';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(p.x-2,p.y-6);ctx.lineTo(top.x-2,top.y);ctx.stroke();
+    if(i<positions.length-1){
+     const next=feet[i+1],up=tops[i+1];
+     for(const k of [.36,.72]){
+      ctx.strokeStyle='#b9a58a';ctx.lineWidth=6;
+      ctx.beginPath();ctx.moveTo(p.x,p.y*(1-k)+top.y*k);
+      ctx.lineTo(next.x,next.y*(1-k)+up.y*k);ctx.stroke();
+     }
+    }
+   }else if(kind==='forest'){
+    ctx.strokeStyle='#303a3b';ctx.lineWidth=8;
+    ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(top.x,top.y+28);ctx.stroke();
+    paintPoly(ctx,[[top.x-23,top.y+47],[top.x,top.y],[top.x+24,top.y+47]],
+     i%2?'#354746':'#40534a','#293c40');
+    paintPoly(ctx,[[top.x-29,top.y+69],[top.x,top.y+20],[top.x+28,top.y+69]],
+     i%2?'#445a4b':'#304b47','#283a3b');
+   }else{
+    const q=i%2?93:120,tip=toView(positions[i][0],positions[i][1],
+      heightAt(...positions[i])+q);
+    ctx.strokeStyle='#3f4d56';ctx.lineWidth=29;
+    ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
+    ctx.strokeStyle='#899396';ctx.lineWidth=18;
+    ctx.beginPath();ctx.moveTo(p.x-6,p.y-8);ctx.lineTo(tip.x-6,tip.y);ctx.stroke();
+   }
+  }
+  return {canvas,x:minX,y:minY,depth:toView(...positions[Math.floor(positions.length/2)],0).y+.1,
+   visible:true,alpha:1};
+ }
+ const northernFence=borderArtwork('fence',Array.from({length:27},(_,i)=>[285+i*43,69]),62);
+ const southernForest=borderArtwork('forest',Array.from({length:23},(_,i)=>[270+i*52,1279]),111);
+ const easternWall=borderArtwork('cliff',Array.from({length:27},(_,i)=>[1451,108+i*44]),125);
+ const prisonArt=makePrison(),artLayers=[...chunks,prisonArt,northernFence,southernForest,easternWall];
  const layers=()=>artLayers;
  function addLayers(scene){
   return artLayers.map((chunk,i)=>{
