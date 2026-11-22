@@ -1,0 +1,35 @@
+name: Live Blender enemy rigs in Chromium WebGL
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/check-live-enemy-browser.yml
+      - beta/dungeon-enemy-rig.js
+      - beta/index.html
+      - beta/art/skeleton/skeleton-*-rig.glb.gz
+      - beta/art/skeleton/skeleton-live.json
+      - beta/art/rat/rat-live-rig.glb.gz
+      - beta/art/rat/rat-live.json
+      - tools/check-live-enemy-browser.cjs
+
+permissions:
+  contents: read
+
+jobs:
+  webgl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Chromium WebGL test tools
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Run real 3D enemy rendering in the browser
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/mind-dungeon-server.log 2>&1 &
+          webserver=$!
+          trap 'kill $webserver || true' EXIT
+          node tools/check-live-enemy-browser.cjs
