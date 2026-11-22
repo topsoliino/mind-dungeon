@@ -38,13 +38,13 @@ jobs:
           python3 -m venv /tmp/skeleton-qa
           /tmp/skeleton-qa/bin/python -m pip install --disable-pip-version-check Pillow
           /tmp/skeleton-qa/bin/python tools/check-isometric-skeleton-atlases.py
-      - name: Commit 360-degree Blender source and all animated WebP atlases
+      - name: Commit all 32-way animated WebP atlases (canonical Blender sources come from fast rig build)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add beta/art/skeleton/skeleton.blend beta/art/skeleton/*.webp
+          git add beta/art/skeleton/*.webp
           if ! git diff --cached --quiet; then
-            git commit -m "Blender: render 32 facings for both skeleton weapons and every animation"
+            git commit -m "Blender: publish 32 facing skeleton fallback atlases"
             # Other active workflows may commit during a 32-view Blender
             # bake. Retry ordinary fast-forward pushes instead of losing art.
             for attempt in 1 2 3 4 5 6; do
