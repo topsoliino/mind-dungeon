@@ -9,7 +9,7 @@ from PIL import Image, ImageChops
 
 ASSETS=Path(__file__).resolve().parent.parent/'beta'/'art'/'skeleton'
 CELL=128
-CLIPS={'idle':6,'run':10,'strike':10,'shoot':10,'death':10}
+CLIPS={'idle':8,'run':12,'strike':12,'shoot':12,'death':12}
 blend=(ASSETS/'skeleton.blend').read_bytes()
 # Blender optionally compresses its .blend stream with Zstandard (0x28B52FFD).
 assert blend.startswith((b'BLENDER', b'\x28\xb5\x2f\xfd')), 'Editable Blender armature missing or corrupt'
