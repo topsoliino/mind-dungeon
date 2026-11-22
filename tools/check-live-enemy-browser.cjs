@@ -218,6 +218,7 @@ const run=async()=>{
    window.__mindDiagnostics?.engine==='Phaser 3',null,{timeout:40000});
   const benchmark=await playtest.evaluate(async()=>{
    const rig=window.__mindEnemyRig,initial=rig.stats.gpuRenders;
+   const gameTimeStart=window.__mindDiagnostics.gameTime;
    const profile={};
    const wrap=(object,method,name)=>{
     if(!object||typeof object[method]!=='function')return;
@@ -256,6 +257,7 @@ const run=async()=>{
     atlasRat:!rig.active.includes('rat'),
     enemyCount:window.__mindDiagnostics.enemyCount,
     simulation:window.__mindDiagnostics.simulationMs,
+    gameSeconds:Math.round((window.__mindDiagnostics.gameTime-gameTimeStart)*100)/100,
     sampledFps:Math.round(samples.length*1000/elapsed),
     p95FrameMs:Math.round(samples[Math.floor(samples.length*.95)]||0),
     gpuRenders:rig.stats.gpuRenders-initial,
@@ -270,6 +272,8 @@ const run=async()=>{
   assert.equal(benchmark.engine,'Phaser 3');
   assert(benchmark.atlasRat,
    'Normal playtest must use baked dense-fur rat, not live WebGL skinning');
+  assert(benchmark.gameSeconds>=benchmark.seconds*.70,
+   'When FPS collapses, simulation must not run in slow motion');
   assert(benchmark.gpuRenders<=Math.ceil(benchmark.seconds*18)+2,
    'Enemy GPU render budget must remain capped, not scale with enemy count');
   assert.equal(playErrors.length,0,
