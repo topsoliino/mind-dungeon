@@ -43,6 +43,7 @@ function moveEnemy(e,dx,dy){
  const moved=Math.hypot(e.x-x,e.y-y);
  if(moved<=.05)return;
  e.facing=Math.atan2(e.y-y,e.x-x);e.moving=true;
+ if(e.type===enemyRules.RAT)e.ratMoveAngle=e.facing;
  const movement=movementCues[enemyRules.attacks[e.type].id];
  if(!movement)return;
  const [cue,stride,gain,cooldown]=movement;
@@ -265,7 +266,7 @@ function updateRat(e,dt,spec,d,angle,clear){
  }
  if(e.ratState==='withdraw'){
   if(d<e.ratPreferred+12)
-   ratWalk(e,angle+Math.PI,spec.speed*.81,dt,angle+Math.PI);
+   ratWalk(e,angle+Math.PI,spec.speed*.81,dt,angle);
   if(e.ratStateTime<=0||d>e.ratPreferred+24)
    ratState(e,'watch',.22,.7);
   return;
@@ -287,7 +288,7 @@ function updateRat(e,dt,spec,d,angle,clear){
  }
  // Hold distance instead of running permanently to d=0.
  if(d<e.ratPreferred-25&&e.attack>0)
-  ratWalk(e,angle+Math.PI,spec.speed*.46,dt,angle+Math.PI);
+  ratWalk(e,angle+Math.PI,spec.speed*.46,dt,angle);
  else if(d>e.ratPreferred+62){
   e.ratStalking=true;
   pursue(e,dt,spec.speed*.76,clear);

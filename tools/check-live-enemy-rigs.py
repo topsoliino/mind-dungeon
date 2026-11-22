@@ -17,7 +17,8 @@ PACKAGES=[
  ("skeleton/skeleton-bow-rig.glb.gz","skeleton/skeleton-live.json","bow",
   ("idle","run","shoot","death")),
  ("rat/rat-live-rig.glb.gz","rat/rat-live.json",None,
-  ("idle","run","stalk","jump","bite","combo","dodge","dodge-left","death")),
+  ("idle","run","stalk","strafe-left","strafe-right","back",
+    "jump","bite","combo","dodge","dodge-left","death")),
 ]
 for asset,settings_path,variant,clips in PACKAGES:
     data=gzip.decompress((ROOT/asset).read_bytes())
@@ -43,7 +44,7 @@ for asset,settings_path,variant,clips in PACKAGES:
         asset, "Blender palette must match the Guardian's sRGB-to-linear pipeline")
     assert manifest.get("artStyle")==(
        "guardian-rebuilt-skeleton-v4" if variant is not None
-       else "guardian-rebuilt-rat-v5"), (asset,"wrong art generation")
+       else "guardian-rebuilt-rat-v6"), (asset,"wrong art generation")
     source_blend=ROOT/("rat/rat.blend" if variant is None else "skeleton/skeleton.blend")
     assert manifest.get("sourceBlendSha256")==hashlib.sha256(source_blend.read_bytes()).hexdigest(), (
         asset,"Live rig does not use the current Blender source; rebuild GLB")
@@ -53,7 +54,9 @@ for asset,settings_path,variant,clips in PACKAGES:
          "Ossuary forged sabre steel" if variant=="sabre" else "Ossuary bow yew"}
         if variant is not None else
         {"Guardian rat slate-blue fur","Guardian rat graphite underfur",
-         "Guardian rat silver guard hairs","Guardian rat cool flank fur"}
+         "Guardian rat silver guard hairs","Guardian rat cool flank fur",
+         "Creature fur | blue-grey undercoat","Creature fur | slate guard hairs",
+         "Creature fur | silver tips"}
     )
     assert required<=names, (
         asset,"Wrong skeleton/rat color generation; missing "+str(required-names))
@@ -65,6 +68,11 @@ for asset,settings_path,variant,clips in PACKAGES:
             for name in names), (asset,"Deleted skeleton armor returned")
     else:
         assert manifest["displaySize"]<=84, (asset,"Rat must render smaller")
+        assert manifest.get("furSystem")=="skinned-solid-strands-spring-v1", (
+            asset,"Live fur dynamics contract missing")
+        assert any("TEXCOORD_0" in p.get("attributes",{})
+                   for m in gltf["meshes"] for p in m.get("primitives",[])), (
+            asset,"Fur tip weights must survive in UV0 for the GPU spring")
         expected_bones={"Root","Chest","Neck","Head","FrontPaw.L","FrontPaw.R",
                         "HindPaw.L","HindPaw.R","Tail0","Tail5"}
         present_bones={n.get("name","") for n in gltf.get("nodes",[])}

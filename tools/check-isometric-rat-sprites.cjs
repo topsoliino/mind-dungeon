@@ -10,7 +10,8 @@ class ImageStub {
  async decode(){
   const clip=this.src.match(/rat\/([^/]+)\.webp/)[1];
   if(clip===missing)throw Error('Missing fixture');
-  this.width=128*({idle:8,run:10,stalk:10,jump:12,bite:9,combo:14,
+  this.width=128*({idle:8,run:12,stalk:10,'strafe-left':12,
+   'strafe-right':12,back:12,jump:12,bite:9,combo:14,
    dodge:10,'dodge-left':10,death:14})[clip];
   loaded.push(clip);
  }
@@ -24,7 +25,7 @@ const iso={toView:(x,y)=>({x:x-y,y:(x+y)/2})};
 const rules={RAT:13,attacks:Array.from({length:21},()=>({windup:.23,recovery:.36}))};
 async function test(){
  await rat.load();
- assert.equal(loaded.length,9);
+ assert.equal(loaded.length,12);
  const e={type:13,x:100,y:120,phase:.1,angle:0,moving:false,size:.86,hit:0,
   windup:0,runAttack:0,recover:0};
  assert.equal(rat.sprite(e,iso,rules).key,'rat-idle');
@@ -33,6 +34,13 @@ async function test(){
  assert.equal(rat.sprite(e,iso,rules).key,'rat-stalk');
  e.ratStalking=false;
  assert.equal(rat.sprite(e,iso,rules).key,'rat-run');
+ e.facing=0;e.angle=0;e.ratMoveAngle=Math.PI/2;
+ assert.equal(rat.sprite(e,iso,rules).key,'rat-strafe-right');
+ e.ratMoveAngle=-Math.PI/2;
+ assert.equal(rat.sprite(e,iso,rules).key,'rat-strafe-left');
+ e.ratMoveAngle=Math.PI;
+ assert.equal(rat.sprite(e,iso,rules).key,'rat-back');
+ e.ratMoveAngle=0;
  e.moving=false;e.windup=.23;
  assert.equal(rat.sprite(e,iso,rules).key,'rat-bite');
  e.ratAttackClip='combo';
@@ -66,8 +74,8 @@ async function test(){
  assert.equal(JSON.stringify(first),JSON.stringify(rat.encounters({rooms},floor)));
  missing='combo';loaded.length=0;
  await rat.load();
- assert.equal(loaded.length,8);
+ assert.equal(loaded.length,11);
  assert(warnings.some(msg=>msg.includes('combo')));
- console.log('Rat browser adapter: 9 clips, 32 fully opaque facings, combat and procedural spawns OK');
+ console.log('Rat browser adapter: 12 clips, side/back locomotion, 32 opaque facings, combat and spawning OK');
 }
 test().catch(err=>{console.error(err);process.exitCode=1;});

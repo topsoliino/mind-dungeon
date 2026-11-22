@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/render-isometric-rat.yml
       - tools/build-isometric-rat.py
+      - tools/creature_fur.py
       - tools/check-isometric-rat-atlases.py
 
 permissions:
@@ -27,7 +28,7 @@ jobs:
       - name: Verify sprite selector and Python source
         run: |
           node tools/check-isometric-rat-sprites.cjs
-          python3 -m py_compile tools/build-isometric-rat.py
+          python3 -m py_compile tools/build-isometric-rat.py tools/creature_fur.py
       - name: Install Blender and atlas inspector
         run: |
           sudo apt-get update
@@ -51,7 +52,7 @@ jobs:
           cp beta/art/rat/*.webp "$temp_dir/"
           for attempt in 1 2 3 4 5 6; do
             git fetch origin main
-            if ! git diff --quiet "$build_base" origin/main -- tools/build-isometric-rat.py; then
+            if ! git diff --quiet "$build_base" origin/main -- tools/build-isometric-rat.py tools/creature_fur.py; then
               echo "Newer rat sculpt detected; discarding obsolete atlases."
               exit 0
             fi

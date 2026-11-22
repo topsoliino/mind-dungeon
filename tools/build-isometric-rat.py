@@ -11,13 +11,16 @@ MIND_DUNGEON_RIG_ONLY=1 blender -b --factory-startup -t 4 \
   --python-exit-code 1 -P tools/build-isometric-rat.py
 
 Stable game/export API: "Rat rig • editable", "Small rat • fully weighted skin",
-and nine Blender actions rat_idle, rat_run, rat_stalk, rat_jump, rat_bite,
-rat_combo, rat_dodge, rat_dodge-left, rat_death. WebGL uses the Guardian lights.
+and twelve Blender actions, including dedicated lateral and backward gaits.
+Solid groomed fibers expose root/tip stiffness for shared GPU spring motion.
 """
 import math
 import os
+import sys
 from pathlib import Path
 import bpy
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from creature_fur import groom_coat
 from mathutils import Vector, Euler, Matrix
 
 ROOT=Path.cwd()/"beta/art/rat"
@@ -34,8 +37,9 @@ PI=math.pi
 VIEWS=32
 CELL=128
 SHEETS={
-    "idle":8,"run":10,"stalk":10,"jump":12,"bite":9,
-    "combo":14,"dodge":10,"dodge-left":10,"death":14,
+    "idle":8,"run":12,"stalk":10,"strafe-left":12,"strafe-right":12,
+    "back":12,"jump":12,"bite":9,"combo":14,"dodge":10,
+    "dodge-left":10,"death":14,
 }
 
 def srgb_to_linear(v):
@@ -69,6 +73,10 @@ nose=material("Guardian rat graphite nose","333545",.35)
 teeth=material("Guardian rat ivory incisors","e1dfd2",.66)
 claw=material("Guardian rat weathered claw","aaa7a3",.67)
 tailshade=material("Guardian rat ringed tail folds","534e61",.88)
+# Reusable opaque groom swatches: no transparent cards or metallic costume.
+fur_shadow=material("Creature fur | blue-grey undercoat","405166",.97)
+fur_body=material("Creature fur | slate guard hairs","708397",.92)
+fur_silver=material("Creature fur | silver tips","98a8b5",.89)
 
 SIDES=(("L",-1),("R",1))
 # +X is screen right; -Y is forward, identical to Guardian/skeleton world.
@@ -252,7 +260,7 @@ def mass(name,at,widths,bone,mats):
 
 # Main pear-shaped rodent torso. Shoulder narrows toward the muzzle,
 # haunches are broad and slightly taller, not a squared-off armor block.
-torso=longitudinal_profile("Shaggy slate-blue torso",[
+TORSO_RINGS=[
     (-.565,0,.364,.065,.065),
     (-.456,0,.377,.169,.141),
     (-.29,0,.388,.241,.205),
@@ -261,7 +269,15 @@ torso=longitudinal_profile("Shaggy slate-blue torso",[
     (.365,0,.376,.289,.242),
     (.530,0,.331,.185,.153),
     (.615,0,.287,.043,.044),
-], [coat,mane,mid,belly],"Root",16,bevel=.007,soft=True)
+]
+torso=longitudinal_profile("Shaggy slate-blue torso",TORSO_RINGS,
+    [coat,mane,mid,belly],"Root",16,bevel=.007,soft=True)
+# Deterministic, surface-conforming strand geometry, skinned with the body.
+# Atlases are a lower-detail fallback; live 3D keeps the full groom.
+fur_count=420 if os.environ.get("MIND_DUNGEON_RIG_ONLY")!="1" else 700
+fur=groom_coat("Creature fur | rat coat",TORSO_RINGS,
+    [fur_shadow,fur_body,fur_silver],count=fur_count,seed=713)
+parts.append((fur,"Root"))
 mass("Fur-covered chest",(0,-.346,.385),(.204,.17,.172),
      "Chest",[coat,mid,mane])
 # No overlapping belly ellipsoid: the former bright continuous horizontal
@@ -470,20 +486,24 @@ def pulse(t,start,peak,end):
 def gait_foot(phase,stride,stance,clearance):
     """Guardian stance / swing trajectory fitted to rapid four-beat scurry."""
     if phase<stance:
-        travel=stride*(phase/stance-.5)
+        u=phase/stance
+        # Ease only touchdown and liftoff, preserving near-linear footplants.
+        edge=.13
+        progress=(u if edge<=u<=1-edge else
+             (edge*smooth(u/edge) if u<edge else
+              1-edge+edge*smooth((u-1+edge)/edge)))
+        travel=stride*(progress-.5)
         height=0
-        pitch,=sample([(0,-.09),(.21,.02),(.67,0),(1,.14)],phase/stance)
+        pitch,=sample([(0,-.07),(.21,.012),(.67,0),(1,.10)],u)
     else:
-        t=(phase-stance)/(1-stance)
-        arc=math.sin(PI*t)
-        carry=(1-stance)/(2*PI*stance)
-        progress=smooth(t)-carry*math.sin(2*PI*t)*(1-.55*arc)-.05*arc*arc
-        travel=stride*(.5-progress)
-        height=clearance*arc**1.36
-        pitch,=sample([(0,.14),(.34,.13),(.58,.01),(.86,-.07),(1,-.09)],t)
+        u=(phase-stance)/(1-stance)
+        arc=max(0,math.sin(PI*u))
+        travel=stride*(.5-smooth(u))
+        height=clearance*arc**1.55
+        pitch,=sample([(0,.10),(.34,.11),(.58,.01),(.86,-.05),(1,-.07)],u)
     return travel,height,pitch
 
-def place_paw(name,phase,stride,stance,clearance,crouch=0,spread=0,lift_extra=0):
+def place_paw(name,phase,stride,stance,clearance,crouch=0,spread=0,lift_extra=0,lateral=0,reverse=False):
     side=name.split(".")[-1]
     sign=-1 if side=="L" else 1
     front=name.startswith("Front")
@@ -491,10 +511,12 @@ def place_paw(name,phase,stride,stance,clearance,crouch=0,spread=0,lift_extra=0)
     ankle=rest[name][0]
     # Compute actual paw sole at every stance frame like Guardian's boots,
     # rather than rotating limbs in place and skating over the floor.
-    rotation=Euler((pitch,0,sign*.05)).to_matrix()
+    if reverse:travel=-travel
+    rotation=Euler((pitch*(.5 if lateral else 1),lateral*.075,
+                    sign*.05+lateral*.09)).to_matrix()
     lowest=min((rotation@(p-ankle)).z for p in paw_soles[name])
-    position=V((ankle.x+sign*spread,
-                ankle.y+travel,
+    position=V((ankle.x+sign*spread+(lateral*travel if lateral else 0),
+                ankle.y+(0 if lateral else travel),
                 max(.014,.012+lift+lift_extra-lowest-.025*crouch)))
     upper="Shoulder."+side if front else "Hip."+side
     lower="Foreleg."+side if front else "Hindleg."+side
@@ -515,8 +537,10 @@ def sample_pose(kind,t):
         bone.scale=(1,1,1)
     bpy.context.view_layer.update()
     phase=2*PI*t
-    moving=kind in ("run","stalk")
+    moving=kind in ("run","stalk","strafe-left","strafe-right","back")
     stalk=kind=="stalk"
+    lateral=-1 if kind=="strafe-left" else 1 if kind=="strafe-right" else 0
+    reverse=kind=="back"
     # Small breaths and vigilance are always present, even in attacks.
     shift=.012*math.sin(phase-.22)
     bob=.006*math.sin(phase*1.8)
@@ -529,13 +553,14 @@ def sample_pose(kind,t):
     combo_second=0
     settle=0
     if moving:
-        stride=.26 if stalk else .49
-        lift=.052 if stalk else .102
-        bob=.009+.034*(1-math.cos(4*PI*t))*.5
-        root_pitch=.032+.043*math.sin(phase+.25)
-        chest_pitch=.061+.047*math.sin(phase+.50)
-        skull_pitch=-.064-.048*math.sin(phase+.16)
-        shift=.021*math.sin(phase+.1)
+        stride=.25 if stalk else .29 if reverse else .32 if lateral else .43
+        lift=.051 if stalk else .063 if reverse else .074 if lateral else .084
+        # Reduce vertical bouncing and stagger torso/head oscillations.
+        bob=.006+.021*(1-math.cos(4*PI*t))*.5
+        root_pitch=.025+.031*math.sin(phase+.25)
+        chest_pitch=.037+.030*math.sin(phase+.67)
+        skull_pitch=-.049-.028*math.sin(phase+.31)
+        shift=.014*math.sin(phase+.1)+lateral*.023
     elif kind=="jump":
         load=pulse(t,.01,.15,.26)
         strike=pulse(t,.17,.53,.91)
@@ -584,7 +609,7 @@ def sample_pose(kind,t):
     body_position=rest["Root"][0]+V((shift,
            (-.026 if moving else 0)+(-.022*load+.028*strike),
            bob))
-    yaw=.038*math.sin(phase) if moving else .014*math.sin(phase)
+    yaw=(.028*math.sin(phase)+lateral*.065) if moving else .014*math.sin(phase)
     if kind=="death":yaw=.38*smooth(t/.73)
     orient("Root",body_position,
            Euler((root_pitch,0,yaw)).to_matrix())
@@ -616,8 +641,10 @@ def sample_pose(kind,t):
                 # Four-beat alternating footfalls with staggered front/hind.
                 offset=(0 if side=="L" else .5) + (0 if front else .25)
                 travel_phase=(t+offset)%1
-                place_paw(paw,travel_phase,stride,.65 if stalk else .58,lift,
-                          spread=.012 if stalk else .029)
+                place_paw(paw,travel_phase,stride,
+                          .66 if stalk else .63 if reverse else .61,lift,
+                          spread=.012 if stalk else .024,
+                          lateral=lateral,reverse=reverse)
             else:
                 # Plant all four paws during windup and keep them stable
                 # during the rapid bite instead of waving them in the air.
@@ -712,7 +739,7 @@ if os.environ.get("MIND_DUNGEON_RIG_ONLY") != "1":
         faces=[]
         mids=[]
         rig.animation_data.action=bpy.data.actions["rat_"+clip]
-        looping=clip in ("idle","run","stalk")
+        looping=clip in ("idle","run","stalk","strafe-left","strafe-right","back")
         for col in range(count):
             t=col/count if looping else col/(count-1)
             scene.frame_set(1+round(48*t))

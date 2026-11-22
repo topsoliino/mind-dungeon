@@ -153,8 +153,8 @@ def rat():
     bpy.ops.wm.open_mainfile(filepath=str(ROOT / "rat" / "rat.blend"))
     rig = bpy.data.objects["Rat rig • editable"]
     mesh = bpy.data.objects["Small rat • fully weighted skin"]
-    names = ("idle", "run", "stalk", "jump", "bite", "combo",
-             "dodge", "dodge-left", "death")
+    names = ("idle", "run", "stalk", "strafe-left", "strafe-right",
+             "back", "jump", "bite", "combo", "dodge", "dodge-left", "death")
     clips = {name: "rat_" + name for name in names}
     export_model(ROOT / "rat" / "rat-live-rig.glb.gz", rig, [mesh], clips)
     manifest = {
@@ -163,7 +163,8 @@ def rat():
                   for i, key in enumerate(clips)},
         "displaySize": 82, "field": 2.3, "targetHeight": 0.39,
         "materialColorSpace": "srgb-to-linear",
-        "artStyle": "guardian-rebuilt-rat-v5",
+        "artStyle": "guardian-rebuilt-rat-v6",
+        "furSystem": "skinned-solid-strands-spring-v1",
         "sourceBlendSha256": hashlib.sha256(
             (ROOT / "rat" / "rat.blend").read_bytes()).hexdigest(),
     }

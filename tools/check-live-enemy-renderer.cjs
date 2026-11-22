@@ -33,7 +33,7 @@ for(const field of [
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=12')"));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=13')"));
 assert(!enemy.includes("function hasLegacyPalette("),
  'Do not classify correctly linearized bright bone as legacy sRGB by its brightness');
 assert(enemy.includes("settings.sourceBlendSha256?.slice(0,16)"),
@@ -62,12 +62,21 @@ assert.equal(window.AlleySkeleton.choose(skeleton,rules,1).clip,'death');
 const rat={type:13,moving:true,phase:.15,size:1};
 assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'run');
 rat.ratStalking=true;assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'stalk');
+rat.ratStalking=false;rat.angle=0;rat.facing=0;
+rat.ratMoveAngle=Math.PI/2;
+assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'strafe-right');
+rat.ratMoveAngle=-Math.PI/2;
+assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'strafe-left');
+rat.ratMoveAngle=Math.PI;
+assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'back');
 rat.ratMotion={name:'dodge-left',duration:.4,time:.2};
 assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'dodge-left');
 assert.equal(window.AlleyRat.choose(rat,rules,.9).clip,'death');
 const skeletonBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-skeleton.py'),'utf8');
 const ratBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-rat.py'),'utf8');
 const exporter=fs.readFileSync(path.join(__dirname,'export-enemy-rigs.py'),'utf8');
+const furBuilder=fs.readFileSync(path.join(__dirname,'creature_fur.py'),'utf8');
+const furRuntime=source('creature-fur.js');
 const oldGuardian=fs.readFileSync(path.join(__dirname,'build-player-sprite-study.py'),'utf8');
 for(const helper of ['def mesh(', 'def profile(', 'def limb(', 'def plate(',
  'def point(', 'def bend_joint(', 'def attached(', 'def gait_foot(']){
@@ -116,6 +125,12 @@ assert(ratBuilder.includes('"rat_"+clip')&&
  ratBuilder.includes('MIND_DUNGEON_RIG_ONLY')&&
  ratBuilder.includes('def place_paw('),
  'Retain all existing 3D clip names with Guardian planted-paw animation');
+assert(ratBuilder.includes('groom_coat("Creature fur | rat coat"')&&
+ furBuilder.includes('def groom_coat(')&&furBuilder.includes('uv.data[loop].uv')&&
+ furRuntime.includes('prepareCreatureFur')&&furRuntime.includes('updateCreatureFur')&&
+ enemy.includes('stage.fur=prepareCreatureFur(model.scene)')&&
+ enemy.includes('updateCreatureFur(stage.fur,enemy,selection,state)'),
+ 'Reusable Blender fur groom and spring shader must be connected to live rigs');
 assert(exporter.includes('"materialColorSpace": "srgb-to-linear"'),
  'Exporter must not gamma-correct live rigs twice');
 console.log('Guardian original-model skeleton and unchanged rat contracts OK');

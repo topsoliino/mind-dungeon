@@ -5,7 +5,8 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 root=Path(__file__).resolve().parents[1]/"beta/art/rat"
-clips={"idle":8,"run":10,"stalk":10,"jump":12,"bite":9,
+clips={"idle":8,"run":12,"stalk":10,"strafe-left":12,
+       "strafe-right":12,"back":12,"jump":12,"bite":9,
        "combo":14,"dodge":10,"dodge-left":10,"death":14}
 CELL=128
 blend=(root/"rat.blend").read_bytes()

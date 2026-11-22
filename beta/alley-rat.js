@@ -1,8 +1,8 @@
 // Blender-baked small rat: editable armature, 32 independent 3D views/animation.
 window.AlleyRat=(()=>{
  'use strict';
- const CELL=128,VIEWS=32,TAU=Math.PI*2,VERSION=6;
- const files=['idle','run','stalk','jump','bite','combo','dodge','dodge-left','death'];
+ const CELL=128,VIEWS=32,TAU=Math.PI*2,VERSION=8;
+ const files=['idle','run','stalk','strafe-left','strafe-right','back','jump','bite','combo','dodge','dodge-left','death'];
  const sheets=new Map();
  const DEATH_SECONDS=1.15;
  const clamp=(x)=>Math.max(0,Math.min(1,x));
@@ -39,13 +39,27 @@ window.AlleyRat=(()=>{
    return {clip,t:clamp(t)};
   }
   const stalk=Boolean(e.ratStalking);
-  return {clip:e.moving?(stalk?'stalk':'run'):'idle',
-   t:((e.phase*(stalk?1.05:e.moving?2.0:.85))%1+1)%1};
+  let clip=e.moving?(stalk?'stalk':'run'):'idle';
+  if(e.moving){
+   // Facing stays pointed at the target: use the actual collision-resolved
+   // translation vector to animate lateral steps and rearward retreat.
+   const look=Number.isFinite(e.angle)?e.angle:e.facing??0;
+   const move=Number.isFinite(e.ratMoveAngle)?e.ratMoveAngle:
+    Number.isFinite(e.facing)?e.facing:look;
+   const difference=Math.atan2(Math.sin(move-look),Math.cos(move-look));
+   if(Math.cos(difference)<-.52)clip='back';
+   else if(Math.abs(Math.sin(difference))>.70&&Math.abs(Math.cos(difference))<.72)
+    clip=Math.sin(difference)>0?'strafe-right':'strafe-left';
+  }
+  return {clip,t:((e.phase*(stalk?1.05:e.moving?2.0:.85))%1+1)%1};
  }
  function sprite(e,iso,rules,deathAge=null){
   if(!e||e.type!==rules.RAT)return null; // Electro-rats retain their own effect.
   const {clip,t}=choose(e,rules,deathAge);
-  const image=sheets.get(clip);
+  // Older cached atlases remain valid while Blender CI rebuilds the new
+  // gait sheets. Missing directions fall back to the existing run atlas.
+  const renderedClip=sheets.has(clip)?clip:(clip==='back'||clip.startsWith('strafe-')?'run':clip);
+  const image=sheets.get(renderedClip);
   if(!image)return null;
   const textureCell=image.height/VIEWS;
   const cols=image.width/textureCell,col=Math.min(cols-1,Math.floor(t*cols));
@@ -54,7 +68,7 @@ window.AlleyRat=(()=>{
   const row=wrap(Math.round(exact),VIEWS);
   const p=iso.toView(e.x,e.y,e.alleyZ||0);
   const alpha=deathAge===null?1:clamp((2.6-deathAge)/.55);
-  return {image,key:'rat-'+clip,frame:row+'-'+col,sx:col*textureCell,sy:row*textureCell,
+  return {image,key:'rat-'+renderedClip,frame:row+'-'+col,sx:col*textureCell,sy:row*textureCell,
    w:textureCell,h:textureCell,width:114*(e.size||1),height:114*(e.size||1),
    x:p.x,y:p.y,depth:(e.alleyFloor===1||e.alleyClimb?7000:0)+p.y,originX:.5,originY:.65,alpha};
  }

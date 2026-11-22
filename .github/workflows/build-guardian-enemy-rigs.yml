@@ -8,6 +8,7 @@ on:
       - .github/workflows/build-guardian-enemy-rigs.yml
       - tools/build-isometric-skeleton.py
       - tools/build-isometric-rat.py
+      - tools/creature_fur.py
       - tools/export-enemy-rigs.py
       - tools/check-live-enemy-rigs.py
 
@@ -28,7 +29,7 @@ jobs:
           persist-credentials: true
       - name: Validate both Guardian-derived builders before starting Blender
         run: |
-          python3 -m py_compile tools/build-isometric-skeleton.py tools/build-isometric-rat.py tools/export-enemy-rigs.py tools/check-live-enemy-rigs.py
+          python3 -m py_compile tools/build-isometric-skeleton.py tools/build-isometric-rat.py tools/creature_fur.py tools/export-enemy-rigs.py tools/check-live-enemy-rigs.py
           node tools/check-live-enemy-renderer.cjs
       - name: Install Blender
         run: |
@@ -63,7 +64,7 @@ jobs:
             # definitions must not have advanced since this job started.
             if ! git diff --quiet "$build_base" origin/main -- \
               tools/build-isometric-skeleton.py tools/build-isometric-rat.py \
-              tools/export-enemy-rigs.py; then
+              tools/creature_fur.py tools/export-enemy-rigs.py; then
               echo "Newer Blender source detected; discarding stale render."
               exit 0
             fi

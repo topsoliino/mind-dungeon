@@ -7,6 +7,7 @@ import {
  LoopOnce, OrthographicCamera, Scene, Vector3, WebGLRenderer
 } from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {prepareCreatureFur,updateCreatureFur} from './creature-fur.js';
 
 // Maintain at least the Guardian's pixel density at the skeleton's larger
 // on-screen size (208/132 ~= 176/110). No per-enemy WebGL contexts.
@@ -96,7 +97,7 @@ export async function loadEnemyRigs(){
  renderer.setClearColor(0,0);
  renderer.toneMapping=ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.13;
- const versions={sabre:7,bow:7,rat:7};
+ const versions={sabre:7,bow:7,rat:8};
  const files=[
   ['sabre','beta/art/skeleton/skeleton-sabre-rig.glb.gz',
    'beta/art/skeleton/skeleton-live.json','sabre'],
@@ -121,6 +122,7 @@ export async function loadEnemyRigs(){
    const model=await glb(url+'?v='+revision);
    const stage=makeStage(settings.field,settings.targetHeight);
    prepareMaterials(model.scene,settings);
+   stage.fur=prepareCreatureFur(model.scene);
    stage.pivot.add(model.scene);
    stage.mixer=new AnimationMixer(model.scene);
    stage.action=stage.mixer.clipAction(model.animations[0]);
@@ -154,7 +156,7 @@ export async function loadEnemyRigs(){
    canvases.set(enemy,state);
   }
   const {clips,fps,displaySize}=stage.settings;
-  const spec=clips[selection.clip]||clips.idle;
+  const spec=clips[selection.clip]||(type==='rat'?clips.run:clips.idle);
   if(!spec)return null;
   const [start,count]=spec;
   const t=clamp(selection.t);
@@ -169,6 +171,7 @@ export async function loadEnemyRigs(){
   const changed=state.last!==signature;
   if(changed){
    state.last=signature;
+   if(stage.fur.length)updateCreatureFur(stage.fur,enemy,selection,state);
    // Reuse a single GLB model per weapon/species, but sample its continuous
    // rig animation independently into every enemy's own persistent canvas.
    stage.pivot.rotation.y=yaw;
