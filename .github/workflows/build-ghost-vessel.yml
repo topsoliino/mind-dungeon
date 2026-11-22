@@ -40,7 +40,8 @@ jobs:
           initial=$(git rev-parse HEAD)
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
-          cp beta/art/props/ghost-vessel.blend beta/art/props/ghost-vessel.glb beta/art/props/ghost-vessel.png "$tmp/"
+          printf '{"spriteReady":true,"version":1}\n' > beta/art/props/ghost-vessel-art.json
+          cp beta/art/props/ghost-vessel.blend beta/art/props/ghost-vessel.glb beta/art/props/ghost-vessel.png beta/art/props/ghost-vessel-art.json "$tmp/"
           for attempt in 1 2 3 4; do
             git fetch origin main
             if ! git diff --quiet "$initial" origin/main -- tools/build-ghost-vessel.py; then
@@ -50,7 +51,7 @@ jobs:
             git reset --hard origin/main
             mkdir -p beta/art/props
             cp "$tmp/"* beta/art/props/
-            git add beta/art/props/ghost-vessel.blend beta/art/props/ghost-vessel.glb beta/art/props/ghost-vessel.png
+            git add beta/art/props/ghost-vessel.blend beta/art/props/ghost-vessel.glb beta/art/props/ghost-vessel.png beta/art/props/ghost-vessel-art.json
             if git diff --cached --quiet; then exit 0; fi
             git commit -m "Blender: publish carved spectral ghost-vessel 3D model and sprite"
             if git push origin HEAD:main; then exit 0; fi

@@ -36,7 +36,13 @@ function create(){
   const c=vessel.getContext('2d');c.clearRect(0,0,64,96);
   c.drawImage(asset,0,0,64,96);vesselRevision++;
  };
- asset.src='beta/art/props/ghost-vessel.png?v=1';
+ // A missing in-progress Blender render must NOT trigger a 404 on every
+ // startup. Load it only after the build pipeline publishes its manifest.
+ fetch('beta/art/props/ghost-vessel-art.json?v=1',{cache:'no-store'})
+  .then(response=>response.ok?response.json():null)
+  .then(config=>{
+   if(config?.spriteReady)asset.src='beta/art/props/ghost-vessel.png?v='+(config.version||1);
+  }).catch(()=>{});
  let gl=null,program=null,uniformT=null,position=null,lastFrame=-1;
  try{
   gl=canvas.getContext('webgl',{alpha:true,preserveDrawingBuffer:true,
