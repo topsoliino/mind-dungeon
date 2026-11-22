@@ -5350,10 +5350,25 @@ function pauseOnFrameError(stage,error){
   mdNavigatingToNewCharacter=true;location.reload();
  });
 }
+// Low-overhead timings of the ACTUAL simulation (not merely Phaser's draw).
+// GPU stalls and expensive pathfinding can otherwise hide in uninstrumented
+// frame callbacks. Keep an always-readable rolling aggregate for F3/CI.
+const simulationTiming={frames:0,totalMs:0,maxMs:0,lastMs:0};
 function advanceFrame(dt){
  if(paused)return;
+ const start=performance.now();
  try{update(dt);}
  catch(error){pauseOnFrameError('Spielschritt',error);}
+ const ms=performance.now()-start;
+ simulationTiming.frames++;
+ simulationTiming.totalMs+=ms;
+ simulationTiming.lastMs=ms;
+ simulationTiming.maxMs=Math.max(simulationTiming.maxMs,ms);
+ if(simulationTiming.frames>=180){
+  simulationTiming.frames=1;
+  simulationTiming.totalMs=ms;
+  simulationTiming.maxMs=ms;
+ }
 }
 function loop(t){
  requestAnimationFrame(loop);
@@ -6593,6 +6608,10 @@ accountReady.then(async()=>{
  get guardianQuality(){return guardianBaked?'BAKED BLENDER ATLAS':'3D LIVE'},
  get resolutionScale(){return renderScale},
  get adaptiveRenderer(){return phaserActive?'Phaser WebGL':'Canvas'},
- get gpuEnemyRenders(){return enemyRig?.stats?.gpuRenders||0}};
+ get gpuEnemyRenders(){return enemyRig?.stats?.gpuRenders||0},
+ get simulationMs(){return {
+  avg:Math.round(simulationTiming.totalMs/Math.max(1,simulationTiming.frames)),
+  max:Math.round(simulationTiming.maxMs),
+  latest:Math.round(simulationTiming.lastMs)}}};
 })();
 </script></body></html>

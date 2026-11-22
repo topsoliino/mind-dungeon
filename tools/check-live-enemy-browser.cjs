@@ -255,6 +255,7 @@ const run=async()=>{
     engine:window.__mindDiagnostics.engine,
     atlasRat:!rig.active.includes('rat'),
     enemyCount:window.__mindDiagnostics.enemyCount,
+    simulation:window.__mindDiagnostics.simulationMs,
     sampledFps:Math.round(samples.length*1000/elapsed),
     p95FrameMs:Math.round(samples[Math.floor(samples.length*.95)]||0),
     gpuRenders:rig.stats.gpuRenders-initial,
@@ -290,6 +291,7 @@ const run=async()=>{
    frames.sort((a,b)=>a-b);
    return {engine:window.__mindDiagnostics.engine,
     quality:window.__mindDiagnostics.guardianQuality,
+    simulation:window.__mindDiagnostics.simulationMs,
     renderScale:window.__mindDiagnostics.resolutionScale,
     fps:Math.round(frames.length*1000/(performance.now()-before)),
     p95FrameMs:Math.round(frames[Math.floor(frames.length*.95)]||0)};
@@ -321,7 +323,8 @@ const run=async()=>{
    return {engine:window.__mindDiagnostics.engine,
     fps:Math.round(times.length*1000/(performance.now()-start)),
     p95FrameMs:Math.round(times[Math.floor(times.length*.95)]||0),
-    enemyCount:window.__mindDiagnostics.enemyCount};
+    enemyCount:window.__mindDiagnostics.enemyCount,
+    simulation:window.__mindDiagnostics.simulationMs};
   });
   console.log('SOFTWARE CANVAS COMPARISON:',JSON.stringify(canvasSample));
   await canvasPage.close();
