@@ -17,7 +17,7 @@ for(const field of [
 }
 for(const field of [
  'ACESFilmicToneMapping','toneMappingExposure=1.13',
- 'RENDER_SIZE=176','new HemisphereLight(0xd0dcff,0x93737a,1.45)',
+ 'RENDER_SIZE=208','new HemisphereLight(0xd0dcff,0x93737a,1.45)',
  'light(scene,0xffdfb7,3.4,-3,5,4)',
  'light(scene,0xb8ccff,1.9,3,4,-4)',
  'new OrthographicCamera',
@@ -25,12 +25,15 @@ for(const field of [
  'new AnimationMixer(model.scene)','stage.mixer.setTime(sample)',
  'WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true})',
  'new WeakMap()','const renderer=new WebGLRenderer',
+ 'function srgbToLinear(value)','function prepareMaterials(root,settings)',
+ "settings.materialColorSpace!=='srgb-to-linear'",
+ 'material.transparent=false','material.depthWrite=true',
  "if(skinned<1)throw Error"]){
  assert(enemy.includes(field),'3D enemies must share Guardian rendering: '+field);
 }
 assert.equal(enemy.match(/new WebGLRenderer/g).length,1,
  'One GPU render context shared across all enemy models, NOT one per rat');
-assert(html.includes("import('./beta/dungeon-enemy-rig.js?v="));
+assert(html.includes("import('./beta/dungeon-enemy-rig.js?v=3')"));
 assert(html.includes('enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)'));
 assert(html.includes("enemyRig?.draw(e,'rat',ratArt.choose(e,enemyRules,null),iso)"));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));
@@ -56,4 +59,15 @@ rat.ratStalking=true;assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'s
 rat.ratMotion={name:'dodge-left',duration:.4,time:.2};
 assert.equal(window.AlleyRat.choose(rat,rules,null).clip,'dodge-left');
 assert.equal(window.AlleyRat.choose(rat,rules,.9).clip,'death');
-console.log('Guardian renderer parity: shared WebGL/lighting/ACES, continuous 3D bones, enemy clip selection, corpses and fallback OK');
+const skeleton=fs.readFileSync(path.join(__dirname,'build-isometric-skeleton.py'),'utf8');
+const ratBuilder=fs.readFileSync(path.join(__dirname,'build-isometric-rat.py'),'utf8');
+const exporter=fs.readFileSync(path.join(__dirname,'export-enemy-rigs.py'),'utf8');
+for(const [label,script] of [['skeleton',skeleton],['rat',ratBuilder]]){
+ assert(script.includes('def srgb_to_linear(value):'),
+  label+' must convert its authored palette like the Guardian');
+ assert(script.includes('srgb_to_linear(v) for v in color'),
+  label+' must assign linear palette to Principled BSDF');
+}
+assert(exporter.includes('"materialColorSpace": "srgb-to-linear"'),
+ 'GLB manifests must prevent correcting a corrected palette twice');
+console.log('Guardian renderer parity: high-contrast sRGB/linear palette, solid materials, matched pixels, 360-degree bones, corpses and fallback OK');
