@@ -574,7 +574,7 @@ bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);bpy.context.vi
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'skeleton.blend'),compress=True)
 # Batch evaluated Blender geometry into an orthographic contact sheet so one
 # Cycles render covers every facing and sample of a clip.
-scene.render.engine='CYCLES';scene.cycles.samples=26;scene.cycles.use_denoising=True
+scene.render.engine='CYCLES';scene.cycles.samples=26;scene.cycles.use_denoising=False  # GitHub Blender build lacks OpenImageDenoiser
 scene.render.image_settings.file_format='WEBP';scene.render.image_settings.color_mode='RGBA'
 scene.render.image_settings.quality=96
 scene.render.film_transparent=True;scene.render.resolution_percentage=100
