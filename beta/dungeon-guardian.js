@@ -23,10 +23,11 @@
   ]);
   if(!response.ok)throw new Error('Wächter-Animationen konnten nicht geladen werden.');
   const atlas=await response.json();
+  const climbing=loadLayer(root,['guardian-climbing.webp']).then(([image])=>image).catch(()=>null);
   if(settings?.ok)light=await settings.json();
   try{
    const {loadRig}=await import('./dungeon-guardian-rig.js?v=6');
-   return {atlas,rig:await loadRig(root+'guardian-rig.glb.gz?v=3',atlas.clips)};
+   return {atlas,climbing:await climbing,rig:await loadRig(root+'guardian-rig.glb.gz?v=3',atlas.clips)};
   }catch(error){
    console.warn('3D-Wächter nicht verfügbar. Sprite-Wächter wird verwendet.',error);
    const layers=await Promise.all(['body','weapon'].map(key=>loadLayer(root,atlas.sheets[key])));
@@ -34,7 +35,7 @@
    // ladder takes. Use the walk frames instead of indexing past the atlas.
    const spriteAtlas={...atlas,clips:{...atlas.clips,
     'climb-up':atlas.clips.walk,'climb-down':atlas.clips.walk}};
-   return {atlas:spriteAtlas,layers};
+   return {atlas:spriteAtlas,layers,climbing:await climbing};
   }
  }
  // The richly lit GLB remains the preferred path. If the measured in-game
@@ -51,7 +52,7 @@
      clips:{...guardian.atlas.clips,
       'climb-up':guardian.atlas.clips.walk,
       'climb-down':guardian.atlas.clips.walk}};
-    guardian.spriteFallback={atlas:guardian.spriteAtlas,layers};
+    guardian.spriteFallback={atlas:guardian.spriteAtlas,layers,climbing:guardian.climbing};
     return true;
    }).catch(error=>{
     fallbackLoads.delete(guardian);
@@ -75,6 +76,11 @@
  }
  function parts(guardian,clip,progress,angle,x,y,armed,alpha=1){
   const {atlas,layers}=guardian;
+  if(guardian.climbing&&(clip==='climb-up'||clip==='climb-down')){
+   const column=facing(angle),row=(clip==='climb-down'?16:0)+Math.round(clamp(progress)*15);
+   return [{image:guardian.climbing,key:'guardian-climbing',frame:String(row*8+column),
+    sx:column*128,sy:row*128,w:128,h:128,x:x-55,y:y-ground,width:110,height:110,alpha}];
+  }
   const [start,count]=atlas.clips[clip];
   const step=Math.min(count-1,Math.floor(clamp(retimedSprite(clip,progress))*count));
   const index=(start+step)*directionCount+facing(angle);

@@ -8,8 +8,8 @@ const prisonSource=script('rocky-coast-prison.js');
 const generatorSource=script('alley-generator.js');
 const terrainSource=script('rocky-coast-terrain.js');
 const game=script('index.html');
-const region=(level,entry='from-lower')=>{
- const q='?szene=gasse&modus=generator&region=rocky-coast&level='+level+'&entry='+entry;
+const region=(level,storey=1,entry='from-lower')=>{
+ const q='?szene=gasse&modus=generator&region=rocky-coast&level='+level+'&storey='+storey+'&entry='+entry;
  const window={location:{href:'https://example.org/mind-dungeon/beta/index.html'+q,
   search:q,assign(url){this.href=url;}}};
  for(const source of [map,prisonSource,generatorSource])
@@ -18,57 +18,62 @@ const region=(level,entry='from-lower')=>{
 };
 const seeds=new Set();
 for(let level=1;level<=4;level++){
- const root=region(level),g=root.AlleyGenerator,d=root.RockyCoastPrison;
- assert(g.enabled,'Dungeon interior greybox missing at level '+level);
- assert.equal(d.level,level);
- assert.equal(g.rooms.length,10,'Ten connected rooms on level '+level);
- const entrances=level===1?1:0,exits=level===4?1:0;
- assert.equal(g.portals.length,entrances+exits,
-  'Only L1 may have an exterior entrance, only L4 may have an exit');
- assert.equal(Boolean(g.outdoorEntrance),Boolean(entrances));
- assert.equal(Boolean(g.outdoorExit),Boolean(exits));
- assert.equal(d.hasEntrance,Boolean(entrances));
- assert.equal(d.hasExit,Boolean(exits));
- assert.equal(g.stairs.length,level===4?0:1,
-  'Only L1-L3 have an upward physical stair');
- if(level>1){
-  assert.equal(g.doors.length,8,'Later levels have no starter alley doorway');
-  assert(g.blocked(12,4.5,.20)&&g.blocked(12,5.5,.20),
-   'Previous street entrance must be a SOLID collision wall');
- }else{
-  assert.equal(g.doors.length,9);
-  assert.equal(d.link({x:g.outdoorEntrance.x*48,y:g.outdoorEntrance.y*48},g),null,
-   'L1 entrance must not act as an exit or skip floors');
+ const count=region(level).RockyCoastPrison.count;
+ assert(count>=2&&count<=4);
+ for(let storey=1;storey<=count;storey++){
+  const root=region(level,storey),g=root.AlleyGenerator,d=root.RockyCoastPrison;
+  assert(g.enabled,'Dungeon interior greybox missing at level '+level);
+  assert.equal(d.level,level);
+  assert.equal(g.rooms.length,10,'Ten connected rooms on level '+level);
+  const entrances=level===1&&storey===1?1:0,exits=level===4&&storey===count?1:0;
+  assert.equal(g.portals.length,entrances+exits,
+   'Only L1 may have an exterior entrance, only L4 may have an exit');
+  assert.equal(Boolean(g.outdoorEntrance),Boolean(entrances));
+  assert.equal(Boolean(g.outdoorExit),Boolean(exits));
+  assert.equal(d.hasEntrance,Boolean(entrances));
+  assert.equal(d.hasExit,Boolean(exits));
+  assert.equal(g.stairs.length,exits?0:1,
+   'Only L1-L3 have an upward physical stair');
+  if(!entrances){
+   assert.equal(g.doors.length,8,'Later levels have no starter alley doorway');
+   assert(g.blocked(12,4.5,.20)&&g.blocked(12,5.5,.20),
+    'Previous street entrance must be a SOLID collision wall');
+  }else{
+   assert.equal(g.doors.length,9);
+   assert.equal(d.link({x:g.outdoorEntrance.x*48,y:g.outdoorEntrance.y*48},g),null,
+    'L1 entrance must not act as an exit or skip floors');
+  }
+  if(exits){
+   const exit=g.outdoorExit,near={x:exit.x*48,y:exit.y*48};
+   assert.equal(d.link(near,g)?.target,5,'Only L4 has a door to exterior L5');
+   assert.equal(d.link(near,g)?.kind,'exit');
+  }else{
+   const stair=g.stairs[0];
+   const top={x:stair.area[0]+.8,y:stair.area[1]+.8};
+   root.AlleyVertical={enabled:true,state:{floor:0,stairRide:null,
+    transition:null,pending:null},
+    connectors:[{kind:'stairs',top}]};
+   const hero={x:top.x*48,y:top.y*48};
+   assert.equal(d.link(hero,g),null,
+    'Dungeon floor must never skip via the staircase until reached upstairs');
+   root.AlleyVertical.state.floor=1;
+   const next=d.link(hero,g);
+   assert.equal(next?.target,storey===count?level+1:level,'Completed real staircase leads to next level');
+   assert.equal(next?.kind,storey===count?'stairs':'inside');
+   if(storey===count)assert.equal(next?.entry,'from-lower');
+   else assert.equal(next.storey,storey+1);
+   root.AlleyVertical.state.stairRide={};
+   assert.equal(d.link(hero,g),null,'Cannot skip dungeon floor mid-climb');
+   root.AlleyVertical.state.stairRide=null;
+   root.AlleyVertical.state.pending={};
+   assert.equal(d.link(hero,g),null,'Cannot skip dungeon floor while interaction pending');
+   assert(d.href(level+1).includes('level='+(level+1)));
+  }
+  if(storey===1&&(level===2||level===3))
+   assert.equal(d.link({x:14.5*48,y:5.5*48},g),null,
+    'Middle dungeon floors must have neither entrance nor exit');
+  if(storey===1)seeds.add(g.seed);
  }
- if(level===4){
-  const exit=g.outdoorExit,near={x:exit.x*48,y:exit.y*48};
-  assert.equal(d.link(near,g)?.target,5,'Only L4 has a door to exterior L5');
-  assert.equal(d.link(near,g)?.kind,'exit');
- }else{
-  const stair=g.stairs[0];
-  const top={x:stair.area[0]+.8,y:stair.area[1]+.8};
-  root.AlleyVertical={enabled:true,state:{floor:0,stairRide:null,
-   transition:null,pending:null},
-   connectors:[{kind:'stairs',top}]};
-  const hero={x:top.x*48,y:top.y*48};
-  assert.equal(d.link(hero,g),null,
-   'Dungeon floor must never skip via the staircase until reached upstairs');
-  root.AlleyVertical.state.floor=1;
-  const next=d.link(hero,g);
-  assert.equal(next?.target,level+1,'Completed real staircase leads to next level');
-  assert.equal(next?.kind,'stairs');
-  assert.equal(next?.entry,'from-lower');
-  root.AlleyVertical.state.stairRide={};
-  assert.equal(d.link(hero,g),null,'Cannot skip dungeon floor mid-climb');
-  root.AlleyVertical.state.stairRide=null;
-  root.AlleyVertical.state.pending={};
-  assert.equal(d.link(hero,g),null,'Cannot skip dungeon floor while interaction pending');
-  assert(d.href(level+1).includes('level='+(level+1)));
- }
- if(level===2||level===3)
-  assert.equal(d.link({x:14.5*48,y:5.5*48},g),null,
-   'Middle dungeon floors must have neither entrance nor exit');
- seeds.add(g.seed);
 }
 assert.equal(seeds.size,4,'Each indoor level generates a stable separate layout');
 const outside=region(5),definition=outside.RockyCoastPrison;

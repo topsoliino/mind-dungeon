@@ -48,7 +48,7 @@
   const query=new URLSearchParams(location.search);
   // Keep requested world/seed/render mode. Never forward OAuth fragments,
   // auth tokens, or unrelated tracking parameters to the game.
-  for(const key of ['szene','modus','seed','boss-test','renderer','debug-art','enemy3d']){
+  for(const key of ['szene','modus','seed','region','level','run','storey','entry','treppe','boss-test','renderer','debug-art','enemy3d']){
    if(query.has(key))target.searchParams.set(key,query.get(key));
   }
   // The default title leads to the real procedural test, not another title.
@@ -56,6 +56,8 @@
   if(!target.searchParams.has('szene')&&!target.searchParams.has('boss-test')){
    target.searchParams.set('szene','gasse');
    target.searchParams.set('modus','generator');
+   target.searchParams.set('region','rocky-coast');
+   if(!target.searchParams.has('run'))target.searchParams.set('run',String(Date.now()>>>0));
   }
   return target;
  }

@@ -41,9 +41,12 @@
   // Floors 2-4 start INSIDE their own generated building, not in the
   // original outdoor alley or through an invisible/forbidden entrance.
   // The first interior corridor always occupies [12..,4..7].
-  const innerSpawn=prison?.enabled&&prison.level>1&&prison.level<=4?
+  const innerSpawn=prison?.enabled&&!prison.hasEntrance&&prison.level<=4?
    {x:14.5*tile,y:5.5*tile}:null;
-  const spawn=returnGate?{x:(returnGate.x-returnGate.dx*.70)*tile,
+  const returnLanding=vertical&&prison?.enabled&&prison.entry?.startsWith('down-')?
+   vertical.connectors.find(c=>c.kind===prison.entry.slice(5))?.top:null;
+  if(returnLanding){vertical.state.floor=1;vertical.state.z=vertical.height;}
+  const spawn=returnLanding?{x:returnLanding.x*tile,y:returnLanding.y*tile}:returnGate?{x:(returnGate.x-returnGate.dx*.70)*tile,
     y:(returnGate.y-returnGate.dy*.70)*tile}:innerSpawn||unit(map.spawn);
   const chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
   // These are the same ground footprints as the neutral props in the art pass.
@@ -171,7 +174,7 @@
     // Guardian while climbing. The previous 0-vs-7000 mismatch forced the
     // player in front of every step/column, regardless of physical position.
     const stairPart=part.kind==='stair-tread'||part.kind==='stair-landing'||part.kind==='stair-spindle';
-    const depth=part.depth+(raised&&stairPart?7000:0);
+    const depth=part.depth+(raised&&stairPart&&(part.surfaceZ??Infinity)>(vertical.state.z+.5)?7000:0);
     return {...part.image,depth,alpha,visible};
    });
    return [...ground,...buildings,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),

@@ -2,15 +2,15 @@
 'use strict';
 const query=new URLSearchParams(window.location.search);
 const dungeonLevel=window.RockyCoastPrison?.enabled?window.RockyCoastPrison.level:0;
-const hasOutdoorEntrance=!dungeonLevel||dungeonLevel===1;
-const hasOutdoorExit=!dungeonLevel||dungeonLevel===4;
+const hasOutdoorEntrance=!dungeonLevel||window.RockyCoastPrison.hasEntrance;
+const hasOutdoorExit=!dungeonLevel||window.RockyCoastPrison.hasExit;
 if(query.get('szene')!=='gasse'||query.get('modus')!=='generator'||
    window.RockyCoastPrison?.isExterior){
  window.AlleyGenerator={enabled:false};return;
 }
 const input=query.has('seed')?Number(query.get('seed')):NaN;
 const defaultSeed=window.RockyCoastPrison?.enabled?
- window.RockyCoastPrison.levels[window.RockyCoastPrison.level-1].seed:4147;
+ window.RockyCoastPrison.layoutSeed:4147;
 const seed=Number.isSafeInteger(input)&&input>=0?input>>>0:defaultSeed;
 const key=(x,y)=>x+','+y;
 const edge=(a,b)=>[key(...a),key(...b)].sort().join('|');
@@ -227,7 +227,7 @@ if(!stairs){
  }
 }
 // On L4 the next stage is the exterior through a door, never a stair.
-if(dungeonLevel===4)stairs=null;
+if(dungeonLevel===4&&hasOutdoorExit)stairs=null;
 // Interior partitions are real structural walls, not randomly placed obstacles.
 // Each spans between two external boundaries; a one-cell doorway is cut into it.
 const innerWalls=[];
@@ -329,6 +329,17 @@ function renderFloor(ctx,{project,polygon,line}){
   const u=(a[0]+b[0]+1)/2,v=(a[1]+b[1]+1)/2,du=a[0]!==b[0]?.13:.4,dv=a[1]!==b[1]?.13:.4;
   polygon(ctx,[project(u-du,v-dv),project(u+du,v-dv),project(u+du,v+dv),project(u-du,v+dv)],
    '#ad9b8a87','#dcc8aa');
+ }
+ if(window.RockyCoastPrison?.enabled){
+  const signs=[];
+  if(window.RockyCoastPrison.storey>1)signs.push([14.5,5.5,'↓ Treppenhaus · E']);
+  if(hasOutdoorExit&&exit)signs.push([exit.x,exit.y,'Rocky Coast · Ausgang · E']);
+  for(const [u,v,label] of signs){
+   const [x,y]=project(u,v);
+   ctx.save();ctx.font='bold 13px system-ui';ctx.textAlign='center';
+   ctx.lineWidth=4;ctx.strokeStyle='#292533';ctx.strokeText(label,x,y);
+   ctx.fillStyle='#ffe1a6';ctx.fillText(label,x,y);ctx.restore();
+  }
  }
  if(stairs&&!window.AlleyVertical?.enabled){
   const [u,v,r,b]=stairs.area;

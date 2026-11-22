@@ -379,7 +379,7 @@
   }
   function structures(x,y){
    const result=[],heroY=y+footOffset;
-   const archDepth=archPanel.renderDepth;
+   const feet=unproject(x,y),archDepth=archPanel.renderDepth;
    if(enabled('standing')){
     for(const {home,image,renderDepth,hull} of housePanels){
      const area=home.area;
@@ -392,7 +392,8 @@
     }
     for(const wall of wallPanels){
      result.push({image:wall.image,depth:wall.renderDepth,
-      alpha:wallVisibility(wall,x,heroY)});
+      alpha:(wall.wall.axis==='u'&&feet[0]>=wall.area[2]||
+       wall.wall.axis==='v'&&feet[1]>=wall.area[3])?1:wallVisibility(wall,x,heroY)});
     }
    }
    if(enabled('foreground')){

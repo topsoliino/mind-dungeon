@@ -348,7 +348,7 @@ function createLayers({project,polygon,line,cacheObject}){
      project(start.x,start.y,prev+27)],'#8d99a9',2.8);
    }
   });
-  stairObjects.push({kind:'stair-tread',image,level:0,
+  stairObjects.push({kind:'stair-tread',image,level:0,surfaceZ:step.prev,
    depth:project(step.center.x,step.center.y,0)[1]+.25});
  }
  for(const landing of plan.landings.filter(l=>!l.top)){
@@ -357,7 +357,7 @@ function createLayers({project,polygon,line,cacheObject}){
   const image=cacheObject(boundsFor(landing.corners),HEIGHT+58,ctx=>
    drawPrism(ctx,landing.corners,landing.z,
     plan.cfg.open?Math.max(0,landing.z-13):0,plan.cfg.open));
-  stairObjects.push({kind:'stair-landing',image,level:0,
+  stairObjects.push({kind:'stair-landing',image,level:0,surfaceZ:landing.z,
    depth:project(center.x,center.y,0)[1]+.25});
  }
  for(const post of plan.posts){
@@ -453,7 +453,9 @@ function targetAlongStairs(part){
 // Both keyboard and click motion use one freeform, radius-safe navigation
 // surface rather than separate timing or single-centreline movement systems.
 const stairController=window.AlleyStairController.make({
- plan,state,nav:navigation,length:totalLength,speeds:STAIR_SPEED,curving
+ plan,state,nav:navigation,length:totalLength,speeds:STAIR_SPEED,curving,walkStairs,alongStairs:targetAlongStairs,speedOnStair,
+ canExit:(floor,x,y)=>floor?insideTop(x,y,14/48):
+  !blocksGround(x,y,14/48)&&!generator.blocked(x,y,14/48)
 });
 const boardStairs=(actor,up=true,target=null)=>stairController.board(actor,up,target);
 const aimStairs=part=>stairController.aim(part);

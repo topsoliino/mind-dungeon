@@ -29,6 +29,8 @@ a{color:#ffdc90}
   if(!playURL.searchParams.has('szene')&&!playURL.searchParams.has('boss-test')){
    playURL.searchParams.set('szene','gasse');
    playURL.searchParams.set('modus','generator');
+   playURL.searchParams.set('region','rocky-coast');
+   if(!playURL.searchParams.has('run'))playURL.searchParams.set('run',String(Date.now()>>>0));
    history.replaceState(history.state,'',playURL.href);
   }
   const url=new URL('./index.html',location.href);

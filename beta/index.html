@@ -316,7 +316,9 @@ if(rockyPrison){
   const value=JSON.parse(sessionStorage.getItem(rockyRunKey)||'null');
   sessionStorage.removeItem(rockyRunKey);
   if(value&&value.target===rockyPrison.level&&
-     Math.abs(value.sourceLevel-value.target)===1&&
+     (Math.abs(value.sourceLevel-value.target)===1||value.sourceLevel===value.target&&
+      Math.abs(value.sourceStorey-rockyPrison.storey)===1)&&
+     (value.destination==null||value.destination===rockyPrison.storey)&&
      Date.now()-value.savedAt<10*60*1000){
    Object.assign(save,value.hero);
    rockyContinuation=value;
@@ -2456,7 +2458,7 @@ function finishAlleyApproach(){
   const task=alleyVertical.state.pending;
   alleyVertical.state.pending=null;
   if(task.connector.kind==='stairs'){
-   if(!alleyVertical.boardStairs(player,task.up,task.part??null)){
+   if(!alleyVertical.boardStairs(player,task.up,task.part??(task.up?alleyVertical.plan.top:alleyVertical.plan.bottom))){
     tell('Treppenbeginn nicht erreichbar.');
    }else player.dir=task.up?task.connector.face:task.connector.face+Math.PI;
   }else{
@@ -2508,6 +2510,7 @@ function aimAlleyStairFloor(screen,groundOnly=false){
  const upperTarget=iso.toWorld(screen.x,screen.y,vertical.height);
  const onDeck=!groundOnly&&vertical.state.z>vertical.height*.84&&
   vertical.insideTop(upperTarget.x/48,upperTarget.y/48,0);
+ if(!onDeck&&!groundOnly&&vertical.state.z>vertical.height*.16)return false;
  const floor=onDeck?1:0,exit=floor?vertical.plan.top:vertical.plan.bottom;
  const target=onDeck?upperTarget:iso.toWorld(screen.x,screen.y,0);
  let route;
@@ -2585,23 +2588,23 @@ function approachAlleyVertical(){
  finishAlleyApproach();
  return true;
 }
-function goRockyFloor(target,entry=target<rockyPrison.level?'from-upper':'from-lower'){
+function goRockyFloor(target,entry=target<rockyPrison.level?'from-upper':'from-lower',destination){
  if(!rockyPrison)return false;
  const hero={};
  for(const field of rockyCarryFields)if(save[field]!==undefined)hero[field]=save[field];
  hero.hp=player.hp;
  try{
   sessionStorage.setItem(rockyRunKey,JSON.stringify({
-   sourceLevel:rockyPrison.level,target,entry,savedAt:Date.now(),
+   sourceLevel:rockyPrison.level,sourceStorey:rockyPrison.storey,destination,target,entry,savedAt:Date.now(),
    stamina:player.stamina,hero
   }));
  }catch(error){console.warn('Dungeon-Fortschritt konnte nicht übernommen werden:',error);}
- return rockyPrison.route(target,entry);
+ return rockyPrison.route(target,entry,destination);
 }
 function interact(){if(bossIntro()||modalType||paused||vault||isConsuming()||heroFallProgress()>=0||mdNavigatingToNewCharacter)return;
 if(alley){
  const passage=rockyPrison?.link(player,window.AlleyGenerator);
- if(passage){goRockyFloor(passage.target,passage.entry);return;}
+ if(passage){goRockyFloor(passage.target,passage.entry,passage.storey);return;}
  if(generationMode&&near?.kind!=='soul'){approachAlleyVertical();return;}
  if(near?.kind==='soul'&&!alleyHit&&!alleyChest){claimSoul(near.orb);return;}
  if(near?.kind==='iso-archive'){
@@ -2963,6 +2966,9 @@ function updateAlleyActions(dt){
    // On Rocky Coast floors 1-3, the actual physical stair top is the
    // gold/red threshold to the NEXT generated dungeon floor. Never move
    // stages at a decorative building door, from a ladder or from floor 0.
+   if(rockyPrison&&!rockyPrison.last&&result.floor===1){
+    goRockyFloor(rockyPrison.level,'landing',rockyPrison.storey+1);return;
+   }
    if(rockyPrison?.hasAscent&&result.floor===1){
     goRockyFloor(rockyPrison.level+1,'from-lower');return;
    }
@@ -2986,6 +2992,9 @@ function updateAlleyActions(dt){
    state.floor=task.up?1:0;state.z=state.floor?alleyVertical.height:0;
    const final=task.up?task.connector.top:task.connector.bottom;
    player.x=final.x*48;player.y=final.y*48;state.transition=null;
+   if(rockyPrison&&!rockyPrison.last&&task.up){
+    goRockyFloor(rockyPrison.level,'landing-'+task.connector.kind,rockyPrison.storey+1);return;
+   }
    if(rockyPrison?.hasAscent&&task.up&&task.connector.kind==='stairs'){
     goRockyFloor(rockyPrison.level+1,'from-lower');return;
    }
@@ -3115,7 +3124,7 @@ function update(dt){
  if(player.wallRecoil>wallRecoilSeconds-.13||authorityMode&&!authorityConnected){dx=0;dy=0;}
  player.moving=Boolean(alleyVertical?.state.stairRide&&player.moving);
  if(vault)advanceVault(dt);
- else if((dx||dy)&&!alleyVertical?.state.stairRide){
+ else if((dx||dy)&&!alleyVertical?.state.stairRide&&!alleyVertical?.state.transition){
   player.back=dy<0;player.moveAngle=Math.atan2(dy,dx);
   moveClock+=dt;
   if(moveClock>.09){moveClock=0;dust.push({x:player.x+rand(-7,7),y:player.y+14,life:.5});}
@@ -3366,7 +3375,7 @@ if(alley){
  $('#zone').textContent=alley.zoneAt(player);
  $('#progress').textContent=rockyPrison?
   ('Rocky Coast Prison · Dungeon-Ebene '+rockyPrison.level+'/5 · '+rockyPrison.levelTitle+
-   (rockyTerrain?' · Terrainhöhe & Normalmap':' · '+window.AlleyGenerator.metadata.rooms+' Räume · Seed '+window.AlleyGenerator.seed)):
+   (rockyTerrain?' · Terrainhöhe & Normalmap':' · Stockwerk '+rockyPrison.storey+'/'+rockyPrison.count+' · Seed '+window.AlleyGenerator.seed)):
   generationMode?
   'Greybox · '+window.AlleyGenerator.metadata.rooms+' Räume · '+(alleyVertical?.state.floor?'Obergeschoss':'Erdgeschoss')+
   ' · '+window.AlleyGenerator.metadata.stairTitle+' · Seed '+window.AlleyGenerator.seed:
@@ -3374,7 +3383,8 @@ if(alley){
   (alley.archiveUnlocked()?'Labor betreten und Versuch abschließen':'Archiv finden · Wissenssiegel öffnen');
  const passage=rockyPrison?.link(player,window.AlleyGenerator);
  const hint=passage?'E: '+passage.label:
-  rockyPrison?.hasAscent?'Goldrot: Treppe zum nächsten Dungeon-Level · Aufstieg: E oder Treppe begehen':
+  rockyPrison?.hasAscent?'Goldrote Treppe → '+rockyPrison.levels[rockyPrison.level].title:
+  rockyPrison&&!rockyTerrain?(rockyPrison.hasExit?'Ausgang → Rocky Coast · E am Tor':'Treppe oder Leiter → Stockwerk '+(rockyPrison.storey+1)+' · E am Einstieg'):
   rockyTerrain?'Rechtsklick: Gelände · WASD: bewegen · Hänge: Rutschen · Meer/Fluss: Todeszone · E: Gefängnistor':
   matchMedia('(pointer:coarse)').matches?
    'Stick bewegen · Welt antippen: Ziel setzen · ⚔ Angriff · ↷ Rolle · E Leiter/Treppe':
@@ -3388,7 +3398,7 @@ const placeName=lowerPassage?(lowerPassage.style==='bridge'?'Brückenunterführu
 $('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+([1,2].includes(layer)?layerNames[layer]+' · ':'')+placeName;$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${sanctuary&&inRest(player.x,player.y)?'Im Schutz des Leuchtfeuers':(authorityMode?authorityRemaining:enemies.length)+' Gegner auf dieser Ebene'}${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${world.outsideAt(player.x,player.y)?.light?' · '+({day:'Tag',evening:'Abend',night:'Nacht'}[world.outsideAt(player.x,player.y).light]):''}${world.hailAt(player.x,player.y)?' · Hagel (Frost +35 %)':world.waterAt(player.x,player.y)?' · Wasser (Blitz +35 %)':inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}${items.madnessBonus(save,save.equipment.rings)>1?' · Wahn '+Math.ceil(save.madnessUntil-save.playtime)+' s':''}`;
 }
 if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
-const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=alleyRoute?'Zur Truhe …':interactionHint(near);
+const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=alleyRoute?(alleyVertical?.state.pending?.connector.kind==='ladder'?'Zur Leiter …':alleyVertical?.state.pending?'Zur Treppe …':'Zur Truhe …'):interactionHint(near);
 prompt.hidden=!hint||Boolean(modalType);$('#mobileInteract').hidden=alley?Boolean(modalType):!hint||Boolean(modalType)||Boolean(alleyRoute);if(hint){
  const text=alleyRoute?hint:(controllerInUse?'[ A ] ':matchMedia('(pointer:coarse)').matches?'':'[ E ] ')+hint;
  if(prompt.textContent!==text)prompt.textContent=text;
@@ -3511,6 +3521,7 @@ function triggerRockyDeath(cause){
 }
 function moveActor(actor,dx,dy,knockback=false,origin){
  if(actor.fall)return false;
+ if(actor===player&&knockback&&(alleyVertical?.state.transition||alleyVertical?.state.stairRide))return false;
  const hero=actor===player,radius=actorRadius(actor);
  const flying=actor.type===EAGLE;
  const canFall=!flying&&(knockback||hero&&!hasRing('height'));
@@ -4343,7 +4354,7 @@ function positionWorldHUD({x:scrollX,y:scrollY,zoom}){
   }
  }
  const hud=$('#hud');
- const ground=alley?iso.toView(player.x,player.y):player;
+ const ground=alley?alleyActor():player;
  hud.style.left=screenX(ground.x);
  hud.style.top=screenY(ground.y-54);
  const bleed=$('#bleedMeter');
@@ -4995,7 +5006,7 @@ function alleySprites(actor){
     {originX:0,originY:0,depth:actor.renderDepth??actor.y,live});
   }else{
    const baked=guardian.spriteFallback||guardian;
-   const safeClip=clip.startsWith('climb-')?'walk':baked.atlas.clips[clip]?clip:'idle';
+   const safeClip=baked.atlas.clips[clip]?clip:clip.startsWith('climb-')?'walk':'idle';
    const parts=guardianArt.parts(baked,safeClip,progress,facing,actor.x,actor.y,armed);
    parts.forEach((part,i)=>sprites.push({...part,depth:(actor.renderDepth??actor.y)+i*.02,originX:0,originY:0}));
   }
@@ -5152,7 +5163,7 @@ function drawAlleyHudEffects(dot,bar){
  }
  if(generationMode&&alleyVertical?.enabled&&alleyVertical.state.floor===0){
   const top=alleyUpperExitMark();
-  if(top&&!rockyPrison){
+  if(top&&!rockyPrison?.hasAscent){
    const pulse=.70+.16*Math.sin(frame*3.4);
    dot(top.center.x,top.center.y,16,'#5fe6d6',pulse*.25);
    dot(top.center.x,top.center.y,7,'#8cfced',pulse);
@@ -6025,7 +6036,7 @@ function mdTitle(){
  mdButton('md-continue',()=>{if(save.completed){trophyMenu(true);return;}resumeGame();if(save.pendingLevels)setTimeout(()=>{if(!paused&&!modalType)levelMenu();},300);});
  mdButton('md-alley-test',()=>location.assign(location.pathname+'?szene=gasse'));
  mdButton('md-generator-test',()=>location.assign(location.pathname+'?szene=gasse&modus=generator&seed='+crypto.getRandomValues(new Uint32Array(1))[0]));
- mdButton('md-rocky-test',()=>location.assign(location.pathname+'?szene=gasse&modus=generator&region=rocky-coast&level=1'));
+ mdButton('md-rocky-test',()=>location.assign(location.pathname+'?szene=gasse&modus=generator&region=rocky-coast&level=1&run='+crypto.getRandomValues(new Uint32Array(1))[0]));
  mdButton('md-settings',mdSettings);mdButton('md-create',mdCreator);mdButton('md-coop',enterAuthorityLobby);mdButton('md-packs',()=>packMenu());
  mdButton('md-trophies',()=>trophyMenu());mdButton('md-journal',journal);mdButton('md-saves',mdSaves);mdButton('md-login',mdAccount);
 }

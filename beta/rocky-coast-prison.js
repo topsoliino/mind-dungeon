@@ -15,11 +15,22 @@
   region:'rocky-coast',dungeon:'rocky-coast-prison-dungeon',
   seed:(4147+7919*(i+1))>>>0
  })));
+ const runSeed=Number(q.get('run')??q.get('seed')??4147)>>>0;
+ function storeysAt(stage){
+  if(stage===5)return 1;
+  let hash=Math.imul(runSeed^Math.imul(stage,7919),0x45d9f3b);
+  hash=Math.imul(hash^(hash>>>16),0x45d9f3b);
+  return 2+((hash^(hash>>>16))>>>0)%3;
+ }
+ const count=storeysAt(level);
+ const storey=Math.max(1,Math.min(count,Math.trunc(Number(q.get('storey')))||1));
+ const layoutSeed=(runSeed+7919*level+104729*(storey-1))>>>0;
+ const last=storey===count;
  const title='Rocky Coast Prison';
  const portalDistance=84;
  const toPoint=portal=>({x:portal.x*48,y:portal.y*48});
- const hasEntrance=enabled&&level===1,hasExit=enabled&&level===4;
- const hasAscent=enabled&&level>=1&&level<=3;
+ const hasEntrance=enabled&&level===1&&storey===1,hasExit=enabled&&level===4&&last;
+ const hasAscent=enabled&&level>=1&&level<=3&&last;
  let routing=false;
  function ascentPosition(){
   if(!hasAscent)return null;
@@ -34,6 +45,18 @@
   if(level===5){
    const point={x:350,y:325},distance=Math.hypot(actor.x-point.x,actor.y-point.y);
    return distance<=portalDistance?{kind:'return',point,distance}:null;
+  }
+  const state=root.AlleyVertical?.state;
+  if(state?.pending||state?.transition||state?.stairRide)return null;
+  if(storey>1&&!state?.floor){
+   const point=toPoint({x:14.5,y:5.5}),distance=Math.hypot(actor.x-point.x,actor.y-point.y);
+   if(distance<41)return {kind:'down',point,distance};
+  }
+  if(!last&&state?.floor===1){
+   for(const c of root.AlleyVertical.connectors){
+    const point=toPoint(c.top),distance=Math.hypot(actor.x-point.x,actor.y-point.y);
+    if(distance<41)return {kind:'inside',point,distance};
+   }
   }
   const ascent=ascentPosition();
   if(ascent){
@@ -53,9 +76,14 @@
  function link(actor,generator){
   const portal=nearest(actor,generator);
   if(!portal)return null;
+  if(portal.kind==='down'||portal.kind==='inside'){
+   const up=portal.kind==='inside',destination=storey+(up?1:-1);
+   return {kind:portal.kind,target:level,storey:destination,entry:up?'landing':q.get('entry')==='landing-ladder'?'down-ladder':'down-stairs',
+    label:'Zum '+destination+'. Stockwerk'};
+  }
   if(portal.kind==='advance')return {
    kind:'stairs',target:level+1,entry:'from-lower',
-   label:'Goldene Treppe · Aufstieg zu Ebene '+(level+1)
+   label:'Goldene Treppe · Ebene '+(level+1)+' · '+levels[level].title
   };
   if(portal.kind==='exit')return {
    kind:'exit',target:5,entry:'from-lower',
@@ -67,29 +95,31 @@
   };
   return null;
  }
- function href(target,entry='from-lower'){
+ function href(target,entry='from-lower',destination=entry==='from-upper'?storeysAt(target):1){
   if(!Number.isInteger(target)||target<1||target>5)throw Error('Invalid dungeon level '+target);
   const url=new URL(root.location.href);
   url.searchParams.set('szene','gasse');
   url.searchParams.set('modus','generator');
   url.searchParams.set('region','rocky-coast');
   url.searchParams.set('level',String(target));
-  url.searchParams.set('seed',String(levels[target-1].seed));
+  url.searchParams.set('run',String(runSeed));
+  url.searchParams.set('storey',String(destination));
+  url.searchParams.delete('seed');
   url.searchParams.set('entry',entry);
   url.searchParams.delete('treppe');
   url.searchParams.set('v','rocky-floor-transition-2');
   return url.href;
  }
- function route(target,entry=target<level?'from-upper':'from-lower'){
-  if(!enabled||routing||target===level||!Number.isInteger(target)||target<1||target>5)return false;
+ function route(target,entry=target<level?'from-upper':'from-lower',destination){
+  if(!enabled||routing||(target===level&&Math.abs(destination-storey)!==1)||!Number.isInteger(target)||target<1||target>5)return false;
   routing=true;
-  root.location.assign(href(target,entry));
+  root.location.assign(href(target,entry,destination));
   return true;
  }
  const entry=q.get('entry');
  root.RockyCoastPrison={
   enabled,isExterior:enabled&&level===5,level,entry,levels,nearest,link,href,
-  hasEntrance,hasExit,hasAscent,title,
+  hasEntrance,hasExit,hasAscent,title,storey,count,last,layoutSeed,
   id:'rocky-coast-prison-dungeon',
   region:{id:'rocky-coast',biome:'temperate-grassland',topography:'hills',
    traversability:'open',features:['wide-river','ocean','cliff'],

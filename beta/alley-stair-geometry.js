@@ -157,7 +157,7 @@ function candidateAccessible(generator,model){
  // position. This check happens before creating renderer art.
  // Enclosed dungeon floors start within their own corridor. Using the
  // original outside alley would make every upstairs stair falsely unreachable.
- const enclosed=window.RockyCoastPrison?.enabled&&window.RockyCoastPrison.level>1;
+ const enclosed=window.RockyCoastPrison?.enabled&&!window.RockyCoastPrison.hasEntrance;
  const start=enclosed?[14.5,5.5]:window.AlleyStudyMap.logic.spawn,
   R=.29,goal=model.bottom;
  const [a,b,c,d]=model.region;
@@ -208,6 +208,7 @@ function select(generator,placeLadder){
   generator.seed%13===8?'switchback-closed':
   originalStyles[generator.seed%originalStyles.length],
   order=[preferred,...styles.filter(s=>s!==preferred)];
+ const doorCells=generator.doors.flatMap(d=>d.edges.flatMap(([a,b])=>[a,b]));
  const viable=[];
  for(const style of order){
   const template=buildTemplate(style),{w,h}=template.cfg;
@@ -233,7 +234,7 @@ function select(generator,placeLadder){
       wall.area[1]<model.region[3]-.23&&wall.area[3]>model.region[1]+.23))continue;
      if(generator.blocked(model.bottom.x,model.bottom.y,.27)||
         generator.blocked(model.top.x,model.top.y,.27))continue;
-     const doorCells=generator.doors.flatMap(d=>d.edges.flatMap(([a,b])=>[a,b]));
+     if(doorCells.some(([u,v])=>blocksCandidate(model,u+.5,v+.5,.42)))continue;
      const clearance=doorCells.length?Math.min(...doorCells.map(c=>
       Math.min(dist(model.bottom,vec(c[0]+.5,c[1]+.5)),
        dist(model.top,vec(c[0]+.5,c[1]+.5))))):4;

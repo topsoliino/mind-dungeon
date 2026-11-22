@@ -4,7 +4,7 @@
 const norm=(x,y)=>{const d=Math.hypot(x,y)||1;return {x:x/d,y:y/d};};
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
-function controller({plan,state,nav,length,speeds,curving}){
+function controller({plan,state,nav,length,speeds,curving,canExit,walkStairs,alongStairs,speedOnStair}){
  const H=plan.height,stairs=[...plan.steps,...plan.landings];
  const rise=H/plan.steps.length;
  const gates=[
@@ -25,7 +25,7 @@ function controller({plan,state,nav,length,speeds,curving}){
   const pressed=inputX*gate.out.x+inputY*gate.out.y>.13;
   const click=ride.exitTarget===gate.floor;
   const enteredHere=ride.entry===(gate.floor?'top':'bottom');
-  return corridor&&height&&(click||manual&&pressed)&&
+  return corridor&&height&&canExit(gate.floor,ride.x,ride.y)&&(click||manual&&pressed)&&
    (!enteredHere||ride.leftEntry||click||ride.traveled>.9);
  }
  function gate(up){return up?plan.bottom:plan.top;}
@@ -49,7 +49,7 @@ function controller({plan,state,nav,length,speeds,curving}){
   // the upper landing. XY proximity alone must NEVER board the wrong portal.
   // Ignore the opposite portal's very centre: spiral stairheads may
   // overlap in XY, but ordinary off-centre upper entry must remain possible.
-  if(!approach.allowed||distance(where,gate(!up))<.13)return false;
+  if(!approach.allowed)return false;
   const {frame,sideways}=approach,
    safeSide=clamp(sideways,-plan.width*.5+nav.RADIUS+.02,
     plan.width*.5-nav.RADIUS-.02);
@@ -70,6 +70,7 @@ function controller({plan,state,nav,length,speeds,curving}){
  function aim(target){
   const ride=state.stairRide;
   if(!ride)return false;
+  ride.guide=null;
   if(!target){ride.path=null;ride.target=null;ride.exitTarget=null;return true;}
   const piece=target.part??target;
   let point=target.point??piece.center;
@@ -82,6 +83,14 @@ function controller({plan,state,nav,length,speeds,curving}){
   if(!point)return false;
   const isHead=piece.top||distance(point,plan.top)<.08;
   const isFoot=distance(point,plan.bottom)<.08;
+  if(isHead||isFoot){
+   // XY-only shortcuts can connect the two ends of a spiral across empty air.
+   // Follow the same ordered, elevated flights and landings as the artwork.
+   const along=alongStairs({x:ride.x,y:ride.y,z:state.z});
+   ride.guide={along,goal:isHead?length:0};
+   ride.path=null;ride.target=null;ride.exitTarget=isHead?1:0;
+   return true;
+  }
   if(isHead)point=plan.top;
   if(isFoot)point=plan.bottom;
   const goal=nav.legalTarget(point,piece.corners?piece:null);
@@ -102,7 +111,32 @@ function controller({plan,state,nav,length,speeds,curving}){
   const ride=state.stairRide;
   if(!ride)return false;
   const manual=Math.hypot(dx,dy)>.12;
-  if(manual){ride.path=null;ride.target=null;ride.exitTarget=null;}
+  if(manual){ride.guide=null;ride.path=null;ride.target=null;ride.exitTarget=null;}
+  else if(ride.guide){
+   const guide=ride.guide,sign=Math.sign(guide.goal-guide.along);
+   const stride=worldSpeed/48*Math.min(dt,.05)*speedOnStair(guide.along,sign);
+   const anchor=walkStairs(guide.along/length);
+   const lateral=distance(ride,anchor);
+   let next=anchor;
+   if(lateral>stride&&lateral>.01){
+    next={x:ride.x+(anchor.x-ride.x)*stride/lateral,
+     y:ride.y+(anchor.y-ride.y)*stride/lateral,z:state.z};
+   }else{
+    guide.along+=sign*Math.min(Math.abs(guide.goal-guide.along),Math.max(0,stride-lateral));
+    next=walkStairs(guide.along/length);
+   }
+   const dx=next.x-ride.x,dy=next.y-ride.y;
+   actor.moving=Math.hypot(dx,dy)>.00001;
+   if(actor.moving)actor.moveAngle=actor.dir=Math.atan2(dy,dx);
+   ride.x=next.x;ride.y=next.y;ride.s=guide.along;state.z=next.z;
+   actor.x=ride.x*48;actor.y=ride.y*48;
+   if(guide.along===guide.goal&&distance(ride,guide.goal?plan.top:plan.bottom)<.01){
+    state.floor=ride.exitTarget;state.z=state.floor?H:0;
+    state.stairRide=null;actor.moving=false;
+    return {completed:true,floor:state.floor};
+   }
+   return {completed:false,floor:state.floor,z:state.z};
+  }
   else if(ride.path){
    while(ride.path.length&&distance(ride.path[0],ride)<.065)ride.path.shift();
    if(!ride.path.length){ride.path=null;ride.target=null;}
@@ -133,7 +167,8 @@ function controller({plan,state,nav,length,speeds,curving}){
    let step=(Math.max(0,worldSpeed)/48)*Math.min(.05,dt)*factor;
    if(!manual&&ride.path)step=Math.min(step,distance(ride.path[0],ride));
    const next=nav.move(old,dx*step,dy*step);
-   ride.x=next.x;ride.y=next.y;
+   const supported=nav.surface(next,state.z);
+   if(supported&&Math.abs(supported.z-state.z)<=rise*1.5){ride.x=next.x;ride.y=next.y;}
   }
   const traveled=distance(ride,old);
   ride.traveled+=traveled;

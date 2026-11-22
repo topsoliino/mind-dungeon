@@ -8,7 +8,7 @@ function mount({generator:g,player,iso}){
   width:'306px',padding:'11px',borderRadius:'9px',background:'#171c2bec',
   border:'1px solid #a2a8b18c',color:'#e8e3d9',font:'12px/1.4 system-ui,sans-serif',
   boxShadow:'0 8px 28px #050915aa'});
- const grammar=window.AlleyStairGeometry;
+ const grammar=window.AlleyStairGeometry,prison=window.RockyCoastPrison;
  const stairOptions=(grammar?.styles||[]).map(id=>'<option value="'+id+'">'+
   grammar.templates[id].title+'</option>').join('');
  panel.innerHTML=
@@ -120,6 +120,7 @@ function mount({generator:g,player,iso}){
  const colors=['#687182','#617d87','#827487','#707e75'];
  const vertical=window.AlleyVertical;
  function drawBackground(){
+  if(prison?.enabled)title.textContent='Stockwerk '+prison.storey+' / '+prison.count;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   for(const [u,v,r,b] of alley)poly(quad(u,v,r,b),'#495461','#8e9da3');
   for(const room of g.rooms.slice(1))
@@ -157,7 +158,7 @@ function mount({generator:g,player,iso}){
     poly(land.corners.map(p=>xy(p.x,p.y)),'#8fa4b0','#d2e8f4');
    const top=xy(vertical.plan.top.x,vertical.plan.top.y);
    ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillStyle='#fcf1cb';
-   ctx.fillText('OG',top[0],top[1]+5);
+   ctx.fillText(prison?.hasAscent?'Ebene '+(prison.level+1):prison?.enabled?'Stock '+(prison.storey+1):'OG',top[0],top[1]+5);
    if(vertical.plan.kind==='switchback'){
     const landing=vertical.plan.landings.find(l=>!l.top);
     if(landing){
@@ -178,7 +179,7 @@ function mount({generator:g,player,iso}){
    ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#211a20';
    ctx.fillText('L',p[0],p[1]+3.7);
    panel.querySelector('#iso-gen-level').textContent=
-    'GREYBOX · '+(vertical.state.floor?'OBERGESCHOSS':'ERDGESCHOSS');
+    prison?.enabled?'Stockwerk '+Math.min(prison.count,prison.storey+vertical.state.floor)+' / '+prison.count:'GREYBOX · '+(vertical.state.floor?'OBERGESCHOSS':'ERDGESCHOSS');
   }
  }
  let cachedFloor=null,lastX=null,lastY=null;
