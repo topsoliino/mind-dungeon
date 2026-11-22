@@ -3104,6 +3104,10 @@ function update(dt){
    finishAlleyApproach();
   }
  }
+ if(rockyTerrain&&!paused){
+  rockyTerrain.slide(player,dt,(sx,sy)=>moveActor(player,sx,sy),cause=>
+   triggerRockyDeath(cause==='river'?'Fluss':cause==='ocean'?'Meer':'Klippensturz'));
+ }
  if(authorityMode){
   authorityInput(inputX,inputY,step);
   if(!vault&&authorityOwn){
@@ -3429,6 +3433,14 @@ function clearsActor(actor,x,y,other){
  const ox=Math.abs(actor.x-other.x),oy=Math.abs(actor.y-other.y);
  return ox<range&&oy<range&&dx>=ox&&dy>=oy&&(dx>ox||dy>oy);
 }
+function triggerRockyDeath(cause){
+ if(!rockyTerrain||player.fall||paused)return;
+ player.fall={remaining:fallSeconds,origin:cause,heading:player.dir};
+ player.dash=0;player.attack=0;player.moving=false;
+ alleyMove=alleyRoute=alleyMarker=null;
+ clearHeldAttack();
+ soundWorld('hero_fall',player,{priority:4,gain:.78});
+}
 function moveActor(actor,dx,dy,knockback=false,origin){
  if(actor.fall)return false;
  const hero=actor===player,radius=actorRadius(actor);
@@ -3437,6 +3449,10 @@ function moveActor(actor,dx,dy,knockback=false,origin){
  const safe={x:actor.x,y:actor.y};
  const step=(x,y)=>{
   if(alley){
+   if(hero&&rockyTerrain){
+    const hazard=rockyTerrain.dangerAt(x,y);
+    if(hazard){triggerRockyDeath(hazard==='river'?'Fluss':'Meer');return;}
+   }
    const floor=hero?(alleyVertical?.state.floor??0):(actor.alleyFloor??0);
    // Collide each actor with its OWN storey, not the hero's current level.
    if(alley.walkableOnFloor(x,y,floor,radius)&&
