@@ -5440,14 +5440,14 @@ function realSimulationDelta(){
  const elapsed=simulationWallClock?
   Math.max(0,(now-simulationWallClock)/1000):1/60;
  simulationWallClock=now;
- return Math.min(.22,elapsed);
+ return Math.min(.50,elapsed);
 }
 function advanceFrame(dt){
  if(paused)return;
  const start=performance.now();
  try{
-  let remaining=Math.min(.22,Math.max(0,dt));
-  for(let step=0;step<7&&remaining>.000001;step++){
+  let remaining=Math.min(.50,Math.max(0,dt));
+  for(let step=0;step<15&&remaining>.000001;step++){
    const elapsed=Math.min(.035,remaining);
    update(elapsed);
    remaining-=elapsed;
@@ -5466,7 +5466,7 @@ function advanceFrame(dt){
 }
 function loop(t){
  requestAnimationFrame(loop);
- const elapsed=Math.min(.22,(t-last)/1000||.016);
+ const elapsed=Math.min(.50,(t-last)/1000||.016);
  const dt=Math.min(.05,elapsed);last=t;
  try{pollController(t);}
  catch(error){pauseOnFrameError('Controller-Eingabe',error);}
