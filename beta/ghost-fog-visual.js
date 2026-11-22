@@ -3,10 +3,40 @@
 (function(root){
 'use strict';
 const SIZE=15,CELL=18;
+// The runtime sprite is rendered from the actual Blender prop when its asset
+// has been published. The procedural preview is deliberately kept visible
+// on slow networks and when the art CDN is unavailable.
+function createPot(){
+ const canvas=document.createElement('canvas');canvas.width=64;canvas.height=96;
+ const c=canvas.getContext('2d');
+ c.shadowColor='#111521';c.shadowBlur=8;c.shadowOffsetY=5;
+ c.fillStyle='#292f3b';c.beginPath();c.ellipse(32,83,15,5,0,0,Math.PI*2);c.fill();
+ c.shadowBlur=0;c.shadowOffsetY=0;
+ const body=c.createLinearGradient(15,0,50,0);
+ body.addColorStop(0,'#20252d');body.addColorStop(.19,'#697582');body.addColorStop(.5,'#a4afb7');
+ body.addColorStop(.73,'#5f6a77');body.addColorStop(1,'#252b36');
+ c.fillStyle=body;c.strokeStyle='#171e29';c.lineWidth=2;
+ c.beginPath();c.moveTo(24,20);c.bezierCurveTo(22,31,15,37,17,57);
+ c.bezierCurveTo(17,79,25,82,32,83);c.bezierCurveTo(45,82,49,73,47,55);
+ c.bezierCurveTo(49,37,42,29,40,20);c.closePath();c.fill();c.stroke();
+ c.fillStyle='#343b49';c.fillRect(23,14,18,8);
+ c.strokeStyle='#b9c5ce';c.lineWidth=2;c.beginPath();c.ellipse(32,16,11,4,0,0,Math.PI*2);c.stroke();
+ c.strokeStyle='#3c4858';c.lineWidth=3;c.beginPath();c.ellipse(32,52,15,10,0,0,Math.PI*2);c.stroke();
+ c.strokeStyle='#a6bdc0';c.lineWidth=1.4;c.beginPath();c.moveTo(29,47);c.lineTo(33,56);c.lineTo(38,46);c.stroke();
+ c.fillStyle='#b6d2c8';c.beginPath();c.ellipse(32,15,7,2,0,0,Math.PI*2);c.fill();
+ return canvas;
+}
 function create(){
  const canvas=document.createElement('canvas');canvas.width=canvas.height=96;
  const result=document.createElement('canvas');result.width=result.height=96;
  const ctx=result.getContext('2d');
+ const vessel=createPot();let vesselRevision=0;
+ const asset=new Image();
+ asset.onload=()=>{
+  const c=vessel.getContext('2d');c.clearRect(0,0,64,96);
+  c.drawImage(asset,0,0,64,96);vesselRevision++;
+ };
+ asset.src='beta/art/props/ghost-vessel.png?v=1';
  let gl=null,program=null,uniformT=null,position=null,lastFrame=-1;
  try{
   gl=canvas.getContext('webgl',{alpha:true,preserveDrawingBuffer:true,
@@ -48,7 +78,7 @@ function create(){
   }
  }catch(error){console.warn('Soul fog shader fallback:',error);gl=null;}
  function frame(time){
-  const stamp=Math.floor(time*13);
+  const stamp=Math.floor(time*9);
   if(lastFrame===stamp)return false;
   lastFrame=stamp;
   ctx.clearRect(0,0,96,96);
@@ -65,7 +95,7 @@ function create(){
   }
   return true;
  }
- function cells(stones,visible,view,limit=170){
+ function cells(stones,visible,view,limit=90){
   const result=[];
   for(const v of stones??[]){
    if(!v.landed)continue;
@@ -89,19 +119,16 @@ function create(){
   for(const v of stones??[]){
    if(!visible(v.x,v.y))continue;
    const p=view(v.x,v.y,v.z);
-   ctx.save();ctx.translate(p.x,p.y);
-   ctx.fillStyle='#3f4654';ctx.strokeStyle='#9ca0a7';ctx.lineWidth=2;
-   ctx.beginPath();ctx.ellipse(0,-5,9,17,.24,0,Math.PI*2);
-   ctx.fill();ctx.stroke();ctx.restore();
+   ctx.drawImage(vessel,p.x-26,p.y-67,52,78);
   }
-  const fields=cells(stones,visible,view,170);
+  const fields=cells(stones,visible,view,90);
   for(const f of fields){
    ctx.globalAlpha=f.alpha;
    ctx.drawImage(result,f.x-f.size/2,f.y-f.size/2,f.size,f.size);
   }
   ctx.globalAlpha=1;
  }
- return {canvas:result,frame,cells,draw,gpu:Boolean(gl)};
+ return {canvas:result,vessel,get vesselRevision(){return vesselRevision;},frame,cells,draw,gpu:Boolean(gl)};
 }
 root.GhostFogVisual={create};
 })(typeof window==='undefined'?globalThis:window);
