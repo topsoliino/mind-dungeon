@@ -79,6 +79,7 @@ let alleySneaking=false,alleyGaitMode='run',alleyItemWalkUntil=0;
 const alleyVertical=alley?.vertical?.enabled?alley.vertical:null;
 const rockyPrison=window.RockyCoastPrison?.enabled?window.RockyCoastPrison:null;
 const rockyTerrain=alley?.exterior?alley:null;
+let rockyDebug=null;
 const alleyEnemyPursuit=generationMode&&alleyVertical?
  window.AlleyEnemyPursuit.create(alleyVertical,alley):null;
 const enemySameFloor=e=>!alleyEnemyPursuit||
@@ -5383,6 +5384,7 @@ class DungeonScene extends Phaser.Scene{
     this.alleyEffects.fillStyle(0xca846a).fillRect(x-15,y,30*Math.max(0,health),4);
    });
    this.renderGhostVisuals(true);
+   rockyDebug?.draw(performance.now());
    positionWorldHUD(view);
    renderStats.fps=Math.round(this.game.loop.actualFps);
    monitorRenderQuality();
@@ -6809,13 +6811,15 @@ function finishLoading(){
    tell('Handy: Stick bewegen · ⚔ Angriff · ↷ Rolle · E Leiter/Treppe · Welt antippen zum Laufen');
  }
  if(generationMode)window.AlleyGeneratorUI?.mount({generator:window.AlleyGenerator,player:()=>player,iso});
+ if(rockyTerrain&&!rockyDebug)rockyDebug=rockyTerrain.mountDebug(()=>player);
  if(rockyPrison){
   const label=document.createElement('div');label.id='rocky-level-status';
   label.style.cssText='position:fixed;top:12px;left:12px;z-index:18;background:#152028ed;border:1px solid #75858d;color:#d3e2e4;border-radius:7px;padding:7px 10px;font:12px system-ui';
   label.textContent='ROCKY COAST PRISON · Ebene '+rockyPrison.level+'/5 · '+rockyPrison.title;
   document.body.append(label);
  }
- if(alley)tell(generationMode?'Generator-Test · 10 verbundene Räume · Seed '+window.AlleyGenerator.seed:
+ if(alley)tell(rockyPrison?'Rocky Coast Prison Dungeon · Ebene '+rockyPrison.level+'/5 · '+rockyPrison.title:
+  generationMode?'Generator-Test · 10 verbundene Räume · Seed '+window.AlleyGenerator.seed:
   guardian?'Etappe 4a · Hinter dem Torbogen führt der Weg zum Archiv und ins Behavioristen-Labor.':'Etappe 4a · Wächtergrafik konnte nicht geladen werden.');
  if(bossTest)tell('Boss-Test · Fallgitter im Laborflur links ist offen');
  if(coopRoom)connectCoop();
