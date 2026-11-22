@@ -65,10 +65,12 @@ for asset,settings_path,variant,clips in PACKAGES:
             for name in names), (asset,"Deleted skeleton armor returned")
     else:
         assert manifest["displaySize"]<=84, (asset,"Rat must render smaller")
-        assert {"Root","Chest","Neck","Head","FrontPaw.L","FrontPaw.R",
-                "HindPaw.L","HindPaw.R","Tail0","Tail5"} <=
-               {n.get("name","") for n in gltf.get("nodes",[])}, (
-                   asset,"New Guardian quadruped IK rig missing animated bone chain")
+        expected_bones={"Root","Chest","Neck","Head","FrontPaw.L","FrontPaw.R",
+                        "HindPaw.L","HindPaw.R","Tail0","Tail5"}
+        present_bones={n.get("name","") for n in gltf.get("nodes",[])}
+        assert expected_bones <= present_bones, (
+            asset,"New Guardian quadruped IK rig missing "+
+            str(expected_bones-present_bones))
         assert not any(
             float(m.get("pbrMetallicRoughness",{}).get("metallicFactor",0))>.01
             for m in gltf["materials"]), (asset,"Rat still has metallic equipment")
