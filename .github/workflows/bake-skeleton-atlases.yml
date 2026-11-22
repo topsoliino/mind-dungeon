@@ -1,0 +1,74 @@
+name: Publish genuine Blender skeleton animation atlases
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bake-skeleton-atlases.yml
+      - tools/bake-skeleton-atlases.cjs
+      - tools/bake-skeleton-atlases.html
+      - beta/dungeon-enemy-rig.js
+      - beta/art/skeleton/skeleton-live.json
+      - beta/art/skeleton/skeleton-*-rig.glb.gz
+  workflow_run:
+    workflows: [Fast export Guardian-style skeleton and rat rigs]
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: genuine-blender-skeleton-atlases
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Chromium for genuine skinned Blender render
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Bake 32 facing angles for every skeleton Blender action
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/mind-atlas-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" || true' EXIT
+          node tools/bake-skeleton-atlases.cjs
+      - name: Publish generated WebP atlases only if source has not changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          original=$(git rev-parse HEAD)
+          temp=$(mktemp -d)
+          trap 'rm -rf "$temp"' EXIT
+          cp beta/art/skeleton/atlas-*.webp beta/art/skeleton/skeleton-atlas.json "$temp/"
+          for retry in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git diff --quiet "$original" origin/main -- \
+               beta/art/skeleton/skeleton-live.json \
+               beta/art/skeleton/skeleton-sabre-rig.glb.gz \
+               beta/art/skeleton/skeleton-bow-rig.glb.gz \
+               tools/bake-skeleton-atlases.cjs beta/dungeon-enemy-rig.js; then
+              echo "A newer Blender source or atlas baker exists; skip outdated assets."
+              exit 0
+            fi
+            git reset --hard origin/main
+            cp "$temp/"atlas-*.webp beta/art/skeleton/
+            cp "$temp/skeleton-atlas.json" beta/art/skeleton/
+            git add beta/art/skeleton/atlas-*.webp beta/art/skeleton/skeleton-atlas.json
+            if git diff --cached --quiet; then exit 0; fi
+            git commit -m "Blender: publish real 32-direction skeleton action atlases"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          echo "Unable to publish without racing newer commits."
+          exit 1
