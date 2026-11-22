@@ -65,7 +65,7 @@ for(const marker of [
  "touch.reset();",
  "const stick=touch.read();",
  "const intensity=Math.min(1,Math.hypot(x,y));",
- "skeletonArt.sprites",
+ "enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)",
 ]){
  assert(html.includes(marker),'missing active mobile wiring: '+marker);
 }
