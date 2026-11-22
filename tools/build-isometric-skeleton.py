@@ -3,6 +3,7 @@ Build a Guardian-style undead warrior rig and 32-view fallback animation atlases
 Each sheet has animation time along X and camera-relative facing along Y.
 """
 import math
+import os
 import importlib.util
 from pathlib import Path
 import bpy
@@ -572,51 +573,54 @@ rig.animation_data.action=bpy.data.actions['idle'];scene.frame_set(1)
 meshes['bow'].hide_viewport=True;meshes['bow'].hide_render=True
 bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);bpy.context.view_layer.objects.active=rig
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'skeleton.blend'),compress=True)
-# Batch evaluated Blender geometry into an orthographic contact sheet so one
-# Cycles render covers every facing and sample of a clip.
-scene.render.engine='CYCLES';scene.cycles.samples=26;scene.cycles.use_denoising=False  # GitHub Blender build lacks OpenImageDenoiser
-scene.render.image_settings.file_format='WEBP';scene.render.image_settings.color_mode='RGBA'
-scene.render.image_settings.quality=96
-scene.render.film_transparent=True;scene.render.resolution_percentage=100
-scene.world=bpy.data.worlds.new('Ambient skylight');scene.world.use_nodes=True
-scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.55,.60,.66,1)
-scene.world.node_tree.nodes['Background'].inputs[1].default_value=.49
-camdata=bpy.data.cameras.new('Atlas orthographic');cam=bpy.data.objects.new('Atlas camera',camdata);scene.collection.objects.link(cam);scene.camera=cam
-camdata.type='ORTHO';camdata.clip_end=300;cam.location=(0,0,20)
-for name,color,power,direction in [('Key', (1,.88,.76),2.7,(.4,-.7,1)),('Rim',(.56,.72,1),1.15,(-1,.6,.4))]:
-    light=bpy.data.lights.new(name,'SUN');light.energy=power;light.color=color;light.angle=.4
-    obj=bpy.data.objects.new(name,light);scene.collection.objects.link(obj)
-    obj.rotation_euler=(-V(direction)).to_track_quat('-Z','Y').to_euler()
-for obj in meshes.values():obj.hide_render=True;obj.hide_viewport=False
-mats=list(dict.fromkeys(m for ob in meshes.values() for m in ob.data.materials))
-pitch=math.atan(1/math.sqrt(2));view=rotation(pitch-pi/2);cell=3.35
-for kit in ('sabre','bow'):
-    for clip in ('idle','run','shoot' if kit=='bow' else 'strike','death'):
-        count=clips[clip];verts=[];faces=[];indices=[]
-        rig.animation_data.action=bpy.data.actions[clip]
-        for i in range(count):
-            scene.frame_set(1+round(48*i/(count if clip in ('idle','run') else count-1)))
-            deps=bpy.context.evaluated_depsgraph_get()
-            for obj in (meshes['both'],meshes[kit]):
-                ev=obj.evaluated_get(deps);mesh=ev.to_mesh()
-                coords=[v.co.copy() for v in mesh.vertices]
-                polys=[tuple(f.vertices) for f in mesh.polygons]
-                ids=[mats.index(mesh.materials[f.material_index].original) for f in mesh.polygons]
-                for row in range(FACINGS):
-                    # Row zero faces the camera. A quarter-turn is FACINGS/4.
-                    # Every row is a different evaluated 3D model, never a
-                    # flat 2D sprite rotation.
-                    transform=view@rotation(z=row*2*pi/FACINGS)
-                    origin=V(((i+.5-count/2)*cell,(FACINGS/2-.5-row)*cell-.265*cell,0))
-                    offset=len(verts);verts.extend(transform@v+origin for v in coords)
-                    faces.extend(tuple(offset+j for j in poly) for poly in polys);indices.extend(ids)
-                ev.to_mesh_clear()
-        data=bpy.data.meshes.new('Pose batch');data.from_pydata(verts,[],faces)
-        for m in mats:data.materials.append(m)
-        data.polygons.foreach_set('material_index',indices)
-        batch=bpy.data.objects.new('Pose batch',data);scene.collection.objects.link(batch)
-        scene.render.resolution_x=count*PIXELS;scene.render.resolution_y=FACINGS*PIXELS
-        camdata.ortho_scale=max(count,FACINGS)*cell
-        scene.render.filepath=str(out/(kit+'-'+clip+'.webp'))
-        bpy.ops.render.render(write_still=True)
-        bpy.data.objects.remove(batch,do_unlink=True);bpy.data.meshes.remove(data)
+# CI can publish new live GLBs without waiting for the expensive Cycles
+# 32-facing fallback atlases. Default keeps full atlas generation unchanged.
+if os.environ.get("MIND_DUNGEON_RIG_ONLY") != "1":
+    # Batch evaluated Blender geometry into an orthographic contact sheet so one
+    # Cycles render covers every facing and sample of a clip.
+    scene.render.engine='CYCLES';scene.cycles.samples=26;scene.cycles.use_denoising=False  # GitHub Blender build lacks OpenImageDenoiser
+    scene.render.image_settings.file_format='WEBP';scene.render.image_settings.color_mode='RGBA'
+    scene.render.image_settings.quality=96
+    scene.render.film_transparent=True;scene.render.resolution_percentage=100
+    scene.world=bpy.data.worlds.new('Ambient skylight');scene.world.use_nodes=True
+    scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.55,.60,.66,1)
+    scene.world.node_tree.nodes['Background'].inputs[1].default_value=.49
+    camdata=bpy.data.cameras.new('Atlas orthographic');cam=bpy.data.objects.new('Atlas camera',camdata);scene.collection.objects.link(cam);scene.camera=cam
+    camdata.type='ORTHO';camdata.clip_end=300;cam.location=(0,0,20)
+    for name,color,power,direction in [('Key', (1,.88,.76),2.7,(.4,-.7,1)),('Rim',(.56,.72,1),1.15,(-1,.6,.4))]:
+        light=bpy.data.lights.new(name,'SUN');light.energy=power;light.color=color;light.angle=.4
+        obj=bpy.data.objects.new(name,light);scene.collection.objects.link(obj)
+        obj.rotation_euler=(-V(direction)).to_track_quat('-Z','Y').to_euler()
+    for obj in meshes.values():obj.hide_render=True;obj.hide_viewport=False
+    mats=list(dict.fromkeys(m for ob in meshes.values() for m in ob.data.materials))
+    pitch=math.atan(1/math.sqrt(2));view=rotation(pitch-pi/2);cell=3.35
+    for kit in ('sabre','bow'):
+        for clip in ('idle','run','shoot' if kit=='bow' else 'strike','death'):
+            count=clips[clip];verts=[];faces=[];indices=[]
+            rig.animation_data.action=bpy.data.actions[clip]
+            for i in range(count):
+                scene.frame_set(1+round(48*i/(count if clip in ('idle','run') else count-1)))
+                deps=bpy.context.evaluated_depsgraph_get()
+                for obj in (meshes['both'],meshes[kit]):
+                    ev=obj.evaluated_get(deps);mesh=ev.to_mesh()
+                    coords=[v.co.copy() for v in mesh.vertices]
+                    polys=[tuple(f.vertices) for f in mesh.polygons]
+                    ids=[mats.index(mesh.materials[f.material_index].original) for f in mesh.polygons]
+                    for row in range(FACINGS):
+                        # Row zero faces the camera. A quarter-turn is FACINGS/4.
+                        # Every row is a different evaluated 3D model, never a
+                        # flat 2D sprite rotation.
+                        transform=view@rotation(z=row*2*pi/FACINGS)
+                        origin=V(((i+.5-count/2)*cell,(FACINGS/2-.5-row)*cell-.265*cell,0))
+                        offset=len(verts);verts.extend(transform@v+origin for v in coords)
+                        faces.extend(tuple(offset+j for j in poly) for poly in polys);indices.extend(ids)
+                    ev.to_mesh_clear()
+            data=bpy.data.meshes.new('Pose batch');data.from_pydata(verts,[],faces)
+            for m in mats:data.materials.append(m)
+            data.polygons.foreach_set('material_index',indices)
+            batch=bpy.data.objects.new('Pose batch',data);scene.collection.objects.link(batch)
+            scene.render.resolution_x=count*PIXELS;scene.render.resolution_y=FACINGS*PIXELS
+            camdata.ortho_scale=max(count,FACINGS)*cell
+            scene.render.filepath=str(out/(kit+'-'+clip+'.webp'))
+            bpy.ops.render.render(write_still=True)
+            bpy.data.objects.remove(batch,do_unlink=True);bpy.data.meshes.remove(data)

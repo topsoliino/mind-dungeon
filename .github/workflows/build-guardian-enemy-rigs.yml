@@ -1,0 +1,62 @@
+name: Fast export Guardian-style skeleton and rat rigs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/build-guardian-enemy-rigs.yml
+      - tools/guardian-style.py
+      - tools/build-isometric-skeleton.py
+      - tools/build-isometric-rat.py
+      - tools/export-enemy-rigs.py
+      - tools/check-live-enemy-rigs.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: guardian-style-fast-rigs
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate source renderer and install Blender
+        run: |
+          node tools/check-live-enemy-renderer.cjs
+          sudo apt-get update
+          sudo apt-get install -y blender python3-numpy
+      - name: Build actual sculpted skeleton and rat rigs without atlas batching
+        env:
+          MIND_DUNGEON_RIG_ONLY: "1"
+        run: |
+          blender -b --factory-startup -t 4 --python-exit-code 1 -P tools/build-isometric-skeleton.py
+          blender -b --factory-startup -t 4 --python-exit-code 1 -P tools/build-isometric-rat.py
+      - name: Export and verify all three full skinned GLBs
+        run: |
+          PYTHONPATH=/usr/lib/python3/dist-packages blender -b --factory-startup -t 4 --python-exit-code 1 -P tools/export-enemy-rigs.py
+          python3 tools/check-live-enemy-rigs.py
+      - name: Publish canonical Blender sources and playable live GLBs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add beta/art/skeleton/skeleton.blend beta/art/rat/rat.blend
+          git add beta/art/skeleton/skeleton-*-rig.glb.gz beta/art/skeleton/skeleton-live.json
+          git add beta/art/rat/rat-live-rig.glb.gz beta/art/rat/rat-live.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Blender: publish Guardian-forged enemy geometry and canonical 3D rigs"
+            for attempt in 1 2 3 4 5 6; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then exit 0; fi
+              sleep 2
+            done
+            echo "Unable to publish fresh 3D rigs" >&2
+            exit 1
+          fi

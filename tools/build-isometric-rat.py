@@ -8,6 +8,7 @@ Each WebP sheet has animation frames on X and 32 directions on Y.
 from pathlib import Path
 import importlib.util
 import math
+import os
 import bpy
 from mathutils import Vector, Euler, Matrix
 
@@ -524,83 +525,86 @@ rig.select_set(True)
 bpy.context.view_layer.objects.active=rig
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/"rat.blend"),compress=True)
 
-# Pose batching: 1 render per animation, not 32 x frames individual renders.
-scene.render.engine="CYCLES"
-scene.cycles.samples=18
-scene.cycles.use_denoising=False  # GitHub Blender build lacks OpenImageDenoiser
-scene.render.film_transparent=True
-scene.render.resolution_percentage=100
-scene.render.image_settings.file_format="WEBP"
-scene.render.image_settings.color_mode="RGBA"
-scene.render.image_settings.quality=96
-scene.world=bpy.data.worlds.new("Rat studio ambient")
-scene.world.use_nodes=True
-scene.world.node_tree.nodes["Background"].inputs[0].default_value=(.64,.66,.73,1)
-scene.world.node_tree.nodes["Background"].inputs[1].default_value=.51
-camera_data=bpy.data.cameras.new("Atlas orthographic")
-camera=bpy.data.objects.new("Atlas camera",camera_data)
-scene.collection.objects.link(camera)
-camera_data.type="ORTHO"
-camera_data.clip_end=300
-camera.location=(0,0,45)
-scene.camera=camera
-for name, color, power, direction in [
-    ("Warm key",(1,.84,.69),2.8,(.35,-.65,1)),
-    ("Blue rim",(.55,.70,1),1.3,(-.8,.5,.8))
-]:
-    light=bpy.data.lights.new(name,"SUN")
-    light.energy=power
-    light.color=color
-    light.angle=.4
-    obj=bpy.data.objects.new(name,light)
-    scene.collection.objects.link(obj)
-    obj.rotation_euler=(-V(direction)).to_track_quat("-Z","Y").to_euler()
+# CI can publish new live GLBs without waiting for the expensive Cycles
+# 32-facing fallback atlases. Default keeps full atlas generation unchanged.
+if os.environ.get("MIND_DUNGEON_RIG_ONLY") != "1":
+    # Pose batching: 1 render per animation, not 32 x frames individual renders.
+    scene.render.engine="CYCLES"
+    scene.cycles.samples=18
+    scene.cycles.use_denoising=False  # GitHub Blender build lacks OpenImageDenoiser
+    scene.render.film_transparent=True
+    scene.render.resolution_percentage=100
+    scene.render.image_settings.file_format="WEBP"
+    scene.render.image_settings.color_mode="RGBA"
+    scene.render.image_settings.quality=96
+    scene.world=bpy.data.worlds.new("Rat studio ambient")
+    scene.world.use_nodes=True
+    scene.world.node_tree.nodes["Background"].inputs[0].default_value=(.64,.66,.73,1)
+    scene.world.node_tree.nodes["Background"].inputs[1].default_value=.51
+    camera_data=bpy.data.cameras.new("Atlas orthographic")
+    camera=bpy.data.objects.new("Atlas camera",camera_data)
+    scene.collection.objects.link(camera)
+    camera_data.type="ORTHO"
+    camera_data.clip_end=300
+    camera.location=(0,0,45)
+    scene.camera=camera
+    for name, color, power, direction in [
+        ("Warm key",(1,.84,.69),2.8,(.35,-.65,1)),
+        ("Blue rim",(.55,.70,1),1.3,(-.8,.5,.8))
+    ]:
+        light=bpy.data.lights.new(name,"SUN")
+        light.energy=power
+        light.color=color
+        light.angle=.4
+        obj=bpy.data.objects.new(name,light)
+        scene.collection.objects.link(obj)
+        obj.rotation_euler=(-V(direction)).to_track_quat("-Z","Y").to_euler()
 
-def rot(x=0,y=0,z=0):
-    return Euler((x,y,z)).to_matrix().to_4x4()
-pitch=math.atan(1/math.sqrt(2))
-view=rot(pitch-PI/2)
-all_mats=list(body.data.materials)
-world_cell=3.7  # tighter framing while preserving the tail and evasive leap
-for clip,count in SHEETS.items():
-    verts=[]
-    faces=[]
-    mids=[]
-    rig.animation_data.action=bpy.data.actions["rat_"+clip]
-    looping=clip in ("idle","run","stalk")
-    for col in range(count):
-        t=col/count if looping else col/(count-1)
-        scene.frame_set(1+round(48*t))
-        dg=bpy.context.evaluated_depsgraph_get()
-        obj=body.evaluated_get(dg)
-        mesh=obj.to_mesh()
-        coords=[v.co.copy() for v in mesh.vertices]
-        polys=[tuple(p.vertices) for p in mesh.polygons]
-        indices=[p.material_index for p in mesh.polygons]
-        for row in range(VIEWS):
-            spin=view@rot(z=row*2*PI/VIEWS)
-            origin=V(((col+.5-count/2)*world_cell,
-                      (VIEWS/2-.5-row)*world_cell-.15*world_cell,0))
-            offset=len(verts)
-            verts.extend(spin@v+origin for v in coords)
-            faces.extend(tuple(offset+k for k in poly) for poly in polys)
-            mids.extend(indices)
-        obj.to_mesh_clear()
-    data=bpy.data.meshes.new("Baked rat "+clip)
-    data.from_pydata(verts,[],faces)
-    data.update()
-    for material in all_mats:
-        data.materials.append(material)
-    data.polygons.foreach_set("material_index",mids)
-    batch=bpy.data.objects.new("Baked rat "+clip,data)
-    scene.collection.objects.link(batch)
-    body.hide_render=True
-    scene.render.resolution_x=CELL*count
-    scene.render.resolution_y=CELL*VIEWS
-    camera_data.ortho_scale=VIEWS*world_cell
-    scene.render.filepath=str(ROOT/(clip+".webp"))
-    bpy.ops.render.render(write_still=True)
-    body.hide_render=False
-    bpy.data.objects.remove(batch,do_unlink=True)
-    bpy.data.meshes.remove(data)
-print("Rat rig and "+str(len(SHEETS))+" 32-view atlases generated in "+str(ROOT))
+    def rot(x=0,y=0,z=0):
+        return Euler((x,y,z)).to_matrix().to_4x4()
+    pitch=math.atan(1/math.sqrt(2))
+    view=rot(pitch-PI/2)
+    all_mats=list(body.data.materials)
+    world_cell=3.7  # tighter framing while preserving the tail and evasive leap
+    for clip,count in SHEETS.items():
+        verts=[]
+        faces=[]
+        mids=[]
+        rig.animation_data.action=bpy.data.actions["rat_"+clip]
+        looping=clip in ("idle","run","stalk")
+        for col in range(count):
+            t=col/count if looping else col/(count-1)
+            scene.frame_set(1+round(48*t))
+            dg=bpy.context.evaluated_depsgraph_get()
+            obj=body.evaluated_get(dg)
+            mesh=obj.to_mesh()
+            coords=[v.co.copy() for v in mesh.vertices]
+            polys=[tuple(p.vertices) for p in mesh.polygons]
+            indices=[p.material_index for p in mesh.polygons]
+            for row in range(VIEWS):
+                spin=view@rot(z=row*2*PI/VIEWS)
+                origin=V(((col+.5-count/2)*world_cell,
+                          (VIEWS/2-.5-row)*world_cell-.15*world_cell,0))
+                offset=len(verts)
+                verts.extend(spin@v+origin for v in coords)
+                faces.extend(tuple(offset+k for k in poly) for poly in polys)
+                mids.extend(indices)
+            obj.to_mesh_clear()
+        data=bpy.data.meshes.new("Baked rat "+clip)
+        data.from_pydata(verts,[],faces)
+        data.update()
+        for material in all_mats:
+            data.materials.append(material)
+        data.polygons.foreach_set("material_index",mids)
+        batch=bpy.data.objects.new("Baked rat "+clip,data)
+        scene.collection.objects.link(batch)
+        body.hide_render=True
+        scene.render.resolution_x=CELL*count
+        scene.render.resolution_y=CELL*VIEWS
+        camera_data.ortho_scale=VIEWS*world_cell
+        scene.render.filepath=str(ROOT/(clip+".webp"))
+        bpy.ops.render.render(write_still=True)
+        body.hide_render=False
+        bpy.data.objects.remove(batch,do_unlink=True)
+        bpy.data.meshes.remove(data)
+    print("Rat rig and "+str(len(SHEETS))+" 32-view atlases generated in "+str(ROOT))
