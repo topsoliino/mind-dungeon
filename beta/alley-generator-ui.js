@@ -184,7 +184,7 @@ function mount({generator:g,player,iso}){
  let cachedFloor=null,lastX=null,lastY=null;
  function draw(){
   if(body.style.display==='none')return;
-  const floor=vertical?.state.floor??0,hero=player();
+  const floor=vertical?.state?.floor??0,hero=player();
   if(cachedFloor===floor&&hero.x===lastX&&hero.y===lastY)return;
   if(cachedFloor!==floor){drawBackground();cachedFloor=floor;}
   lastX=hero.x;lastY=hero.y;
