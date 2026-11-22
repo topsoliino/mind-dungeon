@@ -11,7 +11,8 @@ const skeleton=window.AlleySkeleton;
 assert(source.includes("'.webp?v='"),'Animated Blender atlas uses versioned WebP assets');
 assert(!source.includes('safeImage(')&&!source.includes('fallbackImages'),
  'No hand-drawn or procedural skeleton substitute may render');
-assert(!source.includes('sheets=new Map'));
+assert(source.includes('sheets=new Map'),
+ 'Original Blender animation frames must be shared across skeletons');
 assert.equal(typeof skeleton.sprite,'function');
 assert.equal(typeof skeleton.sprites,'undefined');
 assert.equal(typeof skeleton.load,'function');
