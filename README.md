@@ -1,8 +1,16 @@
-# Mind Dungeon: Shadowbound v0.7
+# Mind Dungeon: Shadowbound
 
-Browserbasiertes Top-down-Lern-RPG mit KVT-III-Fragen zu Konfrontationsverfahren.
+Browserbasiertes isometrisches Lern-Action-RPG mit Psychologie-Fragen.
 
-**Spielen:** https://topsoliino.github.io/mind-dungeon/
+## 🎮 Aktuelle Playtest-Version
+
+### **[▶ Mind Dungeon jetzt playtesten](https://topsoliino.github.io/mind-dungeon/beta/)**
+
+**Direktlink:** https://topsoliino.github.io/mind-dungeon/beta/
+
+Dieser Link führt zur **aktuellen Testversion** (in `beta/`) und bleibt auch bei zukünftigen Updates gleich. GitHub Pages veröffentlicht neue Änderungen aus `main` automatisch unter derselben Adresse.
+
+Die [Hauptversion](https://topsoliino.github.io/mind-dungeon/) ist nicht der aktuelle Playtest-Einstieg.
 
 ## Steuerung
 
