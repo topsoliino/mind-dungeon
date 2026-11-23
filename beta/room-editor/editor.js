@@ -12,6 +12,7 @@ let room=clone(kit.preset),selected=null,tool='select',chosenFurniture='prison-t
 let showGrid=true,playing=false,dragging=null,hover=null,dirty=true,frame=0;
 let width=0,height=0,zoom=1,ox=0,oy=0;
 let hero={x:3.5,y:2.6,target:null,vault:0,face:0},keys=new Set(),history=[],historyPos=0;
+let playHP=new Map();
 const assets=new Map();
 function spriteName(type,rot){return cat.furniture[type].asset+'-'+rot+'.webp'}
 for(const type of Object.keys(cat.furniture))for(const rot of [0,90,180,270]){
@@ -201,6 +202,14 @@ function bounds(obj){
 function fits(obj,ignoreId=null){
  const a=bounds(obj);
  if(a.left<.1||a.top<.1||a.right>room.width-.1||a.bottom>room.height-.1)return false;
+ if(obj.blocksMovement)for(const wall of room.walls){
+  if(!cat.walls[wall.style]?.solid)continue;
+  // A physical 3D furniture footprint cannot be placed through a prison
+  // wall or cell grille, not merely outside the rectangular room.
+  const h=wall.edge==='north'||wall.edge==='south';
+  if(h&&a.left<wall.x+1&&a.right>wall.x&&a.top<wall.y+.06&&a.bottom>wall.y-.06)return false;
+  if(!h&&a.top<wall.y+1&&a.bottom>wall.y&&a.left<wall.x+.06&&a.right>wall.x-.06)return false;
+ }
  for(const other of room.furniture){
   if(other.id===(ignoreId||obj.id)||!other.blocksMovement||!obj.blocksMovement)continue;
   const b=bounds(other);
@@ -243,6 +252,7 @@ function shadeFurniture(type,obj,paint,outline,highlight){
  }
 }
 function drawFurniture(obj){
+ if(playing&&playHP.has(obj.id)&&playHP.get(obj.id)<=0)return;
  const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=168*zoom;
  ctx.save();
  ctx.globalAlpha=.4;ctx.fillStyle='#000';
@@ -369,6 +379,7 @@ function changeRoom(fn){
 function item(){return room.furniture.find(f=>f.id===selected)||null}
 function togglePlay(active){
  playing=active;keys.clear();dragging=null;hero.target=null;hero.vault=0;
+ playHP=new Map(active?room.furniture.map(obj=>[obj.id,cat.furniture[obj.type].maxHP]):[]);
  if(active){
   let found=null;
   for(let y=1;y<room.height&&!found;y+=.5)for(let x=1;x<room.width&&!found;x+=.5)
@@ -379,13 +390,14 @@ function togglePlay(active){
  $('playBtn').classList.toggle('active',active);
  $('playBtn').textContent=active?'■ Spieltest beenden':'▶ Spieltest';
  $('playHint').hidden=!active;
- $('sceneStatus').textContent=active?'WASD bewegen · Leertaste Vault · Klick Bewegungsziel':'V · Auswahl';
+ $('sceneStatus').textContent=active?'WASD · Rechtsklick Ziel · Linksklick Angriff · Leertaste Vault':'V · Auswahl';
  schedule();
 }
 function canOccupy(x,y){
  const r=.17;
  if(x<r||y<r||x>room.width-r||y>room.height-r)return false;
- for(const obj of room.furniture)if(obj.blocksMovement){
+ for(const obj of room.furniture)if(obj.blocksMovement&&
+  (!playing||!playHP.has(obj.id)||playHP.get(obj.id)>0)){
   const b=bounds(obj);
   if(x+r>b.left&&x-r<b.right&&y+r>b.top&&y-r<b.bottom)return false;
  }
@@ -432,12 +444,29 @@ function vault(){
  if(to){hero.x=to.x;hero.y=to.y;schedule()}
 }
 c.addEventListener('pointerdown',e=>{
+ const pos=getPointer(e),uv=toWorld(pos.x,pos.y);
+ if(playing){
+  e.preventDefault();
+  if(e.button===2){
+   hero.target={x:clamp(uv.x,0,room.width),y:clamp(uv.y,0,room.height)};
+  }else if(e.button===0){
+   // Editor-only combat collision probe. A non-destroyable prop survives,
+   // destroyed props disappear from the preview without changing room JSON.
+   const target=hitFurniture(pos.x,pos.y);
+   if(target&&Math.hypot(target.x-hero.x,target.y-hero.y)<=1.6&&target.destroyable){
+    const hp=(playHP.get(target.id)??cat.furniture[target.type].maxHP)-25;
+    playHP.set(target.id,hp);
+    $('editorStatus').textContent=hp<=0?
+     cat.furniture[target.type].label+' zerstört (nur Spieltest)':
+     cat.furniture[target.type].label+' · '+Math.max(0,hp)+' HP';
+   }else $('editorStatus').textContent='Kein zerstörbares Möbelstück in Schlagreichweite.';
+  }
+  schedule();return;
+ }
  if(e.button===1||e.button===2||keys.has(' ')){
   e.preventDefault();c.setPointerCapture(e.pointerId);
   dragging={type:'pan',x:e.clientX,y:e.clientY,ox,oy};return;
  }
- const pos=getPointer(e),uv=toWorld(pos.x,pos.y);
- if(playing){hero.target={x:clamp(uv.x,0,room.width),y:clamp(uv.y,0,room.height)};return}
  c.setPointerCapture(e.pointerId);
  const hit=hitFurniture(pos.x,pos.y);
  if(tool==='select'){
@@ -484,8 +513,9 @@ c.addEventListener('pointermove',e=>{
    if(tile)tile.style=$('floorType').value;
    else room.tiles.push({...cell,style:$('floorType').value});}
  }
+ const currentTile=cursorTile(uv.x,uv.y);
  hover=tool==='wall'||tool==='erase'?nearestWall(uv.x,uv.y):
-  tool==='floor'?({...cursorTile(uv.x,uv.y),kind:'tile'}):
+  tool==='floor'?(currentTile?{...currentTile,kind:'tile'}:null):
   {x:quant(uv.x),y:quant(uv.y),kind:'world'};
  $('sceneStatus').textContent=(playing?'Spieltest · ':'')+'Raster '+uv.x.toFixed(2)+' × '+uv.y.toFixed(2)+' · '+(tool==='select'?'Möbel verschieben':tool);
  schedule();
