@@ -9,23 +9,23 @@ const catalog={
   // Two complete, continuous photographic maps; older room JSON keeps the
   // original 'dungeon-ashlar' identifier for backward compatibility.
   'dungeon-ashlar':{
-   label:'Kerkerboden · brüchig und verdreckt',base:'#414244',grout:'#252626',
+   label:'Monastery Stone Floor · Original',base:'#414244',grout:'#252626',
    accent:'#77716b',pattern:'photo-dirt',
-   asset:artRoot+'tiles/floor-prison-01.webp',
-   source:'Poly Haven CC0 · Fotomaterial · 4096 × 4096'
+   asset:artRoot+'tiles/floor-prison-01.png',
+   source:'Poly Haven CC0 · Original-Vorschaubild, keine Nachbearbeitung'
   },
   'dungeon-cut-stone':{
-   label:'Quadersteinboden · fest und abgenutzt',base:'#535455',grout:'#24272b',
+   label:'Rectangular Paving · Original',base:'#535455',grout:'#24272b',
    accent:'#878580',pattern:'photo-cut-stone',
-   asset:artRoot+'tiles/floor-prison-02.jpg',
-   source:'Poly Haven CC0 · rechteckige Steinquader · 4096 × 4096'
+   asset:artRoot+'tiles/floor-prison-02.png',
+   source:'Poly Haven CC0 · Original-Vorschaubild, keine Nachbearbeitung'
   }
  },
  walls:{
-  stone:{label:'Steinmauer I · raues mittelalterliches Mauerwerk',height:2,solid:true,
-   asset:artRoot+'tiles/wall-masonry-01.jpg',render:'photo-wall-map'},
-  'stone-cut':{label:'Steinmauer II · massive verwitterte Quader',height:2,solid:true,
-   asset:artRoot+'tiles/wall-masonry-02.jpg',render:'photo-wall-map'},
+  stone:{label:'Steinmauer I · Medieval Wall 02 (Original)',height:2,solid:true,
+   asset:artRoot+'tiles/wall-masonry-01.png',render:'photo-wall-map'},
+  'stone-cut':{label:'Steinmauer II · Stone Block Wall (Original)',height:2,solid:true,
+   asset:artRoot+'tiles/wall-masonry-02.png',render:'photo-wall-map'},
   bars:{label:'Geschmiedetes Zellen-Gitter',height:2.05,solid:true,asset:'walls/bars'},
   gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,asset:'walls/gate'},
   open:{label:'Offene Wand / Durchgang',height:0,solid:false,asset:null}
