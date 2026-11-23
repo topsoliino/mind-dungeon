@@ -6,26 +6,40 @@ const artRoot='assets/';
 const catalog={
  version:1,tileSize:TILE,projection:{stepX:42,stepY:42/Math.sqrt(3),footOffset:16},
  floors:{
-  // Two complete, continuous photographic maps; older room JSON keeps the
-  // original 'dungeon-ashlar' identifier for backward compatibility.
+  // Identifiers stay backward-compatible with existing exported room JSON.
+  // Every photo uses its Poly Haven real-world coverage (1 grid ~ 1 metre).
   'dungeon-ashlar':{
-   label:'Monastery Stone Floor · Original',base:'#414244',grout:'#252626',
-   accent:'#77716b',pattern:'photo-dirt',
+   label:'Dark Rock 02 · dunkler Fels',base:'#343337',grout:'#242326',
+   accent:'#62616a',pattern:'photo-raw',worldWidth:4.0,
    asset:artRoot+'tiles/floor-prison-01.png',
-   source:'Poly Haven CC0 · Original-Vorschaubild, keine Nachbearbeitung'
+   source:'Poly Haven CC0 · 2 m Originalhöhe / etwa 4 m Bildbreite'
+  },
+  'dungeon-coast-rocks':{
+   label:'Coast Sand Rocks 02 · feuchter Naturfels',base:'#48463e',grout:'#2c302a',
+   accent:'#777664',pattern:'photo-raw',worldWidth:15.0,
+   asset:artRoot+'tiles/floor-prison-02.png',
+   source:'Poly Haven CC0 · 15 m Originalbreite'
   },
   'dungeon-cut-stone':{
-   label:'Rectangular Paving · Original',base:'#535455',grout:'#24272b',
-   accent:'#878580',pattern:'photo-cut-stone',
-   asset:artRoot+'tiles/floor-prison-02.png',
-   source:'Poly Haven CC0 · Original-Vorschaubild, keine Nachbearbeitung'
+   label:'Cobblestone Floor 09 · altes Steinpflaster',base:'#525052',grout:'#303032',
+   accent:'#848084',pattern:'photo-raw',worldWidth:2.2,
+   asset:artRoot+'tiles/floor-prison-03.png',
+   source:'Poly Haven CC0 · 2,2 m Originalbreite'
   }
  },
  walls:{
-  stone:{label:'Steinmauer I · Medieval Wall 02 (Original)',height:2,solid:true,
-   asset:artRoot+'tiles/wall-masonry-01.png',render:'photo-wall-map'},
-  'stone-cut':{label:'Steinmauer II · Stone Block Wall (Original)',height:2,solid:true,
-   asset:artRoot+'tiles/wall-masonry-02.png',render:'photo-wall-map'},
+  stone:{
+   label:'Rock Wall 17 · feuchter Bruchstein',height:2,solid:true,
+   worldWidth:1.8,asset:artRoot+'tiles/wall-masonry-01.png',render:'photo-wall-map'
+  },
+  'stone-cut':{
+   label:'Rock Wall 16 · verwitterte Quader',height:2,solid:true,
+   worldWidth:2.0,asset:artRoot+'tiles/wall-masonry-02.png',render:'photo-wall-map'
+  },
+  'stone-old':{
+   label:'Old Stone Wall · alte Steinmauer',height:2,solid:true,
+   worldWidth:2.0,asset:artRoot+'tiles/wall-masonry-03.png',render:'photo-wall-map'
+  },
   bars:{label:'Geschmiedetes Zellen-Gitter',height:2.05,solid:true,asset:'walls/bars'},
   gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,asset:'walls/gate'},
   open:{label:'Offene Wand / Durchgang',height:0,solid:false,asset:null}
