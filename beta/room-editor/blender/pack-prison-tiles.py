@@ -56,6 +56,12 @@ VARIANTS={
  "stone":("wall-albedo-01.jpg","rock_wall_17",1.8),
  "stone-cut":("wall-albedo-02.jpg","rock_wall_16",2.0),
  "stone-old":("wall-albedo-03.jpg","old_stone_wall",2.0),
+ "stone-rough-12":("wall-albedo-04.jpg","rock_wall_12",1.6),
+ "stone-rough-13":("wall-albedo-05.jpg","rock_wall_13",2.0),
+ "stone-rough-14":("wall-albedo-06.jpg","rock_wall_14",1.8),
+ "stone-rough-15":("wall-albedo-07.jpg","rock_wall_15",1.9),
+ "stone-castle-slates":("wall-albedo-08.jpg","castle_wall_slates",2.5),
+ "stone-castle-aged":("wall-albedo-09.jpg","castle_wall_varriation",2.0),
 }
 ATLASES={
  "dungeon-ashlar":"floor-atlas-01.jpg",
@@ -68,7 +74,13 @@ ATLASES={
  "dungeon-wet-mud":"floor-atlas-08.jpg",
  "stone":"wall-atlas-01.jpg",
  "stone-cut":"wall-atlas-02.jpg",
- "stone-old":"wall-atlas-03.jpg"
+ "stone-old":"wall-atlas-03.jpg",
+ "stone-rough-12":"wall-atlas-04.jpg",
+ "stone-rough-13":"wall-atlas-05.jpg",
+ "stone-rough-14":"wall-atlas-06.jpg",
+ "stone-rough-15":"wall-atlas-07.jpg",
+ "stone-castle-slates":"wall-atlas-08.jpg",
+ "stone-castle-aged":"wall-atlas-09.jpg"
 }
 asset_info={}
 for style,(filename,asset_id,width_world) in VARIANTS.items():
@@ -111,8 +123,8 @@ for style,filename in ATLASES.items():
     }
 
 manifest={
- "schema":"mind-dungeon-room-tiles/v7",
- "source":"Eleven UV-ready Poly Haven original Diffuse maps (eight floors, three walls)",
+ "schema":"mind-dungeon-room-tiles/v8",
+ "source":"Seventeen authentic Poly Haven Diffuse maps: eight floors and nine masonry walls",
  "textureMode":"uv-ready-polyhaven-diffuse",
  "license":"CC0: https://polyhaven.com/license",
  "floorMaterial":"derived-large-stochastic-albedo-atlas",
@@ -136,9 +148,9 @@ manifest={
 # Regression: exactly eight floors and three walls, no cross-category leakage.
 assert len(manifest["floorVariants"]) == 8
 assert set(manifest["floorVariants"]) == {k for k in VARIANTS if k.startswith("dungeon-")}
-assert len(manifest["wallVariants"]) == 3
+assert len(manifest["wallVariants"]) == 9
 assert set(manifest["wallVariants"]) == {k for k in VARIANTS if not k.startswith("dungeon-")}
 assert set(manifest["floorAtlases"]) == set(manifest["floorVariants"])
 assert set(manifest["wallAtlases"]) == set(manifest["wallVariants"])
 (OUT/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n")
-print("VALIDATED: 11 original Diffuse maps + 8 floor atlases + 3 wall atlases",flush=True)
+print("VALIDATED: 17 original Diffuse maps + 8 floor atlases + 9 wall atlases",flush=True)
