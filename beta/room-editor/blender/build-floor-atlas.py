@@ -1,4 +1,4 @@
-"""Build a non-grid-repeating 4096px room FLOOR atlas from an original diffuse.
+"""Build eight non-grid-repeating 4096px room FLOOR atlases from an original diffuse.
 
 NOT a primary presentation preview. Source diffuse JPG is imported unchanged.
 We retain the diffuse as an independent original material; this script produces
@@ -23,6 +23,11 @@ SPECS=(
  ("floor-albedo-01.jpg","floor-atlas-01.jpg",2.0,11003),
  ("floor-albedo-02.jpg","floor-atlas-02.jpg",15.0,22867),
  ("floor-albedo-03.jpg","floor-atlas-03.jpg",2.2,33947),
+ ("floor-albedo-04.jpg","floor-atlas-04.jpg",1.5,42171),
+ ("floor-albedo-05.jpg","floor-atlas-05.jpg",2.4,52843),
+ ("floor-albedo-06.jpg","floor-atlas-06.jpg",1.8,62239),
+ ("floor-albedo-07.jpg","floor-atlas-07.jpg",2.0,71479),
+ ("floor-albedo-08.jpg","floor-atlas-08.jpg",1.3,80627),
 )
 
 def periodic(image: Image.Image, dx: int, dy: int):
