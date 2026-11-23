@@ -26,14 +26,14 @@
 | `editor.css` | Oberfläche |
 | `catalog.js` | Boden-/Wand-Katalog und Möbel-Eigenschaften, vorinstallierte Gefängniszelle |
 | `editor.js` | Projektion, Zeichenreihenfolge, Interaktionen, Undo, Kollision, Spieltest, Export |
-| `editor-art.js` | Drei feste 30-m-Bodenatlanten und drei 30-m-Wandatlanten UV-korrekt darstellen; echter Wächter-Atlas als Referenz |
+| `editor-art.js` | Acht feste 30-m-Bodenatlanten und drei 30-m-Wandatlanten UV-korrekt darstellen; echter Wächter-Atlas als Referenz |
 | `presets/prison-cell-01.json` | Eigenständig importierbare Gefängniszelle |
 | `blender/build-room-kit.py` | **Tatsächliche 3D-Modelle**: Tisch, Stuhl; physische Bretter, Beine, Eisennägel, Material-/Lichtsetup |
 | `blender/pack-room-kit.py` | Vier Ansichten je Möbelstück in 512×512 WebP + Manifest packen |
 | `blender/build-prison-tiles.py` | Historische Blender-Wand- und Bodenfallbacks (nur CI-Kompatibilität), nicht der aktive Material-Look |
-| `blender/build-floor-map.py` | Importiert drei echte, originale 2K-**Diffuse-/Albedo-JPGs** von Poly Haven statt Vorschaubildern |
+| `blender/build-floor-map.py` | Importiert acht originale 2K-**Diffuse-/Albedo-JPGs** von Poly Haven statt Vorschaubildern |
 | `blender/build-wall-maps.py` | Importiert drei echte, originale 2K-**Diffuse-/Albedo-JPGs** für Mauerflächen |
-| `blender/build-floor-atlas.py` | Erstellt drei 30×30-m-Texturatlanten ohne sichtbaren 2-m-Raster-Wiederholungsbeginn |
+| `blender/build-floor-atlas.py` | Erstellt acht 30×30-m-Texturatlanten ohne sichtbaren 2-m-Raster-Wiederholungsbeginn |
 | `blender/build-wall-atlas.py` | Erstellt drei fortlaufende 30×2-m-Fassadenatlanten mit korrekter Mauerorientierung |
 | `blender/pack-prison-tiles.py` | Validiert sechs unveränderte Original-Diffuse-JPGs und sechs Atlanten samt SHA-256 im v6-Manifest |
 | `assets/source/prison-tiles.blend` | Editierbare Modellquelle der Steinarchitektur |
@@ -76,7 +76,7 @@ Wanddaten definieren *physische Kanten* in Rasterkoordinaten. `north/south` gehe
 
 Im Editor-Spieltest wird kein neuer Wächter erzeugt. `editor-art.js` liest **`beta/art/player-study/guardian-frames.json`** plus die Originalbilder `guardian-body.webp`, `guardian-body-2.webp` und `guardian-weapon.webp`. Idle, Walk und Vault werden aus den tatsächlichen Frame-Metadaten abgespielt; das ist der bewährte günstige Sprite-Renderpfad des Spiels, aber ohne den laufenden 3D-Renderer.
 
-Mauern und Möbel nutzen dieselbe 35,264°-orthografische Kamera, kontrastreiches Filmic, warmen Key, kühles Fill und physische Material-/Kantenmodelle. Die zwei Böden sind jeweils **eine** große top-down-authored 4096px-Karte über fest **32×32 Welteinheiten**. Die editorseitige isometrische UV-Transformation bewahrt die Größe jedes Kratzers und Steins bei 2×2, 7×5 oder 30×30 Feldern; kleinere Räume sehen einen **zentrierten Ausschnitt** und dehnen keine Textur. Die Schere ist die physische Grundrisspolygon-Grenze. Das Raster ist ausschließlich eine optionale UI-Ebene. Die Mauer ist **ein** Stil mit zwei Sichtprojektionen, die Möbel je vier unabhängig gerenderte Ansichten.
+Mauern und Möbel nutzen dieselbe 35,264°-orthografische Kamera, kontrastreiches Filmic, warmen Key, kühles Fill und physische Material-/Kantenmodelle. Alle acht Böden verwenden je einen unverändert ausgerichteten UV-Atlas über **30×30 Welteinheiten**. Die editorseitige isometrische UV-Transformation bewahrt die Größe jedes Kratzers und Steins bei 2×2, 7×5 oder 30×30 Feldern; kleinere Räume sehen einen **zentrierten Ausschnitt** und dehnen keine Textur. Die Schere ist die physische Grundrisspolygon-Grenze. Das Raster ist ausschließlich eine optionale UI-Ebene. Die drei Steinmauern nutzen fortlaufende UV-Streifen, die Möbel je vier unabhängig gerenderte Ansichten.
 
 ### 3D-Renderpipeline
 
@@ -113,3 +113,21 @@ Alle Änderungen der Bodenkarte und des Editors liegen ausschließlich unter `be
 **Hauptspielschutz:** Alle Writes bleiben strikt auf `beta/room-editor/**` begrenzt. Weder `beta/index.html`, `beta/dungeon-isometric.js`, Gegner-/Wächter-/Generator-Dateien noch `.github/**` werden verändert.
 
 **UV-Regressionstest:** `node beta/room-editor/tests/uv-mapping.test.js` prüft alle sechs Materialien, konstante 30-m-Boden-UVs unabhängig von der Raumgröße sowie unmittelbar aufeinanderfolgende Wandtexturabschnitte für beide isometrischen Wandrichtungen.
+
+### V7: Fünf weitere Bodenmaterialien – acht insgesamt
+
+Die bisherigen drei Böden bleiben unverändert auswählbar. Neu sind:
+
+| ID / Auswahl | Poly-Haven-Original | Breite der gescannten Original-Diffuse-Map | Runtime-Atlas |
+| --- | --- | ---: | --- |
+| `dungeon-mossy-cobbles` – Feuchtes Moospflaster | [Cobblestone Floor 04](https://polyhaven.com/a/cobblestone_floor_04) | 1,5 m | `floor-atlas-04.jpg` |
+| `dungeon-ruined-cobbles` – Verwittertes Pflaster | [Cobblestone Floor 03](https://polyhaven.com/a/cobblestone_floor_03) | 2,4 m | `floor-atlas-05.jpg` |
+| `dungeon-aged-paving` – Altes Steinpflaster | [Stone Floor](https://polyhaven.com/a/stone_floor) | 1,8 m | `floor-atlas-06.jpg` |
+| `dungeon-rustic-slate` – Abgetretene Schieferplatten | [Slate Floor 02](https://polyhaven.com/a/slate_floor_02) | 2,0 m | `floor-atlas-07.jpg` |
+| `dungeon-wet-mud` – Nasser Kerkerlehm | [Brown Mud 03](https://polyhaven.com/a/brown_mud_03) | 1,3 m | `floor-atlas-08.jpg` |
+
+**Pipeline:** Die Originale werden als unveränderte 2048px-Diffuse-JPGs importiert (`floor-albedo-04.jpg` bis `floor-albedo-08.jpg`); die 4096²-Atlanten werden per bestehender, stochastischer Phasenmischung aufgebaut, ohne bemalte Fugen, Schmutz-Overlays oder veränderte Steingrößen. Alle acht Atlasbilder umfassen 30×30 Weltmeter und werden vom Raumeditor jeweils in **einem** `drawImage` projiziert – auch für 2×2- und 30×30-Räume. Der originalgetreue Wächter, die Mauerkollisionen und drei Wandstile bleiben gleich.
+
+**Publikation:** `assets/tiles/manifest.json` ist ab Version `mind-dungeon-room-tiles/v7` gültig, mit genau acht `floorVariants` und acht `floorAtlases` sowie drei `wallVariants` und drei `wallAtlases`. Der Browser akzeptiert während der Build-Umstellung noch das vorangegangene v6-Manifest und lädt die acht Bodenbilder unabhängig voneinander; ein fehlender neuer Atlas darf die bisherigen drei nicht blockieren.
+
+**Regression:** `node beta/room-editor/tests/uv-mapping.test.js` prüft die acht Bodenstile, ihre Quellhashes, Maßstäbe und die isometrische Projektion sowie die weiterhin zusammenhängenden drei Wandtypen. Alle Dateien und Asset-Publikationen bleiben ausschließlich unter `beta/room-editor/**`.
