@@ -26,15 +26,15 @@
 | `editor.css` | Oberfläche |
 | `catalog.js` | Boden-/Wand-Katalog und Möbel-Eigenschaften, vorinstallierte Gefängniszelle |
 | `editor.js` | Projektion, Zeichenreihenfolge, Interaktionen, Undo, Kollision, Spieltest, Export |
-| `editor-art.js` | Acht feste 30-m-Bodenatlanten und drei 30-m-Wandatlanten UV-korrekt darstellen; echter Wächter-Atlas als Referenz |
+| `editor-art.js` | Acht feste 30-m-Bodenatlanten und neun 30-m-Wandatlanten UV-korrekt darstellen; echter Wächter-Atlas als Referenz |
 | `presets/prison-cell-01.json` | Eigenständig importierbare Gefängniszelle |
 | `blender/build-room-kit.py` | **Tatsächliche 3D-Modelle**: Tisch, Stuhl; physische Bretter, Beine, Eisennägel, Material-/Lichtsetup |
 | `blender/pack-room-kit.py` | Vier Ansichten je Möbelstück in 512×512 WebP + Manifest packen |
 | `blender/build-prison-tiles.py` | Historische Blender-Wand- und Bodenfallbacks (nur CI-Kompatibilität), nicht der aktive Material-Look |
 | `blender/build-floor-map.py` | Importiert acht originale 2K-**Diffuse-/Albedo-JPGs** von Poly Haven statt Vorschaubildern |
-| `blender/build-wall-maps.py` | Importiert drei echte, originale 2K-**Diffuse-/Albedo-JPGs** für Mauerflächen |
+| `blender/build-wall-maps.py` | Importiert neun echte, originale 2K-**Diffuse-/Albedo-JPGs** für Mauerflächen |
 | `blender/build-floor-atlas.py` | Erstellt acht 30×30-m-Texturatlanten ohne sichtbaren 2-m-Raster-Wiederholungsbeginn |
-| `blender/build-wall-atlas.py` | Erstellt drei fortlaufende 30×2-m-Fassadenatlanten mit korrekter Mauerorientierung |
+| `blender/build-wall-atlas.py` | Erstellt neun fortlaufende 30×2-m-Fassadenatlanten mit korrekter Mauerorientierung |
 | `blender/pack-prison-tiles.py` | Validiert sechs unveränderte Original-Diffuse-JPGs und sechs Atlanten samt SHA-256 im v6-Manifest |
 | `assets/source/prison-tiles.blend` | Editierbare Modellquelle der Steinarchitektur |
 | `assets/tiles/` | Originale hochauflösende Blender-Architekturbilder, nicht prozeduraler Runtime-Shader |
@@ -131,3 +131,20 @@ Die bisherigen drei Böden bleiben unverändert auswählbar. Neu sind:
 **Publikation:** `assets/tiles/manifest.json` ist ab Version `mind-dungeon-room-tiles/v7` gültig, mit genau acht `floorVariants` und acht `floorAtlases` sowie drei `wallVariants` und drei `wallAtlases`. Der Browser akzeptiert während der Build-Umstellung noch das vorangegangene v6-Manifest und lädt die acht Bodenbilder unabhängig voneinander; ein fehlender neuer Atlas darf die bisherigen drei nicht blockieren.
 
 **Regression:** `node beta/room-editor/tests/uv-mapping.test.js` prüft die acht Bodenstile, ihre Quellhashes, Maßstäbe und die isometrische Projektion sowie die weiterhin zusammenhängenden drei Wandtypen. Alle Dateien und Asset-Publikationen bleiben ausschließlich unter `beta/room-editor/**`.
+
+### V8 – Sechs zusätzliche mittelalterliche Mauerarten
+
+Zu den bestehenden drei Wänden kommen **sechs weitere** fotorealistische Materialien hinzu. Alle sind echte, ungedrehte Poly-Haven-Diffuse-Maps mit CC0-Lizenz und werden in derselben UV-korrekten 30×2-m-Atlas-Pipeline wie Rock Wall 17, Rock Wall 16 und Old Stone Wall verwendet:
+
+| Stil-ID (in alten Raumdateien kompatibel) | Material | Scanbreite | 2K-Diffuse / Runtime-Atlas |
+|---|---|---:|---|
+| `stone-rough-12` | [Rock Wall 12](https://polyhaven.com/a/rock_wall_12) | 1,6 m | `wall-albedo-04.jpg` / `wall-atlas-04.jpg` |
+| `stone-rough-13` | [Rock Wall 13](https://polyhaven.com/a/rock_wall_13) | 2,0 m | `wall-albedo-05.jpg` / `wall-atlas-05.jpg` |
+| `stone-rough-14` | [Rock Wall 14](https://polyhaven.com/a/rock_wall_14) | 1,8 m | `wall-albedo-06.jpg` / `wall-atlas-06.jpg` |
+| `stone-rough-15` | [Rock Wall 15](https://polyhaven.com/a/rock_wall_15) | 1,9 m | `wall-albedo-07.jpg` / `wall-atlas-07.jpg` |
+| `stone-castle-slates` | [Castle Wall Slates](https://polyhaven.com/a/castle_wall_slates) | 2,5 m | `wall-albedo-08.jpg` / `wall-atlas-08.jpg` |
+| `stone-castle-aged` | [Castle Wall Variation](https://polyhaven.com/a/castle_wall_varriation) | 2,0 m | `wall-albedo-09.jpg` / `wall-atlas-09.jpg` |
+
+**Fix für die zuvor nicht ladenden fünf neuen Böden und leere Vorschaubilder:** Die Editor-UI ist vor der zeitaufwendigen GitHub-Action zur Veröffentlichung neuer Materialatlanten online gegangen. Darum verweisen die Vorschauen zunächst auf noch nicht erzeugte JPGs. Ab V8 sind die fünf neuen Böden und sechs Wände **sofort sichtbar**, wenn GitHub Pages deren HTML/JS veröffentlicht: Die Thumbnails verwenden das jeweilige echte 1K-Poly-Haven-Diffuse als Bild-Fallback, und der Canvas-Renderer versucht bei fehlendem 30-m-Atlas die echte 2K-Diffuse-Map direkt nachzuladen. Während dieses Übergangs wiederholt der Browser das Originalmaterial im korrekten Maßstab; wenn GitHub Actions die 30-m-Atlanten publiziert, bevorzugt der Editor automatisch den großen lokal gebackenen Atlas. Der Fallback wird in der Materialstatuszeile angezeigt und blockiert weder vorhandene Bodenmaterialien noch die übrigen Wände. Das ist ein Material-Lade- und Veröffentlichungsfix, **kein** Eingriff in Hauptspiel-/Wächter-/Generatordateien.
+
+**Dateien:** `blender/build-floor-map.py`, `build-wall-maps.py`, `build-floor-atlas.py`, `build-wall-atlas.py` und `pack-prison-tiles.py` bleiben ausschließlich unter `beta/room-editor/`. `manifest.json` veröffentlicht Version `mind-dungeon-room-tiles/v8` mit genau acht Böden und neun Steinmauern; die Runtime toleriert beim Rollout auch v6/v7 und lädt fehlende Dateien unabhängig nach. `tests/uv-mapping.test.js` enthält eine Regression für ein veraltetes Manifest.
