@@ -31,7 +31,7 @@ manifest={
  'sourceBlend':'../source/prison-tiles.blend',
  'pixelDimensions':[512,512],
  'projection':{
-  'cameraAzimuth':225,'elevationDegrees':35.264,'projection':'ORTHO',
+  'cameraAzimuth':45,'elevationDegrees':35.264,'projection':'ORTHO',
   'orientation':'same x-y and x+y axes as beta/alley-study.js',
   'floorOrthoScale':2.65,'wallOrthoScale':3.25,
   'wallRootZScale':0.8660254037844,'wallEditorHeight':2.0,
