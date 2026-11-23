@@ -261,7 +261,7 @@
    }:null;
    const state=vertical?.state,stable=prison?.enabled&&!state?.stairRide&&!state?.transition;
    const previous=canvasLayers;
-   if(!stable||!previous||previous.x!==player.x||previous.y!==player.y||
+   if(!stable||!previous||Math.hypot(previous.x-player.x,previous.y-player.y)>8||
       previous.storey!==prison.storey||previous.floor!==state?.floor||previous.opened!==opened){
     canvasLayers={x:player.x,y:player.y,storey:prison?.storey,floor:state?.floor,opened,
      layers:layers(player,opened).filter(layer=>layer.visible!==false)};
