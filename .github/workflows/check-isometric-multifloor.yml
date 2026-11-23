@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/check-isometric-multifloor.yml
       - beta/alley-enemy-pursuit.js
+      - beta/alley-floor-occlusion.js
+      - tools/check-alley-floor-occlusion.cjs
       - beta/dungeon-isometric.js
       - beta/alley-stair-geometry.js
       - beta/alley-generator.js
@@ -24,4 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Seed 4148 - all upper slabs, tracking, last seen search and real combat
-        run: node tools/check-isometric-multifloor.cjs
+        run: |
+          node tools/check-isometric-multifloor.cjs
+          node tools/check-alley-floor-occlusion.cjs
