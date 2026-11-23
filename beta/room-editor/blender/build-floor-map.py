@@ -29,7 +29,11 @@ from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageOp
 SIZE = 4096
 WORLD = 32
 SEED = 0xDA7A6E
-ASSETS = ("monastery_stone_floor", "stone_floor", "rock_embedded_floor")
+FLOOR_VARIANTS = {
+    "dirt": ("monastery_stone_floor", "stone_floor", "rock_embedded_floor"),
+    "cut-stone": ("rectangular_paving", "stone_tiles", "cobblestone_floor_02"),
+}
+ASSETS = FLOOR_VARIANTS["dirt"]
 ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / "assets" / "tiles" / "floor-prison-01.webp"
 USER_AGENT = "MindDungeonRoomAtelier/2.0 (CC0 art build; https://github.com/topsoliino/mind-dungeon)"
@@ -162,26 +166,26 @@ def build_photo_atlas(images: dict[str,Image.Image]) -> Image.Image:
     return background
 
 
-def age_and_weather(image: Image.Image) -> Image.Image:
+def age_and_weather(image: Image.Image, cut_stone: bool=False) -> Image.Image:
     # Real photographed rock + compacted dirt gets cooler shadows, low chroma
     # and uneven surface dampness. No drawn stone polygons or regular seams.
     image=ImageEnhance.Color(image).enhance(.68)
     image=ImageEnhance.Contrast(image).enhance(1.22)
-    image=ImageEnhance.Brightness(image).enhance(.70)
+    image=ImageEnhance.Brightness(image).enhance(.77 if cut_stone else .70)
 
     macro=fractal_noise(SIZE,(14,48,128,350))
     grime=ImageOps.autocontrast(macro,cutoff=(6,5))
-    grime_mask=grime.point(lambda v:max(0,min(110,int((125-v)*1.30))))
+    grime_mask=grime.point(lambda v:max(0,min(58 if cut_stone else 110,int((125-v)*(0.66 if cut_stone else 1.30)))))
     image=Image.composite(Image.new("RGB",(SIZE,SIZE),(29,27,26)),image,grime_mask)
 
     # Photo-grain based microvariation is subdued to preserve genuine scanned
     # stone detail, while moss, moisture and sediment stay irregularly distributed.
     wet=Image.new("L",(SIZE,SIZE))
     draw=ImageDraw.Draw(wet)
-    for i in range(135):
+    for i in range(45 if cut_stone else 135):
         x=rng.randrange(SIZE);y=rng.randrange(SIZE)
         rx=rng.randrange(35,300);ry=rng.randrange(30,190)
-        opacity=rng.randrange(25,115)
+        opacity=rng.randrange(12,55 if cut_stone else 115)
         draw.ellipse((x-rx,y-ry,x+rx,y+ry),fill=opacity)
     wet=wet.filter(ImageFilter.GaussianBlur(85))
     noise=fractal_noise(SIZE,(48,128,320))
@@ -196,12 +200,18 @@ def age_and_weather(image: Image.Image) -> Image.Image:
     return image
 
 
-def build(output: Path, source_dir: Path | None):
+def build(output: Path, source_dir: Path | None, variant: str="dirt"):
+    global ASSETS, rng
+    ASSETS = FLOOR_VARIANTS[variant]
+    rng = random.Random(SEED + (709 if variant=="cut-stone" else 0))
     images=load_photographs(source_dir)
     print("Composing one 4096px photobased stone/dirt floor…",flush=True)
-    image=age_and_weather(build_photo_atlas(images))
+    image=age_and_weather(build_photo_atlas(images), cut_stone=variant=="cut-stone")
     output.parent.mkdir(parents=True,exist_ok=True)
-    image.save(output,format="WEBP",quality=88,method=5)
+    if output.suffix.lower()==".jpg":
+        image.save(output,format="JPEG",quality=91,subsampling=0,optimize=True)
+    else:
+        image.save(output,format="WEBP",quality=88,method=5)
     if output.stat().st_size<350_000:
         raise RuntimeError("Floor image unusually tiny: photobased output missing?")
     with Image.open(output) as verify:
@@ -213,6 +223,7 @@ if __name__=="__main__":
     parser=argparse.ArgumentParser()
     parser.add_argument("--source-dir",type=Path,default=None,
                         help="Optional local JPG copies for offline validation")
-    parser.add_argument("--output",type=Path,default=DEST)
+    parser.add_argument("--variant",choices=tuple(FLOOR_VARIANTS),default="dirt")
+    parser.add_argument("--output",type=Path,default=None)
     args=parser.parse_args()
-    build(args.output,args.source_dir)
+    build(args.output or (DEST if args.variant=="dirt" else DEST.with_name("floor-prison-02.jpg")),args.source_dir,args.variant)
