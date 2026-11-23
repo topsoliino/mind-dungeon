@@ -23,47 +23,53 @@ window.MindRoomArt=(()=>{
   img.src=src;
   return result;
  }
- // Six CC0 photos. Accept ONLY the new manifest mapping, source SHA and
- // physically calibrated width. No recolor or artificial dirt at runtime.
+ // Only true flat UV diffuse maps, NEVER perspective presentation previews.
+ // Three 30m floor atlases and three aligned 30m wall strips break the
+ // highly visible 2m material-repetition grid while retaining stone scale.
  const PHOTOS=[
-  ['dungeon-ashlar','floor-prison-01.png','dark_rock_02',false],
-  ['dungeon-coast-rocks','floor-prison-02.png','coast_sand_rocks_02',false],
-  ['dungeon-cut-stone','floor-prison-03.png','cobblestone_floor_09',false],
-  ['stone','wall-masonry-01.png','rock_wall_17',true],
-  ['stone-cut','wall-masonry-02.png','rock_wall_16',true],
-  ['stone-old','wall-masonry-03.png','old_stone_wall',true]
+  ['dungeon-ashlar','floor-albedo-01.jpg','floor-atlas-01.jpg','dark_rock_02',false],
+  ['dungeon-coast-rocks','floor-albedo-02.jpg','floor-atlas-02.jpg','coast_sand_rocks_02',false],
+  ['dungeon-cut-stone','floor-albedo-03.jpg','floor-atlas-03.jpg','cobblestone_floor_09',false],
+  ['stone','wall-albedo-01.jpg','wall-atlas-01.jpg','rock_wall_17',true],
+  ['stone-cut','wall-albedo-02.jpg','wall-atlas-02.jpg','rock_wall_16',true],
+  ['stone-old','wall-albedo-03.jpg','wall-atlas-03.jpg','old_stone_wall',true]
  ];
- const PHOTO_KEYS=PHOTOS.map(info=>info[0]);
- for(const key of PHOTO_KEYS)
-  images.set(key,{img:null,ready:false,failed:false,src:''});
+ for(const [key] of PHOTOS)images.set(key,{img:null,ready:false,failed:false,src:''});
  async function loadPhotographicMaterials(){
   try{
-   const response=await fetch(ROOT+'tiles/manifest.json?v=wet-dungeon-six-v1',{cache:'no-cache'});
+   const response=await fetch(ROOT+'tiles/manifest.json?v=uv-fix-v6',{cache:'no-cache'});
    if(!response.ok)throw Error('Material manifest unavailable');
    const manifest=await response.json();
-   if(manifest.schema!=='mind-dungeon-room-tiles/v4'||
-      manifest.textureMode!=='original-photo-byte-identical')
-    throw Error('Six new Poly Haven photos are not published yet');
-   const selections=[];
-   for(const [style,file,assetId,wall] of PHOTOS){
-    const info=manifest.assetInfo?.[style];
-    const expected=(wall?manifest.wallVariants:manifest.floorVariants)?.[style];
-    const catalog=(wall?window.MindRoomKit.catalog.walls:window.MindRoomKit.catalog.floors)[style];
-    if(expected!==file||info?.file!==file||info?.asset!==assetId||
-       info.byteIdenticalToSource!==true||
-       info.imageRotationDegrees!==0||info.imageMirrored!==false||
-       !/^[0-9a-f]{64}$/.test(info?.sha256||'')||
-       !Number.isFinite(info?.worldWidth)||Math.abs(info.worldWidth-catalog.worldWidth)>.01)
-      throw Error('Missing or incorrectly scaled original: '+style);
-    selections.push([style,ROOT+'tiles/'+file+'?v='+info.sha256]);
+   if(manifest.schema!=='mind-dungeon-room-tiles/v6'||
+      manifest.textureMode!=='uv-ready-polyhaven-diffuse')
+    throw Error('Corrected diffuse maps not published yet');
+   const pending=[];
+   for(const [style,rawFile,atlasFile,assetId,wall] of PHOTOS){
+    const raw=manifest.assetInfo?.[style],atlas=manifest.atlasInfo?.[style];
+    const file=(wall?manifest.wallVariants:manifest.floorVariants)?.[style];
+    const atlasMapped=(wall?manifest.wallAtlases:manifest.floorAtlases)?.[style];
+    const data=(wall?window.MindRoomKit.catalog.walls:window.MindRoomKit.catalog.floors)[style];
+    if(file!==rawFile||atlasMapped!==atlasFile||
+       raw?.file!==rawFile||raw?.asset!==assetId||
+       raw?.byteIdenticalToSource!==true||
+       raw?.textureRole!=='Diffuse/albedo, flat UV ready'||
+       !/^[0-9a-f]{64}$/.test(raw?.sha256||'')||
+       atlas?.file!==atlasFile||atlas?.sourceSha256!==raw.sha256||
+       !/^[0-9a-f]{64}$/.test(atlas?.sha256||'')||
+       Math.abs(atlas?.worldWidth-30)>.01||
+       Math.abs(atlas?.worldHeight-(wall?2:30))>.01||
+       !Number.isFinite(data?.worldWidth)||
+       Math.abs(data.worldWidth-raw.worldWidth)>.01)
+      throw Error('Missing or incorrectly mapped UV atlas: '+style);
+    pending.push([style,ROOT+'tiles/'+atlasFile+'?v='+atlas.sha256]);
    }
-   for(const [style,src] of selections)preload(style,src);
+   for(const [style,url] of pending)preload(style,url);
   }catch(error){
-   for(const key of PHOTO_KEYS){
-    const info=images.get(key);
-    if(!info.ready)info.failed=true;
+   for(const [style] of PHOTOS){
+    const item=images.get(style);
+    if(!item.ready)item.failed=true;
    }
-   console.warn('Room Atelier six-photo build not yet available:',error.message);
+   console.warn('Room Atelier corrected material build pending:',error.message);
    emit();
   }
  }
@@ -138,41 +144,12 @@ window.MindRoomArt=(()=>{
   ctx.restore();
   return true;
  }
- // The photos are transferred UNCHANGED. The only transformation is
- // mapping source picture coordinates into the isometric world geometry.
- // Poly Haven specifies each photo's physical size in metres. Our preview
- // is calibrated to about 1 game-grid unit per metre (Guardian ~2 units tall).
- // A photo does not restart on every floor tile or every wall segment.
+ // Only one world-aligned atlas is sampled for the entire visible room.
+ // No per-tile texture restarting at all. The source JPEGs remain separately
+ // available for material thumbnails and provenance.
  function getPhoto(style){
-  const entry=images.get(style);
-  return entry?.ready?entry.img:null;
- }
- function photoSpan(style,image,wall){
-  const data=wall?window.MindRoomKit.catalog.walls[style]:
-                  window.MindRoomKit.catalog.floors[style];
-  const width=data?.worldWidth;
-  if(!Number.isFinite(width)||width<=0)return null;
-  return [width,width*image.naturalHeight/image.naturalWidth];
- }
- function fillOriginal(ctx,image,scaleX,scaleY,x,y,w,h){
-  // The Pattern transform is in WORLD coordinates, not CSS/screen pixels.
-  // This is a single GPU-friendly fill even for 30x30 rooms.
-  const pattern=ctx.createPattern(image,'repeat');
-  if(pattern&&typeof pattern.setTransform==='function'&&
-     typeof DOMMatrix==='function'){
-   pattern.setTransform(new DOMMatrix([
-    scaleX/image.naturalWidth,0,0,scaleY/image.naturalHeight,-x,-y
-   ]));
-   ctx.fillStyle=pattern;
-   ctx.fillRect(0,0,w,h);
-   return;
-  }
-  // Correctly aligned fallback for older browsers without pattern transforms.
-  const firstX=-(x%scaleX+scaleX)%scaleX;
-  const firstY=-(y%scaleY+scaleY)%scaleY;
-  for(let py=firstY;py<h;py+=scaleY)
-   for(let px=firstX;px<w;px+=scaleX)
-    ctx.drawImage(image,px,py,scaleX,scaleY);
+  const data=images.get(style);
+  return data?.ready?data.img:null;
  }
  function drawRoomFloor(ctx,room,project){
   const image=getPhoto(room.floorStyle);
@@ -186,13 +163,11 @@ window.MindRoomArt=(()=>{
   ctx.transform(ex.x-origin.x,ex.y-origin.y,ey.x-origin.x,ey.y-origin.y,
                 origin.x,origin.y);
   if(image){
-   const [spanX,spanY]=photoSpan(room.floorStyle,image,false);
-   ctx.imageSmoothingEnabled=true;
-   ctx.imageSmoothingQuality='high';
-   // World-anchored orientation: x-axis of original texture == room x-axis.
-   fillOriginal(ctx,image,spanX,spanY,0,0,room.width,room.height);
+   const x=(room.width-30)*.5,y=(room.height-30)*.5;
+   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+   ctx.drawImage(image,x,y,30,30);
   }else{
-   ctx.fillStyle='#454545';ctx.fillRect(0,0,room.width,room.height);
+   ctx.fillStyle='#484846';ctx.fillRect(0,0,room.width,room.height);
   }
   ctx.restore();
   return true;
@@ -200,27 +175,27 @@ window.MindRoomArt=(()=>{
  function drawWallFace(ctx,style,topA,topB,bottomA,bottomB,along,height=2){
   const image=getPhoto(style);
   if(!image)return false;
-  const [spanX,spanY]=photoSpan(style,image,true);
+  // A 30-metre horizontal wall strip, 2 metres vertically. Source is actual
+  // FLAT diffuse material, not a photograph of a tilted wall demo.
+  const sourceX=Math.max(0,Math.min(29,along))*image.naturalWidth/30;
+  const sourceW=image.naturalWidth/30;
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);
+  ctx.beginPath();ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);
   ctx.lineTo(bottomB.x,bottomB.y);ctx.lineTo(bottomA.x,bottomA.y);
   ctx.closePath();ctx.clip();
-  // Canvas coordinates (u,v) travel along each wall and down its height.
-  // A full wall is height metres; v is normalized to 0..1 here.
+  // Basis u is along the top wall edge; v is physical vertical DOWN.
+  // This is orthogonal in world axes despite the skew of the iso camera.
   ctx.transform(topB.x-topA.x,topB.y-topA.y,
-                bottomA.x-topA.x,bottomA.y-topA.y,topA.x,topA.y);
-  ctx.imageSmoothingEnabled=true;
-  ctx.imageSmoothingQuality='high';
-  // Image spans spanX metres along the wall, spanY metres vertically.
-  // The negative offset ensures adjacent segments sample contiguous pixels.
-  fillOriginal(ctx,image,spanX,spanY/height,along,0,1,1);
+                bottomA.x-topA.x,bottomA.y-topA.y,
+                topA.x,topA.y);
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(image,sourceX,0,sourceW,image.naturalHeight,0,0,1,1);
   ctx.restore();
   return true;
  }
  function status(){
-  const floors=PHOTOS.filter(p=>!p[3]&&getPhoto(p[0])).length;
-  const walls=PHOTOS.filter(p=>p[3]&&getPhoto(p[0])).length;
+  const floors=PHOTOS.filter(p=>!p[4]&&getPhoto(p[0])).length;
+  const walls=PHOTOS.filter(p=>p[4]&&getPhoto(p[0])).length;
   return {
    tiles:floors+'/3 Poly-Haven-Böden',
    wallPhotos:walls+'/3 Poly-Haven-Mauern',
