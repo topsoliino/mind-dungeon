@@ -24,12 +24,17 @@ window.MindRoomArt=(()=>{
   return result;
  }
  // Only true flat UV diffuse maps, NEVER perspective presentation previews.
- // Three 30m floor atlases and three aligned 30m wall strips break the
+ // Eight 30m floor atlases and three aligned 30m wall strips break the
  // highly visible 2m material-repetition grid while retaining stone scale.
  const PHOTOS=[
   ['dungeon-ashlar','floor-albedo-01.jpg','floor-atlas-01.jpg','dark_rock_02',false],
   ['dungeon-coast-rocks','floor-albedo-02.jpg','floor-atlas-02.jpg','coast_sand_rocks_02',false],
   ['dungeon-cut-stone','floor-albedo-03.jpg','floor-atlas-03.jpg','cobblestone_floor_09',false],
+  ['dungeon-mossy-cobbles','floor-albedo-04.jpg','floor-atlas-04.jpg','cobblestone_floor_04',false],
+  ['dungeon-ruined-cobbles','floor-albedo-05.jpg','floor-atlas-05.jpg','cobblestone_floor_03',false],
+  ['dungeon-aged-paving','floor-albedo-06.jpg','floor-atlas-06.jpg','stone_floor',false],
+  ['dungeon-rustic-slate','floor-albedo-07.jpg','floor-atlas-07.jpg','slate_floor_02',false],
+  ['dungeon-wet-mud','floor-albedo-08.jpg','floor-atlas-08.jpg','brown_mud_03',false],
   ['stone','wall-albedo-01.jpg','wall-atlas-01.jpg','rock_wall_17',true],
   ['stone-cut','wall-albedo-02.jpg','wall-atlas-02.jpg','rock_wall_16',true],
   ['stone-old','wall-albedo-03.jpg','wall-atlas-03.jpg','old_stone_wall',true]
@@ -42,10 +47,10 @@ window.MindRoomArt=(()=>{
  async function loadPhotographicMaterials(){
   let manifest=null;
   try{
-   const response=await fetch(ROOT+'tiles/manifest.json?v=uv-fix-v7',{cache:'no-store'});
+   const response=await fetch(ROOT+'tiles/manifest.json?v=eight-floors-v7',{cache:'no-store'});
    if(!response.ok)throw Error('Materialmanifest HTTP '+response.status);
    manifest=await response.json();
-   if(manifest.schema!=='mind-dungeon-room-tiles/v6'||
+   if(!['mind-dungeon-room-tiles/v6','mind-dungeon-room-tiles/v7'].includes(manifest.schema)||
       manifest.textureMode!=='uv-ready-polyhaven-diffuse')
     throw Error('Falsche Materialmanifest-Version');
   }catch(error){
@@ -77,7 +82,7 @@ window.MindRoomArt=(()=>{
    }
    // The known v6 atlas filenames are unique to the corrected Diffuse pipeline.
    // Even during a stale Pages deployment, try these exact editor-local assets.
-   const version=valid?atlas.sha256:'uv-fix-v7';
+   const version=valid?atlas.sha256:'eight-floors-v7';
    preload(style,ROOT+'tiles/'+atlasFile+'?v='+version);
   }
  }
@@ -205,7 +210,7 @@ window.MindRoomArt=(()=>{
   const floors=PHOTOS.filter(p=>!p[4]&&getPhoto(p[0])).length;
   const walls=PHOTOS.filter(p=>p[4]&&getPhoto(p[0])).length;
   return {
-   tiles:floors+'/3 Poly-Haven-Böden',
+   tiles:floors+'/8 Poly-Haven-Böden',
    wallPhotos:walls+'/3 Poly-Haven-Mauern',
    guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
    tileReady:floors>0,wallsReady:walls===3,
