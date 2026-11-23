@@ -601,7 +601,11 @@ function previewBackground(entry){
  if(!slug)return local;
  const remote='https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/'+
   slug+'/'+slug+'_diff_1k.jpg';
- return local+',url("'+remote+'")';
+ const preview='https://cdn.polyhaven.com/asset_img/primary/'+
+  slug+'.png?height=256&quality=80';
+ // The 1K JPG matches the flat actual material. The small CDN preview is
+ // only a last-resort thumbnail if the browser cannot fetch that JPG.
+ return local+',url("'+remote+'"),url("'+preview+'")';
 }
 for(const [type,entry] of Object.entries(cat.floors)){
  const option=document.createElement('option');option.value=type;option.textContent=entry.label;$('floorType').appendChild(option);
