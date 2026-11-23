@@ -304,8 +304,8 @@
    const samples=[[u-radius,v],[u+radius,v],[u,v-radius],[u,v+radius]];
    const outside=samples.some(([x,y])=>generatorMode?!route.containsGround(x,y):
     !walkable.some(area=>contains(area,x,y)));
-   return outside||solids.some(([a,b,c,d])=>
-    contains([a-radius,b-radius,c+radius,d+radius],u,v))||Boolean(route?.blocked(u,v,radius));
+   return outside||(!prisonInterior&&solids.some(([a,b,c,d])=>
+    contains([a-radius,b-radius,c+radius,d+radius],u,v)))||Boolean(route?.blocked(u,v,radius));
   }
   function blocked(x,y){return blockedGround(...unproject(x,y),.23);}
   function clearSegment(from,to){
