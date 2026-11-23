@@ -88,7 +88,8 @@ def cube(name, location, size, m, bevel=.01):
         mod = ob.modifiers.new('soft worn physical edges', 'BEVEL')
         mod.width = bevel
         mod.segments = 3
-        mod.affect = 'EDGES' if hasattr(mod, 'affect') else None
+        if hasattr(mod, 'affect'):
+            mod.affect = 'EDGES'
         mod.profile = .5
         ob.modifiers.new('weighted normals', 'WEIGHTED_NORMAL')
     return ob
