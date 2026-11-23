@@ -8,6 +8,6 @@
 - Schreiboperationen und Commits müssen auf Dateien mit Präfix `beta/room-editor/` begrenzt werden.
 - Der bestehende Editor-Art-Build schreibt nur Assets unter `beta/room-editor/assets/`; Änderungen am Workflow unter `.github/` sind nicht Teil dieser Erlaubnis.
 - Editor-Daten/-Vorschau und Spieltest bleiben vom produktiven Dungeon-Generator isoliert.
-- Die Bodenkarte ist ein einzelnes 32×32-Welteinheiten-Artwork; kleine Räume clippen einen Ausschnitt statt einzelne Tiles zu wiederholen oder die Steingröße zu skalieren.
+- Der Editor nutzt drei originalgetreue Poly-Haven-Bodenfotos und drei Wandfotos. Die Texturprojektion ist an den Weltachsen ausgerichtet und verwendet je Asset die auf Poly Haven angegebenen realen Größen (ein Editor-Rasterfeld etwa ein Meter), statt Material mit der Raumgröße zu dehnen. Die Originalfotos werden unverändert lokal importiert und aus dem Manifest mit Dateihash geladen.
 
 Diese Projektgrenze gilt für weitere Änderungen am Raumeditor.
