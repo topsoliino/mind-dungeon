@@ -111,3 +111,5 @@ Alle Änderungen der Bodenkarte und des Editors liegen ausschließlich unter `be
 **Veröffentlichungsprüfung:** `assets/tiles/manifest.json` muss `mind-dungeon-room-tiles/v6`, `textureMode: uv-ready-polyhaven-diffuse`, drei `floorAtlases` und drei `wallAtlases` sowie für jede Ausgabe ein SHA-256 und die Quelldatei enthalten. Die generierten Dateinamen heißen `floor-albedo-0{1,2,3}.jpg`, `wall-albedo-0{1,2,3}.jpg`, `floor-atlas-0{1,2,3}.jpg` und `wall-atlas-0{1,2,3}.jpg`. Die ursprünglichen drei Blender-WebPs bleiben einzig zur Wahrung des unveränderten, separat laufenden Editor-Art-CI-Checks erhalten.
 
 **Hauptspielschutz:** Alle Writes bleiben strikt auf `beta/room-editor/**` begrenzt. Weder `beta/index.html`, `beta/dungeon-isometric.js`, Gegner-/Wächter-/Generator-Dateien noch `.github/**` werden verändert.
+
+**UV-Regressionstest:** `node beta/room-editor/tests/uv-mapping.test.js` prüft alle sechs Materialien, konstante 30-m-Boden-UVs unabhängig von der Raumgröße sowie unmittelbar aufeinanderfolgende Wandtexturabschnitte für beide isometrischen Wandrichtungen.
