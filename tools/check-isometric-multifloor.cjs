@@ -13,7 +13,7 @@ const document={currentScript:{src:'https://example.org/beta/alley-architecture.
  createElement:()=>({width:0,height:0,getContext:context})};
 class Image{set src(value){this._src=value;}}
 function scene(seed){
- const w={location:{search:'?szene=gasse&modus=generator&seed='+seed},
+ const w={location:{search:'?szene=gasse&modus=generator&seed='+seed+'&treppe=switchback'},
   DungeonWorld:{TILE:48,HERO_RADIUS:14}};
  const scope=vm.createContext({window:w,document,Image,URL,URLSearchParams});
  for(const file of files)vm.runInContext(read(file),scope,{filename:file});
