@@ -11,7 +11,7 @@ const quant=x=>Math.round(x*4)/4;
 let room=clone(kit.preset),selected=null,tool='select',chosenFurniture='prison-table';
 let showGrid=true,playing=false,dragging=null,hover=null,dirty=true,frame=0;
 let width=0,height=0,zoom=1,ox=0,oy=0;
-let hero={x:3.5,y:2.6,target:null,vault:0,face:0},keys=new Set(),history=[],historyPos=0;
+let hero={x:3.5,y:2.6,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
 let playHP=new Map();
 const assets=new Map();
 function spriteName(type,rot){return cat.furniture[type].asset+'-'+rot+'.webp'}
@@ -50,6 +50,9 @@ function sanitize(raw){
  for(const wall of raw.walls||[]){
   if(!isWall(wall))continue;
   const horizontal=wall.edge==='north'||wall.edge==='south';
+  // Our camera sees from +X/+Y. Never store a wall along the southern
+  // or eastern outer cutaway: it would hide the Guardian and furniture.
+  if(horizontal&&wall.y===next.height||!horizontal&&wall.x===next.width)continue;
   if(wall.x<0||wall.y<0||wall.x>(horizontal?next.width-1:next.width)||
    wall.y>(horizontal?next.height:next.height-1))continue;
   const id=keyWall(wall);if(seen.has(id))continue;seen.add(id);
@@ -118,6 +121,10 @@ new ResizeObserver(resize).observe($('canvasWrap'));
 function tileStyle(x,y){return room.tiles.find(t=>t.x===x&&t.y===y)?.style||room.floorStyle}
 function drawTile(x,y){
  const info=cat.floors[tileStyle(x,y)],corners=[pt(x,y),pt(x+1,y),pt(x+1,y+1),pt(x,y+1)];
+ if(window.MindRoomArt?.drawFloor(ctx,pt(x+.5,y+.5),zoom)){
+  if(showGrid)polygon(corners,null,'#c1bdbe1c',.55);
+  return;
+ }
  const r=rand(x,y),r2=rand(x,y,15);
  polygon(corners,info.base,info.grout,.8);
  const variation=r>.6?'#ffffff10':'#00000012';
@@ -148,10 +155,19 @@ function wallEnds(w){
  return [[w.x,w.y],[w.x,w.y+1]];
 }
 function wallDepth(w){const [a,b]=wallEnds(w);return(pt(a[0],a[1]).y+pt(b[0],b[1]).y)/2+.5}
+function isNearWall(w){
+ return (w.edge==='north'||w.edge==='south')&&w.y===room.height||
+  (w.edge==='west'||w.edge==='east')&&w.x===room.width;
+}
 function drawWall(w){
+ if(isNearWall(w))return; // Isometric camera-side cutaway, not a collision hack.
  const type=cat.walls[w.style];if(!type||!type.height)return;
  const [a,b]=wallEnds(w),h=type.height,base0=pt(...a),base1=pt(...b),
   top0=pt(a[0],a[1],h),top1=pt(b[0],b[1],h),facing=(w.edge==='north'||w.edge==='south');
+ if(w.style==='stone'){
+  const mid=pt((a[0]+b[0])/2,(a[1]+b[1])/2,1);
+  if(window.MindRoomArt?.drawWall(ctx,mid,facing?'x':'y',zoom))return;
+ }
  // Breakable stone-block rendering is deliberately same for all four faces.
  if(w.style==='stone'){
   polygon([top0,top1,base1,base0],facing?'#4b4955':'#54525c','#2b2a34',1.1);
@@ -203,7 +219,7 @@ function fits(obj,ignoreId=null){
  const a=bounds(obj);
  if(a.left<.1||a.top<.1||a.right>room.width-.1||a.bottom>room.height-.1)return false;
  if(obj.blocksMovement)for(const wall of room.walls){
-  if(!cat.walls[wall.style]?.solid)continue;
+  if(isNearWall(wall)||!cat.walls[wall.style]?.solid)continue;
   // A physical 3D furniture footprint cannot be placed through a prison
   // wall or cell grille, not merely outside the rectangular room.
   const h=wall.edge==='north'||wall.edge==='south';
@@ -285,8 +301,8 @@ function nearestWall(x,y){
  const du=Math.abs(x-Math.round(x)),dv=Math.abs(y-Math.round(y));
  const horizontal=dv<=du;
  let u=horizontal?Math.floor(x):Math.round(x),v=horizontal?Math.round(y):Math.floor(y);
- if(horizontal){if(u<0||u>=room.width||v<0||v>room.height)return null}
- else{if(u<0||u>room.width||v<0||v>=room.height)return null}
+ if(horizontal){if(u<0||u>=room.width||v<0||v>=room.height)return null}
+ else{if(u<0||u>=room.width||v<0||v>=room.height)return null}
  const wall={x:u,y:v,edge:horizontal?'north':'west',style:$('wallType').value};
  return {...wall,kind:'wall',id:keyWall(wall)};
 }
@@ -323,8 +339,15 @@ function draw(){
   const v=hover;polygon([pt(v.x,v.y),pt(v.x+1,v.y),pt(v.x+1,v.y+1),pt(v.x,v.y+1)],'#f4c87527','#e3bd78',1.2);
  }
  const layers=[];
- for(const w of room.walls)layers.push({depth:wallDepth(w),draw:()=>drawWall(w)});
+ for(const w of room.walls)if(!isNearWall(w))layers.push({depth:wallDepth(w),draw:()=>drawWall(w)});
  for(const obj of room.furniture)layers.push({depth:pt(obj.x,obj.y).y,draw:()=>drawFurniture(obj)});
+ if(playing)layers.push({
+  depth:pt(hero.x,hero.y).y+.01,
+  draw:()=>window.MindRoomArt.drawGuardian(ctx,{
+   point:pt(hero.x,hero.y),angle:hero.face,time:hero.clock,
+   moving:hero.moving,vault:hero.vault,zoom
+  })
+ });
  layers.sort((a,b)=>a.depth-b.depth);
  for(const layer of layers)layer.draw();
  if(hover?.kind==='wall'&&(tool==='wall'||tool==='erase')){
@@ -335,17 +358,15 @@ function draw(){
   const item=makeInstance(chosenFurniture,hover.x,hover.y,0,'ghost');
   drawGhost(item);
  }
- if(playing){
-  const p=pt(hero.x,hero.y);
-  ctx.beginPath();ctx.ellipse(p.x,p.y,10*zoom,5*zoom,0,0,TAU);
-  ctx.fillStyle='#bad8cf45';ctx.fill();ctx.strokeStyle='#a1dfce';ctx.lineWidth=1.3*zoom;ctx.stroke();
-  ctx.beginPath();ctx.arc(p.x,p.y-23*zoom-hero.vault*18*zoom,10.5*zoom,0,TAU);
-  ctx.fillStyle='#e6d4b2';ctx.fill();ctx.strokeStyle='#725850';ctx.lineWidth=2*zoom;ctx.stroke();
-  ctx.beginPath();ctx.arc(p.x+Math.cos(hero.face)*6*zoom,p.y-23*zoom-hero.vault*18*zoom+
-  Math.sin(hero.face)*6*zoom,2*zoom,0,TAU);ctx.fillStyle='#29343c';ctx.fill();
- }
+
 }
 function schedule(){dirty=true}
+window.MindRoomArt?.onChange(()=>{
+ const state=window.MindRoomArt.status();
+ $('assetStatus').textContent='Blender-Stein '+state.tiles+' · Wächter '+(state.guardianAuthentic?'Originalatlas':state.guardian);
+ schedule();
+});
+
 function getPointer(e){
  const rect=c.getBoundingClientRect();return{x:e.clientX-rect.left,y:e.clientY-rect.top};
 }
@@ -378,7 +399,7 @@ function changeRoom(fn){
 }
 function item(){return room.furniture.find(f=>f.id===selected)||null}
 function togglePlay(active){
- playing=active;keys.clear();dragging=null;hero.target=null;hero.vault=0;
+ playing=active;keys.clear();dragging=null;hero.target=null;hero.vault=0;hero.moving=false;hero.clock=0;
  playHP=new Map(active?room.furniture.map(obj=>[obj.id,cat.furniture[obj.type].maxHP]):[]);
  if(active){
   let found=null;
@@ -401,7 +422,7 @@ function canOccupy(x,y){
   const b=bounds(obj);
   if(x+r>b.left&&x-r<b.right&&y+r>b.top&&y-r<b.bottom)return false;
  }
- for(const wall of room.walls)if(cat.walls[wall.style].solid){
+ for(const wall of room.walls)if(!isNearWall(wall)&&cat.walls[wall.style].solid){
   const [a,b]=wallEnds(wall),d=Math.hypot(b[0]-a[0],b[1]-a[1]);
   if(d<.5)continue;
   if(wall.edge==='north'||wall.edge==='south'){
@@ -411,6 +432,8 @@ function canOccupy(x,y){
  return true;
 }
 function playStep(dt){
+ const previousX=hero.x,previousY=hero.y;
+ hero.clock=(hero.clock||0)+dt;
  const sx=Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft')),
   sy=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'));
  let dx=sx,dy=sy;
@@ -427,6 +450,7 @@ function playStep(dt){
   else if(canOccupy(hero.x,hero.y+dy*step)){hero.y+=dy*step;hero.target=null}
   else hero.target=null;
  }
+ hero.moving=Math.hypot(hero.x-previousX,hero.y-previousY)>.001;
  hero.vault=Math.max(0,hero.vault-dt*2.7);
 }
 function vault(){
