@@ -41,6 +41,19 @@ async function main(){
  for(let i=0;i<15;i++)await Promise.resolve();
  assert.equal(manifest.schema,'mind-dungeon-room-tiles/v6');
  assert.equal(manifest.textureMode,'uv-ready-polyhaven-diffuse');
+ const floorStyles=Object.keys(ctxWindow.MindRoomKit.catalog.floors).sort();
+ const wallStyles=Object.entries(ctxWindow.MindRoomKit.catalog.walls)
+   .filter(([style,spec])=>spec.render==='photo-wall-map')
+   .map(([style])=>style).sort();
+ // A previous build accidentally exported the wall materials inside
+ // floorVariants and left wallVariants empty; this caused ALL six UI images
+ // to stay gray (0/3 floors, 0/3 walls). Test both category partitions.
+ assert.deepEqual(Object.keys(manifest.floorVariants).sort(),floorStyles,
+   'floorVariants must contain only the three floor styles');
+ assert.deepEqual(Object.keys(manifest.wallVariants).sort(),wallStyles,
+   'wallVariants must contain all three wall styles');
+ assert.deepEqual(Object.keys(manifest.floorAtlases).sort(),floorStyles);
+ assert.deepEqual(Object.keys(manifest.wallAtlases).sort(),wallStyles);
  const art=ctxWindow.MindRoomArt,status=art.status();
  assert.match(status.tiles,/^3\/3/);
  assert.match(status.wallPhotos,/^3\/3/);
