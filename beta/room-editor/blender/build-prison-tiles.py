@@ -22,6 +22,7 @@ args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
 parser=argparse.ArgumentParser()
 parser.add_argument('--raw',default='/tmp/md-room-editor-raw')
 parser.add_argument('--samples',type=int,default=56)
+# Keep the same atlas resolution: richness comes from modeled detail, not pixels.
 opt=parser.parse_args(args)
 OUT=Path(opt.raw)
 OUT.mkdir(parents=True,exist_ok=True)
@@ -68,11 +69,11 @@ def material(name,dark,light,roughness=.84,metallic=0,scale=26,bump=.15):
     return mat
 
 stone=[
-    material('Cold quarried prison slate 01','2d323d','747783',.86,scale=31,bump=.23),
-    material('Smoky blue granite 02','313844','85818b',.89,scale=39,bump=.20),
-    material('Warm flecked stone 03','433d40','969093',.82,scale=28,bump=.25),
+    material('Cold quarried prison slate 01','24272f','666670',.91,scale=44,bump=.32),
+    material('Smoky blue granite 02','292d36','74747e',.91,scale=52,bump=.31),
+    material('Warm flecked stone 03','393337','847976',.88,scale=46,bump=.33),
     material('Smoke weathered limestone 04','30343e','777b81',.93,scale=47,bump=.25),
-    material('Damp shaded slab 05','292e39','66636d',.90,scale=42,bump=.28)
+    material('Damp shaded slab 05','22252e','57555d',.94,scale=50,bump=.35)
 ]
 mortar=material('Deep black charcoal mortar','15171f','31323c',.96,scale=64,bump=.33)
 chipped=material('Stone broken bevel edges','3c393e','aba19c',.80,scale=76,bump=.22)
@@ -138,10 +139,16 @@ def floor_piece():
                           (px,py,z+top/2+.001),
                           (.085,.0025,.002),mortar,.0005)
                 chip.rotation_euler.z=R.uniform(-.8,.8)
-    for i in range(8):
+    for i in range(24):
         x=R.uniform(-.48,.48);y=R.uniform(-.48,.48)
         # Very small dark grit in mortar joints, intentionally subtle.
         if i%2==0:pebble('dark grit', (x,y,-.004),.006,mortar)
+    # Hairline fractures and ancient repairs are actual geometry, not resolution tricks.
+    for i in range(12):
+        px,py=R.uniform(-.42,.42),R.uniform(-.42,.42)
+        crack=cube('irregular fissure / dark mineral seam',
+            (px,py,.053),(.09+R.random()*.10,.0025,.002),mortar,.0004)
+        crack.rotation_euler.z=R.uniform(-1.6,1.6)
 
 def wall_piece():
     # X-oriented length1 wall; rotated 90deg for Y-facing sprite.
@@ -172,6 +179,20 @@ def wall_piece():
                      (.026,.003,.10),rust,.001)
     cube('Heavy worn capstone', (0,0,1.965),(1.07,.27,.11),stone[2],.018)
     cube('Stone base plinth',(0,0,.075),(1.055,.282,.14),stone[4],.015)
+    # Forged repairs, tool scratches and broken masonry create a dark medieval silhouette.
+    for px in (-.39,.39):
+        for z in (.32,1.27):
+            cube('centuries-old hammered iron staple',
+                (px,-.143,z),(.075,.023,.026),iron,.003)
+            for side in (-1,1):
+                cube('square blacksmith rivet',
+                    (px+side*.026,-.158,z),(.014,.012,.014),rust,.002)
+    for i in range(17):
+        x=R.uniform(-.45,.45);z=R.uniform(.24,1.79)
+        scar=cube('chisel scarring and weathering',
+            (x,-.149,z),(.032+R.random()*.058,.004,.003),
+            mortar if i%3 else chipped,.001)
+        scar.rotation_euler.y=R.uniform(-1.1,1.1)
     # A few tiny forged spikes visible under the coping line.
     for i in (-.36,.02,.34):
         cube('ancient iron masonry dowel',
@@ -231,7 +252,7 @@ scene.render.image_settings.color_depth='8'
 scene.view_settings.view_transform='Filmic'
 try:scene.view_settings.look='High Contrast'
 except Exception:scene.view_settings.look='Medium High Contrast'
-scene.view_settings.exposure=.10
+scene.view_settings.exposure=-.18
 scene.view_settings.gamma=1.0
 
 def show(which):
