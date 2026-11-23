@@ -70,6 +70,36 @@ const catalog={
    label:'Old Stone Wall · alte Steinmauer',height:2,solid:true,
    worldWidth:2.0,asset:artRoot+'tiles/wall-albedo-03.jpg',render:'photo-wall-map'
   },
+  'stone-rough-12':{
+   label:'Rock Wall 12 · zerklüfteter Bruchstein',height:2,solid:true,
+   worldWidth:1.6,asset:artRoot+'tiles/wall-albedo-04.jpg',
+   polyhaven:'rock_wall_12',render:'photo-wall-map'
+  },
+  'stone-rough-13':{
+   label:'Rock Wall 13 · alte verwitterte Quader',height:2,solid:true,
+   worldWidth:2.0,asset:artRoot+'tiles/wall-albedo-05.jpg',
+   polyhaven:'rock_wall_13',render:'photo-wall-map'
+  },
+  'stone-rough-14':{
+   label:'Rock Wall 14 · dunkler grober Bruchstein',height:2,solid:true,
+   worldWidth:1.8,asset:artRoot+'tiles/wall-albedo-06.jpg',
+   polyhaven:'rock_wall_14',render:'photo-wall-map'
+  },
+  'stone-rough-15':{
+   label:'Rock Wall 15 · raues Felsmauerwerk',height:2,solid:true,
+   worldWidth:1.9,asset:artRoot+'tiles/wall-albedo-07.jpg',
+   polyhaven:'rock_wall_15',render:'photo-wall-map'
+  },
+  'stone-castle-slates':{
+   label:'Castle Wall Slates · geschichtete Burgsteine',height:2,solid:true,
+   worldWidth:2.5,asset:artRoot+'tiles/wall-albedo-08.jpg',
+   polyhaven:'castle_wall_slates',render:'photo-wall-map'
+  },
+  'stone-castle-aged':{
+   label:'Castle Wall Variation · alte Burgquader',height:2,solid:true,
+   worldWidth:2.0,asset:artRoot+'tiles/wall-albedo-09.jpg',
+   polyhaven:'castle_wall_varriation',render:'photo-wall-map'
+  },
   bars:{label:'Geschmiedetes Zellen-Gitter',height:2.05,solid:true,asset:'walls/bars'},
   gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,asset:'walls/gate'},
   open:{label:'Offene Wand / Durchgang',height:0,solid:false,asset:null}
