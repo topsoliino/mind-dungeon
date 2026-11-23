@@ -128,32 +128,10 @@ const fastIsometric=Boolean(alley&&!enemyArtPreview&&
 let guardianBaked=false,guardianSlowSeconds=0,guardianFallbackPending=false,
  guardianQualityClock=0;
 function adaptGuardianQuality(dt){
- if(enemyArtPreview||guardianBaked||guardianFallbackPending||!guardian?.rig||paused)return;
- // Delay downgrade until sustained low FPS; occasional spikes retain 3D.
- const now=performance.now();
- const wallDt=guardianQualityClock?
-  Math.min(.18,Math.max(0,(now-guardianQualityClock)/1000)):Math.min(.035,dt);
- guardianQualityClock=now;
- const fps=renderStats.fps||60;
- guardianSlowSeconds=fps<32?
-  Math.min(5,guardianSlowSeconds+wallDt):
-  Math.max(0,guardianSlowSeconds-wallDt*1.5);
- // Prepare the cached art BEFORE the costly Phaser->Canvas switch, so
- // decoding several large WebPs cannot interrupt an already slow canvas
- // rendering session with multi-second frame spikes.
- if(guardianSlowSeconds<.78)return;
- guardianFallbackPending=true;
- guardianArt.ensureFallback(guardian).then(ok=>{
-  guardianBaked=Boolean(ok);
-  if(ok){
-   // Switching images is cheap. Forcing a WebGL context loss mid-game can
-   // stall software GPU compositors for over a second; defer GPU teardown
-   // until game exit, not during a critical FPS recovery.
-   updateArtStatus();
-   console.info('Mind Dungeon: Guardian switched to Blender-baked animation');
-  }else guardianSlowSeconds=0;
-  guardianFallbackPending=false;
- });
+ // Model fidelity is invariant. The original Blender GLB renderer has a
+ // dynamic pose-sampling budget; do not silently switch to obsolete art.
+ // Dynamic WORLD render resolution still adapts separately to FPS.
+ return;
 }
 // Load genuine Blender GLB snapshots first: 32 independently rendered angles,
 // no per-frame WebGL readback or Phaser texture uploads during battles.
@@ -183,9 +161,10 @@ const guardianReady=alley?guardianArt.load('beta/art/player-study/').then(async 
  guardian=data;
  window.__mindGuardianRig=data.rig||null;
  window.__mindGuardianAtlas=data.atlas||null;
- // Decode the authored Blender animation atlas BEFORE game entry so combat
- // will never pause while switching from live armature to cached sprites.
- if(fastIsometric)guardianBaked=Boolean(await guardianArt.ensureFallback(data));
+ // Keep the original skinned 3D Guardian in every dungeon mode.
+ // Fast Canvas rendering may lower WORLD resolution, but must NEVER
+ // replace the player's model with the older eight-direction sprites.
+ guardianBaked=false;
  updateArtStatus();
 }).catch(error=>{
  updateArtStatus();
