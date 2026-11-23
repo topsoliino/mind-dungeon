@@ -1,4 +1,4 @@
-"""Package 3 raw floor diffuse JPGs, 3 raw wall diffuse JPGs and 3 floor atlases.
+"""Package 8 raw floor diffuse JPGs, 3 raw wall diffuse JPGs and 8 floor atlases.
 
 The old primary previews were NOT UV materials. Those are not imported by
 this version. Originals come from Poly Haven's actual diffuse map endpoint.
@@ -48,6 +48,11 @@ VARIANTS={
  "dungeon-ashlar":("floor-albedo-01.jpg","dark_rock_02",2.0),
  "dungeon-coast-rocks":("floor-albedo-02.jpg","coast_sand_rocks_02",15.0),
  "dungeon-cut-stone":("floor-albedo-03.jpg","cobblestone_floor_09",2.2),
+ "dungeon-mossy-cobbles":("floor-albedo-04.jpg","cobblestone_floor_04",1.5),
+ "dungeon-ruined-cobbles":("floor-albedo-05.jpg","cobblestone_floor_03",2.4),
+ "dungeon-aged-paving":("floor-albedo-06.jpg","stone_floor",1.8),
+ "dungeon-rustic-slate":("floor-albedo-07.jpg","slate_floor_02",2.0),
+ "dungeon-wet-mud":("floor-albedo-08.jpg","brown_mud_03",1.3),
  "stone":("wall-albedo-01.jpg","rock_wall_17",1.8),
  "stone-cut":("wall-albedo-02.jpg","rock_wall_16",2.0),
  "stone-old":("wall-albedo-03.jpg","old_stone_wall",2.0),
@@ -56,6 +61,11 @@ ATLASES={
  "dungeon-ashlar":"floor-atlas-01.jpg",
  "dungeon-coast-rocks":"floor-atlas-02.jpg",
  "dungeon-cut-stone":"floor-atlas-03.jpg",
+ "dungeon-mossy-cobbles":"floor-atlas-04.jpg",
+ "dungeon-ruined-cobbles":"floor-atlas-05.jpg",
+ "dungeon-aged-paving":"floor-atlas-06.jpg",
+ "dungeon-rustic-slate":"floor-atlas-07.jpg",
+ "dungeon-wet-mud":"floor-atlas-08.jpg",
  "stone":"wall-atlas-01.jpg",
  "stone-cut":"wall-atlas-02.jpg",
  "stone-old":"wall-atlas-03.jpg"
@@ -101,8 +111,8 @@ for style,filename in ATLASES.items():
     }
 
 manifest={
- "schema":"mind-dungeon-room-tiles/v6",
- "source":"Six UV-ready Poly Haven original Diffuse maps (not perspective presentation previews)",
+ "schema":"mind-dungeon-room-tiles/v7",
+ "source":"Eleven UV-ready Poly Haven original Diffuse maps (eight floors, three walls)",
  "textureMode":"uv-ready-polyhaven-diffuse",
  "license":"CC0: https://polyhaven.com/license",
  "floorMaterial":"derived-large-stochastic-albedo-atlas",
@@ -123,10 +133,12 @@ manifest={
  "legacyBlenderWallProjectionFiles":["wall-prison-x.webp","wall-prison-y.webp"],
  "gameBetaFilesModified":False
 }
-# Regression: exactly three floors and three walls, no cross-category leakage.
+# Regression: exactly eight floors and three walls, no cross-category leakage.
+assert len(manifest["floorVariants"]) == 8
 assert set(manifest["floorVariants"]) == {k for k in VARIANTS if k.startswith("dungeon-")}
+assert len(manifest["wallVariants"]) == 3
 assert set(manifest["wallVariants"]) == {k for k in VARIANTS if not k.startswith("dungeon-")}
 assert set(manifest["floorAtlases"]) == set(manifest["floorVariants"])
 assert set(manifest["wallAtlases"]) == set(manifest["wallVariants"])
 (OUT/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n")
-print("VALIDATED: 6 original UV diffuse maps + 3 large floor atlases + 3 world-aligned wall atlases",flush=True)
+print("VALIDATED: 11 original Diffuse maps + 8 floor atlases + 3 wall atlases",flush=True)
