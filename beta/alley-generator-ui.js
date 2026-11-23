@@ -28,8 +28,8 @@ function mount({generator:g,player,iso}){
   'background:#101725;color:#eee;border:1px solid #8190a1;border-radius:4px">'+
   stairOptions+'</select></div>'+
   '<div style="display:flex;gap:5px;align-items:center;margin-top:8px">'+
-  '<label for="iso-gen-seed">Seed</label><input id="iso-gen-seed" type="number" min="0" step="1" '+
-  'value="'+g.requestedSeed+'" style="width:100%;min-width:0;padding:5px;background:#101725;color:white;'+
+  '<label for="iso-gen-seed">Seed</label><input id="iso-gen-seed" type="number" min="4147" max="4156" step="1" '+
+  'value="'+g.runSeed+'" style="width:100%;min-width:0;padding:5px;background:#101725;color:white;'+
   'border:1px solid #8190a1;border-radius:4px"><button id="iso-gen-apply">Laden</button></div>'+
   '<button id="iso-gen-new" style="width:100%;margin-top:7px;padding:8px;font-weight:bold">'+
   'Neue Ebene generieren</button></div>';
@@ -91,10 +91,10 @@ function mount({generator:g,player,iso}){
   const url=new URL(window.location.href);
   url.searchParams.set('szene','gasse');url.searchParams.set('modus','generator');
   if(randomStyle)url.searchParams.delete('treppe');
-  url.searchParams.set('seed',String(n));url.searchParams.set('v','20');window.location.assign(url.href);
+  url.searchParams.delete('seed');url.searchParams.set('run',String(n));url.searchParams.set('v','20');window.location.assign(url.href);
  }
  panel.querySelector('#iso-gen-apply').onclick=()=>setSeed(field.value);
- panel.querySelector('#iso-gen-new').onclick=()=>setSeed((g.requestedSeed+1)>>>0,true);
+ panel.querySelector('#iso-gen-new').onclick=()=>setSeed((g.runSeed+1)>>>0,true);
  field.onkeydown=e=>{if(e.key==='Enter')setSeed(field.value);};
  const canvas=panel.querySelector('#iso-gen-map'),display=canvas.getContext('2d');
  const background=document.createElement('canvas');

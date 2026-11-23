@@ -50,7 +50,14 @@ function create(api){
   updateWebs(dt);updateStorm(dt);updateBolts(dt);soulController?.update(dt);updatePlates(dt);updateEnemyHazards(dt);
  }
  function act(e,dt,actor,clock,width,height){
-  player=actor;combatClock=clock;cw=width;ch=height;updateEnemy(e,dt);
+  player=actor;combatClock=clock;cw=width;ch=height;
+  const x=e.x,y=e.y;
+  updateEnemy(e,dt);
+  if(e.skeleton||e.type===enemyRules.RAT){
+   const distance=Math.hypot(e.x-x,e.y-y);
+   e.moving=distance>.001||Boolean(e.alleyClimb);
+   e.gait=((e.gait||0)+distance/(e.skeleton?54:37))%1;
+  }
  }
 function moveEnemy(e,dx,dy){
  const {x,y}=e;

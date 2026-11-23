@@ -229,7 +229,20 @@ function select(generator,placeLadder,reserved=null,previousKind=null){
      }
      if(!fits)continue;
      if(reserved&&x<reserved[2]+1&&x+W>reserved[0]-1&&y<reserved[3]+1&&y+L>reserved[1]-1)continue;
-     const model=transform(template,[x,y],rotation);
+     // Rank cheap footprint descriptors first. Construct detailed meshes only
+     // for candidates actually being validated, one mesh at a time.
+     const clearance=Math.min(5,...doorCells.map(([u,v])=>
+      Math.hypot(Math.max(x-u-1,0,u-x-W),Math.max(y-v-1,0,v-y-L))));
+     const variety=((Math.imul(generator.seed+31,(x+53)*17+(y+43)*13+rotation*7)>>>0)%53)/53;
+     const score=clearance*3+Math.min(35,room.cells.length-W*L)*.55+variety;
+     viable.push({room,occupied,x,y,rotation,score});
+    }
+   }
+  }
+  if(viable.length){
+   viable.sort((a,b)=>b.score-a.score);
+   for(const {room,occupied,x,y,rotation} of viable){
+     const model={...transform(template,[x,y],rotation),room};
      // A usable upper and lower landing must remain in the SAME room.
      if(!occupied.has(K(Math.floor(model.bottom.x),Math.floor(model.bottom.y)))||
       !occupied.has(K(Math.floor(model.top.x),Math.floor(model.top.y))))continue;
@@ -255,26 +268,6 @@ function select(generator,placeLadder,reserved=null,previousKind=null){
      const [left,back,right,front]=model.region;
      if(doorCells.some(([u,v])=>u+1>left&&u<right&&v+1>back&&v<front&&
       blocksCandidate(model,u+.5,v+.5,.42)))continue;
-     const clearance=doorCells.length?Math.min(...doorCells.map(c=>
-      Math.min(dist(model.bottom,vec(c[0]+.5,c[1]+.5)),
-       dist(model.top,vec(c[0]+.5,c[1]+.5))))):4;
-     const old=generator.stairs?.[0]?.roomId===room.id?1:0;
-     const variety=((Math.imul(generator.seed+31,(x+53)*17+(y+43)*13+rotation*7)>>>0)%53)/53;
-     // Prefer space around the stair and away from doors: fewer bottlenecks.
-     const free=room.cells.filter(([u,v])=>!blocksCandidate(model,u+.5,v+.5,.29));
-     const freeRatio=free.length/room.cells.length,extraCells=room.cells.length-W*L;
-     const nearTreads=doorCells.length?Math.min(...doorCells.map(([u,v])=>
-      Math.min(...model.steps.filter((_,i)=>i%2===0).map(step=>
-       dist(vec(u+.5,v+.5),step.center))))):5;
-     const score=Math.min(5,clearance)*3+old*1.5+variety+
-      Math.min(35,extraCells)*.55+freeRatio*18+Math.min(3,nearTreads)*3;
-     viable.push({...model,room,score});
-    }
-   }
-  }
-  if(viable.length){
-   viable.sort((a,b)=>b.score-a.score);
-   for(const model of viable){
     // Check the actual tread and landing polygons against every wall,
     // including perimeter walls near a rotated or curved outer rail.
     const intersectsWall=(corners,[x0,y0,x1,y1])=>{
@@ -287,7 +280,6 @@ function select(generator,placeLadder,reserved=null,previousKind=null){
      });
      return !separated(box,corners)&&!separated(corners,box);
     };
-    const [left,back,right,front]=model.region;
     const walls=generator.walls.filter(({area:[x,y,r,b]})=>x<=right+.1&&r>=left-.1&&y<=front+.1&&b>=back-.1);
     if(walls.some(w=>model.steps.concat(model.landings).some(p=>intersectsWall(p.corners,w.area))))continue;
     const plan=withUpperDeck(model);

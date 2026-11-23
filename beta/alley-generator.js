@@ -8,10 +8,10 @@ if(query.get('szene')!=='gasse'||query.get('modus')!=='generator'||
    window.RockyCoastPrison?.isExterior){
  window.AlleyGenerator={enabled:false};return;
 }
-const input=query.has('seed')?Number(query.get('seed')):NaN;
-const defaultSeed=window.RockyCoastPrison?.enabled?
- window.RockyCoastPrison.layoutSeed:4147;
-const seed=Number.isSafeInteger(input)&&input>=0?input>>>0:defaultSeed;
+const prison=window.RockyCoastPrison;
+const legacySeed=Number(query.get('seed')??query.get('run')??4147)>>>0;
+const runSeed=prison?.runSeed??4147+((legacySeed-4147)%10+10)%10;
+const seed=dungeonLevel?prison.layoutSeed:runSeed;
 const key=(x,y)=>x+','+y;
 const edge=(a,b)=>[key(...a),key(...b)].sort().join('|');
 const dirs=[[1,0,'east'],[-1,0,'west'],[0,1,'south'],[0,-1,'north']];
@@ -64,7 +64,7 @@ function generate(n){
  const door={from:0,to:1,edges:[[[11,4],[12,4]]],side:'east'};
  if(width===3)door.edges.push([[11,5],[12,5]]);
  doors.push(door);start.exits.push(door);passage.exits.push(door);
- for(let id=2;id<10;id++){
+ for(let id=2;rooms.filter(r=>r.kind==='raum').length<15;id++){
   let accepted=false;
   for(let trial=0;trial<1600&&!accepted;trial++){
    const parents=rooms.slice(1).filter(p=>p.exits.length<(p.kind==='gang'?3:4));
@@ -78,7 +78,7 @@ function generate(n){
    const border=shape.mask.filter(([x,y])=>!has(shape.mask,x-dx,y-dy));
    const touching=pick(rnd,border),ox=neighbor[0]-touching[0],oy=neighbor[1]-touching[1];
    const cells=shape.mask.map(([x,y])=>[x+ox,y+oy]);
-   if(cells.some(([x,y])=>x<12||x>37||y< -9||y>17||occ.has(key(x,y))))continue;
+   if(cells.some(([x,y])=>x<12||x>56||y< -22||y>29||occ.has(key(x,y))))continue;
    let collision=false;
    for(const [x,y] of cells){
     for(const [sx,sy] of dirs){
@@ -135,7 +135,7 @@ function generate(n){
 }
 let result=null,actualSeed=seed;
 for(let i=0;i<15&&!result;i++){actualSeed=(seed+i*7919)>>>0;result=generate(actualSeed);}
-if(!result)throw Error('Generator: kein zusammenhängender 10-Raum-Grundriss möglich');
+if(!result)throw Error('Generator: kein zusammenhängender 15-Raum-Grundriss möglich');
 const {rooms,doors,occ}=result;
 // L2-L4 have no outward-facing entrance: the old threshold becomes a
 // solid, collidable greybox wall instead of a secret shortcut to the street.
@@ -276,7 +276,7 @@ for(const room of rooms){
  useCounts.set(room.plannedUse,(useCounts.get(room.plannedUse)||0)+1);
 }
 
-const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.length,
+const metadata={seed:actualSeed,requestedSeed:seed,rooms:rooms.filter(r=>r.kind==='raum').length,
  corridors:rooms.filter(p=>p.kind==='gang').length,doors:doors.length,
  interiorWalls:innerWalls.length,stairs:stairs?[stairs]:[],depth,roomLinearScale:2,wallCutHeight:96};
 function extend(map){
@@ -320,7 +320,7 @@ function areaAt(u,v){
  const id=occ.get(cell);
  if(id===undefined||id===0)return 'Gasse · Startraum';
  const room=rooms[id];
- return String(id+1).padStart(2,'0')+' / 10 · '+(room.kind==='gang'?'Gang':'Raum')+' · '+room.style;
+ return String(id+1).padStart(2,'0')+ ' · '+(room.kind==='gang'?'Gang':'Raum')+' · '+room.style;
 }
 function renderFloor(ctx,{project,polygon,line}){
  for(const room of rooms.slice(1)){
@@ -466,13 +466,13 @@ function path(from,target,canWalk,floorOverride=null){
  return {goal,steps};
 }
 const generator={
- enabled:true,seed:actualSeed,requestedSeed:seed,rooms,doors:activeDoors,walls,portals,
+ enabled:true,runSeed,seed:actualSeed,requestedSeed:seed,rooms,doors:activeDoors,walls,portals,
  roomAt:(u,v)=>occ.get(key(Math.floor(u),Math.floor(v))),
  outdoorEntrance:hasOutdoorEntrance?entrance:null,
  outdoorExit:hasOutdoorExit?exit:null,dungeonLevel,containsGround,
  stairs:stairs?[stairs]:[],materials,metadata,seal:null,
  extend,blocked,areaAt,renderFloor,renderWall,
- renderSeal(){},renderProp(){},unlock(){},isUnlocked(){return true;},path,prewarm
+ renderSeal(){},renderProp(){},unlock(){},isUnlocked(){return true;},path,prewarm,clearNavigation:()=>navigation.clear()
 };
 generator.extend(window.AlleyStudyMap);
 window.AlleyGenerator=generator;

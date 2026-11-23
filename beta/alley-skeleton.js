@@ -6,7 +6,7 @@ window.AlleySkeleton=(()=>{
  function choose(e,rules,deathAge=null){
   const spec=rules.attacks[e.type],bow=e.skeleton==='bow';
   if(!spec||!e.skeleton)return null;
-  let clip=e.moving?'run':'idle',t=(e.phase*(e.moving?1.65:.8))%1;
+  let clip=e.moving?'run':'idle',t=e.moving?(e.gait??(e.phase*1.65)%1):(e.phase*.8)%1;
   if(deathAge!==null){clip='death';t=Math.min(1,deathAge/deathDuration);}
   else if(e.alleyClimb){
    const ride=e.alleyClimb;
@@ -18,8 +18,7 @@ window.AlleySkeleton=(()=>{
   else if(e.skeletonAction){
    const a=e.skeletonAction;
    clip=a.name;
-   if(clip.startsWith('cartwheel')&&e.skeletonWheelSide<0)
-    clip+='-left';
+   if(clip==='flee'&&e.moving)return {clip:'run',t,kit:e.skeleton};
    if(e.moving&&['shoot','double-shoot','throw','combo','slash','overhead'].includes(clip))
     clip+='-run';
    t=a.age/Math.max(.001,a.duration);
@@ -135,7 +134,7 @@ window.AlleySkeleton=(()=>{
   const image=sheets.get(name(kit,shown));
   if(!image)return null;
   const frames=framesFor(kit,shown),column=Math.max(0,
-   Math.min(frames-1,Math.floor(selected.t*frames)));
+   Math.min(frames-1,Math.floor((shown==='run'?(e.gait??selected.t):selected.t)*frames)));
   const heading=Number.isFinite(e.facing)?e.facing:
    Number.isFinite(e.angle)?e.angle:0;
   const view=iso.viewAngle(heading);

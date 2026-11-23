@@ -1,18 +1,17 @@
 // Dedicated action-driven combat for Blender skeletons. Movement is independent
-// of upper-body attack playback, except while performing a cartwheel.
+// of upper-body attack playback, including moving attacks.
 (function(root){
 'use strict';
 const TAU=Math.PI*2;
 function create(hooks){
  const {move,aim,advance,fireArrow,throwVessel,damage,blocked,random}=hooks;
  const clipDur={shoot:.49,'double-shoot':.83,throw:.75,flee:.46,
-   combo:1.15,slash:.82,overhead:.80,'cartwheel-enter':.36,
-   cartwheel:.97,'cartwheel-exit':.34};
+   combo:1.15,slash:.82,overhead:.80};
  function begin(e,name){
   e.skeletonAction={name,age:0,duration:clipDur[name],hits:0};
   e.windup=0;e.runAttack=0;e.recover=0;
   e.skeletonCooldown={shoot:.63,'double-shoot':1.08,throw:1.45,
-   combo:1.50,slash:1.06,overhead:1.13,'cartwheel-enter':2.5,
+   combo:1.50,slash:1.06,overhead:1.13,
    flee:.37}[name]??.68;
  }
  function travel(e,direction,speed,dt,face){
@@ -32,18 +31,12 @@ function create(hooks){
   e.skeletonCooldown=Math.max(0,(e.skeletonCooldown||0)-dt);
   e.soulCooldown=Math.max(0,(e.soulCooldown??5)-dt);
   let a=e.skeletonAction;
-  if(a?.name.startsWith('cartwheel'))angle=e.skeletonWheelFacing??angle;
   aim(e,angle);
   if(!e.aggro&&!a)return;
   if(a){
    const old=a.age;a.age=Math.min(a.duration,a.age+dt);
    const crossed=t=>old<t&&a.age>=t;
    const back=angle+Math.PI,bow=e.skeleton==='bow';
-   if(a.name.startsWith('cartwheel')){
-    const fraction=a.name==='cartwheel'?.56:.22;
-    const lateral=(e.skeletonWheelSide||1)*-Math.PI/2;
-    travel(e,angle+lateral,1.9*29*(e.size||1)*fraction/a.duration,a.age-old,angle);
-   }
    if(bow){
     if(d<260||a.name==='flee')
      travel(e,back,spec.speed*(a.name==='flee'?2.3:1.72),dt,angle);
@@ -60,15 +53,6 @@ function create(hooks){
     if(a.name==='double-shoot'){
      if(crossed(.23)){shot(-.045);a.hits++;}
      if(crossed(.55)){shot(.045);a.hits++;}
-    }
-   }else if(a.name==='cartwheel'){
-    // One sideways gymnastics pass: slow palm plant, accelerated inverted
-    // scissor-kick, measured landing. Prevent the old constant-speed slide.
-    e.skeletonWheelContact=Math.max(0,(e.skeletonWheelContact||0)-dt);
-    if(e.skeletonWheelContact<=0&&
-       Math.hypot(e.x-hero.x,e.y-hero.y)<38){
-      hit(e,hero,'Rad-Kollision',10,42,angle);
-      e.skeletonWheelContact=.29;
     }
    }else if(a.name==='combo'){
     travel(e,angle,spec.speed*1.8,dt,angle);
@@ -90,15 +74,7 @@ function create(hooks){
     throwVessel(e,angle);
     e.soulCooldown=6+random()*2.8;
    }
-   if(a.age>=a.duration-1e-6){
-    if(a.name==='cartwheel-enter')begin(e,'cartwheel');
-    else if(a.name==='cartwheel')begin(e,'cartwheel-exit');
-    else if(a.name==='cartwheel-exit'){
-     // The exit can immediately convert into an advancing slash.
-     if(random()<.72)begin(e,'slash');
-     else e.skeletonAction=null;
-    }else e.skeletonAction=null;
-   }
+   if(a.age>=a.duration-1e-6)e.skeletonAction=null;
    return;
   }
   if(!e.aggro)return;
@@ -126,8 +102,7 @@ function create(hooks){
   }
   if(e.skeletonCooldown<=0&&d<177){
    e.skeletonChoice=(e.skeletonChoice||0)+1;
-   const name=['combo','slash','overhead','cartwheel-enter'][(e.skeletonChoice-1)%4];
-   if(name==='cartwheel-enter'){e.skeletonWheelSide=random()<.5?-1:1;e.skeletonWheelFacing=angle;}
+   const name=['combo','slash','overhead'][(e.skeletonChoice-1)%3];
    begin(e,name);
   }else if(d>44){
    advance(e,dt,spec.speed*1.52,true);

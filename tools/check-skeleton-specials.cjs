@@ -62,20 +62,10 @@ function encounter(kit,distance,options={}){
  assert(sword.actions.has('slash'),'follow-up sabre slash must be available');
 }
 {
- const wheel=encounter('sabre',65);
- wheel.enemy.skeletonChoice=3; // next mode is cartwheel
- let wheelTravel=0,found=false;
- for(let i=0;i<440;i++){
-  const before={x:wheel.enemy.x,y:wheel.enemy.y};
-  wheel.advance();
-  if(wheel.enemy.skeletonAction?.name==='cartwheel'){
-   found=true;
-   wheelTravel+=Math.hypot(before.x-wheel.enemy.x,before.y-wheel.enemy.y);
-  }
- }
- assert(found&&wheelTravel>20,'cartwheel moves at triple walking speed');
- assert(wheel.actions.has('cartwheel-enter')&&wheel.actions.has('cartwheel-exit'),
-  'wheel requires separate enter and exit clips');
+ const melee=encounter('sabre',65);
+ for(let i=0;i<1000;i++)melee.advance();
+ assert.deepEqual([...melee.actions].sort(),['combo','overhead','slash']);
+
 }
 {
  const floor={wall:x=>x>110,gateBlocked:no,doorAt:no,inRest:no,
@@ -104,4 +94,4 @@ function encounter(kit,distance,options={}){
  assert(state.soulVessels.every(v=>v.emission===0),
   'stone stops emitting after ten seconds');
 }
-console.log('Skeleton special combat, 6-hit combo, double arrows, wheel, stone physics, wall-aware poison mist OK');
+console.log('Skeleton special combat, 6-hit combo, double arrows, stone physics, wall-aware poison mist OK');

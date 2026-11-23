@@ -130,23 +130,34 @@ window.AlleyEnemyPursuit=(()=>{
    const seen=inSight(e,hero);
    if(seen){
     e.alleyLastSeen={...point(hero),floor:heroFloor(),time:now};
-    e.alleyMode='chase';e.alleySearch=0;
+    e.alleyMode='chase';e.alleySearch=null;
     resetNavigation(e);
     return false; // Ordinary attack and animation AI only on the SAME floor.
    }
    idle(e,dt);
+   e.skeletonAction=null;e.ratMotion=null;
    investigateFloorChange(e,hero,now);
    if(e.alleyMode==='guard')return true;
    const remembered=e.alleyLastSeen;
    if(e.alleyMode!=='return'&&(!remembered||
-      now-remembered.time>17)){
+      (e.alleyMode!=='search'&&now-remembered.time>17))){
     e.alleyMode='return';resetNavigation(e);
    }
    if(e.alleyMode==='search'){
-    e.alleySearch=(e.alleySearch||0)+dt;
-    e.facing=(e.facing??0)+dt*.82;
-    if(e.alleySearch>2.2){
-     e.alleyMode='return';resetNavigation(e);
+    if(!e.alleySearch){
+     // Probe different directions from the last sighting without reading the hidden hero.
+     const angle=e.facing??0,targets=[];
+     for(const offset of [0,Math.PI/2,-Math.PI/2,Math.PI]){
+      const p={x:remembered.x+120*Math.cos(angle+offset),y:remembered.y+120*Math.sin(angle+offset)};
+      if(routeOn(e,p))targets.push(p);
+      if(targets.length===3)break;
+     }
+     e.alleySearch={targets,until:now+4};
+    }
+    const search=e.alleySearch,target=search.targets[0];
+    if(!target){e.alleyMode='return';resetNavigation(e);}
+    else if(now>search.until||d(e,target)<10||!walk(e,target,dt,now,mover,groundSpeed)){
+     search.targets.shift();search.until=now+4;resetNavigation(e);
     }
     return true;
    }
@@ -180,13 +191,13 @@ window.AlleyEnemyPursuit=(()=>{
      e.alleyMode='guard';e.alleyLastSeen=null;
      e.aggro=0;resetNavigation(e);
     }else{
-     e.alleyMode='search';e.alleySearch=0;resetNavigation(e);
+     e.alleyMode='search';e.alleySearch=null;resetNavigation(e);
     }
     return true;
    }
    if(!walk(e,target,dt,now,mover,e.skeleton?83:108)){
     e.alleyMode=returning?'guard':'search';
-    e.alleySearch=0;resetNavigation(e);
+    e.alleySearch=null;resetNavigation(e);
    }
    return true;
   }

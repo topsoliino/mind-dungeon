@@ -15,7 +15,9 @@
   region:'rocky-coast',dungeon:'rocky-coast-prison-dungeon',
   seed:(4147+7919*(i+1))>>>0
  })));
- const runSeed=Number(q.get('run')??q.get('seed')??4147)>>>0;
+ const seeds=Array.from({length:10},(_,i)=>4147+i);
+ const requested=Number(q.get('seed')??q.get('run')??4147)>>>0;
+ const runSeed=seeds[((requested-4147)%10+10)%10];
  function storeysAt(stage){
   if(stage===5)return 1;
   let hash=Math.imul(runSeed^Math.imul(stage,7919),0x45d9f3b);
@@ -103,7 +105,7 @@
  }
  const entry=q.get('entry');
  root.RockyCoastPrison={
-  enabled,runSeed,isExterior:enabled&&level===5,level,entry,levels,nearest,link,href,
+  enabled,runSeed,seeds,isExterior:enabled&&level===5,level,entry,levels,nearest,link,href,
   hasEntrance,hasExit,get hasAscent(){return hasAscent&&storey===count;},title,
   get storey(){return storey;},count,get last(){return storey===count;},layoutSeed,
   atStorey(index,read){
