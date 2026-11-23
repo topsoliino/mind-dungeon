@@ -30,7 +30,10 @@ with Image.open(OUT/'floor-prison-01.webp') as floor_map:
     if floor_map.size!=(4096,4096):raise SystemExit('Floor artwork must be 4096x4096')
 manifest={
  'schema':'mind-dungeon-room-tiles/v2',
- 'source':'Blender wall meshes and one authored continuous Pillow dungeon-floor map',
+ 'source':'Blender wall meshes and one photographic CC0 dungeon-floor bake',
+ 'floorMaterial':'photoreal-scanned-cc0',
+ 'floorSources':['monastery_stone_floor','stone_floor','rock_embedded_floor'],
+ 'floorLicense':'CC0; source photos by Poly Haven',
  'generator':'beta/room-editor/blender/build-prison-tiles.py',
  'sha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
  'sourceBlend':'../source/prison-tiles.blend',
