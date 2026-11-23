@@ -1,8 +1,10 @@
 import {
  ACESFilmicToneMapping, AnimationMixer, DirectionalLight, Group, HemisphereLight,
  LoopOnce, OrthographicCamera, Scene, Vector3, WebGLRenderer
-} from 'three';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+} from './vendor/guardian-three/three.js';
+import {GLTFLoader} from './vendor/guardian-three/GLTFLoader.js';
+
+import {createCanvasRenderer} from './guardian-canvas.js';
 
 const renderSize=176;
 const displaySize=110;
@@ -31,10 +33,15 @@ function visibleParts(clip,progress,armed){
 }
 
 export async function loadRig(url,clips={}){
- const renderer=new WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});
+ let renderer;
  try{
-  renderer.setSize(renderSize,renderSize,false);
-  renderer.setClearColor(0,0);
+  renderer=new WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});
+ }catch{
+  renderer=createCanvasRenderer(renderSize);
+ }
+ try{
+  renderer.setSize?.(renderSize,renderSize,false);
+  renderer.setClearColor?.(0,0);
   renderer.toneMapping=ACESFilmicToneMapping;
   renderer.toneMappingExposure=1.13;
   const response=await fetch(url);
@@ -42,7 +49,15 @@ export async function loadRig(url,clips={}){
   const bytes=await response.arrayBuffer();
   const signature=new Uint8Array(bytes,0,2);
   const compressed=signature[0]===0x1f&&signature[1]===0x8b;
-  const model=compressed?await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer():bytes;
+  let model=bytes;
+  if(compressed){
+   if(typeof DecompressionStream==='function'){
+    model=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+   }else{
+    const {gunzipSync}=await import('./vendor/guardian-three/fflate.js');
+    model=gunzipSync(new Uint8Array(bytes)).buffer;
+   }
+  }
   const gltf=await new GLTFLoader().parseAsync(model,'');
   if(gltf.animations.length!==1)throw new Error('Die Animationsspur des Wächters fehlt.');
   const ladderUp=clips['climb-up'],ladderDown=clips['climb-down'];
@@ -117,6 +132,7 @@ export async function loadRig(url,clips={}){
  let lastDrawTime=-Infinity,lastArmed=null;
   return {
    canvas,displaySize,ground,
+   get backend(){return renderer.isWebGLRenderer?'WebGL':'Canvas 2D';},
    render(clip,[start,count],progress,viewAngle,armed,time){
     const angle=Math.atan2(Math.cos(viewAngle),Math.sin(viewAngle)/Math.sin(elevation));
     // The previous guardian renderer did GPU skinned animation + synchronized
@@ -164,6 +180,10 @@ export async function loadRig(url,clips={}){
      }
      if(t===1)transition=null;
     }
+    if(renderer.isWebGLRenderer && renderer.getContext().isContextLost()){
+     renderer.dispose();
+     renderer=createCanvasRenderer(renderSize);
+    }
     renderer.render(scene,camera);
     context.clearRect(0,0,renderSize,renderSize);
     context.drawImage(renderer.domElement,0,0);
@@ -172,13 +192,13 @@ export async function loadRig(url,clips={}){
    dispose(){
     action.stop();
     mixer.uncacheRoot(gltf.scene);
-    renderer.dispose();
-    renderer.forceContextLoss();
+    renderer.dispose?.();
+    renderer.forceContextLoss?.();
    }
   };
  }catch(error){
-  renderer.dispose();
-  renderer.forceContextLoss();
+  renderer.dispose?.();
+  renderer.forceContextLoss?.();
   throw error;
  }
 }
