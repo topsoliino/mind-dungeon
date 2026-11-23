@@ -17,8 +17,8 @@ const ref={
  'quarter':{w:8,h:8,width:1.7,steps:14,title:'Viertelgewendelte Treppe mit Podest'},
  'switchback':{w:8,h:9,width:1.7,steps:16,open:true,title:'Offene U-Treppe mit Zwischenpodest'},
  'switchback-closed':{w:8,h:9,width:1.7,steps:16,open:false,title:'U-Treppe mit geschlossenem Unterbau'},
- 'spiral-tight':{w:6,h:6,inner:.64,outer:2.42,steps:13,title:'Enge Wendeltreppe'},
- 'spiral-wide':{w:9,h:9,inner:1.05,outer:3.75,steps:17,title:'Weite Wendeltreppe'},
+ 'spiral-tight':{open:true,w:6,h:6,inner:.64,outer:2.42,steps:13,title:'Enge Wendeltreppe'},
+ 'spiral-wide':{open:true,w:9,h:9,inner:1.05,outer:3.75,steps:17,title:'Weite Wendeltreppe'},
  'curved':{w:9,h:9,inner:2.05,outer:3.7,steps:12,open:true,title:'Geschwungene Freitreppe'}
 };
 const styles=Object.keys(ref);
@@ -331,3 +331,4 @@ function withUpperDeck(chosen){
 }
 window.AlleyStairGeometry={height:H,styles,templates:ref,make:buildTemplate,select};
 })();
+

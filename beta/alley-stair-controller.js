@@ -54,6 +54,9 @@ function controller({plan,state,nav,length,speeds,curving,canExit,walkStairs,alo
   // fits, ordinary floor movement keeps approaching the entrance.
   const origin=where;
   if(!nav.canStand(origin))return false;
+  const entryZ=up?0:H;
+  const support=nav.surface(origin,entryZ);
+  if(!support||Math.abs(support.z-entryZ)>rise)return false;
   const ride={x:origin.x,y:origin.y,s:up?0:length,dir:up?1:-1,
    lateral:0,gait:0,target:null,path:null,entry:up?'bottom':'top',
    traveled:0,leftEntry:false,exitTarget:null};
@@ -61,7 +64,6 @@ function controller({plan,state,nav,length,speeds,curving,canExit,walkStairs,alo
   if(target&&!aim(target)){
    state.stairRide=null;return false;
   }
-  actor.x=ride.x*48;actor.y=ride.y*48;
   return true;
  }
  function aim(target){
