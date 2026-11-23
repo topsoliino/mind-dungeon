@@ -1288,7 +1288,8 @@ function show(content,type='menu'){
  if(type!=='dialogue')endConversation();
  unmountTitleGlow?.();unmountTitleGlow=null;
  if(!paused&&type!=='quiz'&&performance.now()-lastUiSound>48)soundUI('ui_open');
- const live=!atTitle&&type!=='death'&&type!=='game-error'&&(type==='quiz'||type==='coop-watch'||Boolean(coopRoom));
+ const readingSite=type==='quiz'&&['rocky-altar','rocky-door'].includes(pending?.reason);
+ const live=!atTitle&&type!=='death'&&type!=='game-error'&&(type==='quiz'&&!readingSite||type==='coop-watch'||Boolean(coopRoom));
  if(type==='quiz')player.dash=0;
  $('#levelNotice').hidden=true;
  audio?.setPaused(!live);
