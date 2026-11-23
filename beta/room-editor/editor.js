@@ -596,7 +596,7 @@ for(const [type,entry] of Object.entries(cat.floors)){
  const b=document.createElement('button');b.className='swatch';
  b.style.background='linear-gradient(150deg,'+entry.accent+','+entry.base+','+entry.grout+')';
  // Thumbnail is the exact source image, with no darkening overlay.
- b.style.backgroundImage='url("'+entry.asset+'?v=uv-diffuse-v6")';
+ b.style.backgroundImage='url("'+entry.asset+'?v=uv-diffuse-v7")';
  b.style.backgroundSize='cover';
  b.setAttribute('aria-label','Boden wählen: '+entry.label);
  b.dataset.floor=type;b.title=entry.label;b.onclick=()=>{
@@ -609,7 +609,7 @@ for(const [type,entry] of Object.entries(cat.walls)){
   const button=document.createElement('button');
   button.className='swatch';
   button.style.background='#4e4b47';
-  button.style.backgroundImage='url("'+entry.asset+'?v=uv-diffuse-v6")';
+  button.style.backgroundImage='url("'+entry.asset+'?v=uv-diffuse-v7")';
   button.style.backgroundSize='cover';
   button.style.backgroundPosition='center';
   button.dataset.wall=type;
