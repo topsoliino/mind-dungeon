@@ -1,5 +1,5 @@
 import {
- ACESFilmicToneMapping, AnimationMixer, DirectionalLight, Group, HemisphereLight,
+ ACESFilmicToneMapping, AnimationMixer, BoxGeometry, Mesh, MeshStandardMaterial, DirectionalLight, Group, HemisphereLight,
  LoopOnce, OrthographicCamera, Scene, Vector3, WebGLRenderer
 } from './vendor/guardian-three/three.js';
 import {GLTFLoader} from './vendor/guardian-three/GLTFLoader.js';
@@ -82,6 +82,23 @@ export async function loadRig(url,clips={}){
   const attachments=[];
   pivot.traverse(node=>{if(node.userData.guardian_part)attachments.push(node);});
 
+  const book=new Group(),pages=new MeshStandardMaterial({color:0xf1dfaa,roughness:.9}),
+   leather=new MeshStandardMaterial({color:0x673b27,roughness:.77}),
+   ink=new MeshStandardMaterial({color:0x68533b,roughness:1});
+  for(const side of [-1,1]){
+   const leaf=new Group();leaf.rotation.z=side*.15;book.add(leaf);
+   for(const [w,h,d,y,material] of [[.17,.016,.25,0,leather],[.156,.023,.234,.018,pages]]){
+    const sheet=new Mesh(new BoxGeometry(w,h,d),material);
+    sheet.position.set(side*.08,y,0);leaf.add(sheet);
+   }
+   const lineGeometry=new BoxGeometry(.097,.002,.006);
+   for(let i=0;i<5;i++){
+    const line=new Mesh(lineGeometry,ink);line.position.set(side*.08,.031,i*.033-.068);leaf.add(line);
+   }
+  }
+  book.rotation.x=.30;book.visible=false;pivot.add(book);
+  const hands=[],handPoint=new Vector3(),otherHand=new Vector3();
+  gltf.scene.traverse(node=>{if(node.isBone&&/^glove[lr]$/i.test(node.name.replace(/[._-]/g,'')))hands.push(node);});
   const mixer=new AnimationMixer(gltf.scene);
   const action=mixer.clipAction(gltf.animations[0]);
   action.setLoop(LoopOnce,1);
@@ -180,6 +197,14 @@ export async function loadRig(url,clips={}){
      }
      if(t===1)transition=null;
     }
+    book.visible=clip==='knowledge'&&progress>.18;
+    if(book.visible){
+     if(hands.length===2){
+      hands[0].getWorldPosition(handPoint);hands[1].getWorldPosition(otherHand);
+      book.position.copy(pivot.worldToLocal(handPoint.lerp(otherHand,.5)));
+      book.position.y+=.055;
+     }else book.position.set(0,1.14,.31);
+    }
     if(renderer.isWebGLRenderer && renderer.getContext().isContextLost()){
      renderer.dispose();
      renderer=createCanvasRenderer(renderSize);
@@ -202,3 +227,4 @@ export async function loadRig(url,clips={}){
   throw error;
  }
 }
+
