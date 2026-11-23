@@ -1,6 +1,13 @@
 {
   "schema": "mind-dungeon-room-tiles/v2",
-  "source": "Blender wall meshes and one authored continuous Pillow dungeon-floor map",
+  "source": "Blender wall meshes and one photographic CC0 dungeon-floor bake",
+  "floorMaterial": "photoreal-scanned-cc0",
+  "floorSources": [
+    "monastery_stone_floor",
+    "stone_floor",
+    "rock_embedded_floor"
+  ],
+  "floorLicense": "CC0; source photos by Poly Haven",
   "generator": "beta/room-editor/blender/build-prison-tiles.py",
   "sha256": "0f4c9e970d9305bd8df95119dba51c399c1b1015a5d5ad8efdeb8db3ce5236fe",
   "sourceBlend": "../source/prison-tiles.blend",
@@ -17,7 +24,7 @@
     32
   ],
   "floorGenerator": "beta/room-editor/blender/build-floor-map.py",
-  "floorGeneratorSha256": "f6cc407e9ed547566da8f58b93fcb1d95d84c57a585b712dc35fc6f23ccf6c46",
+  "floorGeneratorSha256": "dd2853068d42344a29185e98b6109e7779bf3a59ce153d82de90a3931d0ff68c",
   "projection": {
     "cameraAzimuth": 45,
     "elevationDegrees": 35.264,
