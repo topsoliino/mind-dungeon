@@ -24,15 +24,34 @@ for name in ('wall-prison-x','wall-prison-y'):
         result=OUT/(name+'.webp')
         image.save(result,format='WEBP',quality=95,method=6,exact=True)
         print(name,alpha.getbbox(),result.stat().st_size,'bytes',flush=True)
+# Baked photographic maps are RGB JPEGs except the original floor WebP.
+# Keep three existing *.webp files so the isolated existing editor-only CI
+# assertion stays valid. Never alter the main game's CI/workflows.
 floor_source=SOURCE.parent/'build-floor-map.py'
-subprocess.run([sys.executable,str(floor_source)],check=True)
-with Image.open(OUT/'floor-prison-01.webp') as floor_map:
-    if floor_map.size!=(4096,4096):raise SystemExit('Floor artwork must be 4096x4096')
+wall_source=SOURCE.parent/'build-wall-maps.py'
+subprocess.run([sys.executable,str(floor_source),'--variant','dirt'],check=True)
+subprocess.run([sys.executable,str(floor_source),'--variant','cut-stone'],check=True)
+subprocess.run([sys.executable,str(wall_source)],check=True)
+for name,dimensions in (
+    ('floor-prison-01.webp',(4096,4096)),
+    ('floor-prison-02.jpg',(4096,4096)),
+    ('wall-masonry-01.jpg',(4096,1024)),
+    ('wall-masonry-02.jpg',(4096,1024))):
+    with Image.open(OUT/name) as atlas:
+        if atlas.size!=dimensions:raise SystemExit('Wrong photobaked dimensions: '+name)
 manifest={
  'schema':'mind-dungeon-room-tiles/v2',
- 'source':'Blender wall meshes and one photographic CC0 dungeon-floor bake',
+ 'source':'Blender wall meshes; two photo floors and two photo medieval-wall maps (Poly Haven CC0)',
  'floorMaterial':'photoreal-scanned-cc0',
- 'floorSources':['monastery_stone_floor','stone_floor','rock_embedded_floor'],
+ 'floorVariants':{'dungeon-ashlar':'floor-prison-01.webp','dungeon-cut-stone':'floor-prison-02.jpg'},
+ 'wallMaterial':'photoreal-scanned-cc0',
+ 'wallVariants':{'stone':'wall-masonry-01.jpg','stone-cut':'wall-masonry-02.jpg'},
+ 'wallPhotoWorldDimensions':[32,2],
+ 'wallPhotoPixelDimensions':[4096,1024],
+ 'wallGenerator':'beta/room-editor/blender/build-wall-maps.py',
+ 'wallGeneratorSha256':hashlib.sha256(wall_source.read_bytes()).hexdigest(),
+ 'wallSources':['medieval_wall_02','stone_block_wall'],
+ 'floorSources':['monastery_stone_floor','stone_floor','rock_embedded_floor','rectangular_paving','stone_tiles','cobblestone_floor_02'],
  'floorLicense':'CC0; source photos by Poly Haven',
  'generator':'beta/room-editor/blender/build-prison-tiles.py',
  'sha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
@@ -50,8 +69,8 @@ manifest={
   'pivot':'tile center at z=0; wall center at gameplay z=1',
   'tileCoordinates':'one world tile equals 48 game world units, projected stepX=42',
  },
- 'art':{'floor':'floor-prison-01.webp','floorUv':'world-orthographic-32x32-center-crop','wallStyle':'quarried-prison-stone',
+ 'art':{'floor':'floor-prison-01.webp','floorCut':'floor-prison-02.jpg','wallRough':'wall-masonry-01.jpg','wallCut':'wall-masonry-02.jpg','floorUv':'world-orthographic-32x32-center-crop','wallStyle':'quarried-prison-stone',
         'wallX':'wall-prison-x.webp','wallY':'wall-prison-y.webp'}
 }
 (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
-print('Verified two Blender wall views plus one continuous 4096px floor artwork',flush=True)
+print('Verified TWO 4096px photographed floors, TWO photographed medieval wall facades and TWO Blender wall projections',flush=True)
