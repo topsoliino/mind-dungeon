@@ -15,57 +15,27 @@
       "style": "stone"
     },
     {
-      "x": 0,
-      "y": 5,
-      "edge": "south",
-      "style": "bars"
-    },
-    {
       "x": 1,
       "y": 0,
       "edge": "north",
       "style": "stone"
     },
     {
-      "x": 1,
-      "y": 5,
-      "edge": "south",
-      "style": "bars"
-    },
-    {
       "x": 2,
       "y": 0,
       "edge": "north",
-      "style": "stone"
-    },
-    {
-      "x": 2,
-      "y": 5,
-      "edge": "south",
       "style": "bars"
     },
     {
       "x": 3,
       "y": 0,
       "edge": "north",
-      "style": "stone"
-    },
-    {
-      "x": 3,
-      "y": 5,
-      "edge": "south",
       "style": "gate"
     },
     {
       "x": 4,
       "y": 0,
       "edge": "north",
-      "style": "stone"
-    },
-    {
-      "x": 4,
-      "y": 5,
-      "edge": "south",
       "style": "bars"
     },
     {
@@ -75,33 +45,15 @@
       "style": "stone"
     },
     {
-      "x": 5,
-      "y": 5,
-      "edge": "south",
-      "style": "bars"
-    },
-    {
       "x": 6,
       "y": 0,
       "edge": "north",
       "style": "stone"
     },
     {
-      "x": 6,
-      "y": 5,
-      "edge": "south",
-      "style": "bars"
-    },
-    {
       "x": 0,
       "y": 0,
       "edge": "west",
-      "style": "stone"
-    },
-    {
-      "x": 7,
-      "y": 0,
-      "edge": "east",
       "style": "stone"
     },
     {
@@ -111,21 +63,9 @@
       "style": "stone"
     },
     {
-      "x": 7,
-      "y": 1,
-      "edge": "east",
-      "style": "stone"
-    },
-    {
       "x": 0,
       "y": 2,
       "edge": "west",
-      "style": "stone"
-    },
-    {
-      "x": 7,
-      "y": 2,
-      "edge": "east",
       "style": "stone"
     },
     {
@@ -135,21 +75,9 @@
       "style": "stone"
     },
     {
-      "x": 7,
-      "y": 3,
-      "edge": "east",
-      "style": "stone"
-    },
-    {
       "x": 0,
       "y": 4,
       "edge": "west",
-      "style": "stone"
-    },
-    {
-      "x": 7,
-      "y": 4,
-      "edge": "east",
       "style": "stone"
     }
   ],
@@ -175,5 +103,5 @@
       "blocksMovement": true
     }
   ],
-  "notes": "Geschlossene Gefängniszelle: Quadersteinboden, Mauer an Nord/West/Ost, südliche Eisen-Gitterfront mit Zellentür. Nur Editor-Preset, keine Änderungen im Dungeon-Generator."
+  "notes": "Kameraseitig offene Gefängniszelle. Nur nördliche und westliche Rückwand mit hochauflösenden Blender-Quadersteinen, Gitter/geschmiedete Zellentür hinten. Süd und Ost sind isometrischer Cutaway; der Wächter bleibt sichtbar. Unabhängig vom existierenden Greybox-Generator."
 }
