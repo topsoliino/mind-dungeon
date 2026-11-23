@@ -26,10 +26,14 @@ function updateAssetInfo(){
  const art=window.MindRoomArt?.status?.();
  $('assetStatus').textContent=(art?art.tiles+' · '+art.wallPhotos:'Materialien laden')+
   ' · Möbel '+furniture+'/8 · Wächter '+(art?.guardianAuthentic?'Original':'lädt / nicht verfügbar');
- $('assetInfo').textContent=
-  'Echte Poly-Haven-Diffuse-Maps statt perspektivischer Vorschaubilder; '+
-  'Böden und Mauern als große zusammenhängende UV-Atlanten. '+
-  'Gleicher Weltmaßstab zum Wächter und keine pro-Feld wiederholten Fotos.';
+ const failed=art?.failedTextures?.length||0;
+ $('assetInfo').textContent=failed?
+  'Ladefehler bei '+failed+' Materialien: '+art.failedTextures.join(', ')+
+  '. Bei einem veralteten GitHub-Pages-Build bitte die neueste Seite laden.' :
+  (art?.assetWarning?
+   art.assetWarning+'. Die passenden UV-Atlasbilder werden unabhängig vom Manifest geladen.' :
+   'Echte Poly-Haven-Diffuse-Maps: 3 große Bodenatlanten und 3 durchgehende Wandatlanten.')+
+  ' Maßstab und Texturrichtung sind an die Weltachsen gebunden.';
 }
 const keyWall=w=>w.edge==='north'||w.edge==='south'?'h:'+w.x+':'+w.y:'v:'+w.x+':'+w.y;
 const isWall=w=>Number.isInteger(w.x)&&Number.isInteger(w.y)&&
