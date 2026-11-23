@@ -10,35 +10,35 @@ const catalog={
   // Every photo uses its Poly Haven real-world coverage (1 grid ~ 1 metre).
   'dungeon-ashlar':{
    label:'Dark Rock 02 · dunkler Fels',base:'#343337',grout:'#242326',
-   accent:'#62616a',pattern:'photo-raw',worldWidth:4.0,
-   asset:artRoot+'tiles/floor-prison-01.png',
-   source:'Poly Haven CC0 · 2 m Originalhöhe / etwa 4 m Bildbreite'
+   accent:'#62616a',pattern:'photo-raw',worldWidth:2.0,
+   asset:artRoot+'tiles/floor-albedo-01.jpg',
+   source:'Poly Haven CC0 · 2 m Materialhöhe, korrektes UV-Diffuse'
   },
   'dungeon-coast-rocks':{
    label:'Coast Sand Rocks 02 · feuchter Naturfels',base:'#48463e',grout:'#2c302a',
    accent:'#777664',pattern:'photo-raw',worldWidth:15.0,
-   asset:artRoot+'tiles/floor-prison-02.png',
-   source:'Poly Haven CC0 · 15 m Originalbreite'
+   asset:artRoot+'tiles/floor-albedo-02.jpg',
+   source:'Poly Haven CC0 · 15 m reale Materialbreite, echtes UV-Diffuse'
   },
   'dungeon-cut-stone':{
    label:'Cobblestone Floor 09 · altes Steinpflaster',base:'#525052',grout:'#303032',
    accent:'#848084',pattern:'photo-raw',worldWidth:2.2,
-   asset:artRoot+'tiles/floor-prison-03.png',
-   source:'Poly Haven CC0 · 2,2 m Originalbreite'
+   asset:artRoot+'tiles/floor-albedo-03.jpg',
+   source:'Poly Haven CC0 · 2,2 m reale Materialbreite, echtes UV-Diffuse'
   }
  },
  walls:{
   stone:{
    label:'Rock Wall 17 · feuchter Bruchstein',height:2,solid:true,
-   worldWidth:1.8,asset:artRoot+'tiles/wall-masonry-01.png',render:'photo-wall-map'
+   worldWidth:1.8,asset:artRoot+'tiles/wall-albedo-01.jpg',render:'photo-wall-map'
   },
   'stone-cut':{
    label:'Rock Wall 16 · verwitterte Quader',height:2,solid:true,
-   worldWidth:2.0,asset:artRoot+'tiles/wall-masonry-02.png',render:'photo-wall-map'
+   worldWidth:2.0,asset:artRoot+'tiles/wall-albedo-02.jpg',render:'photo-wall-map'
   },
   'stone-old':{
    label:'Old Stone Wall · alte Steinmauer',height:2,solid:true,
-   worldWidth:2.0,asset:artRoot+'tiles/wall-masonry-03.png',render:'photo-wall-map'
+   worldWidth:2.0,asset:artRoot+'tiles/wall-albedo-03.jpg',render:'photo-wall-map'
   },
   bars:{label:'Geschmiedetes Zellen-Gitter',height:2.05,solid:true,asset:'walls/bars'},
   gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,asset:'walls/gate'},
