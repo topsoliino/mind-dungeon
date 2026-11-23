@@ -22,11 +22,14 @@ for(const type of Object.keys(cat.furniture))for(const rot of [0,90,180,270]){
  img.src=name;
 }
 function updateAssetInfo(){
- const values=[...assets.values()],count=values.filter(v=>v.ready).length;
- $('assetStatus').textContent=count===8?'8/8 gerenderte Blender-Ansichten':'Blender-Bilder: '+count+'/8 · Editor-Vorschau';
- $('assetInfo').textContent=count===8?
-  'Originale Blender-Renderansichten: 4 Blickrichtungen für jeden Möbeltyp. Kein Rig und kein Echtzeit-3D.' :
-  'Blender-Renderbilder sind noch nicht veröffentlicht. Bis dahin nutzt der Editor eine geometrische Vorschau.';
+ const furniture=[...assets.values()].filter(v=>v.ready).length;
+ const art=window.MindRoomArt?.status?.();
+ $('assetStatus').textContent=(art?art.tiles+' · '+art.wallPhotos:'Materialien laden')+
+  ' · Möbel '+furniture+'/8 · Wächter '+(art?.guardianAuthentic?'Original':'lädt / nicht verfügbar');
+ $('assetInfo').textContent=
+  'Echte Poly-Haven-Diffuse-Maps statt perspektivischer Vorschaubilder; '+
+  'Böden und Mauern als große zusammenhängende UV-Atlanten. '+
+  'Gleicher Weltmaßstab zum Wächter und keine pro-Feld wiederholten Fotos.';
 }
 const keyWall=w=>w.edge==='north'||w.edge==='south'?'h:'+w.x+':'+w.y:'v:'+w.x+':'+w.y;
 const isWall=w=>Number.isInteger(w.x)&&Number.isInteger(w.y)&&
@@ -331,12 +334,11 @@ function draw(){
 }
 function schedule(){dirty=true}
 window.MindRoomArt?.onChange(()=>{
- const state=window.MindRoomArt.status();
- $('assetStatus').textContent='Bodenkarte '+state.tiles+' · Wände '+state.wallPhotos+
-  ' · Spiel-Wächter '+(state.guardianAuthentic?'original geladen':state.guardian==='loading'?'lädt …':'FEHLER');
- $('guardianBtn').disabled=state.guardian==='error';
- $('guardianBtn').textContent='◆ Spiel-Wächter '+(state.guardianAuthentic?
-   (showGuardian?'ausblenden':'einblenden'):state.guardian==='loading'?'lädt …':'nicht verfügbar');
+ const art=window.MindRoomArt.status();
+ $('guardianBtn').disabled=art.guardian==='error';
+ $('guardianBtn').textContent='◆ Spiel-Wächter '+(art.guardianAuthentic?
+   (showGuardian?'ausblenden':'einblenden'):art.guardian==='loading'?'lädt …':'nicht verfügbar');
+ updateAssetInfo();
  schedule();
 });
 
@@ -590,7 +592,7 @@ for(const [type,entry] of Object.entries(cat.floors)){
  const b=document.createElement('button');b.className='swatch';
  b.style.background='linear-gradient(150deg,'+entry.accent+','+entry.base+','+entry.grout+')';
  // Thumbnail is the exact source image, with no darkening overlay.
- b.style.backgroundImage='url("'+entry.asset+'?v=wet-dungeon-six-v1")';
+ b.style.backgroundImage='url("'+entry.asset+'?v=uv-diffuse-v6")';
  b.style.backgroundSize='cover';
  b.setAttribute('aria-label','Boden wählen: '+entry.label);
  b.dataset.floor=type;b.title=entry.label;b.onclick=()=>{
@@ -603,7 +605,7 @@ for(const [type,entry] of Object.entries(cat.walls)){
   const button=document.createElement('button');
   button.className='swatch';
   button.style.background='#4e4b47';
-  button.style.backgroundImage='url("'+entry.asset+'?v=wet-dungeon-six-v1")';
+  button.style.backgroundImage='url("'+entry.asset+'?v=uv-diffuse-v6")';
   button.style.backgroundSize='cover';
   button.style.backgroundPosition='center';
   button.dataset.wall=type;
