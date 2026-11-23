@@ -1,4 +1,4 @@
-"""Package genuine Blender Room Atelier renders as transparent 384px WebP views.
+"""Package genuine Blender Room Atelier renders as transparent 512px WebP views.
 Usage: python3 beta/room-editor/blender/pack-room-kit.py /tmp/md-room-raw
 """
 import hashlib
@@ -25,7 +25,7 @@ for name in items:
   if not src.exists():raise SystemExit('Missing actual Blender view: '+str(src))
   with Image.open(src) as original:
    im=original.convert('RGBA')
-   if im.size!=(384,384):raise SystemExit('Wrong Blender size: '+str(src))
+   if im.size!=(512,512):raise SystemExit('Wrong Blender size: '+str(src))
    alpha=im.getchannel('A')
    if not alpha.getbbox():raise SystemExit('Fully transparent 3D furniture: '+str(src))
    # Do not distort or upscale the model. Source camera and Blender color
@@ -41,11 +41,11 @@ manifest={
  'generator':'beta/room-editor/blender/build-room-kit.py',
  'generatorSha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
  'blend':'assets/source/room-kit.blend',
- 'dimensions':{'width':384,'height':384},
+ 'dimensions':{'width':512,'height':512},
  'camera':{'projection':'ORTHO','elevationDegrees':35.26,
   'views':[0,90,180,270],'groundPivotY':.76,
   'reference':'Guardian-style warm key + cool fill'},
- 'items':items,
+ 'items':{name:{**spec,'rotations':[0,90,180,270]} for name,spec in items.items()},
  'files':{name:{str(rot):'assets/furniture/%s-%d.webp'%(name,rot)
   for rot in (0,90,180,270)} for name in items}
 }
