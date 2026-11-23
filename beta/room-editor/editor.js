@@ -382,7 +382,7 @@ function draw(){
 function schedule(){dirty=true}
 window.MindRoomArt?.onChange(()=>{
  const state=window.MindRoomArt.status();
- $('assetStatus').textContent='Bodenkarte '+state.tiles+' · Wände '+(state.wallsReady?'bereit':'laden')+
+ $('assetStatus').textContent='Bodenkarte '+state.tiles+' · Wände '+state.wallPhotos+
   ' · Spiel-Wächter '+(state.guardianAuthentic?'original geladen':state.guardian==='loading'?'lädt …':'FEHLER');
  $('guardianBtn').disabled=state.guardian==='error';
  $('guardianBtn').textContent='◆ Spiel-Wächter '+(state.guardianAuthentic?
@@ -639,7 +639,11 @@ function refreshUI(){
 }
 for(const [type,entry] of Object.entries(cat.floors)){
  const option=document.createElement('option');option.value=type;option.textContent=entry.label;$('floorType').appendChild(option);
- const b=document.createElement('button');b.className='swatch';b.style.background='linear-gradient(150deg,'+entry.accent+','+entry.base+','+entry.grout+')';
+ const b=document.createElement('button');b.className='swatch';
+ b.style.background='linear-gradient(150deg,'+entry.accent+','+entry.base+','+entry.grout+')';
+ b.style.backgroundImage='linear-gradient(135deg,transparent,#00000040),url("'+entry.asset+'")';
+ b.style.backgroundSize='cover';
+ b.setAttribute('aria-label','Boden wählen: '+entry.label);
  b.dataset.floor=type;b.title=entry.label;b.onclick=()=>{
   $('floorType').value=type;room.floorStyle=type;checkpoint();};
  $('floorSwatches').appendChild(b);
