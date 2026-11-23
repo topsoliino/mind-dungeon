@@ -30,7 +30,7 @@
 | `presets/prison-cell-01.json` | Eigenständig importierbare Gefängniszelle |
 | `blender/build-room-kit.py` | **Tatsächliche 3D-Modelle**: Tisch, Stuhl; physische Bretter, Beine, Eisennägel, Material-/Lichtsetup |
 | `blender/pack-room-kit.py` | Vier Ansichten je Möbelstück in 512×512 WebP + Manifest packen |
-| `blender/build-prison-tiles.py` | Ein vorhandener 512px-Referenzboden und zwei Blender-Maueransichten; in der App wird stattdessen die zusammenhängende 4096px-Bodenkarte verwendet |
+| `blender/build-prison-tiles.py` | Ein vorhandener 512px-Referenzboden und zwei Blender-Maueransichten; in der App wird stattdessen die jeweils zusammenhängenden 4096px-Bodenkarten verwendet |
 | `blender/build-floor-map.py` | Erzeugt ein deterministisches, 4096×4096 Pixel großes, zusammenhängendes Kerkerboden-Artwork mit unregelmäßigen Steinflächen, Schlamm, Schmutz, Feuchtigkeit, Bruchkanten und Stroh |
 | `blender/pack-prison-tiles.py` | Erzeugt und verpackt die 4096px-Bodenkarte und beide 512px-Blender-Maueransichten; die vorhandene Asset-CI wird ohne Workflow-Anpassung wiederverwendet |
 | `assets/source/prison-tiles.blend` | Editierbare Modellquelle der Steinarchitektur |
@@ -73,7 +73,7 @@ Wanddaten definieren *physische Kanten* in Rasterkoordinaten. `north/south` gehe
 
 Im Editor-Spieltest wird kein neuer Wächter erzeugt. `editor-art.js` liest **`beta/art/player-study/guardian-frames.json`** plus die Originalbilder `guardian-body.webp`, `guardian-body-2.webp` und `guardian-weapon.webp`. Idle, Walk und Vault werden aus den tatsächlichen Frame-Metadaten abgespielt; das ist der bewährte günstige Sprite-Renderpfad des Spiels, aber ohne den laufenden 3D-Renderer.
 
-Mauern und Möbel nutzen dieselbe 35,264°-orthografische Kamera, kontrastreiches Filmic, warmen Key, kühles Fill und physische Material-/Kantenmodelle. Der Boden ist dagegen **eine** große top-down-authored 4096px-Karte über fest **32×32 Welteinheiten**. Die editorseitige isometrische UV-Transformation bewahrt die Größe jedes Kratzers und Steins bei 2×2, 7×5 oder 30×30 Feldern; kleinere Räume sehen einen **zentrierten Ausschnitt** und dehnen keine Textur. Die Schere ist die physische Grundrisspolygon-Grenze. Das Raster ist ausschließlich eine optionale UI-Ebene. Die Mauer ist **ein** Stil mit zwei Sichtprojektionen, die Möbel je vier unabhängig gerenderte Ansichten.
+Mauern und Möbel nutzen dieselbe 35,264°-orthografische Kamera, kontrastreiches Filmic, warmen Key, kühles Fill und physische Material-/Kantenmodelle. Die zwei Böden sind jeweils **eine** große top-down-authored 4096px-Karte über fest **32×32 Welteinheiten**. Die editorseitige isometrische UV-Transformation bewahrt die Größe jedes Kratzers und Steins bei 2×2, 7×5 oder 30×30 Feldern; kleinere Räume sehen einen **zentrierten Ausschnitt** und dehnen keine Textur. Die Schere ist die physische Grundrisspolygon-Grenze. Das Raster ist ausschließlich eine optionale UI-Ebene. Die Mauer ist **ein** Stil mit zwei Sichtprojektionen, die Möbel je vier unabhängig gerenderte Ansichten.
 
 ### 3D-Renderpipeline
 
