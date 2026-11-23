@@ -6,19 +6,26 @@ const artRoot='assets/';
 const catalog={
  version:1,tileSize:TILE,projection:{stepX:42,stepY:42/Math.sqrt(3),footOffset:16},
  floors:{
-  // One authored stone material only. Old room files use aliases,
-  // normalized at import, instead of loading contradictory flat styles.
+  // Two complete, continuous photographic maps; older room JSON keeps the
+  // original 'dungeon-ashlar' identifier for backward compatibility.
   'dungeon-ashlar':{
-   label:'Dreckiger Kerker · durchgehende Bodenkarte',base:'#505460',grout:'#22242b',
-   accent:'#a9a3a1',pattern:'blender-ashlar',
+   label:'Kerkerboden · brüchig und verdreckt',base:'#414244',grout:'#252626',
+   accent:'#77716b',pattern:'photo-dirt',
    asset:artRoot+'tiles/floor-prison-01.webp',
-   source:'Handgestaltete prozedurale Bodenmap · 4096 × 4096; feste 32×32 Welteinheiten'
+   source:'Poly Haven CC0 · Fotomaterial · 4096 × 4096'
+  },
+  'dungeon-cut-stone':{
+   label:'Quadersteinboden · fest und abgenutzt',base:'#535455',grout:'#24272b',
+   accent:'#878580',pattern:'photo-cut-stone',
+   asset:artRoot+'tiles/floor-prison-02.webp',
+   source:'Poly Haven CC0 · rechteckige Steinquader · 4096 × 4096'
   }
  },
  walls:{
-  stone:{label:'Kerker · 3D-Quadersteinmauer',height:2,solid:true,
-   asset:artRoot+'tiles/wall-prison',
-   render:'blender-cycles-512'},
+  stone:{label:'Steinmauer I · raues mittelalterliches Mauerwerk',height:2,solid:true,
+   asset:artRoot+'tiles/wall-masonry-01.webp',render:'photo-wall-map'},
+  'stone-cut':{label:'Steinmauer II · massive verwitterte Quader',height:2,solid:true,
+   asset:artRoot+'tiles/wall-masonry-02.webp',render:'photo-wall-map'},
   bars:{label:'Geschmiedetes Zellen-Gitter',height:2.05,solid:true,asset:'walls/bars'},
   gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,asset:'walls/gate'},
   open:{label:'Offene Wand / Durchgang',height:0,solid:false,asset:null}
