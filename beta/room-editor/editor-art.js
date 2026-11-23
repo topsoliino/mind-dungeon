@@ -35,42 +35,50 @@ window.MindRoomArt=(()=>{
   ['stone-old','wall-albedo-03.jpg','wall-atlas-03.jpg','old_stone_wall',true]
  ];
  for(const [key] of PHOTOS)images.set(key,{img:null,ready:false,failed:false,src:''});
+ // Load each material independently. A malformed variant record must NEVER
+ // blank all floors and all walls again (regression: wall keys were emitted
+ // inside floorVariants in the first v6 asset manifest).
+ let atlasWarning='';
  async function loadPhotographicMaterials(){
+  let manifest=null;
   try{
-   const response=await fetch(ROOT+'tiles/manifest.json?v=uv-fix-v6',{cache:'no-cache'});
-   if(!response.ok)throw Error('Material manifest unavailable');
-   const manifest=await response.json();
+   const response=await fetch(ROOT+'tiles/manifest.json?v=uv-fix-v7',{cache:'no-store'});
+   if(!response.ok)throw Error('Materialmanifest HTTP '+response.status);
+   manifest=await response.json();
    if(manifest.schema!=='mind-dungeon-room-tiles/v6'||
       manifest.textureMode!=='uv-ready-polyhaven-diffuse')
-    throw Error('Corrected diffuse maps not published yet');
-   const pending=[];
-   for(const [style,rawFile,atlasFile,assetId,wall] of PHOTOS){
-    const raw=manifest.assetInfo?.[style],atlas=manifest.atlasInfo?.[style];
-    const file=(wall?manifest.wallVariants:manifest.floorVariants)?.[style];
-    const atlasMapped=(wall?manifest.wallAtlases:manifest.floorAtlases)?.[style];
-    const data=(wall?window.MindRoomKit.catalog.walls:window.MindRoomKit.catalog.floors)[style];
-    if(file!==rawFile||atlasMapped!==atlasFile||
-       raw?.file!==rawFile||raw?.asset!==assetId||
-       raw?.byteIdenticalToSource!==true||
-       raw?.textureRole!=='Diffuse/albedo, flat UV ready'||
-       !/^[0-9a-f]{64}$/.test(raw?.sha256||'')||
-       atlas?.file!==atlasFile||atlas?.sourceSha256!==raw.sha256||
-       !/^[0-9a-f]{64}$/.test(atlas?.sha256||'')||
-       Math.abs(atlas?.worldWidth-30)>.01||
-       Math.abs(atlas?.worldHeight-(wall?2:30))>.01||
-       !Number.isFinite(data?.worldWidth)||
-       Math.abs(data.worldWidth-raw.worldWidth)>.01)
-      throw Error('Missing or incorrectly mapped UV atlas: '+style);
-    pending.push([style,ROOT+'tiles/'+atlasFile+'?v='+atlas.sha256]);
-   }
-   for(const [style,url] of pending)preload(style,url);
+    throw Error('Falsche Materialmanifest-Version');
   }catch(error){
-   for(const [style] of PHOTOS){
-    const item=images.get(style);
-    if(!item.ready)item.failed=true;
+   atlasWarning='Manifest nicht verfügbar; prüfe Bilddateien direkt';
+   console.warn('Room Atelier manifest:',error.message);
+  }
+  for(const [style,rawFile,atlasFile,assetId,wall] of PHOTOS){
+   const raw=manifest?.assetInfo?.[style];
+   const atlas=manifest?.atlasInfo?.[style];
+   const file=(wall?manifest?.wallVariants:manifest?.floorVariants)?.[style];
+   const atlasMapped=(wall?manifest?.wallAtlases:manifest?.floorAtlases)?.[style];
+   const cat=(wall?window.MindRoomKit.catalog.walls:
+                   window.MindRoomKit.catalog.floors)[style];
+   const valid=file===rawFile&&atlasMapped===atlasFile&&
+      raw?.file===rawFile&&raw?.asset===assetId&&
+      raw?.byteIdenticalToSource===true&&
+      raw?.textureRole==='Diffuse/albedo, flat UV ready'&&
+      /^[0-9a-f]{64}$/.test(raw?.sha256||'')&&
+      atlas?.file===atlasFile&&atlas?.sourceSha256===raw.sha256&&
+      /^[0-9a-f]{64}$/.test(atlas?.sha256||'')&&
+      Math.abs(atlas?.worldWidth-30)<.01&&
+      Math.abs(atlas?.worldHeight-(wall?2:30))<.01&&
+      Number.isFinite(cat?.worldWidth)&&
+      Math.abs(cat.worldWidth-raw.worldWidth)<.01;
+   if(!valid){
+    atlasWarning='Mindestens ein Manifesteintrag fehlt; Bilder werden direkt geladen';
+    console.warn('Room Atelier: material-manifest mismatch for',style,
+                 '- trying the verified atlas filename instead');
    }
-   console.warn('Room Atelier corrected material build pending:',error.message);
-   emit();
+   // The known v6 atlas filenames are unique to the corrected Diffuse pipeline.
+   // Even during a stale Pages deployment, try these exact editor-local assets.
+   const version=valid?atlas.sha256:'uv-fix-v7';
+   preload(style,ROOT+'tiles/'+atlasFile+'?v='+version);
   }
  }
  void loadPhotographicMaterials();
@@ -200,7 +208,9 @@ window.MindRoomArt=(()=>{
    tiles:floors+'/3 Poly-Haven-Böden',
    wallPhotos:walls+'/3 Poly-Haven-Mauern',
    guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
-   tileReady:floors>0,wallsReady:walls===3
+   tileReady:floors>0,wallsReady:walls===3,
+   assetWarning:atlasWarning,
+   failedTextures:PHOTOS.filter(p=>images.get(p[0])?.failed).map(p=>p[0])
   };
  }
  return {drawGuardian,drawRoomFloor,drawWallFace,status,onChange(callback){watchers.push(callback)}};
