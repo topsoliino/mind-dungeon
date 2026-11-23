@@ -8,6 +8,6 @@
 - Schreiboperationen und Commits müssen auf Dateien mit Präfix `beta/room-editor/` begrenzt werden.
 - Der bestehende Editor-Art-Build schreibt nur Assets unter `beta/room-editor/assets/`; Änderungen am Workflow unter `.github/` sind nicht Teil dieser Erlaubnis.
 - Editor-Daten/-Vorschau und Spieltest bleiben vom produktiven Dungeon-Generator isoliert.
-- Der Editor nutzt drei echte Poly-Haven-Diffuse-Bodenmaps und drei Diffuse-Wandmaps, nicht die schräg fotografierten Primary Previews. Die ursprünglichen JPG-Dateien werden unverändert importiert. Daraus werden innerhalb **dieses Editorordners** drei 30×30-m-Bodenatlanten und drei 30×2-m-Wandatlanten erstellt, die regelmäßige Tile-Neustarts verhindern und senkrecht entlang der Wandhöhe projizieren. Ein Editor-Rasterfeld entspricht ungefähr einem Meter. Alle Assets werden anhand von Manifest v6 und SHA-256 validiert.
+- Der Editor nutzt acht echte Poly-Haven-Diffuse-Bodenmaps und drei Diffuse-Wandmaps, nicht die schräg fotografierten Primary Previews. Die ursprünglichen JPG-Dateien werden unverändert importiert. Daraus werden innerhalb **dieses Editorordners** acht 30×30-m-Bodenatlanten und drei 30×2-m-Wandatlanten erstellt, die regelmäßige Tile-Neustarts verhindern und senkrecht entlang der Wandhöhe projizieren. Ein Editor-Rasterfeld entspricht ungefähr einem Meter. Alle Assets werden anhand von Manifest v7 und SHA-256 validiert.
 
 Diese Projektgrenze gilt für weitere Änderungen am Raumeditor.
