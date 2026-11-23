@@ -81,3 +81,9 @@ Steinarchitektur und Möbel nutzen dieselbe 35,264°-orthografische Kamera, kont
 Die automatisierte Veröffentlichung hat ausschließlich Schreibrechte auf `beta/room-editor/assets/`, ist gegen zwischenzeitliche Quellcode-Updates abgesichert und greift **niemals in den bestehenden Wächter- oder Dungeon-Code ein**.
 
 **Hinweis:** Der Editor ist ein Layout-/Kollisions-Prototyp für einzelne Räume. Sein „Spieltest“ ist eine leichtgewichtige geometrische Probe und **keine** vollständige Reproduktion der bestehenden Phaser-Kampf-/Gegnerphysik. Die Daten lassen sich beim späteren Generator-Import auf die eigentlichen Spielregeln mappen.
+
+## Editor-Branch: Wächterreferenz und düsterer Mittelalter-Look
+
+- Die Schaltfläche **Spiel-Wächter** blendet im normalen Raumeditor den **echten Wächter aus `../art/player-study/guardian-frames.json`** an der Raummitte ein. Es wird kein Ersatzcharakter konstruiert; im Spieltest wird derselbe Atlas mit Idle-/Lauf-/Vault-Clips verwendet. Wenn die Originaldateien fehlen, erscheint ein Fehlerstatus statt einer Attrappe.
+- Die Blender-Tiles bleiben bei **512 × 512 Pixeln**. Die Steinmodelle erhalten mehr Fissuren, Werkzeugspuren, Materialunregelmäßigkeiten, alte Eisenklammern und geschmiedete Nieten sowie dunklere Filmic-Abstimmung. Ziel ist **mehr physisches Detail**, nicht nur höhere Pixelauflösung.
+- **Schutz des Hauptspiels:** Diese Änderungen liegen ausschließlich im isolierten Branch `room-atelier-guardian-style-isolated` und ausschließlich unter `beta/room-editor/`. Der Branch wurde nicht mit `main` zusammengeführt. Der Blender-Generator muss für diesen Branch noch ausgeführt und die WebP-Tiles dort veröffentlicht werden, bevor die neuen Steinrenders im Browser sichtbar sind. Die Workflow-Datei ist bewusst unberührt, da sie zurzeit nur nach `main` publiziert.
