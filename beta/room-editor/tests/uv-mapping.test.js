@@ -49,7 +49,7 @@ async function main(){
  // floorVariants and left wallVariants empty; this caused ALL six UI images
  // to stay gray (0/3 floors, 0/3 walls). Test both category partitions.
  assert.equal(floorStyles.length,8);
- assert.equal(wallStyles.length,3);
+ assert.equal(wallStyles.length,9);
  assert.deepEqual(Object.keys(manifest.floorVariants).sort(),floorStyles,
    'floorVariants must contain only the three floor styles');
  assert.deepEqual(Object.keys(manifest.wallVariants).sort(),wallStyles,
@@ -58,7 +58,7 @@ async function main(){
  assert.deepEqual(Object.keys(manifest.wallAtlases).sort(),wallStyles);
  const art=ctxWindow.MindRoomArt,status=art.status();
  assert.match(status.tiles,/^8\/8/);
- assert.match(status.wallPhotos,/^3\/3/);
+ assert.match(status.wallPhotos,/^9\/9/);
  const geo=(x,y)=>({x:(x-y)*42,y:(x+y)*42/Math.sqrt(3)});
  for(const style of Object.keys(ctxWindow.MindRoomKit.catalog.floors)){
   const s=ctxWindow.MindRoomKit.catalog.floors[style];
@@ -84,7 +84,9 @@ async function main(){
  for(const style of Object.keys(ctxWindow.MindRoomKit.catalog.walls).filter(k=>ctxWindow.MindRoomKit.catalog.walls[k].render==='photo-wall-map')){
   const info=manifest.assetInfo[style],atlas=manifest.atlasInfo[style];
   assert.equal(info.textureRole,'Diffuse/albedo, flat UV ready');
+  assert.equal(info.byteIdenticalToSource,true);
   assert.equal(info.worldWidth,ctxWindow.MindRoomKit.catalog.walls[style].worldWidth);
+  assert.ok(manifest.wallAtlases[style].startsWith('wall-atlas-'));
   assert.equal(atlas.worldWidth,30);
   assert.equal(atlas.worldHeight,2);
   for(const [dx,dy] of [[42,24.25],[-42,24.25]]){
@@ -102,6 +104,6 @@ async function main(){
      'wall height must be SCREEN VERTICAL, not aligned to the floor plane');
   }
  }
- console.log('Room Atelier UV mapping OK: 8 floors and 3 vertical walls, no runtime repeating tiles');
+ console.log('Room Atelier UV mapping OK: 8 floors and 9 vertical walls, no runtime repeating tiles');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
