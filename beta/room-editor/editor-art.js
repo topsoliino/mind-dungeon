@@ -97,11 +97,41 @@ window.MindRoomArt=(()=>{
  }
  // One continuous 32x32 world-unit floor artwork. Small rooms reveal a centered
  // crop; large rooms reveal more of the SAME map. No texture scaling per room.
+ // Low-cost cohesive placeholder while the high-detail WebP is being built.
+ // Never fall back to visibly repeated floor tiles.
+ let previewFloor=null;
+ function getPreviewFloor(){
+  if(previewFloor)return previewFloor;
+  const image=document.createElement('canvas');image.width=image.height=1536;
+  const gc=image.getContext('2d'),size=image.width;
+  let seed=173641;
+  const rnd=()=>{seed=(Math.imul(1664525,seed)+1013904223)|0;return (seed>>>0)/4294967296};
+  gc.fillStyle='#303035';gc.fillRect(0,0,size,size);
+  for(let i=0;i<2800;i++){
+   const x=rnd()*size,y=rnd()*size,rx=7+rnd()*30,ry=5+rnd()*21;
+   const c=Math.floor(47+rnd()*36);
+   gc.fillStyle='rgb('+c+','+(c-1)+','+(c+1)+')';
+   gc.strokeStyle='#202228';gc.lineWidth=1.7;
+   gc.beginPath();
+   for(let j=0;j<7;j++){
+    const a=j*Math.PI*2/7,dist=.72+rnd()*.3;
+    const px=x+Math.cos(a)*rx*dist,py=y+Math.sin(a)*ry*dist;
+    if(!j)gc.moveTo(px,py);else gc.lineTo(px,py);
+   }
+   gc.closePath();gc.fill();gc.stroke();
+  }
+  for(let i=0;i<12000;i++){
+   const c=rnd()>.5?'#16191d':'#837b7055';
+   gc.fillStyle=c;const sz=.4+rnd()*2.8;
+   gc.fillRect(rnd()*size,rnd()*size,sz,sz*.65);
+  }
+  previewFloor=image;return image;
+ }
  const WORLD_FLOOR=32,UNIT_WORLD_X=42,WALL_ORTHO=3.25;
  function spriteSize(ortho,zoom){return UNIT_WORLD_X*ortho*Math.SQRT2*zoom}
  function drawRoomFloor(ctx,room,project){
   const asset=images.get('floor');
-  if(!asset?.ready)return false;
+  const floorImage=asset?.ready?asset.img:getPreviewFloor();
   const corners=[project(0,0),project(room.width,0),
                  project(room.width,room.height),project(0,room.height)];
   const origin=corners[0],ex=project(1,0),ey=project(0,1);
@@ -115,7 +145,7 @@ window.MindRoomArt=(()=>{
   const offsetX=(room.width-WORLD_FLOOR)/2,offsetY=(room.height-WORLD_FLOOR)/2;
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='high';
-  ctx.drawImage(asset.img,offsetX,offsetY,WORLD_FLOOR,WORLD_FLOOR);
+  ctx.drawImage(floorImage,offsetX,offsetY,WORLD_FLOOR,WORLD_FLOOR);
   ctx.restore();
   return true;
  }
