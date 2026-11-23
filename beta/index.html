@@ -4557,11 +4557,14 @@ function setResolutionScale(scale){
 function switchToCanvasForPerformance(){
  rendererSwitchPending=false;
  if(!phaserActive||paused||document.hidden)return;
+ // Paint the replacement frame off-screen BEFORE exposing the canvas.
+ // Otherwise destroying a WebGL frame reveals an empty black framebuffer.
+ try{draw(0);}catch(error){console.warn('Canvas prepaint:',error);}
  phaserActive=false;
  window.__engine='Canvas · Adaptive Performance';
+ canvas.style.display='';
  phaserGame?.destroy(true);phaserGame=null;
  window.__mindPhaserGame=null;
- canvas.style.display='';
  renderStats.draws=0;
  slowCanvasTime=0;
  setResolutionScale(.57);
@@ -5767,13 +5770,17 @@ class DungeonScene extends Phaser.Scene{
   .get('renderer')==='phaser-canvas';
  const renderer=preferCanvasPhaser?Phaser.CANVAS:
   webgl?Phaser.WEBGL:Phaser.CANVAS;
- webgl?.getExtension('WEBGL_lose_context')?.loseContext();
+ // Never force WEBGL_lose_context: explicit context loss can briefly blank
+  // other Three.js canvases on Safari and software-GPU browsers.
  phaserGame=new Phaser.Game({type:renderer,audio:{noAudio:true},parent:'phaser-host',width:innerWidth,height:innerHeight,backgroundColor:'#080c18',render:{antialias:false,pixelArt:true,roundPixels:true},fps:{target:60,forceSetTimeOut:false},scene:[DungeonScene],scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH}});
  window.__mindPhaserGame=phaserGame;return true;
  }catch(e){console.warn('Phaser konnte nicht gestartet werden; Canvas-Ersatzrenderer wird verwendet.',e);return false}}
 
 function switchToCanvas(error){
  console.error('Phaser-Bildaufbau fehlgeschlagen. Wechsel zu Canvas.',error);
+ // The previously hidden canvas must contain a fully drawn frame before
+ // the Phaser host is removed, even after WebGL context loss.
+ try{draw(0);}catch(fallbackError){console.warn('Fallback prepaint:',fallbackError);}
  phaserActive=false;
  window.__engine='Canvas-Ersatzrenderer';
  canvas.style.display='';
