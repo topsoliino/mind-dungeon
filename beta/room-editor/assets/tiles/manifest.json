@@ -1,15 +1,25 @@
 {
-  "schema": "mind-dungeon-room-tiles/v1",
-  "source": "editable Blender meshes, Filmic High Contrast, Cycles",
+  "schema": "mind-dungeon-room-tiles/v2",
+  "source": "Blender wall meshes and one authored continuous Pillow dungeon-floor map",
   "generator": "beta/room-editor/blender/build-prison-tiles.py",
-  "sha256": "15a5a3962a3ef3cfc692fc3504a9d26847e0aedd7a1eddd7bf1fa32c7bf1d06a",
+  "sha256": "0f4c9e970d9305bd8df95119dba51c399c1b1015a5d5ad8efdeb8db3ce5236fe",
   "sourceBlend": "../source/prison-tiles.blend",
-  "pixelDimensions": [
+  "wallPixelDimensions": [
     512,
     512
   ],
+  "floorPixelDimensions": [
+    4096,
+    4096
+  ],
+  "floorWorldDimensions": [
+    32,
+    32
+  ],
+  "floorGenerator": "beta/room-editor/blender/build-floor-map.py",
+  "floorGeneratorSha256": "f6cc407e9ed547566da8f58b93fcb1d95d84c57a585b712dc35fc6f23ccf6c46",
   "projection": {
-    "cameraAzimuth": 225,
+    "cameraAzimuth": 45,
     "elevationDegrees": 35.264,
     "projection": "ORTHO",
     "orientation": "same x-y and x+y axes as beta/alley-study.js",
@@ -22,6 +32,7 @@
   },
   "art": {
     "floor": "floor-prison-01.webp",
+    "floorUv": "world-orthographic-32x32-center-crop",
     "wallStyle": "quarried-prison-stone",
     "wallX": "wall-prison-x.webp",
     "wallY": "wall-prison-y.webp"
