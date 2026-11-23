@@ -248,8 +248,13 @@
   };
   const floor=generatorMode?null:bitmap(drawFloor);
   const detail=generatorMode?null:bitmap(ctx=>drawDetails(ctx,groundDetails));
-  const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>facadeArt.building(ctx,home))}));
-  const gateway=cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
+  // The prison belongs to an isolated procedural building. Never paint
+  // stale houses, roof polygons or the old trial alley arch into its doorway.
+  // Leave only the narrow exterior pavement leading to the real L1 entrance.
+  const prisonInterior=Boolean(generatorMode&&window.RockyCoastPrison?.enabled);
+  const homes=prisonInterior?[]:standing.map(home=>({...home,
+   image:cacheObject(home.area,home.height+home.roof,ctx=>facadeArt.building(ctx,home))}));
+  const gateway=prisonInterior?null:cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
   // A long wall spans many projected depth values. Split its RENDERING into
   // short immutable panels; physics still uses the unbroken structural wall.
   const renderWalls=(route?.walls??[]).flatMap(wall=>{
@@ -281,7 +286,7 @@
     drawUnderlay(backdropContext);
    }
    homes.forEach(home=>redrawImage(home.image,ctx=>facadeArt.building(ctx,home)));
-   redrawImage(gateway,ctx=>facadeArt.arch(ctx,gate));
+   if(gateway)redrawImage(gateway,ctx=>facadeArt.arch(ctx,gate));
    // Re-render only the cached background tiles when facade atlases load.
    // Ground, light and stair geometry remain fixed and never need rebaking.
    for(const {canvas,draw,x,y} of chunkCache){
@@ -400,7 +405,7 @@
     }
    }
    if(enabled('foreground')){
-    result.push({image:gateway,depth:archDepth,street:true,
+    if(!prisonInterior)result.push({image:gateway,depth:archDepth,street:true,
      alpha:wallVisibility(archPanel,x,heroY)});
     if(sealPanel)result.push({image:labSeal,depth:sealPanel.renderDepth,
      alpha:route.isUnlocked()?0:wallVisibility(sealPanel,x,heroY)});
@@ -474,10 +479,11 @@
    [{canvas:bitmap(ctx=>drawGroundLight(ctx,0)),x:0,y:0,depth:-1}]
   ];
   const street=combinedGround&&window.RockyCoastPrison.hasEntrance?
-   cacheObject([-3,-3,15,13],150,ctx=>{
-    for(const [i,building] of backdrop.entries())facadeArt.skyline(ctx,{...building,roof:18+i*5},i);
-    for(const surface of ground.slice(0,map.art.streetSurfaceCount))paving(ctx,surface,random);
-    drawDetails(ctx,groundDetails);drawGroundLight(ctx,0);
+   cacheObject([1,2.7,12.2,6.95],16,ctx=>{
+    // Exterior forecourt must not contain the Gasse's skyline or
+    // architecture fragments (nor unnecessary oversized full-alley art).
+    for(const surface of ground.slice(0,map.art.streetSurfaceCount))
+     paving(ctx,surface,random);
    }):null;
   if(street)bakedGround.push([{...street,depth:-3,street:true}]);
   const bakedOverlays=combinedGround?[]:generatorMode?
