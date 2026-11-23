@@ -22,7 +22,7 @@ window.MindRoomArt=(()=>{
   img.src=src;
   return result;
  }
- preload('floor',ROOT+'tiles/floor-prison-01.webp?v=continuous-32-v1');
+ preload('floor',ROOT+'tiles/floor-prison-01.webp?v=photographic-floor-v2');
  preload('wall-x',ROOT+'tiles/wall-prison-x.webp');
  preload('wall-y',ROOT+'tiles/wall-prison-y.webp');
  // In the game the Guardian's pre-rendered atlas is the verified fallback
