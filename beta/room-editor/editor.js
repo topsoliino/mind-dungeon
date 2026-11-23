@@ -160,12 +160,17 @@ function drawWall(w){
  const type=cat.walls[w.style];if(!type||!type.height)return;
  const [a,b]=wallEnds(w),h=type.height,base0=pt(...a),base1=pt(...b),
   top0=pt(a[0],a[1],h),top1=pt(b[0],b[1],h),facing=(w.edge==='north'||w.edge==='south');
- if(w.style==='stone'){
-  const mid=pt((a[0]+b[0])/2,(a[1]+b[1])/2,1);
-  if(window.MindRoomArt?.drawWall(ctx,mid,facing?'x':'y',zoom))return;
+ if(w.style==='stone'||w.style==='stone-cut'){
+  const along=facing?w.x:w.y;
+  if(window.MindRoomArt?.drawWallFace(ctx,w.style,top0,top1,base0,base1,along))return;
+  // Explicitly marked fallback for the short period before photo publication.
+  if(w.style==='stone'){
+   const mid=pt((a[0]+b[0])/2,(a[1]+b[1])/2,1);
+   if(window.MindRoomArt?.drawWall(ctx,mid,facing?'x':'y',zoom))return;
+  }
  }
  // Breakable stone-block rendering is deliberately same for all four faces.
- if(w.style==='stone'){
+ if(w.style==='stone'||w.style==='stone-cut'){
   polygon([top0,top1,base1,base0],facing?'#4b4955':'#54525c','#2b2a34',1.1);
   for(let i=1;i<5;i++){
    const z=h*i/5;
