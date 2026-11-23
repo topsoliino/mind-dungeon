@@ -13,7 +13,8 @@ window.MindRoomArt=(()=>{
   const img=new Image();
   result.img=img;
   img.onload=()=>{
-   if(key==='floor'&&(img.naturalWidth!==4096||img.naturalHeight!==4096)){
+   if((key==='floor'||key==='floor-cut')&&(img.naturalWidth!==4096||img.naturalHeight!==4096)||
+      key.startsWith('wall-photo-')&&(img.naturalWidth!==4096||img.naturalHeight!==1024)){
     result.failed=true;console.warn('Old tile atlas detected; continuous floor build not published yet');
    }else result.ready=true;
    emit();
@@ -22,26 +23,40 @@ window.MindRoomArt=(()=>{
   img.src=src;
   return result;
  }
- // Only accept the new photographic build. A 4096px image alone could
- // still be the older generated polygon floor; manifest provenance matters.
- images.set('floor',{img:null,ready:false,failed:false,src:''});
- async function loadPhotographicFloor(){
+ // Texture options must come from a verified, published material manifest.
+ // Assets are independently selectable, and the same map is sampled across
+ // consecutive wall segments at a fixed scale without 1-tile repetitions.
+ const PHOTO_KEYS=['floor','floor-cut','wall-photo-stone','wall-photo-stone-cut'];
+ for(const key of PHOTO_KEYS)images.set(key,{img:null,ready:false,failed:false,src:''});
+ async function loadPhotographicMaterials(){
   try{
-   const response=await fetch(ROOT+'tiles/manifest.json?v=photographic-v2',{cache:'no-cache'});
-   if(!response.ok)throw Error('Floor manifest unavailable');
+   const response=await fetch(ROOT+'tiles/manifest.json?v=material-v3',{cache:'no-cache'});
+   if(!response.ok)throw Error('Material manifest unavailable');
    const manifest=await response.json();
-   if(manifest.floorMaterial!=='photoreal-scanned-cc0')
-    throw Error('Photographic 4096px floor asset build not published yet');
-   if(!/^[0-9a-f]{64}$/.test(manifest.floorGeneratorSha256||''))
-    throw Error('Floor build provenance is invalid');
-   preload('floor',ROOT+'tiles/floor-prison-01.webp?v='+manifest.floorGeneratorSha256);
+   if(manifest.floorMaterial!=='photoreal-scanned-cc0'||
+      manifest.wallMaterial!=='photoreal-scanned-cc0')
+    throw Error('Two photographic floors and walls not published yet');
+   if(!/^[0-9a-f]{64}$/.test(manifest.floorGeneratorSha256||'')||
+      !/^[0-9a-f]{64}$/.test(manifest.wallGeneratorSha256||''))
+    throw Error('Material build hash missing');
+   const materials=[
+    ['floor',manifest.floorVariants?.['dungeon-ashlar'],manifest.floorGeneratorSha256],
+    ['floor-cut',manifest.floorVariants?.['dungeon-cut-stone'],manifest.floorGeneratorSha256],
+    ['wall-photo-stone',manifest.wallVariants?.stone,manifest.wallGeneratorSha256],
+    ['wall-photo-stone-cut',manifest.wallVariants?.['stone-cut'],manifest.wallGeneratorSha256]
+   ];
+   const allowed=/^(floor-prison-0[12]\.(?:webp|jpg)|wall-masonry-0[12]\.jpg)$/;
+   for(const [key,file,hash] of materials){
+    if(typeof file!=='string'||!allowed.test(file))throw Error('Bad photo asset '+key);
+    preload(key,ROOT+'tiles/'+file+'?v='+hash);
+   }
   }catch(error){
-   images.get('floor').failed=true;
-   console.warn('Room Atelier: photographic floor pending:',error.message);
+   for(const key of PHOTO_KEYS)images.get(key).failed=true;
+   console.warn('Room Atelier photographic materials pending:',error.message);
    emit();
   }
  }
- void loadPhotographicFloor();
+ void loadPhotographicMaterials();
  preload('wall-x',ROOT+'tiles/wall-prison-x.webp');
  preload('wall-y',ROOT+'tiles/wall-prison-y.webp');
  // In the game the Guardian's pre-rendered atlas is the verified fallback
@@ -149,7 +164,7 @@ window.MindRoomArt=(()=>{
  const WORLD_FLOOR=32,UNIT_WORLD_X=42,WALL_ORTHO=3.25;
  function spriteSize(ortho,zoom){return UNIT_WORLD_X*ortho*Math.SQRT2*zoom}
  function drawRoomFloor(ctx,room,project){
-  const asset=images.get('floor');
+  const asset=images.get(room.floorStyle==='dungeon-cut-stone'?'floor-cut':'floor');
   const floorImage=asset?.ready?asset.img:getPreviewFloor();
   const corners=[project(0,0),project(room.width,0),
                  project(room.width,room.height),project(0,room.height)];
@@ -168,6 +183,37 @@ window.MindRoomArt=(()=>{
   ctx.restore();
   return true;
  }
+ // A true world-mapped facade: the photo source spans 32 connected horizontal
+ // wall units by 2 vertical units. Each segment crops the corresponding span;
+ // segment seams never restart the 1-unit sample at the left edge.
+ function drawWallFace(ctx,style,topA,topB,bottomA,bottomB,along){
+  const key=style==='stone-cut'?'wall-photo-stone-cut':'wall-photo-stone';
+  const asset=images.get(key);
+  if(!asset?.ready)return false;
+  const img=asset.img,unit=img.naturalWidth/32;
+  const position=Math.max(0,Math.min(31,Math.trunc(along)));
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);
+  ctx.lineTo(bottomB.x,bottomB.y);ctx.lineTo(bottomA.x,bottomA.y);
+  ctx.closePath();ctx.clip();
+  ctx.transform(topB.x-topA.x,topB.y-topA.y,
+                bottomA.x-topA.x,bottomA.y-topA.y,topA.x,topA.y);
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  ctx.drawImage(img,position*unit,0,unit,img.naturalHeight,0,0,1,1);
+  ctx.restore();
+  // A restrained rough coping edge gives the otherwise flat photographic
+  // facade a sense of medieval masonry thickness and depth.
+  ctx.save();
+  ctx.lineWidth=2.4;
+  ctx.strokeStyle=style==='stone-cut'?'#5b5955':'#48494b';
+  ctx.beginPath();ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);ctx.stroke();
+  ctx.lineWidth=.8;ctx.strokeStyle='#aaa49a66';
+  ctx.beginPath();ctx.moveTo(topA.x,topA.y-1);ctx.lineTo(topB.x,topB.y-1);ctx.stroke();
+  ctx.restore();
+  return true;
+ }
  function drawWall(ctx,center,axis,zoom){
   const asset=images.get(axis==='x'?'wall-x':'wall-y');
   if(!asset?.ready)return false;
@@ -177,12 +223,17 @@ window.MindRoomArt=(()=>{
   return true;
  }
  function status(){
+  const floors=['floor','floor-cut'].filter(k=>images.get(k)?.ready).length;
+  const walls=['wall-photo-stone','wall-photo-stone-cut'].filter(k=>images.get(k)?.ready).length;
   return {
-   tiles:(images.get('floor')?.ready?'Fotoscan 4096px':images.get('floor')?.failed?'Foto-Build ausstehend':'Foto lädt'),
+   tiles:floors+'/2 Foto-Böden',
+   wallPhotos:walls+'/2 Foto-Mauern',
    guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
-   tileReady:images.get('floor')?.ready||false,
-   wallsReady:images.get('wall-x')?.ready&&images.get('wall-y')?.ready
+   tileReady:floors>0,
+   wallsReady:walls===2,
+   floorReady:images.get('floor')?.ready||false,
+   floorCutReady:images.get('floor-cut')?.ready||false,
   };
  }
- return {drawGuardian,drawRoomFloor,drawWall,status,onChange(callback){watchers.push(callback)}};
+ return {drawGuardian,drawRoomFloor,drawWall,drawWallFace,status,onChange(callback){watchers.push(callback)}};
 })();
