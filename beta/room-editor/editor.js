@@ -9,7 +9,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const rand=(x,y,s=0)=>{let n=Math.imul(x+1009,374761393)+Math.imul(y+41,668265263)+Math.imul(s+1,2246822519);n=Math.imul(n^n>>>13,1274126177);return ((n^n>>>16)>>>0)/4294967295};
 const quant=x=>Math.round(x*4)/4;
 let room=clone(kit.preset),selected=null,tool='select',chosenFurniture='prison-table';
-let showGrid=true,playing=false,dragging=null,hover=null,dirty=true,frame=0;
+let showGuardian=true,showGrid=true,playing=false,dragging=null,hover=null,dirty=true,frame=0;
 let width=0,height=0,zoom=1,ox=0,oy=0;
 let hero={x:3.5,y:2.6,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
 let playHP=new Map();
@@ -121,10 +121,6 @@ new ResizeObserver(resize).observe($('canvasWrap'));
 function tileStyle(x,y){return room.tiles.find(t=>t.x===x&&t.y===y)?.style||room.floorStyle}
 function drawTile(x,y){
  const info=cat.floors[tileStyle(x,y)],corners=[pt(x,y),pt(x+1,y),pt(x+1,y+1),pt(x,y+1)];
- if(window.MindRoomArt?.drawFloor(ctx,pt(x+.5,y+.5),zoom)){
-  if(showGrid)polygon(corners,null,'#c1bdbe1c',.55);
-  return;
- }
  const r=rand(x,y),r2=rand(x,y,15);
  polygon(corners,info.base,info.grout,.8);
  const variation=r>.6?'#ffffff10':'#00000012';
@@ -334,18 +330,36 @@ function draw(){
  polygon([pt(room.width,room.height),pt(0,room.height),
    pt(0,room.height,-slab),pt(room.width,room.height,-slab)],
    '#30303a','#181821',1);
- for(let x=0;x<room.width;x++)for(let y=0;y<room.height;y++)drawTile(x,y);
+ // Render ONE continuous artifact. The image has a fixed 32x32 world scale:
+ // a 5x5 room crops it, a 30x30 room uncovers almost all of it.
+ const floorReady=window.MindRoomArt?.drawRoomFloor(ctx,room,pt);
+ if(!floorReady){
+  for(let x=0;x<room.width;x++)for(let y=0;y<room.height;y++)drawTile(x,y);
+ }
+ // Painted floor details are soft weathering marks, never square tile borders.
+ for(const tile of room.tiles){
+  const center=pt(tile.x+.5,tile.y+.5),seed=rand(tile.x,tile.y);
+  ctx.save();ctx.translate(center.x,center.y);
+  ctx.rotate(seed*Math.PI);
+  ctx.fillStyle='rgba(21,17,14,.16)';
+  ctx.beginPath();ctx.ellipse(0,0,(21+seed*13)*zoom,(9+seed*7)*zoom,0,0,TAU);
+  ctx.fill();ctx.restore();
+ }
+ // Grid is an optional EDITOR overlay, not part of the authored floor artwork.
+ if(showGrid&&floorReady)for(let x=0;x<room.width;x++)for(let y=0;y<room.height;y++)
+  polygon([pt(x,y),pt(x+1,y),pt(x+1,y+1),pt(x,y+1)],null,'#c1bdbe13',.55);
  if(hover?.kind==='tile'&&tool==='floor'){
   const v=hover;polygon([pt(v.x,v.y),pt(v.x+1,v.y),pt(v.x+1,v.y+1),pt(v.x,v.y+1)],'#f4c87527','#e3bd78',1.2);
  }
  const layers=[];
  for(const w of room.walls)if(!isNearWall(w))layers.push({depth:wallDepth(w),draw:()=>drawWall(w)});
  for(const obj of room.furniture)layers.push({depth:pt(obj.x,obj.y).y,draw:()=>drawFurniture(obj)});
- if(playing)layers.push({
-  depth:pt(hero.x,hero.y).y+.01,
+ if(playing||showGuardian)layers.push({
+  depth:pt(playing?hero.x:room.width/2,playing?hero.y:room.height/2).y+.01,
   draw:()=>window.MindRoomArt.drawGuardian(ctx,{
-   point:pt(hero.x,hero.y),angle:hero.face,time:hero.clock,
-   moving:hero.moving,vault:hero.vault,zoom
+   point:pt(playing?hero.x:room.width/2,playing?hero.y:room.height/2),
+   angle:playing?hero.face:Math.PI/4,time:playing?hero.clock:0,
+   moving:playing&&hero.moving,vault:playing?hero.vault:0,zoom
   })
  });
  layers.sort((a,b)=>a.depth-b.depth);
@@ -363,7 +377,11 @@ function draw(){
 function schedule(){dirty=true}
 window.MindRoomArt?.onChange(()=>{
  const state=window.MindRoomArt.status();
- $('assetStatus').textContent='Blender-Stein '+state.tiles+' · Wächter '+(state.guardianAuthentic?'Originalatlas':state.guardian);
+ $('assetStatus').textContent='Bodenkarte '+state.tiles+' · Wände '+(state.wallsReady?'bereit':'laden')+
+  ' · Spiel-Wächter '+(state.guardianAuthentic?'original geladen':state.guardian==='loading'?'lädt …':'FEHLER');
+ $('guardianBtn').disabled=state.guardian==='error';
+ $('guardianBtn').textContent='◆ Spiel-Wächter '+(state.guardianAuthentic?
+   (showGuardian?'ausblenden':'einblenden'):state.guardian==='loading'?'lädt …':'nicht verfügbar');
  schedule();
 });
 
@@ -712,6 +730,12 @@ $('newBtn').onclick=()=>{if(!confirm('Neuen leeren Raum anlegen?'))return;
   floorStyle:room.floorStyle,wallStyle:'stone',walls:[],furniture:[]});resetHistory();fit();};
 $('undoBtn').onclick=()=>undo(-1);$('redoBtn').onclick=()=>undo(1);
 $('playBtn').onclick=()=>togglePlay(!playing);
+$('guardianBtn').onclick=()=>{
+ showGuardian=!showGuardian;
+ $('guardianBtn').classList.toggle('active',showGuardian);
+ $('guardianBtn').textContent='◆ Spiel-Wächter '+(showGuardian?'ausblenden':'einblenden');
+ schedule();
+};
 $('gridBtn').onclick=()=>{showGrid=!showGrid;refreshUI()};
 $('fitBtn').onclick=fit;
 for(const [id,factor] of [['zoomInBtn',1.18],['zoomOutBtn',1/1.18]])
