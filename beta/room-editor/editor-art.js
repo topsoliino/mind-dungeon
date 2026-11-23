@@ -62,8 +62,6 @@ window.MindRoomArt=(()=>{
   }
  }
  void loadPhotographicMaterials();
- preload('wall-x',ROOT+'tiles/wall-prison-x.webp');
- preload('wall-y',ROOT+'tiles/wall-prison-y.webp');
  // In the game the Guardian's pre-rendered atlas is the verified fallback
  // to the expensive GLB rig. Use the exact same frame metadata and images.
  let guardianAtlas=null,guardianBody=[],guardianWeapon=[],guardianStatus='loading';
@@ -137,8 +135,6 @@ window.MindRoomArt=(()=>{
  // The assets are imported byte-for-byte from Poly Haven's visible
  // previews, not authored or color-graded by the editor. Only the camera
  // projection maps those unchanged source pixels onto our room geometry.
- const UNIT_WORLD_X=42,WALL_ORTHO=3.25;
- function spriteSize(ortho,zoom){return UNIT_WORLD_X*ortho*Math.SQRT2*zoom}
  function drawRoomFloor(ctx,room,project){
   const asset=images.get(room.floorStyle==='dungeon-cut-stone'?'floor-cut':'floor');
   const corners=[project(0,0),project(room.width,0),
@@ -194,14 +190,6 @@ window.MindRoomArt=(()=>{
   ctx.restore();
   return true;
  }
- function drawWall(ctx,center,axis,zoom){
-  const asset=images.get(axis==='x'?'wall-x':'wall-y');
-  if(!asset?.ready)return false;
-  const size=spriteSize(WALL_ORTHO,zoom);
-  ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(asset.img,center.x-size/2,center.y-size/2,size,size);
-  return true;
- }
  function status(){
   const floors=['floor','floor-cut'].filter(k=>images.get(k)?.ready).length;
   const walls=['wall-photo-stone','wall-photo-stone-cut'].filter(k=>images.get(k)?.ready).length;
@@ -215,5 +203,5 @@ window.MindRoomArt=(()=>{
    floorCutReady:images.get('floor-cut')?.ready||false,
   };
  }
- return {drawGuardian,drawRoomFloor,drawWall,drawWallFace,status,onChange(callback){watchers.push(callback)}};
+ return {drawGuardian,drawRoomFloor,drawWallFace,status,onChange(callback){watchers.push(callback)}};
 })();
