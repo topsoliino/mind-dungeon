@@ -26,14 +26,14 @@
 | `editor.css` | Oberfläche |
 | `catalog.js` | Boden-/Wand-Katalog und Möbel-Eigenschaften, vorinstallierte Gefängniszelle |
 | `editor.js` | Projektion, Zeichenreihenfolge, Interaktionen, Undo, Kollision, Spieltest, Export |
-| `editor-art.js` | Original-Blender-Wandbilder und eine durchgehende 4096px-Bodenkarte sowie ORIGINALEN vorgerenderten Wächter-Atlas laden; kein Three.js und kein neues Rig |
+| `editor-art.js` | Sechs Poly-Haven-Materialien auf isometrische Boden- und Wandflächen mit physikalisch sinnvoller Größe projizieren; originalen Wächter-Atlas als Referenz verwenden |
 | `presets/prison-cell-01.json` | Eigenständig importierbare Gefängniszelle |
 | `blender/build-room-kit.py` | **Tatsächliche 3D-Modelle**: Tisch, Stuhl; physische Bretter, Beine, Eisennägel, Material-/Lichtsetup |
 | `blender/pack-room-kit.py` | Vier Ansichten je Möbelstück in 512×512 WebP + Manifest packen |
-| `blender/build-prison-tiles.py` | Ein vorhandener 512px-Referenzboden und zwei Blender-Maueransichten; in der App wird stattdessen die jeweils zusammenhängenden 4096px-Bodenkarten verwendet |
-| `blender/build-floor-map.py` | Importiert die beiden originalen Poly-Haven-Vorschau-PNGs ohne Bildverarbeitung |
-| `blender/build-wall-maps.py` | Importiert die beiden originalen Poly-Haven-Mauer-PNGs ohne Bildverarbeitung |
-| `blender/pack-prison-tiles.py` | Prüft vier Original-PNGs und protokolliert Dateigröße, Quelle und SHA-256 im Manifest; CI-Fallbacks bleiben erhalten |
+| `blender/build-prison-tiles.py` | Historische Blender-Wand- und Bodenfallbacks (nur CI-Kompatibilität), nicht der aktive Material-Look |
+| `blender/build-floor-map.py` | Importiert drei originale Poly-Haven-Boden-PNGs ohne Bildverarbeitung |
+| `blender/build-wall-maps.py` | Importiert drei originale Poly-Haven-Wand-PNGs ohne Bildverarbeitung |
+| `blender/pack-prison-tiles.py` | Prüft sechs unveränderte Original-PNGs und dokumentiert Quelle, SHA-256, Orientierung und echten Maßstab im v4-Manifest |
 | `assets/source/prison-tiles.blend` | Editierbare Modellquelle der Steinarchitektur |
 | `assets/tiles/` | Originale hochauflösende Blender-Architekturbilder, nicht prozeduraler Runtime-Shader |
 | `assets/source/room-kit.blend` | Render-Workflow erzeugt die editierbare Blender-Szene |
@@ -92,23 +92,25 @@ Die Schaltfläche **Spiel-Wächter** blendet den echten Originalatlas aus `../ar
 
 Alle Änderungen der Bodenkarte und des Editors liegen ausschließlich unter `beta/room-editor/`. Das eigentliche Spiel (`beta/index.html`, `beta/dungeon-guardian*.js`, `beta/dungeon-isometric.js`, Generator usw.) wird nicht geändert. Der schon bestehende Asset-Workflow darf weiterhin ausschließlich die Editor-Assets publizieren.
 
-### Original-Fotomaterialien (V4) – ohne jegliche Nachbearbeitung
+### Nasskerker-Materialien – sechs originale Poly-Haven-Fotos (V5)
 
-**Wichtig:** Es werden die **exakten Poly-Haven-Vorschaubilder (Primary Previews)** heruntergeladen und als unveränderte PNG-Bytes im isolierten Raumeditor gespeichert. Die vorherigen zusammengesetzten Texturen mit künstlichen Rissen, Schmutz, Feuchtigkeit, Kontrastanpassungen und Filtermasken sind **nicht mehr der aktive Renderpfad**. Der Download wird bytegenau per SHA-256 im Manifest nachgewiesen; er ist **keine Neugenerierung** von Texturen.
+Die sechs Bilder stammen direkt aus Poly Havens **Primary Preview PNGs**. Sie werden durch den Asset-Build bytegenau kopiert, **nicht** nachgefärbt, gedreht, gespiegelt, verwaschen, mit künstlichem Schmutz überzeichnet oder skaliert. Die Texturen erscheinen im Browser auf korrekt orientierten, isometrischen Boden-/Wandflächen; die Raumgeometrie selbst wird nicht verändert. Alle Materialien sind [CC0](https://polyhaven.com/license).
 
-| Materialauswahl | Unveränderte PNG-Datei | Originalreferenz |
-|---|---|---|
-| Boden I · Monastery Stone Floor | `assets/tiles/floor-prison-01.png` | [Monastery Stone Floor](https://polyhaven.com/a/monastery_stone_floor) |
-| Boden II · Rectangular Paving | `assets/tiles/floor-prison-02.png` | [Rectangular Paving](https://polyhaven.com/a/rectangular_paving) |
-| Steinmauer I · Medieval Wall 02 | `assets/tiles/wall-masonry-01.png` | [Medieval Wall 02](https://polyhaven.com/a/medieval_wall_02) |
-| Steinmauer II · Stone Block Wall | `assets/tiles/wall-masonry-02.png` | [Stone Block Wall](https://polyhaven.com/a/stone_block_wall) |
+| Raum-Auswahl / gespeicherte ID | Originalquelle | Datei | Physischer Maßstab |
+|---|---|---|---|
+| Dark Rock 02 · `dungeon-ashlar` | [Dark Rock 02](https://polyhaven.com/a/dark_rock_02) | `floor-prison-01.png` | Originalhöhe 2 m, bei 2:1-Vorschau Breite 4 m |
+| Coast Sand Rocks 02 · `dungeon-coast-rocks` | [Coast Sand Rocks 02](https://polyhaven.com/a/coast_sand_rocks_02) | `floor-prison-02.png` | 15 m breit, 7,5 m hoch |
+| Cobblestone Floor 09 · `dungeon-cut-stone` | [Cobblestone Floor 09](https://polyhaven.com/a/cobblestone_floor_09) | `floor-prison-03.png` | 2,2 m breit, 1,1 m hoch |
+| Rock Wall 17 · `stone` | [Rock Wall 17](https://polyhaven.com/a/rock_wall_17) | `wall-masonry-01.png` | 1,8 m breit, 0,9 m hoch |
+| Rock Wall 16 · `stone-cut` | [Rock Wall 16](https://polyhaven.com/a/rock_wall_16) | `wall-masonry-02.png` | 2 m breit, 1 m hoch |
+| Old Stone Wall · `stone-old` | [Old Stone Wall](https://polyhaven.com/a/old_stone_wall) | `wall-masonry-03.png` | 2 m breit, 1 m hoch |
 
-Quelle [Poly Haven](https://polyhaven.com/) unter [CC0-Lizenz](https://polyhaven.com/license). Die Dateien aus dem Poly-Haven-CDN werden mit `?height=2048&quality=95` angefragt und **unverändert** als PNG gespeichert. Ihre tatsächlichen Pixelmaße stehen im generierten `assets/tiles/manifest.json`, nicht in einer geratenen 4096er-Grenze. Für eine stabile Bildzuordnung lädt der Browser ausschließlich diese vier lokalen Editor-Dateien, wenn `textureMode: "original-photo-byte-identical"` und zugehörige Prüfsummen vorliegen.
+**Maßstab:** Im Editor entspricht ungefähr **ein Rasterfeld einem Meter**, abgestimmt auf die zweifeldhohen Wände und den originalen Wächter. Eine fotobasierte Fläche behält in 2×2-, 7×5- und 30×30-Räumen **dieselbe Körnung und Steingröße**. Der Boden beginnt mit seiner Original-X-Achse an der Raum-X-Achse. Das Material wird über die gesamte sichtbare Fläche im Weltkoordinatensystem wiederholt; es wird nicht auf Raumgröße verzerrt.
 
-**Im Editor:** Boden I und II werden links im Boden-Dropdown **für den gesamten Raum** umgeschaltet (kein Übermalen einzelner Felder mit künstlichem Schmutz). Die Mauern werden links im Wand-Dropdown ausgewählt, danach mit `W` an einer Kante gesetzt oder ersetzt. Die bestehenden Wand- und Möbel-Kollisionen bleiben gleich, alte Raum-JSON-IDs (`dungeon-ashlar`, `stone`) bleiben kompatibel.
+**Wandorientierung:** Eine Wand ist zwei Rastereinheiten hoch. Das Originalfoto wird in horizontaler Wandrichtung und vertikal nach unten gemappt, **ohne Rotation/Spiegelung**. Verbindende Wandsegmente nehmen den richtigen durchgehenden Bildausschnitt, und die Fotohöhe wird mit korrekt kalibriertem Maßstab wiederholt statt auf die doppelte Höhe gestreckt. Süd-/Ostwände zur Kamera bleiben wie bisher ausgeblendet. Wände und Gitter behalten ihre bisherigen Kollisionsflächen.
 
-**Projektion und Skalierung:** Die unveränderten Bilder werden lediglich auf die geometrischen isometrischen Flächen gemappt. Ein Bodenbild deckt bei 2:1-Seitenverhältnis 12×6 Rastereinheiten ab; bei großen Räumen wiederholt der Renderer dieses **unveränderte** Originalbild, statt eine andere Bodenkarte zu erzeugen. Mauerbilder werden abschnittsweise über vier durchgehende Wandsegmente gelegt (2 Welteinheiten hoch), ohne zusätzliche Fugen, gemalte Risse oder dunkle Überlagerungen. Ein einfaches, einfarbiges Ersatzmaterial zeigt fehlende Dateien an, niemals die alten künstlichen Texturen.
+**Benutzung:** Links zwischen drei Böden wählen, um die Bodenfläche des gesamten Raums umzuschalten. Für die drei Wände entweder das Dropdown oder die neuen Bildvorschauen verwenden, dann `W` drücken und eine Kante auswählen. Bestehende Raum-JSONs mit `dungeon-ashlar`, `dungeon-cut-stone`, `stone` und `stone-cut` bleiben gültig; ihre Materialabbildung wurde bewusst auf die neuen Originale aktualisiert.
 
-**Build:** Der vorhandene und unveränderte Editor-Art-Workflow ruft über `blender/pack-prison-tiles.py` die beiden Downloader `blender/build-floor-map.py` und `blender/build-wall-maps.py` auf. Die drei bisherigen Blender-WebP-Dateien bleiben nur für Kompatibilität mit der CI-Prüfung bestehen, werden aber **nicht** zur Darstellung der neuen Original-Materialien herangezogen.
+**Build/Veröffentlichung:** `blender/pack-prison-tiles.py` importiert über `blender/build-floor-map.py` und `blender/build-wall-maps.py` alle sechs Fotos nach `assets/tiles/`. Das Manifest `assets/tiles/manifest.json` verwendet `mind-dungeon-room-tiles/v4` mit Dateinamen, echten Bildabmessungen, SHA-256-Hashes, Weltbreiten und der Kennzeichnung `original-photo-byte-identical`. Drei ältere WebPs bleiben nur wegen des unveränderten Editor-Art-Workflows bestehen; die Runtime lädt sie für die sechs neuen Materialoptionen nicht.
 
-**Hauptspielschutz:** Änderungen ausschließlich unter `beta/room-editor/**`; keine Veränderung von `beta/index.html`, `beta/dungeon-isometric.js`, Wächter-/Gegnerdateien oder `.github/**`.
+**Hauptspielschutz:** Ausschließlich `beta/room-editor/**` wurde geändert. Keine Änderungen an Wächter, Hauptspiel-Beta, Gegnern, Generatoren oder `.github/**`.
