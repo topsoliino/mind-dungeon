@@ -22,7 +22,26 @@ window.MindRoomArt=(()=>{
   img.src=src;
   return result;
  }
- preload('floor',ROOT+'tiles/floor-prison-01.webp?v=photographic-floor-v2');
+ // Only accept the new photographic build. A 4096px image alone could
+ // still be the older generated polygon floor; manifest provenance matters.
+ images.set('floor',{img:null,ready:false,failed:false,src:''});
+ async function loadPhotographicFloor(){
+  try{
+   const response=await fetch(ROOT+'tiles/manifest.json?v=photographic-v2',{cache:'no-cache'});
+   if(!response.ok)throw Error('Floor manifest unavailable');
+   const manifest=await response.json();
+   if(manifest.floorMaterial!=='photoreal-scanned-cc0')
+    throw Error('Photographic 4096px floor asset build not published yet');
+   if(!/^[0-9a-f]{64}$/.test(manifest.floorGeneratorSha256||''))
+    throw Error('Floor build provenance is invalid');
+   preload('floor',ROOT+'tiles/floor-prison-01.webp?v='+manifest.floorGeneratorSha256);
+  }catch(error){
+   images.get('floor').failed=true;
+   console.warn('Room Atelier: photographic floor pending:',error.message);
+   emit();
+  }
+ }
+ void loadPhotographicFloor();
  preload('wall-x',ROOT+'tiles/wall-prison-x.webp');
  preload('wall-y',ROOT+'tiles/wall-prison-y.webp');
  // In the game the Guardian's pre-rendered atlas is the verified fallback
@@ -159,7 +178,7 @@ window.MindRoomArt=(()=>{
  }
  function status(){
   return {
-   tiles:(images.get('floor')?.ready?'1/1 – 4096px':'0/1 – Karte lädt'),
+   tiles:(images.get('floor')?.ready?'Fotoscan 4096px':images.get('floor')?.failed?'Foto-Build ausstehend':'Foto lädt'),
    guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
    tileReady:images.get('floor')?.ready||false,
    wallsReady:images.get('wall-x')?.ready&&images.get('wall-y')?.ready
