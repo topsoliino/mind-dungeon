@@ -31,13 +31,19 @@ function create(hooks){
  function update(e,hero,dt,spec,d,angle,visible){
   e.skeletonCooldown=Math.max(0,(e.skeletonCooldown||0)-dt);
   e.soulCooldown=Math.max(0,(e.soulCooldown??5)-dt);
-  aim(e,angle);
   let a=e.skeletonAction;
+  if(a?.name.startsWith('cartwheel'))angle=e.skeletonWheelFacing??angle;
+  aim(e,angle);
   if(!e.aggro&&!a)return;
   if(a){
    const old=a.age;a.age=Math.min(a.duration,a.age+dt);
    const crossed=t=>old<t&&a.age>=t;
    const back=angle+Math.PI,bow=e.skeleton==='bow';
+   if(a.name.startsWith('cartwheel')){
+    const fraction=a.name==='cartwheel'?.56:.22;
+    const lateral=(e.skeletonWheelSide||1)*-Math.PI/2;
+    travel(e,angle+lateral,1.9*29*(e.size||1)*fraction/a.duration,a.age-old,angle);
+   }
    if(bow){
     if(d<260||a.name==='flee')
      travel(e,back,spec.speed*(a.name==='flee'?2.3:1.72),dt,angle);
@@ -58,10 +64,6 @@ function create(hooks){
    }else if(a.name==='cartwheel'){
     // One sideways gymnastics pass: slow palm plant, accelerated inverted
     // scissor-kick, measured landing. Prevent the old constant-speed slide.
-    const u=Math.max(0,Math.min(1,a.age/a.duration));
-    const side=e.skeletonWheelSide||1;
-    const speed=spec.speed*(1.3+2.1*Math.sin(Math.PI*u)**2);
-    travel(e,angle+Math.PI*.5*side,speed,dt,angle);
     e.skeletonWheelContact=Math.max(0,(e.skeletonWheelContact||0)-dt);
     if(e.skeletonWheelContact<=0&&
        Math.hypot(e.x-hero.x,e.y-hero.y)<38){
@@ -84,7 +86,7 @@ function create(hooks){
    }else if(a.name==='throw'){
     if(d>90)travel(e,angle,spec.speed*.60,dt,angle);
    }
-   if(a.name==='throw'&&crossed(.48)){
+   if(a.name==='throw'&&crossed(a.duration*.59)){
     throwVessel(e,angle);
     e.soulCooldown=6+random()*2.8;
    }
@@ -125,7 +127,7 @@ function create(hooks){
   if(e.skeletonCooldown<=0&&d<177){
    e.skeletonChoice=(e.skeletonChoice||0)+1;
    const name=['combo','slash','overhead','cartwheel-enter'][(e.skeletonChoice-1)%4];
-   if(name==='cartwheel-enter')e.skeletonWheelSide=random()<.5?-1:1;
+   if(name==='cartwheel-enter'){e.skeletonWheelSide=random()<.5?-1:1;e.skeletonWheelFacing=angle;}
    begin(e,name);
   }else if(d>44){
    advance(e,dt,spec.speed*1.52,true);

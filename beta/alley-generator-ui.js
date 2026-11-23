@@ -146,13 +146,13 @@ function mount({generator:g,player,iso}){
    ctx.strokeStyle=wall.height>20?'#e3d6c6':'#7d8b9c';
    ctx.lineWidth=wall.height>20?2.6:1.3;ctx.stroke();
   }
-  for(const [x,y] of g.outdoorExit?.cells||[])poly(quad(x,y,x+1,y+1),'#776047');
+  for(const [x,y] of (!prison?.enabled||prison.hasExit&&prison.last)?g.outdoorExit?.cells||[]:[])poly(quad(x,y,x+1,y+1),'#776047');
   for(const door of g.doors)for(const [a,b] of door.edges){
    const p=xy((a[0]+b[0]+1)/2,(a[1]+b[1]+1)/2);
    ctx.beginPath();ctx.arc(p[0],p[1],3.5,0,Math.PI*2);ctx.fillStyle='#f4d394';ctx.fill();
   }
   for(const door of g.portals){
-   if(prison?.enabled&&(door===g.outdoorEntrance?prison.storey!==1:!prison.last))continue;
+   if(prison?.enabled&&(door===g.outdoorEntrance?!prison.hasEntrance||prison.storey!==1:!prison.hasExit||!prison.last))continue;
    const [x,y]=xy(door.x,door.y);
    ctx.fillStyle='#ffe6b6';ctx.font='bold 13px system-ui';ctx.textAlign='center';
    ctx.strokeStyle='#30251f';ctx.lineWidth=3;

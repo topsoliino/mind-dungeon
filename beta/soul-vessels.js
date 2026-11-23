@@ -16,10 +16,14 @@ function create({state,floor,heroes,poison,origin,random,heroFloor}){
   const stones=state.soulVessels;
   if(stones.length>=10)stones.shift();
   const speed=195,ground=(e.alleyFloor??0)*132;
-  stones.push({x:e.x,y:e.y,z:Math.max(ground,e.alleyZ||0)+63,
+  // Blender Hand.L at release, projected with the skeleton camera (116 / 3.23).
+  const scale=e.size||1,forward=(e.moving?.565:.535)*29*scale,side=.328*29*scale;
+  const x=e.x+Math.cos(angle)*forward-Math.sin(angle)*side;
+  const y=e.y+Math.sin(angle)*forward+Math.cos(angle)*side;
+  stones.push({x,y,z:ground+1.469*29.33*scale,
    vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,vz:95,gravity:530,
    radius:RADIUS,spin:0,age:0,emission:10,life:12.5,landed:false,tick:0,
-   alleyFloor:e.alleyFloor??0,seed:random()*1000,cloudX:e.x,cloudY:e.y,
+   alleyFloor:e.alleyFloor??0,seed:random()*1000,cloudX:x,cloudY:y,
    cells:Array(COUNT).fill(0),origin:origin(e,'Geisterbehälter')});
  }
  // Keep existing smoke in WORLD coordinates as the orb rolls through it.

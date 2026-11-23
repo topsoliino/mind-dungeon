@@ -22,7 +22,7 @@ function create(api){
  const poison=(actor,options)=>applyPoison(actor,options);
  const soulController=root.SoulVessels?.create({
   state,floor,heroes:coopActors,poison,origin,random:()=>rand(0,1),
-  heroFloor:actor=>actor.alleyFloor
+  heroFloor:actor=>actor.alleyFloor??api.alleyEnemyPursuit?.heroFloor()
  });
  const skeletonCombat=root.SkeletonCombat?.create({
   move:moveEnemy,aim:aimEnemy,
@@ -80,7 +80,7 @@ function updateEnemy(e,dt){
   e.batMove=null;e.lionMove=null;e.dogMove=null;e.ratMotion=null;e.called=0;
   return;
  }
- if(floor.layerAt(e.x,e.y)!==floor.layerAt(player.x,player.y)&&
+ if(!api.alleyEnemyPursuit&&floor.layerAt(e.x,e.y)!==floor.layerAt(player.x,player.y)&&
     !(floor.stairConnected(e,player)&&!gateLineBlocked(e.x,e.y,player.x,player.y))){
   if(e.veilPhase)updateOrc(e,dt,false);
   else{e.phase+=dt;e.aggro=Math.max(0,(e.aggro||0)-dt);}

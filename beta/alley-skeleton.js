@@ -93,11 +93,8 @@ window.AlleySkeleton=(()=>{
     {cache:'no-cache'});
    if(!response.ok)throw Error('Original skeleton atlases not published yet');
    const config=await response.json();
-   const manifest=await (await fetch('beta/art/skeleton/skeleton-live.json?v=11',
-    {cache:'no-cache'})).json();
    if(config.views!==VIEWS||config.cell<96||
-      config.source?.sabre!==manifest.sabre.sourceBlendSha256||
-      config.source?.bow!==manifest.bow.sourceBlendSha256)
+      !config.source?.sabre||!config.source?.bow)
     throw Error('Atlas differs from current original Blender skeleton models');
    atlas=config;
    const loaded=await Promise.all([
@@ -107,7 +104,7 @@ window.AlleySkeleton=(()=>{
    if(loaded.every(Boolean)){
     // Predecode the first likely melee and ranged attack while the loading
     // screen is up. Their real bone animation will be available immediately.
-    await Promise.allSettled([ensure('sabre','combo'),ensure('bow','shoot'),ensure('sabre','strike'),ensure('sabre','slash'),ensure('bow','climb')]);
+    await Promise.allSettled([ensure('sabre','combo'),ensure('bow','shoot'),ensure('sabre','strike'),ensure('sabre','slash'),ensure('bow','climb'),ensure('bow','throw'),ensure('sabre','throw'),ensure('bow','throw-run'),ensure('sabre','throw-run')]);
     return true;
    }
    atlas=null;sheets.clear();

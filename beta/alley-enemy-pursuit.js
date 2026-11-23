@@ -13,6 +13,8 @@ window.AlleyEnemyPursuit=(()=>{
   const base=()=>prison?prison.storey-1:0;
   const plane=f=>prison?0:f;
   const portals=(from,to)=>prison?vertical.connectorsAt(to>from?from:from-1):vertical.connectors;
+  const onFloor=(index,read)=>prison?prison.atStorey(index+1,read):read();
+  const routeOn=(e,target)=>onFloor(ownFloor(e),()=>alley.routeToFloor(e,target,plane(ownFloor(e))));
   const ownFloor=e=>e.alleyFloor??0;
   const heroFloor=()=>{
    // A character on the flight is at neither ordinary floor. In particular
@@ -40,12 +42,12 @@ window.AlleyEnemyPursuit=(()=>{
    const key=ownFloor(e)+':'+Math.round(target.x/8)+':'+Math.round(target.y/8);
    if(e.alleyRouteKey!==key||now>=(e.alleyRepathAt||0)||
       !e.alleyWaypoints){
-    const path=alley.routeToFloor(e,target,plane(ownFloor(e)));
+    const path=routeOn(e,target);
     if(!path)return false;
     e.alleyWaypoints=path.steps.slice();
     e.alleyRouteKey=key;e.alleyRepathAt=now+.62;
    }
-   while(e.alleyWaypoints.length&&d(e,e.alleyWaypoints[0])<6)
+   while(e.alleyWaypoints.length&&d(e,e.alleyWaypoints[0])<1)
     e.alleyWaypoints.shift();
    const next=e.alleyWaypoints[0]||target;
    const dx=next.x-e.x,dy=next.y-e.y,length=Math.hypot(dx,dy);
@@ -67,7 +69,7 @@ window.AlleyEnemyPursuit=(()=>{
     const entry=targetFloor>from?connector.bottom:connector.top,
      exit=targetFloor>from?connector.top:connector.bottom,
      goal={x:entry.x*48,y:entry.y*48};
-    const route=alley.routeToFloor(e,goal,plane(from));
+    const route=routeOn(e,goal);
     return {connector,entry:goal,exit:{x:exit.x*48,y:exit.y*48},
      route,cost:d(e,goal)+d({x:exit.x*48,y:exit.y*48},target)};
    }).filter(q=>q.route).sort((a,b)=>a.cost-b.cost);
@@ -86,7 +88,7 @@ window.AlleyEnemyPursuit=(()=>{
    e.moving=true;
    e.ratMoveAngle=pose.angle;
    if(ride.age>=ride.duration){
-    e.alleyFloor=ride.to;e.alleyZ=prison?0:e.alleyFloor*height;
+    e.alleyFloor=ride.to;e.alleyZ=(ride.to-base())*height;
     e.alleyClimb=null;resetNavigation(e);
    }
   }
@@ -124,6 +126,7 @@ window.AlleyEnemyPursuit=(()=>{
     e.alleyMode='guard';
    }
    if(e.alleyClimb){idle(e,dt);climb(e,dt);return true;}
+   e.alleyZ=(ownFloor(e)-base())*height;
    const seen=inSight(e,hero);
    if(seen){
     e.alleyLastSeen={...point(hero),floor:heroFloor(),time:now};
@@ -161,7 +164,7 @@ window.AlleyEnemyPursuit=(()=>{
      if(returning){e.alleyMode='guard';e.alleyLastSeen=null;}
      return true;
     }
-    if(d(e,portal.entry)<=1){
+    if(d(e,portal.entry)<=6){
      const up=target.floor>ownFloor(e);
      e.alleyClimb={connector:portal.connector,up,from:ownFloor(e),to:ownFloor(e)+(up?1:-1),age:0,
       duration:portal.connector.kind==='ladder'?portal.connector.duration:

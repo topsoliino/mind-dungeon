@@ -43,8 +43,8 @@ assert(html.includes('debug-art')&&html.includes('__mindArtStatus'),
 assert(html.includes("enemyRig?.draw(e,e.skeleton,skeletonArt.choose(e,enemyRules),iso)"));
 assert(!html.includes('skeletonArt.sprites('),
  'The low-quality legacy skeleton atlases must NEVER render again');
-assert(!html.includes('const skeletonReady=alley?skeletonArt.load()'),
- 'Do not decode retired skeleton WebP atlases at startup');
+assert(html.includes('const skeletonReady=alley?skeletonArt.load()'),
+ 'Prepare the published Blender animation sheets at startup');
 assert(source('alley-skeleton.js').includes('atlas-'+"'"+'+kit')||
  source('alley-skeleton.js').includes("'beta/art/skeleton/atlas-'"),
  'Skeleton atlases must be built from the Guardian-derived GLBs');
@@ -65,7 +65,7 @@ assert(enemy.includes('const ghostProps=[]')&&
  html.includes('ghostFog?.set3DFrames(renderer.ghostProps)'),
  'Small poison spheres must avoid 24 unnecessary GLB GPU pre-renders');
 assert(enemy.includes('cacheHits:0'));
-assert(html.includes('const visibleEnemies=enemies.filter(e=>onScreen(e))'));
+assert(html.includes('const visibleEnemies=enemies.filter(e=>alleyActorVisible(e)&&onScreen(e))'));
 assert(html.includes("const rig=enemyRig?.draw(enemy,kind,selector.choose(enemy,enemyRules,age),iso,age)"));
 assert(html.includes('const ratReady=alley?ratArt.load()'),
  'Use baked rat frames to avoid expensive live GPU skinning');

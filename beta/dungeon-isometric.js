@@ -44,8 +44,7 @@
   const innerSpawn=prison?.enabled&&(!prison.hasEntrance||prison.storey>1)&&prison.level<=4?
    {x:14.5*tile,y:5.5*tile}:null;
   const returnLanding=vertical&&prison?.enabled&&prison.entry?.startsWith('down-')?
-   vertical.connectors.find(c=>c.kind===prison.entry.slice(5))?.top:null;
-  if(returnLanding){vertical.state.floor=1;vertical.state.z=vertical.height;}
+   vertical.connectorsAt(prison.storey-2).find(c=>c.kind===prison.entry.slice(5))?.top:null;
   const spawn=returnLanding?{x:returnLanding.x*tile,y:returnLanding.y*tile}:returnGate?{x:(returnGate.x-returnGate.dx*.70)*tile,
     y:(returnGate.y-returnGate.dy*.70)*tile}:innerSpawn||unit(map.spawn);
   const chest=unit(map.stations.chest.at),archer=unit(map.encounter.archer);
@@ -180,7 +179,7 @@
     if(prison?.enabled){
      if(!part.door)visible&&=part.flight===(prison.storey-(part.downId?2:1))%2;
      if(part.downId)visible&&=vertical.connectorsAt(prison.storey-2).some(c=>c.id===part.downId);
-     else if(part.door)visible&&=part.door===window.AlleyGenerator.outdoorEntrance?prison.storey===1:prison.last;
+     else if(part.door)visible&&=part.door===window.AlleyGenerator.outdoorEntrance?prison.hasEntrance&&prison.storey===1:prison.hasExit&&prison.last;
      else if(part.connectorId)visible&&=vertical.connectors.some(c=>c.id===part.connectorId);
      else visible&&=vertical.hasStairs();
     }

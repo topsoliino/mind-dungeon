@@ -109,8 +109,8 @@ const ladder=plan.ladder,upper=plan.upper;
 // a root .30 cells inside the wall keeps the hands on the visible rungs.
 function contactFor(ladder){
 const ladderWall={
- x:ladder.cell[0]+.5+ladder.dx*.38,
- y:ladder.cell[1]+.5+ladder.dy*.38
+ x:ladder.cell[0]+.5+ladder.dx*.16,
+ y:ladder.cell[1]+.5+ladder.dy*.16
 };
 return {
  wall:ladderWall,
@@ -329,12 +329,20 @@ function createLayers({project,polygon,line,cacheObject}){
  const boundsFor=points=>[Math.min(...points.map(p=>p.x)),
   Math.min(...points.map(p=>p.y)),Math.max(...points.map(p=>p.x)),
   Math.max(...points.map(p=>p.y))];
+ // Only outward-facing vertical faces can reach this fixed +u/+v camera.
+ // Wedges and rectangular landings can have opposite polygon windings.
+ function front(corners,i){
+  const area=corners.reduce((s,a,k)=>{const b=corners[(k+1)%corners.length];return s+a.x*b.y-b.x*a.y;},0);
+  const a=corners[i],b=corners[(i+1)%corners.length];
+  return Math.sign(area)*(b.y-a.y-b.x+a.x)>1e-8;
+ }
  function drawPrism(ctx,corners,z,base,posts=false){
   const low=corners.map(p=>project(p.x,p.y,base));
   const high=corners.map(p=>project(p.x,p.y,z));
-  polygon(ctx,low,'#454e5d','#394250');
+
   for(let i=0;i<corners.length;i++){
    const j=(i+1)%corners.length;
+   if(!front(corners,i))continue;
    polygon(ctx,[low[i],low[j],high[j],high[i]],
     i%2?'#697788':'#536174','#354352');
   }
@@ -346,6 +354,7 @@ function createLayers({project,polygon,line,cacheObject}){
     cap=pts.map(p=>project(p.x,p.y,base));
    for(let i=0;i<4;i++){
     const j=(i+1)%4;
+    if(!front(pts,i))continue;
     polygon(ctx,[foot[i],foot[j],cap[j],cap[i]],
      i%2?'#586778':'#788798','#424e5c');
    }
@@ -361,9 +370,10 @@ function createLayers({project,polygon,line,cacheObject}){
     base=p=>project(p.x,p.y,plan.cfg.open?Math.max(0,z-13):0);
    // Closed flights have stone infill to the floor; open flights have a
    // 13px load-bearing soffit and allow passage under high sections.
-   polygon(ctx,[base(a),base(d),top(d),top(a)],'#485565','#343d4b');
-   polygon(ctx,[base(b),base(c),top(c),top(b)],'#647384','#3e4654');
-   polygon(ctx,[low(a),low(b),top(b),top(a)],'#555f70','#424a57');
+   if(front(step.corners,3))polygon(ctx,[base(a),base(d),top(d),top(a)],'#485565','#343d4b');
+   if(front(step.corners,1))polygon(ctx,[base(b),base(c),top(c),top(b)],'#647384','#3e4654');
+   if(front(step.corners,0))polygon(ctx,[low(a),low(b),top(b),top(a)],'#555f70','#424a57');
+   if(front(step.corners,2)&&plan.cfg.open)polygon(ctx,[base(c),base(d),top(d),top(c)],'#485565','#343d4b');
    polygon(ctx,[top(a),top(b),top(c),top(d)],
     index%2?'#98a3b0':'#939eaf','#d1c9ca');
    line(ctx,[top(a),top(b)],'#d9ced0',1.8);
@@ -379,7 +389,7 @@ function createLayers({project,polygon,line,cacheObject}){
    }
   });
   stairObjects.push({kind:'stair-tread',image,level:0,surfaceZ:step.prev,
-   depth:project(step.center.x,step.center.y,0)[1]+.25});
+   depth:project(step.center.x,step.center.y,0)[1]+step.z*.5+.25});
  }
  for(const landing of plan.landings.filter(l=>!l.top)){
   const center=landing.corners.reduce((p,q)=>({x:p.x+q.x/landing.corners.length,
@@ -388,7 +398,7 @@ function createLayers({project,polygon,line,cacheObject}){
    drawPrism(ctx,landing.corners,landing.z,
     plan.cfg.open?Math.max(0,landing.z-13):0,plan.cfg.open));
   stairObjects.push({kind:'stair-landing',image,level:0,surfaceZ:landing.z,
-   depth:project(center.x,center.y,0)[1]+.25});
+   depth:project(center.x,center.y,0)[1]+landing.z*.5+.25});
  }
  for(const post of plan.posts){
   const p=post.p,r=post.radius,

@@ -255,7 +255,7 @@
   const renderWalls=(route?.walls??[]).flatMap(wall=>{
    if(generatorMode&&!wall.shared&&!wall.interior&&(wall.side==='east'||wall.side==='south'))return [];
    if(!generatorMode||wall.axis==null)return [wall];
-   const count=Math.ceil((wall.end-wall.start)/1.75);
+   const count=Math.ceil(wall.end-wall.start);
    return Array.from({length:count},(_,i)=>{
     const begin=wall.start+(wall.end-wall.start)*i/count;
     const end=wall.start+(wall.end-wall.start)*(i+1)/count,th=.075;

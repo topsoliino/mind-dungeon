@@ -12,6 +12,15 @@ Dieser Link lädt die **neueste veröffentlichte Testversion**, inklusive frisch
 
 Die [Hauptversion](https://topsoliino.github.io/mind-dungeon/) ist nicht der aktuelle Playtest-Einstieg.
 
+## Übergabe für KI und neue Mitwirkende
+
+Die spielbare isometrische Version liegt in `beta/`. Der Einstieg `beta/index.html` setzt die Basis für relative Asset-URLs auf das Projektverzeichnis. Einen lokalen Webserver deshalb im Projektverzeichnis starten. Bei direkter Arbeit über GitHub einzelne Dateien am selben Commit lesen und Änderungen gegen den aktuellen Branch-Stand schreiben. Parallel können Blender-Jobs neue Assets auf `main` veröffentlichen.
+
+- **Reproduzierbarer Spieltest.** Bühne und Gebäude über `szene=gasse&modus=generator&region=rocky-coast&level=4&run=4147&storey=2` wählen. `run` fixiert die Welt, `storey` zählt ab 1. `entry=down-stairs` startet am Kopf der Treppe vom Stockwerk darunter. `treppe=switchback-closed` bevorzugt eine Bauform, der Generator prüft, ob sie hineinpasst. Beim Fehlerbericht Seed, tatsächliche Bauform, Stockwerk, Bewegungsrichtung und Browser angeben.
+- **Koordinaten und Physik.** `alley-stair-geometry.js` baut Stufen, Podeste und Wegpunkte in Zellen. Eine Zelle entspricht 48 Welteinheiten. `alley-vertical.js` beschreibt die Anschlüsse. `connectorsAt(i)` gehört zum Übergang vom nullbasierten Stockwerk i nach i+1. `state.floor` ist die lokale Seite des aktiven Übergangs. `alleyFloor` eines Gegners zählt dagegen absolut ab 0. Abfragen auf einem anderen Stockwerk erfolgen synchron über `atStorey`. Rendering, Wegsuche und Bewegung müssen denselben Anschluss verwenden.
+- **Grafik.** `dungeon-isometric.js` stellt die Ebenen für Canvas und Phaser zusammen. Die Spielerfigur verwendet in beiden Fällen das Wächter-GLB. Beim Skelett ist `tools/build-isometric-skeleton.py` die Quelle für Geometrie und Posen. Die Workflows `build-guardian-enemy-rigs.yml` und `bake-skeleton-atlases.yml` erzeugen zuerst die GLBs und daraus die 32 Ansichten für den normalen Spielbetrieb. Eine geänderte Blender-Datei allein belegt noch keine öffentlich sichtbare Animation.
+- **Abnahme.** Im Projektverzeichnis `node tools/check-rocky-coast-stairs.cjs`, `node tools/check-skeleton-specials.cjs` und `node tools/check-live-enemy-renderer.cjs` ausführen. Für sichtbare Fehler anschließend den veröffentlichten Build kalt öffnen. Modell, Überdeckung, Aufstieg und Abstieg im Bild prüfen. Bei Änderungen an geladenen Skripten die zugehörige Skriptversion aktualisieren. Bei der Übergabe Commit, getestete Fälle und offene Beobachtungen nennen.
+
 ## Steuerung
 
 | Taste | Funktion |
