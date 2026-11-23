@@ -25,7 +25,7 @@ window.MindRoomArt=(()=>{
  let guardianAtlas=null,guardianBody=[],guardianWeapon=[],guardianStatus='loading';
  async function loadGuardian(){
   try{
-   const response=await fetch(ROOT_GUARDIAN+'guardian-frames.json?v=18');
+   const response=await fetch(ROOT_GUARDIAN+'guardian-frames.json?v=18',{cache:'no-cache'});
    if(!response.ok)throw Error('guardian frame manifest unavailable');
    guardianAtlas=await response.json();
    const load=(name)=>{
@@ -68,19 +68,8 @@ window.MindRoomArt=(()=>{
   ctx.globalAlpha=.33;ctx.fillStyle='#090c14';
   ctx.beginPath();ctx.ellipse(p.x,p.y+3*zoom,14*zoom,6*zoom,0,0,Math.PI*2);ctx.fill();
   ctx.restore();
-  if(guardianStatus!=='ready'){
-   // Visible armored-human silhouette ONLY while the authentic atlas loads.
-   // Never show the former sphere/eye placeholder.
-   ctx.save();
-   ctx.translate(p.x,p.y);
-   ctx.fillStyle='#242b35';
-   ctx.beginPath();ctx.ellipse(0,-30*zoom,15*zoom,30*zoom,0,0,Math.PI*2);ctx.fill();
-   ctx.fillStyle='#8f95a0';
-   ctx.fillRect(-13*zoom,-49*zoom,26*zoom,30*zoom);
-   ctx.fillStyle='#b9b9b7';ctx.fillRect(-9*zoom,-67*zoom,18*zoom,19*zoom);
-   ctx.fillStyle='#36363d';ctx.fillRect(-7*zoom,-58*zoom,14*zoom,5*zoom);
-   ctx.restore();return false;
-  }
+  // Never fabricate a replacement for the real in-game Guardian.
+  if(guardianStatus!=='ready')return false;
   const name=vault>0?'vault':moving?'walk':'idle';
   const [start,count]=guardianAtlas.clips[name];
   // Walking is cyclic. Vault is a one-shot synchronized with the light
