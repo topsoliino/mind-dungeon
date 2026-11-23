@@ -201,6 +201,9 @@ function speedOnStair(distanceAlong,sign){
   (curving?STAIR_SPEED.curvedDown:STAIR_SPEED.straightDown);
 }
 const stairSurfaces=plan.steps.concat(plan.landings);
+const points=stairSurfaces.flatMap(part=>part.corners).concat(plan.posts.flatMap(({p,radius})=>[{x:p.x-radius,y:p.y-radius},{x:p.x+radius,y:p.y+radius}]));
+const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+const bounds=[Math.min(...xs)-.1,Math.min(...ys)-.1,Math.max(...xs)+.1,Math.max(...ys)+.1];
 const navigation=window.AlleyStairNavigation.make(plan);
 function overStair(u,v,r=0){
  const p={x:u,y:v};
@@ -211,7 +214,7 @@ function overStair(u,v,r=0){
 const HEAD_CLEARANCE=92,SLAB_THICKNESS=13;
 const CROUCH_CLEARANCE=39;
 function blocksGround(u,v,r=0,crouching=state.crouching){
- if(!hasStairs())return false;
+ if(u+r<bounds[0]||v+r<bounds[1]||u-r>bounds[2]||v-r>bounds[3]||!hasStairs())return false;
  const p={x:u,y:v};
  
  if(distance(plan.bottom,p)<=.58+r*.65)return false;

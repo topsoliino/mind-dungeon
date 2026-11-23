@@ -25,6 +25,7 @@ assert(html.includes("tell('Dort ist im Obergeschoss kein begehbarer Boden.')"))
 const ui=new Function('alleyVertical','alley','iso','renderedView','cam',
  'cw','ch','mouse','alleySneaking','frame','tell','player',
  'finishAlleyApproach','actorRadius',
+ 'rockyPrison',
  'let alleyRoute=null,alleyMove=null,alleyMarker=null,alleyQueuedLight=null,'+
  'alleyStairFloorGoal=null;\n'+selection+'\n'+
  'return {approachClickStairs,alleyUpperFloorTarget,alleyClickScreen,'+
