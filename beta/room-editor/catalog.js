@@ -17,15 +17,15 @@ const catalog={
   'dungeon-cut-stone':{
    label:'Quadersteinboden · fest und abgenutzt',base:'#535455',grout:'#24272b',
    accent:'#878580',pattern:'photo-cut-stone',
-   asset:artRoot+'tiles/floor-prison-02.webp',
+   asset:artRoot+'tiles/floor-prison-02.jpg',
    source:'Poly Haven CC0 · rechteckige Steinquader · 4096 × 4096'
   }
  },
  walls:{
   stone:{label:'Steinmauer I · raues mittelalterliches Mauerwerk',height:2,solid:true,
-   asset:artRoot+'tiles/wall-masonry-01.webp',render:'photo-wall-map'},
+   asset:artRoot+'tiles/wall-masonry-01.jpg',render:'photo-wall-map'},
   'stone-cut':{label:'Steinmauer II · massive verwitterte Quader',height:2,solid:true,
-   asset:artRoot+'tiles/wall-masonry-02.webp',render:'photo-wall-map'},
+   asset:artRoot+'tiles/wall-masonry-02.jpg',render:'photo-wall-map'},
   bars:{label:'Geschmiedetes Zellen-Gitter',height:2.05,solid:true,asset:'walls/bars'},
   gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,asset:'walls/gate'},
   open:{label:'Offene Wand / Durchgang',height:0,solid:false,asset:null}
