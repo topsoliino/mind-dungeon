@@ -28,6 +28,8 @@ const structures=study.slice(study.indexOf('function structures(x,y){'),
  study.indexOf('function architecture(ctx,x,y){'));
 assert(structures.includes('if(!prisonInterior)result.push({image:gateway'),
  'No foreign arch sprite may be drawn across L1 entrance');
+assert(study.includes('!prisonInterior&&solids.some'),
+ 'The invisible old Gasse arch collider must not block the prison entrance');
 const forecourt=study.slice(study.indexOf('const street=combinedGround'),study.indexOf('if(street)bakedGround.push'));
 assert(!forecourt.includes('facadeArt.skyline')&&
  !forecourt.includes('facadeArt.building')&&
