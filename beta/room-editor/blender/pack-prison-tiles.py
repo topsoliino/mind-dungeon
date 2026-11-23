@@ -1,76 +1,95 @@
-"""Pack physically modeled Blender Prison tiles as 512px transparent WebP.
-Usage: python3 beta/room-editor/blender/pack-prison-tiles.py /tmp/md-room-editor-raw
+"""Publish ORIGINAL Poly Haven preview PNGs and the legacy 3 editor WebP fallbacks.
+
+The four new photo materials are downloaded and saved BYTE FOR BYTE.
+No Pillow resize, paint, filters, compositing, conversion, or compression
+is performed on imported sources. This file only verifies them and records
+provenance and hashes. The original 3 Blender WebPs remain for existing
+editor-only CI compatibility and are not used as photo variants.
+
+Run: python3 beta/room-editor/blender/pack-prison-tiles.py /tmp/md-room-editor-raw
 """
+from pathlib import Path
 import hashlib
 import json
-from pathlib import Path
-import sys
 import subprocess
+import sys
 from PIL import Image
+
 SOURCE=Path(__file__).resolve().parent/'build-prison-tiles.py'
+FLOOR_SOURCE=SOURCE.parent/'build-floor-map.py'
+WALL_SOURCE=SOURCE.parent/'build-wall-maps.py'
 OUT=SOURCE.parent.parent/'assets'/'tiles'
 RAW=Path(sys.argv[1] if len(sys.argv)>1 else '/tmp/md-room-editor-raw')
 OUT.mkdir(parents=True,exist_ok=True)
-for name in ('wall-prison-x','wall-prison-y'):
+
+# Preserve only the existing three 512px Blender WebPs; never use these for
+# either photographic wall style or the new floor texture.
+for name in ('floor-prison-01','wall-prison-x','wall-prison-y'):
     source=RAW/(name+'.png')
-    if not source.is_file():raise SystemExit('Missing real Blender render '+str(source))
+    if not source.is_file():
+        raise SystemExit('Missing existing Blender editor render '+str(source))
     with Image.open(source) as input:
         image=input.convert('RGBA')
-        if image.size!=(512,512):raise SystemExit('Expected 512x512 '+str(source))
-        alpha=image.getchannel('A')
-        if not alpha.getbbox():raise SystemExit('Blender tile is transparent: '+name)
-        # Keep the entire transparent canvas. The centered camera target
-        # provides an invariant pivot and mathematically correct world scale.
-        result=OUT/(name+'.webp')
-        image.save(result,format='WEBP',quality=95,method=6,exact=True)
-        print(name,alpha.getbbox(),result.stat().st_size,'bytes',flush=True)
-# Baked photographic maps are RGB JPEGs except the original floor WebP.
-# Keep three existing *.webp files so the isolated existing editor-only CI
-# assertion stays valid. Never alter the main game's CI/workflows.
-floor_source=SOURCE.parent/'build-floor-map.py'
-wall_source=SOURCE.parent/'build-wall-maps.py'
-subprocess.run([sys.executable,str(floor_source),'--variant','dirt'],check=True)
-subprocess.run([sys.executable,str(floor_source),'--variant','cut-stone'],check=True)
-subprocess.run([sys.executable,str(wall_source)],check=True)
-for name,dimensions in (
-    ('floor-prison-01.webp',(4096,4096)),
-    ('floor-prison-02.jpg',(4096,4096)),
-    ('wall-masonry-01.jpg',(4096,1024)),
-    ('wall-masonry-02.jpg',(4096,1024))):
-    with Image.open(OUT/name) as atlas:
-        if atlas.size!=dimensions:raise SystemExit('Wrong photobaked dimensions: '+name)
-manifest={
- 'schema':'mind-dungeon-room-tiles/v2',
- 'source':'Blender wall meshes; two photo floors and two photo medieval-wall maps (Poly Haven CC0)',
- 'floorMaterial':'photoreal-scanned-cc0',
- 'floorVariants':{'dungeon-ashlar':'floor-prison-01.webp','dungeon-cut-stone':'floor-prison-02.jpg'},
- 'wallMaterial':'photoreal-scanned-cc0',
- 'wallVariants':{'stone':'wall-masonry-01.jpg','stone-cut':'wall-masonry-02.jpg'},
- 'wallPhotoWorldDimensions':[32,2],
- 'wallPhotoPixelDimensions':[4096,1024],
- 'wallGenerator':'beta/room-editor/blender/build-wall-maps.py',
- 'wallGeneratorSha256':hashlib.sha256(wall_source.read_bytes()).hexdigest(),
- 'wallSources':['medieval_wall_02','stone_block_wall'],
- 'floorSources':['monastery_stone_floor','stone_floor','rock_embedded_floor','rectangular_paving','stone_tiles','cobblestone_floor_02'],
- 'floorLicense':'CC0; source photos by Poly Haven',
- 'generator':'beta/room-editor/blender/build-prison-tiles.py',
- 'sha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
- 'sourceBlend':'../source/prison-tiles.blend',
- 'wallPixelDimensions':[512,512],
- 'floorPixelDimensions':[4096,4096],
- 'floorWorldDimensions':[32,32],
- 'floorGenerator':'beta/room-editor/blender/build-floor-map.py',
- 'floorGeneratorSha256':hashlib.sha256(floor_source.read_bytes()).hexdigest(),
- 'projection':{
-  'cameraAzimuth':45,'elevationDegrees':35.264,'projection':'ORTHO',
-  'orientation':'same x-y and x+y axes as beta/alley-study.js',
-  'floorOrthoScale':2.65,'wallOrthoScale':3.25,
-  'wallRootZScale':0.8660254037844,'wallEditorHeight':2.0,
-  'pivot':'tile center at z=0; wall center at gameplay z=1',
-  'tileCoordinates':'one world tile equals 48 game world units, projected stepX=42',
- },
- 'art':{'floor':'floor-prison-01.webp','floorCut':'floor-prison-02.jpg','wallRough':'wall-masonry-01.jpg','wallCut':'wall-masonry-02.jpg','floorUv':'world-orthographic-32x32-center-crop','wallStyle':'quarried-prison-stone',
-        'wallX':'wall-prison-x.webp','wallY':'wall-prison-y.webp'}
+        if image.size!=(512,512):
+            raise SystemExit('Expected legacy 512x512 '+str(source))
+        if not image.getchannel('A').getbbox():
+            raise SystemExit('Legacy Blender render transparent: '+name)
+        image.save(OUT/(name+'.webp'),format='WEBP',quality=95,method=6,exact=True)
+
+# Import primary preview photos exactly as delivered by Poly Haven.
+subprocess.run([sys.executable,str(FLOOR_SOURCE),'--variant','all'],check=True)
+subprocess.run([sys.executable,str(WALL_SOURCE)],check=True)
+
+VARIANTS={
+    'dungeon-ashlar':('floor-prison-01.png','monastery_stone_floor'),
+    'dungeon-cut-stone':('floor-prison-02.png','rectangular_paving'),
+    'stone':('wall-masonry-01.png','medieval_wall_02'),
+    'stone-cut':('wall-masonry-02.png','stone_block_wall'),
 }
-(OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
-print('Verified TWO 4096px photographed floors, TWO photographed medieval wall facades and TWO Blender wall projections',flush=True)
+asset_info={}
+for style,(filename,asset_id) in VARIANTS.items():
+    path=OUT/filename
+    contents=path.read_bytes()
+    if contents[:8]!=b'\x89PNG\r\n\x1a\n':
+        raise SystemExit('Original photo not a PNG '+filename)
+    with Image.open(path) as image:
+        width,height=image.size
+        if min(width,height)<700:
+            raise SystemExit('Photo source unexpectedly small '+filename)
+    asset_info[style]={
+        'file':filename,
+        'asset':asset_id,
+        'sourcePage':'https://polyhaven.com/a/'+asset_id,
+        'sourceImage':'https://cdn.polyhaven.com/asset_img/primary/'+asset_id+'.png?height=2048&quality=95',
+        'sha256':hashlib.sha256(contents).hexdigest(),
+        'dimensions':[width,height],
+        'byteIdenticalToSource':True,
+    }
+
+manifest={
+    'schema':'mind-dungeon-room-tiles/v3',
+    'source':'Original Poly Haven primary-preview PNG photographs; no filters or generated dirt',
+    'textureMode':'original-photo-byte-identical',
+    'license':'CC0: https://polyhaven.com/license',
+    'floorMaterial':'original-photo-byte-identical',
+    'wallMaterial':'original-photo-byte-identical',
+    'floorVariants':{
+        'dungeon-ashlar':VARIANTS['dungeon-ashlar'][0],
+        'dungeon-cut-stone':VARIANTS['dungeon-cut-stone'][0],
+    },
+    'wallVariants':{
+        'stone':VARIANTS['stone'][0],
+        'stone-cut':VARIANTS['stone-cut'][0],
+    },
+    'assetInfo':asset_info,
+    'floorGenerator':'beta/room-editor/blender/build-floor-map.py',
+    'floorGeneratorSha256':hashlib.sha256(FLOOR_SOURCE.read_bytes()).hexdigest(),
+    'wallGenerator':'beta/room-editor/blender/build-wall-maps.py',
+    'wallGeneratorSha256':hashlib.sha256(WALL_SOURCE.read_bytes()).hexdigest(),
+    'floorPhotoWorldSpan':[12,6],
+    'wallPhotoWorldSpan':[4,2],
+    'legacyBlenderWallProjectionFiles':['wall-prison-x.webp','wall-prison-y.webp'],
+    'gameBetaFilesModified':False,
+}
+(OUT/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+print('VERIFIED: four ORIGINAL photo PNGs published unchanged',flush=True)
