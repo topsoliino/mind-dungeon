@@ -414,8 +414,8 @@ const run=async()=>{
   console.log('FAST DEFAULT 30 FPS ACCEPTANCE:',JSON.stringify(canvasSample));
   assert(canvasSample.fps>=30,
    'Default real gameplay must deliver at least 30 FPS on software Chromium');
-  assert(canvasSample.guardian==='BAKED BLENDER ATLAS'&&canvasSample.renderScale<=.73,
-   'Fast mode must preload the authentic Blender atlas before combat');
+  assert(canvasSample.guardian==='3D LIVE'&&canvasSample.renderScale<=.73,
+   'Fast mode must keep the original animated 3D Guardian, never obsolete 8-direction sprites');
   await canvasPage.close();
 
   // End-to-end acceptance test for the user's actual workflow:
