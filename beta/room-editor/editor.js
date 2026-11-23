@@ -27,12 +27,14 @@ function updateAssetInfo(){
  $('assetStatus').textContent=(art?art.tiles+' · '+art.wallPhotos:'Materialien laden')+
   ' · Möbel '+furniture+'/8 · Wächter '+(art?.guardianAuthentic?'Original':'lädt / nicht verfügbar');
  const failed=art?.failedTextures?.length||0;
+ const fallback=art?.fallbackTextures?.length||0;
  $('assetInfo').textContent=failed?
   'Ladefehler bei '+failed+' Materialien: '+art.failedTextures.join(', ')+
   '. Bei einem veralteten GitHub-Pages-Build bitte die neueste Seite laden.' :
-  (art?.assetWarning?
-   art.assetWarning+'. Die passenden UV-Atlasbilder werden unabhängig vom Manifest geladen.' :
-   'Echte Poly-Haven-Diffuse-Maps: 3 große Bodenatlanten und 3 durchgehende Wandatlanten.')+
+  (fallback?
+   fallback+' Materialien werden bis zum Abschluss des GitHub-Asset-Builds direkt als Poly-Haven-Diffuse-Maps angezeigt. ':
+   art?.assetWarning?art.assetWarning+'. ':'' )+
+  '8 Bodenmaterialien und 9 Steinmauern, maßstabsgetreu importiert. '+
   ' Maßstab und Texturrichtung sind an die Weltachsen gebunden.';
 }
 const keyWall=w=>w.edge==='north'||w.edge==='south'?'h:'+w.x+':'+w.y:'v:'+w.x+':'+w.y;
@@ -591,12 +593,22 @@ function refreshUI(){
  }
  refreshInspector();schedule();
 }
+function previewBackground(entry){
+ // First use the local real Diffuse scan. Missing files fall back to an
+ // authentic 1K Poly Haven Diffuse JPG, not a tilted promotional picture.
+ const local='url("'+entry.asset+'?v=uv-8floors-9walls")';
+ const slug=entry.polyhaven;
+ if(!slug)return local;
+ const remote='https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/'+
+  slug+'/'+slug+'_diff_1k.jpg';
+ return local+',url("'+remote+'")';
+}
 for(const [type,entry] of Object.entries(cat.floors)){
  const option=document.createElement('option');option.value=type;option.textContent=entry.label;$('floorType').appendChild(option);
  const b=document.createElement('button');b.className='swatch';
  b.style.background='linear-gradient(150deg,'+entry.accent+','+entry.base+','+entry.grout+')';
  // Thumbnail is the exact source image, with no darkening overlay.
- b.style.backgroundImage='url("'+entry.asset+'?v=uv-diffuse-v7")';
+ b.style.backgroundImage=previewBackground(entry);
  b.style.backgroundSize='cover';
  b.setAttribute('aria-label','Boden wählen: '+entry.label);
  b.dataset.floor=type;b.title=entry.label;b.onclick=()=>{
@@ -609,7 +621,7 @@ for(const [type,entry] of Object.entries(cat.walls)){
   const button=document.createElement('button');
   button.className='swatch';
   button.style.background='#4e4b47';
-  button.style.backgroundImage='url("'+entry.asset+'?v=uv-diffuse-v7")';
+  button.style.backgroundImage=previewBackground(entry);
   button.style.backgroundSize='cover';
   button.style.backgroundPosition='center';
   button.dataset.wall=type;
