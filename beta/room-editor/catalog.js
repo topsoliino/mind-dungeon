@@ -25,6 +25,36 @@ const catalog={
    accent:'#848084',pattern:'photo-raw',worldWidth:2.2,
    asset:artRoot+'tiles/floor-albedo-03.jpg',
    source:'Poly Haven CC0 · 2,2 m reale Materialbreite, echtes UV-Diffuse'
+  },
+  'dungeon-mossy-cobbles':{
+   label:'Cobblestone Floor 04 · nasses Moospflaster',base:'#3d413c',grout:'#242922',
+   accent:'#67745d',pattern:'photo-raw',worldWidth:1.5,
+   asset:artRoot+'tiles/floor-albedo-04.jpg',
+   source:'Poly Haven CC0 · 1,5 m Originalbreite · feuchtes, vermoostes Pflaster'
+  },
+  'dungeon-ruined-cobbles':{
+   label:'Cobblestone Floor 03 · beschädigte Pflastersteine',base:'#48463f',grout:'#292e29',
+   accent:'#776b55',pattern:'photo-raw',worldWidth:2.4,
+   asset:artRoot+'tiles/floor-albedo-05.jpg',
+   source:'Poly Haven CC0 · 2,4 m Originalbreite · Moos, Schlamm und Spalten'
+  },
+  'dungeon-aged-paving':{
+   label:'Stone Floor · verwittertes Steinpflaster',base:'#52483e',grout:'#2f2926',
+   accent:'#7b7164',pattern:'photo-raw',worldWidth:1.8,
+   asset:artRoot+'tiles/floor-albedo-06.jpg',
+   source:'Poly Haven CC0 · 1,8 m Originalbreite · altes, abgetretenes Steinpflaster'
+  },
+  'dungeon-rustic-slate':{
+   label:'Slate Floor 02 · alte Schieferplatten',base:'#524546',grout:'#2d292a',
+   accent:'#8b6a68',pattern:'photo-raw',worldWidth:2.0,
+   asset:artRoot+'tiles/floor-albedo-07.jpg',
+   source:'Poly Haven CC0 · 2 m Originalbreite · abgenutzte Schieferplatten'
+  },
+  'dungeon-wet-mud':{
+   label:'Brown Mud 03 · nasser Kerkerlehm',base:'#46362a',grout:'#2d261f',
+   accent:'#755b45',pattern:'photo-raw',worldWidth:1.3,
+   asset:artRoot+'tiles/floor-albedo-08.jpg',
+   source:'Poly Haven CC0 · 1,3 m Originalbreite · nasser Erd- und Lehmboden'
   }
  },
  walls:{
