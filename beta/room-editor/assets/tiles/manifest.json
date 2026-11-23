@@ -1,6 +1,6 @@
 {
-  "schema": "mind-dungeon-room-tiles/v6",
-  "source": "Six UV-ready Poly Haven original Diffuse maps (not perspective presentation previews)",
+  "schema": "mind-dungeon-room-tiles/v8",
+  "source": "Seventeen authentic Poly Haven Diffuse maps: eight floors and nine masonry walls",
   "textureMode": "uv-ready-polyhaven-diffuse",
   "license": "CC0: https://polyhaven.com/license",
   "floorMaterial": "derived-large-stochastic-albedo-atlas",
@@ -8,22 +8,44 @@
   "floorVariants": {
     "dungeon-ashlar": "floor-albedo-01.jpg",
     "dungeon-coast-rocks": "floor-albedo-02.jpg",
-    "dungeon-cut-stone": "floor-albedo-03.jpg"
+    "dungeon-cut-stone": "floor-albedo-03.jpg",
+    "dungeon-mossy-cobbles": "floor-albedo-04.jpg",
+    "dungeon-ruined-cobbles": "floor-albedo-05.jpg",
+    "dungeon-aged-paving": "floor-albedo-06.jpg",
+    "dungeon-rustic-slate": "floor-albedo-07.jpg",
+    "dungeon-wet-mud": "floor-albedo-08.jpg"
   },
   "floorAtlases": {
     "dungeon-ashlar": "floor-atlas-01.jpg",
     "dungeon-coast-rocks": "floor-atlas-02.jpg",
-    "dungeon-cut-stone": "floor-atlas-03.jpg"
+    "dungeon-cut-stone": "floor-atlas-03.jpg",
+    "dungeon-mossy-cobbles": "floor-atlas-04.jpg",
+    "dungeon-ruined-cobbles": "floor-atlas-05.jpg",
+    "dungeon-aged-paving": "floor-atlas-06.jpg",
+    "dungeon-rustic-slate": "floor-atlas-07.jpg",
+    "dungeon-wet-mud": "floor-atlas-08.jpg"
   },
   "wallAtlases": {
     "stone": "wall-atlas-01.jpg",
     "stone-cut": "wall-atlas-02.jpg",
-    "stone-old": "wall-atlas-03.jpg"
+    "stone-old": "wall-atlas-03.jpg",
+    "stone-rough-12": "wall-atlas-04.jpg",
+    "stone-rough-13": "wall-atlas-05.jpg",
+    "stone-rough-14": "wall-atlas-06.jpg",
+    "stone-rough-15": "wall-atlas-07.jpg",
+    "stone-castle-slates": "wall-atlas-08.jpg",
+    "stone-castle-aged": "wall-atlas-09.jpg"
   },
   "wallVariants": {
     "stone": "wall-albedo-01.jpg",
     "stone-cut": "wall-albedo-02.jpg",
-    "stone-old": "wall-albedo-03.jpg"
+    "stone-old": "wall-albedo-03.jpg",
+    "stone-rough-12": "wall-albedo-04.jpg",
+    "stone-rough-13": "wall-albedo-05.jpg",
+    "stone-rough-14": "wall-albedo-06.jpg",
+    "stone-rough-15": "wall-albedo-07.jpg",
+    "stone-castle-slates": "wall-albedo-08.jpg",
+    "stone-castle-aged": "wall-albedo-09.jpg"
   },
   "assetInfo": {
     "dungeon-ashlar": {
@@ -69,6 +91,86 @@
       ],
       "worldWidth": 2.2,
       "worldHeight": 2.2,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "dungeon-mossy-cobbles": {
+      "file": "floor-albedo-04.jpg",
+      "asset": "cobblestone_floor_04",
+      "sourcePage": "https://polyhaven.com/a/cobblestone_floor_04",
+      "sha256": "82be42e9e666d8da3da306cd47505e0940260389394ff68f74073261577252ac",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 1.5,
+      "worldHeight": 1.5,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "dungeon-ruined-cobbles": {
+      "file": "floor-albedo-05.jpg",
+      "asset": "cobblestone_floor_03",
+      "sourcePage": "https://polyhaven.com/a/cobblestone_floor_03",
+      "sha256": "8cf0a52addc7914b78994ff41f6317955d5b4b09d7d45bd7fc71b72e3450bee6",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 2.4,
+      "worldHeight": 2.4,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "dungeon-aged-paving": {
+      "file": "floor-albedo-06.jpg",
+      "asset": "stone_floor",
+      "sourcePage": "https://polyhaven.com/a/stone_floor",
+      "sha256": "ce19d3cb1e683419b6a596e1baffbf2b429f970f8ddba81e391ad9a38f310ed8",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 1.8,
+      "worldHeight": 1.8,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "dungeon-rustic-slate": {
+      "file": "floor-albedo-07.jpg",
+      "asset": "slate_floor_02",
+      "sourcePage": "https://polyhaven.com/a/slate_floor_02",
+      "sha256": "8442da3364bf1884a19830d6689e8b5fd1cde00aab33f03d999d762a3c4930f0",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 2.0,
+      "worldHeight": 2.0,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "dungeon-wet-mud": {
+      "file": "floor-albedo-08.jpg",
+      "asset": "brown_mud_03",
+      "sourcePage": "https://polyhaven.com/a/brown_mud_03",
+      "sha256": "57a87dae26769677578ab53b8829fe9b1e4dfec1ae1726f2942ce99fc73f400b",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 1.3,
+      "worldHeight": 1.3,
       "imageRotationDegrees": 0,
       "imageMirrored": false,
       "textureRole": "Diffuse/albedo, flat UV ready",
@@ -121,6 +223,102 @@
       "imageMirrored": false,
       "textureRole": "Diffuse/albedo, flat UV ready",
       "byteIdenticalToSource": true
+    },
+    "stone-rough-12": {
+      "file": "wall-albedo-04.jpg",
+      "asset": "rock_wall_12",
+      "sourcePage": "https://polyhaven.com/a/rock_wall_12",
+      "sha256": "e8b7d0501d456041bf2b599a900114617c84444ee08279f655ddae693e65a0bd",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 1.6,
+      "worldHeight": 1.6,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "stone-rough-13": {
+      "file": "wall-albedo-05.jpg",
+      "asset": "rock_wall_13",
+      "sourcePage": "https://polyhaven.com/a/rock_wall_13",
+      "sha256": "d02f12e3c953fd2e7962714ce80284f32ad2de4177c460b8c19fc2a6f3e736a8",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 2.0,
+      "worldHeight": 2.0,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "stone-rough-14": {
+      "file": "wall-albedo-06.jpg",
+      "asset": "rock_wall_14",
+      "sourcePage": "https://polyhaven.com/a/rock_wall_14",
+      "sha256": "fdd5de74512dad2b57cef2dba6caad1fd6df76e3065b62b957eb9190ac7b2028",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 1.8,
+      "worldHeight": 1.8,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "stone-rough-15": {
+      "file": "wall-albedo-07.jpg",
+      "asset": "rock_wall_15",
+      "sourcePage": "https://polyhaven.com/a/rock_wall_15",
+      "sha256": "0659d59abb325ab026f31701c017d57edfdbada0dd1b03abb363031e8dd866a6",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 1.9,
+      "worldHeight": 1.9,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "stone-castle-slates": {
+      "file": "wall-albedo-08.jpg",
+      "asset": "castle_wall_slates",
+      "sourcePage": "https://polyhaven.com/a/castle_wall_slates",
+      "sha256": "89e1dce61cf53decf586bd123b9280365e447019ebedaf3b8e48663ab37eab30",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 2.5,
+      "worldHeight": 2.5,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
+    },
+    "stone-castle-aged": {
+      "file": "wall-albedo-09.jpg",
+      "asset": "castle_wall_varriation",
+      "sourcePage": "https://polyhaven.com/a/castle_wall_varriation",
+      "sha256": "47d50ed57e111e3abfbd367872b5d23e3ab128c45b7172886752ce985f5b9f2b",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "worldWidth": 2.0,
+      "worldHeight": 2.0,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false,
+      "textureRole": "Diffuse/albedo, flat UV ready",
+      "byteIdenticalToSource": true
     }
   },
   "atlasInfo": {
@@ -163,6 +361,71 @@
       "sourceSha256": "368366454a716139bc30fb0e31b0610ff7c278b50ad5f71059efc5359c2eede2",
       "method": "soft-phase-stochastic-UV-blending-no-color-grading"
     },
+    "dungeon-mossy-cobbles": {
+      "file": "floor-atlas-04.jpg",
+      "sha256": "70e63ef3163460dc888d45b41c45c6e7d85494d228f760b0c1371722bde37cdd",
+      "dimensions": [
+        4096,
+        4096
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 30.0,
+      "sourceStyle": "dungeon-mossy-cobbles",
+      "sourceSha256": "82be42e9e666d8da3da306cd47505e0940260389394ff68f74073261577252ac",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "dungeon-ruined-cobbles": {
+      "file": "floor-atlas-05.jpg",
+      "sha256": "631b83f65f818d20bbdad1781b331c206edab8498b40beeecd854f454c305f19",
+      "dimensions": [
+        4096,
+        4096
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 30.0,
+      "sourceStyle": "dungeon-ruined-cobbles",
+      "sourceSha256": "8cf0a52addc7914b78994ff41f6317955d5b4b09d7d45bd7fc71b72e3450bee6",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "dungeon-aged-paving": {
+      "file": "floor-atlas-06.jpg",
+      "sha256": "37e3c2da8235e927beaf7e3ce9c23ccdf4f1cd2c3b1b17a76b7c161720d9f6f0",
+      "dimensions": [
+        4096,
+        4096
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 30.0,
+      "sourceStyle": "dungeon-aged-paving",
+      "sourceSha256": "ce19d3cb1e683419b6a596e1baffbf2b429f970f8ddba81e391ad9a38f310ed8",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "dungeon-rustic-slate": {
+      "file": "floor-atlas-07.jpg",
+      "sha256": "8c72582c8dd8baa77399f104f11b71c2f03eb85bb53043912c76e9557a7998b6",
+      "dimensions": [
+        4096,
+        4096
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 30.0,
+      "sourceStyle": "dungeon-rustic-slate",
+      "sourceSha256": "8442da3364bf1884a19830d6689e8b5fd1cde00aab33f03d999d762a3c4930f0",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "dungeon-wet-mud": {
+      "file": "floor-atlas-08.jpg",
+      "sha256": "e243443b332a9b683249084fb439259a1b8f378218dcd6c181a05bea68957cb5",
+      "dimensions": [
+        4096,
+        4096
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 30.0,
+      "sourceStyle": "dungeon-wet-mud",
+      "sourceSha256": "57a87dae26769677578ab53b8829fe9b1e4dfec1ae1726f2942ce99fc73f400b",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
     "stone": {
       "file": "wall-atlas-01.jpg",
       "sha256": "cbe26f45c4be52d22bb5776b9ae166e93ca6d3e4b75aef531e6f44b7fac59109",
@@ -201,16 +464,94 @@
       "sourceStyle": "stone-old",
       "sourceSha256": "97b705f9f5acb69890e734cd60d52294d926623dff681572acb37cc52b385801",
       "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "stone-rough-12": {
+      "file": "wall-atlas-04.jpg",
+      "sha256": "95d3dee469fde7cf67099626ac381d58109277763291782f22ed1ac532645787",
+      "dimensions": [
+        4096,
+        768
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
+      "sourceStyle": "stone-rough-12",
+      "sourceSha256": "e8b7d0501d456041bf2b599a900114617c84444ee08279f655ddae693e65a0bd",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "stone-rough-13": {
+      "file": "wall-atlas-05.jpg",
+      "sha256": "7e5867326b9b70dfb8d05d12c4d7339ec7336516429a8a7a0ad468e68a7cc915",
+      "dimensions": [
+        4096,
+        768
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
+      "sourceStyle": "stone-rough-13",
+      "sourceSha256": "d02f12e3c953fd2e7962714ce80284f32ad2de4177c460b8c19fc2a6f3e736a8",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "stone-rough-14": {
+      "file": "wall-atlas-06.jpg",
+      "sha256": "7826fa3bfe57590196383c96027373ad548164fc402c0f69e7107bf1f9f91ea4",
+      "dimensions": [
+        4096,
+        768
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
+      "sourceStyle": "stone-rough-14",
+      "sourceSha256": "fdd5de74512dad2b57cef2dba6caad1fd6df76e3065b62b957eb9190ac7b2028",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "stone-rough-15": {
+      "file": "wall-atlas-07.jpg",
+      "sha256": "27c8049a13d7b32298c26c88370875e8ad3ac75a223b2de1e3b02d42803d35e2",
+      "dimensions": [
+        4096,
+        768
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
+      "sourceStyle": "stone-rough-15",
+      "sourceSha256": "0659d59abb325ab026f31701c017d57edfdbada0dd1b03abb363031e8dd866a6",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "stone-castle-slates": {
+      "file": "wall-atlas-08.jpg",
+      "sha256": "5bc111e5385ec9997be5a0cfe932825f7333cbb7be355272e16c789c2ffc77c2",
+      "dimensions": [
+        4096,
+        768
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
+      "sourceStyle": "stone-castle-slates",
+      "sourceSha256": "89e1dce61cf53decf586bd123b9280365e447019ebedaf3b8e48663ab37eab30",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
+    },
+    "stone-castle-aged": {
+      "file": "wall-atlas-09.jpg",
+      "sha256": "a74b96273897f112adb2ac863649df564887c949f2e7da76b83758ae961937ef",
+      "dimensions": [
+        4096,
+        768
+      ],
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
+      "sourceStyle": "stone-castle-aged",
+      "sourceSha256": "47d50ed57e111e3abfbd367872b5d23e3ab128c45b7172886752ce985f5b9f2b",
+      "method": "soft-phase-stochastic-UV-blending-no-color-grading"
     }
   },
   "floorGenerator": "beta/room-editor/blender/build-floor-map.py",
-  "floorGeneratorSha256": "0aafad455ab4c394f7960c88ffc8e763511d0ca842051c8bcde883121866d657",
+  "floorGeneratorSha256": "a3c050d31489b7521e397c5be5dcbc7735705891419e7852b917b56e59f97e66",
   "wallGenerator": "beta/room-editor/blender/build-wall-maps.py",
-  "wallGeneratorSha256": "3d4e349411eb94ab8e564b0dd5d563e8e11fceeca9165a9169cbe5b0ac3f9c1c",
+  "wallGeneratorSha256": "ab38d14fa71642db0de58123737a21d7302ee2b4b7ee22a76dcb48ce7ed71011",
   "atlasGenerator": "beta/room-editor/blender/build-floor-atlas.py",
-  "atlasGeneratorSha256": "0c3e2e93d5221698e44314a29fd15ac7d4e3b35ae16b488aa81e6cbf4457950e",
+  "atlasGeneratorSha256": "83de69c006eba4d23cf3bc16e4585c6e16e2be2122607d6592794688a01c0640",
   "wallAtlasGenerator": "beta/room-editor/blender/build-wall-atlas.py",
-  "wallAtlasGeneratorSha256": "81b7d6e1ab922fc7e1900a7b55506f3f133c71f39bcefbbe6aa8771dc84ae738",
+  "wallAtlasGeneratorSha256": "e1124ed768b3f9a7965bb4b8fcf0daf0e879ef63c3929b3f8c2618b10cb6dadf",
   "legacyBlenderWallProjectionFiles": [
     "wall-prison-x.webp",
     "wall-prison-y.webp"
