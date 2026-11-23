@@ -158,7 +158,7 @@ def build_chair():
     # to fit the game's collision and vaulting envelope.
     for x in (-.29,.29):
         for y in (-.30,.30):
-            height=1.24 if y<0 else .61
+            height=1.24 if y>0 else .61
             cube('Square chair leg', (x,y,height/2),
                  (.105,.103,height),oak_dark,.015)
             cube('Foot iron binding', (x,y,.055),(.108,.107,.11),iron_black,.008)
@@ -171,14 +171,14 @@ def build_chair():
         cube('Separate carved chair seat plank', (x,0,.657),
              (.187,.72,.102),[oak,oak_light,oak,oak_dark][i],.016)
     # Taller backrest, pierced by independent vertical planks.
-    cube('Upper broad oak backrest', (0,-.305,1.25),(.71,.11,.16),oak_light,.021)
-    cube('Lower backrest frame', (0,-.306,.85),(.68,.078,.085),oak_dark,.010)
+    cube('Upper broad oak backrest', (0,.305,1.25),(.71,.11,.16),oak_light,.021)
+    cube('Lower backrest frame', (0,.306,.85),(.68,.078,.085),oak_dark,.010)
     for x in (-.22,0,.22):
-        cube('Separate backrest stave', (x,-.307,1.055),
+        cube('Separate backrest stave', (x,.307,1.055),
              (.115,.068,.43),oak,.018)
     for x in (-.29,.29):
         for z in (.76,1.19):
-            cylinder('Iron brace nail', (x,-.365,z),.016,.011,
+            cylinder('Iron brace nail', (x,.365,z),.016,.011,
                      iron_black,10)
     for x in (-.29,.29):
         cube('Seat bracket / nail strip', (x,0,.58),
@@ -199,7 +199,7 @@ table = make_model('Prison Table · unrigged',build_table)
 chair = make_model('Prison Chair · unrigged',build_chair)
 
 # Original Guardian-style 35.26° isometric camera, warm key + blue fill.
-bpy.ops.object.camera_add(location=(-5.0,-5.0,5.72))
+bpy.ops.object.camera_add(location=(5.0,5.0,5.72))
 camera=bpy.context.object
 camera.name='Shared isometric orthographic camera'
 look=Vector((0,0,.72))
@@ -247,7 +247,7 @@ for name,rig in [('table',table),('chair',chair)]:
         for ob in (other,*other.children):
             ob.hide_render=not show
     for rot in (0,90,180,270):
-        rig.rotation_euler.z=math.radians(rot)
+        rig.rotation_euler.z=math.radians(90-rot)
         scene.render.filepath=str(RAW/('%s-%s.png'%(name,rot)))
         bpy.ops.render.render(write_still=True)
         print('RENDERED',name,rot,scene.render.filepath,flush=True)
