@@ -27,6 +27,11 @@ FLOORS={
  "dungeon-ashlar":("dark_rock_02","floor-albedo-01.jpg"),
  "dungeon-coast-rocks":("coast_sand_rocks_02","floor-albedo-02.jpg"),
  "dungeon-cut-stone":("cobblestone_floor_09","floor-albedo-03.jpg"),
+ "dungeon-mossy-cobbles":("cobblestone_floor_04","floor-albedo-04.jpg"),
+ "dungeon-ruined-cobbles":("cobblestone_floor_03","floor-albedo-05.jpg"),
+ "dungeon-aged-paving":("stone_floor","floor-albedo-06.jpg"),
+ "dungeon-rustic-slate":("slate_floor_02","floor-albedo-07.jpg"),
+ "dungeon-wet-mud":("brown_mud_03","floor-albedo-08.jpg"),
 }
 
 def fetch(url: str) -> bytes:
