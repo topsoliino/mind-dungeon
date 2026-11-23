@@ -289,6 +289,7 @@ function hitFurniture(x,y){
  })||null;
 }
 function draw(){
+ if(width<1||height<1)return;
  dirty=false;frame++;
  ctx.setTransform(c.width/width,0,0,c.height/height,0,0);
  ctx.clearRect(0,0,width,height);
@@ -298,6 +299,15 @@ function draw(){
  for(let i=-width;i<width*2;i+=35){
   ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+height,height);ctx.stroke();
  }
+ // A physical 3D floor PLATE under the individually editable stone tiles.
+ // The two exposed edges have real thickness and catch cool ambient shadow.
+ const slab=.22;
+ polygon([pt(room.width,0),pt(room.width,room.height),
+   pt(room.width,room.height,-slab),pt(room.width,0,-slab)],
+   '#242730','#121820',1);
+ polygon([pt(room.width,room.height),pt(0,room.height),
+   pt(0,room.height,-slab),pt(room.width,room.height,-slab)],
+   '#30303a','#181821',1);
  for(let x=0;x<room.width;x++)for(let y=0;y<room.height;y++)drawTile(x,y);
  if(hover?.kind==='tile'&&tool==='floor'){
   const v=hover;polygon([pt(v.x,v.y),pt(v.x+1,v.y),pt(v.x+1,v.y+1),pt(v.x,v.y+1)],'#f4c87527','#e3bd78',1.2);
@@ -570,10 +580,36 @@ document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>chooseTool(b.d
 $('roomName').addEventListener('change',e=>changeRoom(()=>room.name=e.target.value.trim().slice(0,80)||'Raum'));
 for(const [id,field] of [['roomW','width'],['roomH','height']])$(id).addEventListener('change',e=>{
  const val=clamp(Number(e.target.value)|0,2,30);
- changeRoom(()=>{room[field]=val;room.tiles=room.tiles.filter(t=>t.x<room.width&&t.y<room.height);
- room.walls=room.walls.filter(w=>w.x<=room.width&&w.y<=room.height);
- room.furniture=room.furniture.filter(o=>{const b=bounds(o);return b.right<=room.width-.1&&b.bottom<=room.height-.1;});});
- fit();
+ changeRoom(()=>{
+  const oldW=room.width,oldH=room.height;
+  room[field]=val;
+  // Keep the boundary walls attached to the RESIZED room, not suspended
+  // at the old perimeter. Other placed internal walls remain where drawn.
+  for(const w of room.walls){
+   if(field==='width'&&w.edge==='west'&&w.x===oldW)w.x=val;
+   if(field==='height'&&w.edge==='north'&&w.y===oldH)w.y=val;
+  }
+  room.tiles=room.tiles.filter(t=>t.x<room.width&&t.y<room.height);
+  room.walls=room.walls.filter(w=>w.x<=room.width&&w.y<=room.height);
+  // Expand a pre-existing enclosed cell along any NEW exterior perimeter
+  // while retaining all internal tile and gate edits.
+  if(field==='width'&&val>oldW)for(let x=oldW;x<val;x++){
+   if(room.walls.some(w=>w.edge==='north'&&w.y===0))
+    room.walls.push({x,y:0,edge:'north',style:'stone'});
+   if(room.walls.some(w=>w.edge==='north'&&w.y===room.height))
+    room.walls.push({x,y:room.height,edge:'north',style:'bars'});
+  }
+  if(field==='height'&&val>oldH)for(let y=oldH;y<val;y++){
+   if(room.walls.some(w=>w.edge==='west'&&w.x===0))
+    room.walls.push({x:0,y,edge:'west',style:'stone'});
+   if(room.walls.some(w=>w.edge==='west'&&w.x===room.width))
+    room.walls.push({x:room.width,y,edge:'west',style:'stone'});
+  }
+  room.furniture=room.furniture.filter(o=>{
+   const f=bounds(o);return f.left>=.1&&f.top>=.1&&
+    f.right<=room.width-.1&&f.bottom<=room.height-.1;
+  });
+ });fit();
 });
 $('floorType').addEventListener('change',e=>changeRoom(()=>room.floorStyle=e.target.value));
 $('wallType').addEventListener('change',e=>{room.wallStyle=e.target.value;checkpoint()});
