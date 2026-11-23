@@ -163,24 +163,9 @@ function drawWall(w){
  if(w.style==='stone'||w.style==='stone-cut'){
   const along=facing?w.x:w.y;
   if(window.MindRoomArt?.drawWallFace(ctx,w.style,top0,top1,base0,base1,along))return;
-  // Explicitly marked fallback for the short period before photo publication.
-  if(w.style==='stone'){
-   const mid=pt((a[0]+b[0])/2,(a[1]+b[1])/2,1);
-   if(window.MindRoomArt?.drawWall(ctx,mid,facing?'x':'y',zoom))return;
-  }
- }
- // Breakable stone-block rendering is deliberately same for all four faces.
- if(w.style==='stone'||w.style==='stone-cut'){
-  polygon([top0,top1,base1,base0],facing?'#4b4955':'#54525c','#2b2a34',1.1);
-  for(let i=1;i<5;i++){
-   const z=h*i/5;
-   line([pt(a[0],a[1],z),pt(b[0],b[1],z)],i%2?'#7d747720':'#1f202caa',1);
-   const u=((i%2)*.45+.23);
-   line([pt(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,z),
-    pt(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,z+h/5)],'#252630bd',1);
-  }
-  polygon([top0,top1,pt(b[0],b[1],h+.11),pt(a[0],a[1],h+.11)],'#77747e','#35323b',.9);
-  line([top0,top1],'#a39c9b65',1.1);
+  // Do not replace the photographic wall with fake Blender bricks,
+  // arbitrary grout lines, or extra edge highlights if assets are pending.
+  polygon([top0,top1,base1,base0], '#444440', '#282729',.85);
  }else{
   // Metal grille: real visual gaps; the physical solid still blocks the player.
   const metal=w.style==='gate'?'#8c7870':'#687887';
@@ -341,15 +326,7 @@ function draw(){
  if(!floorReady){
   for(let x=0;x<room.width;x++)for(let y=0;y<room.height;y++)drawTile(x,y);
  }
- // Painted floor details are soft weathering marks, never square tile borders.
- for(const tile of room.tiles){
-  const center=pt(tile.x+.5,tile.y+.5),seed=rand(tile.x,tile.y);
-  ctx.save();ctx.translate(center.x,center.y);
-  ctx.rotate(seed*Math.PI);
-  ctx.fillStyle='rgba(21,17,14,.16)';
-  ctx.beginPath();ctx.ellipse(0,0,(21+seed*13)*zoom,(9+seed*7)*zoom,0,0,TAU);
-  ctx.fill();ctx.restore();
- }
+ // Original photographs stay clean: NO fake grime, dirt, stains or per-cell overlays.
  // Grid is an optional EDITOR overlay, not part of the authored floor artwork.
  if(showGrid&&floorReady)for(let x=0;x<room.width;x++)for(let y=0;y<room.height;y++)
   polygon([pt(x,y),pt(x+1,y),pt(x+1,y+1),pt(x,y+1)],null,'#c1bdbe13',.55);
@@ -404,7 +381,7 @@ function chooseTool(next){
  document.querySelectorAll('[data-tool]').forEach(btn=>btn.classList.toggle('active',btn.dataset.tool===next));
  $('sceneStatus').textContent={
   select:'V · Möbel anklicken und ziehen · R = 90° drehen',
-  floor:'B · Steinmuster auf Bodenfelder malen',
+  floor:'B · ausgewählten Originalboden auf den ganzen Raum anwenden',
   wall:'W · Wandkante anklicken · Gitter und Türen platzieren',
   place:'F · Möbel auf einem freien Bodenbereich platzieren',
   erase:'E · Möbel entfernen oder Wandkante aufheben'}[next];
@@ -524,10 +501,12 @@ c.addEventListener('pointerdown',e=>{
   if(fits(obj)){room.furniture.push(obj);selected=obj.id;checkpoint()}
   else $('editorStatus').textContent='Hier kollidiert das Möbel mit Wand oder Einrichtungsgegenständen.';
  }else if(tool==='floor'){
-  const cell=cursorTile(uv.x,uv.y);
-  if(cell){const old=room.tiles.find(t=>t.x===cell.x&&t.y===cell.y);
-   if(old)old.style=$('floorType').value;else room.tiles.push({...cell,style:$('floorType').value});
-   checkpoint();dragging={type:'paint'};}
+  // Full-surface PHOTO selection, never painted squares or dirt splashes.
+  if(cursorTile(uv.x,uv.y)){
+   room.floorStyle=$('floorType').value;
+   room.tiles=[];
+   checkpoint();
+  }
  }else if(tool==='wall'){
   const at=nearestWall(uv.x,uv.y);
   if(at){const old=room.walls.find(w=>keyWall(w)===at.id);
@@ -560,11 +539,6 @@ c.addEventListener('pointermove',e=>{
    if(!fits(obj,obj.id)){obj.x=prior.x;obj.y=prior.y}
    refreshInspector();
   }
- }else if(dragging?.type==='paint'){
-  const cell=cursorTile(uv.x,uv.y);
-  if(cell){const tile=room.tiles.find(t=>t.x===cell.x&&t.y===cell.y);
-   if(tile)tile.style=$('floorType').value;
-   else room.tiles.push({...cell,style:$('floorType').value});}
  }
  const currentTile=cursorTile(uv.x,uv.y);
  hover=tool==='wall'||tool==='erase'?nearestWall(uv.x,uv.y):
@@ -575,7 +549,7 @@ c.addEventListener('pointermove',e=>{
 });
 function pointerEnd(){
  if(!dragging)return;
- if(dragging.type==='move'||dragging.type==='paint')checkpoint();
+ if(dragging.type==='move')checkpoint();
  dragging=null;
 }
 c.addEventListener('pointerup',pointerEnd);c.addEventListener('pointercancel',pointerEnd);
@@ -645,7 +619,7 @@ for(const [type,entry] of Object.entries(cat.floors)){
  b.style.backgroundSize='cover';
  b.setAttribute('aria-label','Boden wählen: '+entry.label);
  b.dataset.floor=type;b.title=entry.label;b.onclick=()=>{
-  $('floorType').value=type;room.floorStyle=type;checkpoint();};
+  $('floorType').value=type;room.floorStyle=type;room.tiles=[];checkpoint();};
  $('floorSwatches').appendChild(b);
 }
 for(const [type,entry] of Object.entries(cat.walls)){
@@ -698,7 +672,7 @@ for(const [id,field] of [['roomW','width'],['roomH','height']])$(id).addEventLis
   });
  });fit();
 });
-$('floorType').addEventListener('change',e=>changeRoom(()=>room.floorStyle=e.target.value));
+$('floorType').addEventListener('change',e=>changeRoom(()=>{room.floorStyle=e.target.value;room.tiles=[]}));
 $('wallType').addEventListener('change',e=>{room.wallStyle=e.target.value;checkpoint()});
 $('rotLeft').onclick=()=>rotate(-90);$('rotRight').onclick=()=>rotate(90);
 $('propRotation').onchange=e=>changeSelected('rot',Number(e.target.value));
