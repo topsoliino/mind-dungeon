@@ -41,6 +41,7 @@ for(const kind of ['switchback','curved']){
   'finishAlleyApproach',`
  let alleyRoute=null,alleyMove=null,alleyMarker=null,
   alleyQueuedLight=null,alleyStairFloorGoal=null;
+ const rockyPrison=null,descendAtLanding=()=>false;
  ${clickSource}
  return {approachClickStairs,aimAlleyStairFloor,alleyUpperExitMark,
   alleyUnderpassMark,get floorGoal(){return alleyStairFloorGoal}};
