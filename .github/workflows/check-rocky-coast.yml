@@ -12,6 +12,7 @@ on:
       - beta/index.html
       - tools/check-rocky-coast.cjs
       - tools/check-rocky-coast-stairs.cjs
+      - tools/check-rocky-coast-descent.cjs
       - beta/alley-stair-geometry.js
       - beta/alley-vertical.js
       - .github/workflows/check-rocky-coast.yml
@@ -29,3 +30,4 @@ jobs:
         run: |
           node tools/check-rocky-coast.cjs
           node tools/check-rocky-coast-stairs.cjs
+          node tools/check-rocky-coast-descent.cjs
