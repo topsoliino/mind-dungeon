@@ -4882,7 +4882,10 @@ function alleyActor(){
   z=alleyVertical?.state.z??(terrainZ-(player.fall?44*Math.pow(heroFallProgress(),2):0)),
   point=iso.toView(player.x,player.y,z);
  const feet=iso.toView(player.x,player.y,0).y;
- const raised=alleyVertical&&(alleyVertical.state.floor===1||alleyVertical.state.transition||alleyVertical.state.stairRide);
+ const flight=alleyVertical?.plan;
+ const atSpiralFoot=flight?.kind.startsWith('spiral')&&alleyVertical.hasStairs()&&
+  Math.hypot(player.x/48-flight.bottom.x,player.y/48-flight.bottom.y)<=flight.width+.35;
+ const raised=alleyVertical&&(atSpiralFoot||alleyVertical.state.floor===1||alleyVertical.state.transition||alleyVertical.state.stairRide);
  // Occlusion depends on where the FEET stand, not the projected image
  // displacement due to height; otherwise spiral columns flicker front/back.
  return {...player,...point,renderDepth:(raised?7000:0)+feet,
