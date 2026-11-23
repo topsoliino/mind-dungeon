@@ -98,3 +98,19 @@ Alle Änderungen der Bodenkarte und des Editors liegen ausschließlich unter `be
 **Assetquelle:** [Poly Haven](https://polyhaven.com/) – [CC0](https://polyhaven.com/license). Die API wird ausschließlich beim offline GitHub-Asset-Build mit eigenem User-Agent genutzt; der eigentliche Browser lädt ausschließlich die bereits gebackene Datei aus dem Editorordner. Quelle auch im Editor vermerkt. Das Foto ist **kein Rendering des Wächters** und kein Ersatz-Charakter.
 
 Der Build sollte nach einer Änderung an `beta/room-editor/blender/**` durch den bereits existierenden Workflow ausgelöst werden. Validierung: In `assets/tiles/manifest.json` muss anschließend `floorPixelDimensions: [4096, 4096]` stehen. Bei ausbleibendem Build läuft der zusammenhängende Editor-Vorschauboden weiter.
+
+### Zweite Bodenmap und zwei fotografische Mauerarten
+
+**Böden (Dropdown links `Kerkerboden-Oberfläche`):**
+- `dungeon-ashlar` / `floor-prison-01.webp`: schmutziger, unregelmäßiger alter Kerkerboden aus fotografischen Poly-Haven-Stein- und Erdmaterialien
+- `dungeon-cut-stone` / `floor-prison-02.jpg`: festerer rechteckiger Quadersteinboden aus den fotografischen CC0-Materialien [Rectangular Paving](https://polyhaven.com/a/rectangular_paving), [Stone Tiles](https://polyhaven.com/a/stone_tiles) und [Cobblestone Floor 02](https://polyhaven.com/a/cobblestone_floor_02). Er bleibt eine einzige 4096×4096-Karte für bis zu 32×32 Rasterfelder und wird für kleine Räume lediglich beschnitten
+
+**Mauern (Dropdown links `Bauteil zum Platzieren`, danach `W` und Wandkante anklicken):**
+- `stone` / `wall-masonry-01.jpg`: raue mittelalterliche Steinmauer, CC0-Fototextur [Medieval Wall 02](https://polyhaven.com/a/medieval_wall_02)
+- `stone-cut` / `wall-masonry-02.jpg`: größere, solide, stark verwitterte Quader, CC0-Fototextur [Stone Block Wall](https://polyhaven.com/a/stone_block_wall)
+
+Die Fotomauern sind **4096×1024** große zusammenhängende Fassaden für **32×2 Welteinheiten**; der Editor projiziert bei jedem Segment den zum Weltkoordinatenwert passenden Ausschnitt als isometrische Wandfläche. Benachbarte Segmente erhalten auf derselben Achse keine zufälligen Neuanfänge. Die optionale Struktur `room.wallStyle` bestimmt das aktuell gewählte Material, `room.walls[].style` speichert den Typ jeder bereits gesetzten Wand. Die Wandkollisionen bleiben unverändert; ältere JSONs mit `stone`/ `dungeon-ashlar` funktionieren weiter. Im Editor werden Stiloptionen über Dropdown und Materialvorschau angeboten.
+
+**Bauen:** `blender/build-floor-map.py --variant dirt` und `--variant cut-stone` sowie `blender/build-wall-maps.py` laufen über `blender/pack-prison-tiles.py` im bestehenden Editor-Art-Workflow. Dabei werden neben den drei bestehenden WebP-Dateien drei **JPEGs** geschrieben (keine zusätzlichen WebP-Dateien), damit der vorgegebene, unveränderte Workflow weiterhin exakt drei WebP-Dateien erwartet. Das Manifest enthält dann `floorVariants`, `wallVariants`, `floorMaterial` und `wallMaterial` sowie beide Generator-Hashes. Der Browser nutzt die neue Fotofassade ausschließlich bei passendem Manifest, sonst die vorhandenen rein editorlokalen Vorschaudarstellungen.
+
+**Sicherheitsgrenze:** ausschließlich `beta/room-editor/**` wird verändert, keine Hauptspiel-Beta-Dateien und kein CI-Workflow unter `.github/`.
