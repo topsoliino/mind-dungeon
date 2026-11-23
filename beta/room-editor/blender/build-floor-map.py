@@ -5,8 +5,9 @@ reinterpretation. Download and copy PNG bytes unchanged. No recoloring, noise,
 contrast, compositing, cropping, sharpening, fake dirt, or JPEG re-encoding.
 
 CC0: https://polyhaven.com/license
-  floor-prison-01.png = monastery_stone_floor
-  floor-prison-02.png = rectangular_paving
+  floor-prison-01.png = dark_rock_02
+  floor-prison-02.png = coast_sand_rocks_02
+  floor-prison-03.png = cobblestone_floor_09
 
 Output belongs ONLY to beta/room-editor/assets/tiles.
 """
@@ -24,8 +25,9 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "tiles"
 SOURCE_IDS = {
-    "dirt": ("monastery_stone_floor", "floor-prison-01.png"),
-    "cut-stone": ("rectangular_paving", "floor-prison-02.png"),
+    "dark-rock": ("dark_rock_02", "floor-prison-01.png"),
+    "coast-rocks": ("coast_sand_rocks_02", "floor-prison-02.png"),
+    "cobblestone": ("cobblestone_floor_09", "floor-prison-03.png"),
 }
 # Exactly the same Poly Haven *primary preview* family that appeared in the
 # material references. Higher-resolution delivery of the same photographed art.
