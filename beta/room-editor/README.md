@@ -26,14 +26,16 @@
 | `editor.css` | Oberfläche |
 | `catalog.js` | Boden-/Wand-Katalog und Möbel-Eigenschaften, vorinstallierte Gefängniszelle |
 | `editor.js` | Projektion, Zeichenreihenfolge, Interaktionen, Undo, Kollision, Spieltest, Export |
-| `editor-art.js` | Sechs Poly-Haven-Materialien auf isometrische Boden- und Wandflächen mit physikalisch sinnvoller Größe projizieren; originalen Wächter-Atlas als Referenz verwenden |
+| `editor-art.js` | Drei feste 30-m-Bodenatlanten und drei 30-m-Wandatlanten UV-korrekt darstellen; echter Wächter-Atlas als Referenz |
 | `presets/prison-cell-01.json` | Eigenständig importierbare Gefängniszelle |
 | `blender/build-room-kit.py` | **Tatsächliche 3D-Modelle**: Tisch, Stuhl; physische Bretter, Beine, Eisennägel, Material-/Lichtsetup |
 | `blender/pack-room-kit.py` | Vier Ansichten je Möbelstück in 512×512 WebP + Manifest packen |
 | `blender/build-prison-tiles.py` | Historische Blender-Wand- und Bodenfallbacks (nur CI-Kompatibilität), nicht der aktive Material-Look |
-| `blender/build-floor-map.py` | Importiert drei originale Poly-Haven-Boden-PNGs ohne Bildverarbeitung |
-| `blender/build-wall-maps.py` | Importiert drei originale Poly-Haven-Wand-PNGs ohne Bildverarbeitung |
-| `blender/pack-prison-tiles.py` | Prüft sechs unveränderte Original-PNGs und dokumentiert Quelle, SHA-256, Orientierung und echten Maßstab im v4-Manifest |
+| `blender/build-floor-map.py` | Importiert drei echte, originale 2K-**Diffuse-/Albedo-JPGs** von Poly Haven statt Vorschaubildern |
+| `blender/build-wall-maps.py` | Importiert drei echte, originale 2K-**Diffuse-/Albedo-JPGs** für Mauerflächen |
+| `blender/build-floor-atlas.py` | Erstellt drei 30×30-m-Texturatlanten ohne sichtbaren 2-m-Raster-Wiederholungsbeginn |
+| `blender/build-wall-atlas.py` | Erstellt drei fortlaufende 30×2-m-Fassadenatlanten mit korrekter Mauerorientierung |
+| `blender/pack-prison-tiles.py` | Validiert sechs unveränderte Original-Diffuse-JPGs und sechs Atlanten samt SHA-256 im v6-Manifest |
 | `assets/source/prison-tiles.blend` | Editierbare Modellquelle der Steinarchitektur |
 | `assets/tiles/` | Originale hochauflösende Blender-Architekturbilder, nicht prozeduraler Runtime-Shader |
 | `assets/source/room-kit.blend` | Render-Workflow erzeugt die editierbare Blender-Szene |
@@ -92,25 +94,20 @@ Die Schaltfläche **Spiel-Wächter** blendet den echten Originalatlas aus `../ar
 
 Alle Änderungen der Bodenkarte und des Editors liegen ausschließlich unter `beta/room-editor/`. Das eigentliche Spiel (`beta/index.html`, `beta/dungeon-guardian*.js`, `beta/dungeon-isometric.js`, Generator usw.) wird nicht geändert. Der schon bestehende Asset-Workflow darf weiterhin ausschließlich die Editor-Assets publizieren.
 
-### Nasskerker-Materialien – sechs originale Poly-Haven-Fotos (V5)
+### UV-Reparatur: Boden-Wiederholungen und schiefe Mauerfugen (V6)
 
-Die sechs Bilder stammen direkt aus Poly Havens **Primary Preview PNGs**. Sie werden durch den Asset-Build bytegenau kopiert, **nicht** nachgefärbt, gedreht, gespiegelt, verwaschen, mit künstlichem Schmutz überzeichnet oder skaliert. Die Texturen erscheinen im Browser auf korrekt orientierten, isometrischen Boden-/Wandflächen; die Raumgeometrie selbst wird nicht verändert. Alle Materialien sind [CC0](https://polyhaven.com/license).
+**Fehlerursache:** Die vorherige Version verwendete die Poly-Haven-`primary`-Vorschaubilder als Spieltexturen. Diese sind 1600×800-Pixel-**Präsentationen des Materials**, keine flachen, nahtlosen UV-Texturmaps. Ihr perspektivisch gezeigtes Material wurde nochmals auf die isometrischen Wände projiziert. Zusätzlich wiederholte `createPattern` die kleine 2,2-m-Pflasteraufnahme über alle Räume hinweg, was ein sehr sichtbares regelmäßiges Bildraster erzeugte.
 
-| Raum-Auswahl / gespeicherte ID | Originalquelle | Datei | Physischer Maßstab |
-|---|---|---|---|
-| Dark Rock 02 · `dungeon-ashlar` | [Dark Rock 02](https://polyhaven.com/a/dark_rock_02) | `floor-prison-01.png` | Originalhöhe 2 m, bei 2:1-Vorschau Breite 4 m |
-| Coast Sand Rocks 02 · `dungeon-coast-rocks` | [Coast Sand Rocks 02](https://polyhaven.com/a/coast_sand_rocks_02) | `floor-prison-02.png` | 15 m breit, 7,5 m hoch |
-| Cobblestone Floor 09 · `dungeon-cut-stone` | [Cobblestone Floor 09](https://polyhaven.com/a/cobblestone_floor_09) | `floor-prison-03.png` | 2,2 m breit, 1,1 m hoch |
-| Rock Wall 17 · `stone` | [Rock Wall 17](https://polyhaven.com/a/rock_wall_17) | `wall-masonry-01.png` | 1,8 m breit, 0,9 m hoch |
-| Rock Wall 16 · `stone-cut` | [Rock Wall 16](https://polyhaven.com/a/rock_wall_16) | `wall-masonry-02.png` | 2 m breit, 1 m hoch |
-| Old Stone Wall · `stone-old` | [Old Stone Wall](https://polyhaven.com/a/old_stone_wall) | `wall-masonry-03.png` | 2 m breit, 1 m hoch |
+**Reparatur (nur Editor):**
 
-**Maßstab:** Im Editor entspricht ungefähr **ein Rasterfeld einem Meter**, abgestimmt auf die zweifeldhohen Wände und den originalen Wächter. Eine fotobasierte Fläche behält in 2×2-, 7×5- und 30×30-Räumen **dieselbe Körnung und Steingröße**. Der Boden beginnt mit seiner Original-X-Achse an der Raum-X-Achse. Das Material wird über die gesamte sichtbare Fläche im Weltkoordinatensystem wiederholt; es wird nicht auf Raumgröße verzerrt.
+- `blender/build-floor-map.py` und `build-wall-maps.py` laden die **originalen 2K Diffuse/Albedo JPGs** über `https://api.polyhaven.com/files/{asset_id}` herunter und speichern ihre Bytes unverändert. Die Vorschau-URLs werden nicht mehr als Texturquelle benutzt.
+- `blender/build-floor-atlas.py` erzeugt aus jeder ursprünglichen, physisch korrekt skalierten Aufnahme eine **30 × 30 Weltmeter große, 4096² Pixel umfassende Weltbodenkarte**. Drei unterschiedlich versetzte Abtastungen der Originaldiffuskarte werden durch weich verlaufende großräumige Auswahlmasken kombiniert. Es werden **keine künstlichen Steine/Fugen/Schmutzflecken** hinzugefügt. Alle ursprünglichen Diffuse-JPGs bleiben separat erhalten.
+- `blender/build-wall-atlas.py` erstellt pro Mauer **einen 30 m breiten und 2 m hohen Fassadenstreifen (4096×768)** aus der flachen, vertikal korrekt ausgerichteten Diffuse-Map. Damit entfallen die Neustarts der Mauerfugen nach jedem Segment.
+- `editor-art.js` zeichnet pro Raum **genau ein** Bodenatlas-Bild im festen Maßstab. Für kleine Räume wird ein mittiger Ausschnitt gezeigt; 30×30 ist die maximale Raumgröße. Es gibt kein Runtime-`createPattern('repeat')` für Böden.
+- Bei Wänden stimmt die Textur-U-Achse mit der horizontalen Mauerlänge und V mit der **senkrechten Welt-Höhe** überein. Segment `x` liest den auf Segment `x+1` direkt folgenden Teil des 30-m-Wandbildes. Nord- und Westwände werden entlang ihrer jeweiligen **Weltkante**, nicht entlang eines bereits fotografisch verzerrten Musterbildes, projiziert.
 
-**Wandorientierung:** Eine Wand ist zwei Rastereinheiten hoch. Das Originalfoto wird in horizontaler Wandrichtung und vertikal nach unten gemappt, **ohne Rotation/Spiegelung**. Verbindende Wandsegmente nehmen den richtigen durchgehenden Bildausschnitt, und die Fotohöhe wird mit korrekt kalibriertem Maßstab wiederholt statt auf die doppelte Höhe gestreckt. Süd-/Ostwände zur Kamera bleiben wie bisher ausgeblendet. Wände und Gitter behalten ihre bisherigen Kollisionsflächen.
+**Maßstäbe:** Etwa 1 m pro Editor-Rasterfeld; Dark Rock 02 ca. 2×2 m pro diffuse Quelle, Coast Sand Rocks 02 ca. 15×15 m, Cobblestone Floor 09 ca. 2,2×2,2 m. Die drei Mauertexturen sind 1,8 bzw. 2 m breit. Die Originale werden nicht auf 30 m gestreckt; nur ihre Diffuse-Daten werden auf eine **30-m-UV-Fläche** gebacken. Alle sechs Materialien stammen weiterhin von [Poly Haven](https://polyhaven.com/) und sind [CC0](https://polyhaven.com/license).
 
-**Benutzung:** Links zwischen drei Böden wählen, um die Bodenfläche des gesamten Raums umzuschalten. Für die drei Wände entweder das Dropdown oder die neuen Bildvorschauen verwenden, dann `W` drücken und eine Kante auswählen. Bestehende Raum-JSONs mit `dungeon-ashlar`, `dungeon-cut-stone`, `stone` und `stone-cut` bleiben gültig; ihre Materialabbildung wurde bewusst auf die neuen Originale aktualisiert.
+**Veröffentlichungsprüfung:** `assets/tiles/manifest.json` muss `mind-dungeon-room-tiles/v6`, `textureMode: uv-ready-polyhaven-diffuse`, drei `floorAtlases` und drei `wallAtlases` sowie für jede Ausgabe ein SHA-256 und die Quelldatei enthalten. Die generierten Dateinamen heißen `floor-albedo-0{1,2,3}.jpg`, `wall-albedo-0{1,2,3}.jpg`, `floor-atlas-0{1,2,3}.jpg` und `wall-atlas-0{1,2,3}.jpg`. Die ursprünglichen drei Blender-WebPs bleiben einzig zur Wahrung des unveränderten, separat laufenden Editor-Art-CI-Checks erhalten.
 
-**Build/Veröffentlichung:** `blender/pack-prison-tiles.py` importiert über `blender/build-floor-map.py` und `blender/build-wall-maps.py` alle sechs Fotos nach `assets/tiles/`. Das Manifest `assets/tiles/manifest.json` verwendet `mind-dungeon-room-tiles/v4` mit Dateinamen, echten Bildabmessungen, SHA-256-Hashes, Weltbreiten und der Kennzeichnung `original-photo-byte-identical`. Drei ältere WebPs bleiben nur wegen des unveränderten Editor-Art-Workflows bestehen; die Runtime lädt sie für die sechs neuen Materialoptionen nicht.
-
-**Hauptspielschutz:** Ausschließlich `beta/room-editor/**` wurde geändert. Keine Änderungen an Wächter, Hauptspiel-Beta, Gegnern, Generatoren oder `.github/**`.
+**Hauptspielschutz:** Alle Writes bleiben strikt auf `beta/room-editor/**` begrenzt. Weder `beta/index.html`, `beta/dungeon-isometric.js`, Gegner-/Wächter-/Generator-Dateien noch `.github/**` werden verändert.
