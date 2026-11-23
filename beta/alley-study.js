@@ -88,7 +88,7 @@
  const dungeonMaterial=generatorMode?(()=>{
   const base=new URL('./room-editor/assets/tiles/',document.currentScript.src).href;
   const loaded={floor:null,wall:null},listeners=[];
-  const signal=()=>listeners.forEach(fn=>fn());
+  const signal=kind=>listeners.forEach(fn=>fn(kind));
   const load=(key,local,fallback)=>{
    const image=new Image();
    image.crossOrigin='anonymous';
@@ -97,7 +97,7 @@
      loaded[key]={image,worldWidth:key==='floor'?
        (image.src.includes('floor-atlas')?30:1.3):
        (image.src.includes('wall-atlas')?30:2)};
-     signal();
+     signal(key);
     }
    };
    image.onerror=()=>{
@@ -569,10 +569,11 @@
    }):null;
   if(street)bakedGround.push([{...street,depth:-3,street:true}]);
   if(dungeonMaterial){
-   dungeonMaterial.onReady(()=>{
-    // Re-bake the existing canvases; Phaser textures refresh via onArtReady.
-    for(const panel of roomWalls)redrawImage(panel.image,ctx=>drawPanel(ctx,panel.wall));
-    for(const {canvas,draw,x,y} of chunkCache){
+   dungeonMaterial.onReady(kind=>{
+    // Only the affected cached layer is re-baked, once per loaded material.
+    if(kind==='wall')for(const panel of roomWalls)
+     redrawImage(panel.image,ctx=>drawPanel(ctx,panel.wall));
+    if(kind==='floor')for(const {canvas,draw,x,y} of chunkCache){
      const ctx=canvas.getContext('2d');
      ctx.resetTransform();ctx.clearRect(0,0,canvas.width,canvas.height);
      ctx.translate(-x,-y);draw(ctx);
