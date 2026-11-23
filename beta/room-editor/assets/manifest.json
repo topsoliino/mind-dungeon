@@ -1,0 +1,75 @@
+{
+  "schema": "mind-dungeon-room-art/v1",
+  "source": "Blender 3D editable meshes, no rig",
+  "generator": "beta/room-editor/blender/build-room-kit.py",
+  "generatorSha256": "442ce110d2a2a8a693f512d202d7b628f7dd4e7fee139b6f91432010e064620c",
+  "blend": "assets/source/room-kit.blend",
+  "dimensions": {
+    "width": 512,
+    "height": 512
+  },
+  "camera": {
+    "projection": "ORTHO",
+    "elevationDegrees": 35.26,
+    "views": [
+      0,
+      90,
+      180,
+      270
+    ],
+    "groundPivotY": 0.76,
+    "reference": "Guardian-style warm key + cool fill"
+  },
+  "items": {
+    "table": {
+      "catalogId": "prison-table",
+      "footprint": [
+        1.85,
+        1.05
+      ],
+      "height": 0.94,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 110,
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "chair": {
+      "catalogId": "prison-chair",
+      "footprint": [
+        0.78,
+        0.79
+      ],
+      "height": 1.28,
+      "destroyable": true,
+      "vaultable": true,
+      "blocksMovement": true,
+      "maxHP": 35,
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    }
+  },
+  "files": {
+    "table": {
+      "0": "assets/furniture/table-0.webp",
+      "90": "assets/furniture/table-90.webp",
+      "180": "assets/furniture/table-180.webp",
+      "270": "assets/furniture/table-270.webp"
+    },
+    "chair": {
+      "0": "assets/furniture/chair-0.webp",
+      "90": "assets/furniture/chair-90.webp",
+      "180": "assets/furniture/chair-180.webp",
+      "270": "assets/furniture/chair-270.webp"
+    }
+  }
+}

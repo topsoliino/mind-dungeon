@@ -1,0 +1,29 @@
+{
+  "schema": "mind-dungeon-room-tiles/v1",
+  "source": "editable Blender meshes, Filmic High Contrast, Cycles",
+  "generator": "beta/room-editor/blender/build-prison-tiles.py",
+  "sha256": "15a5a3962a3ef3cfc692fc3504a9d26847e0aedd7a1eddd7bf1fa32c7bf1d06a",
+  "sourceBlend": "../source/prison-tiles.blend",
+  "pixelDimensions": [
+    512,
+    512
+  ],
+  "projection": {
+    "cameraAzimuth": 225,
+    "elevationDegrees": 35.264,
+    "projection": "ORTHO",
+    "orientation": "same x-y and x+y axes as beta/alley-study.js",
+    "floorOrthoScale": 2.65,
+    "wallOrthoScale": 3.25,
+    "wallRootZScale": 0.8660254037844,
+    "wallEditorHeight": 2.0,
+    "pivot": "tile center at z=0; wall center at gameplay z=1",
+    "tileCoordinates": "one world tile equals 48 game world units, projected stepX=42"
+  },
+  "art": {
+    "floor": "floor-prison-01.webp",
+    "wallStyle": "quarried-prison-stone",
+    "wallX": "wall-prison-x.webp",
+    "wallY": "wall-prison-y.webp"
+  }
+}
