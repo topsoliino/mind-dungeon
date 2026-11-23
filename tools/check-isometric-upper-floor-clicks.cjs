@@ -30,8 +30,8 @@ const ui=new Function('alleyVertical','alley','iso','renderedView','cam',
  'alleyStairFloorGoal=null;\n'+selection+'\n'+
  'return {approachClickStairs,alleyUpperFloorTarget,alleyClickScreen,'+
  'get pending(){return alleyVertical.state.pending;}};');
-function make(seed,graphics=false){
- const w={location:{search:'?szene=gasse&modus=generator&seed='+seed},
+function make(seed,graphics=false,style=null){
+ const w={location:{search:'?szene=gasse&modus=generator&seed='+seed+(style?'&treppe='+style:'')},
   DungeonWorld:{TILE:48,HERO_RADIUS:14}};
  const scope=vm.createContext({window:w,URL,URLSearchParams,Image,document});
  for(const mod of graphics?sceneFiles:geometry)
@@ -74,8 +74,11 @@ console.log('16 upper floors: floor-first click intent, '+overlap+
  ' overlaps, invalid click rejection and explicit ground beacon OK');
 
 const kinds=new Set(),walls=new Set();
-for(let seed=0;seed<200;seed++){
- const v=make(seed).AlleyVertical;
+const styles=make(4147).AlleyStairGeometry.styles;
+const cases=[...Array.from({length:10},(_,i)=>[4147+i,null]),...styles.map(style=>[4147,style])];
+for(const [seed,style] of cases){
+ const v=make(seed,false,style).AlleyVertical;
+ if(style)assert.equal(v.plan.kind,style);
  kinds.add(v.plan.kind);walls.add(v.ladder.wall);
  for(const up of [true,false]){
   v.state.floor=up?0:1;v.state.stairRide=null;
@@ -100,4 +103,4 @@ for(let seed=0;seed<200;seed++){
 }
 assert.equal(kinds.size,9);
 assert.equal(walls.size,4);
-console.log('200 seeds, 9 stair types, 4 ladder orientations: 400 stair exits with no position snap OK');
+console.log('10 seeds, 9 explicit stair types, 4 ladder orientations: two-way exits with no position snap OK');

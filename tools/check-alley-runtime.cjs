@@ -33,8 +33,8 @@ const visual={frame:()=>true,cells:()=>[{x:18,y:23,depth:20,alpha:.5,size:45}],
  vesselRevision:0,modelRevision:0,modelFrames:[],modelIndex:()=>-1};
 const iso={toView:(x,y,z)=>({x,y:y-z})};
 const makeRenderer=new Function('ghostFog','soulVessels','combatClock','iso',
- 'H','TILE','regionVisibleAt','return function '+renderMethod);
-const render=makeRenderer(visual,stones,0,iso,50,48,()=>true);
+ 'H','TILE','regionVisibleAt','vesselView','return function '+renderMethod);
+const render=makeRenderer(visual,stones,0,iso,50,48,()=>true,iso.toView);
 const sprites=[];
 function image(){
  const sprite={visible:true,
