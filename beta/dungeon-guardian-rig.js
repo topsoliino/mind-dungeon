@@ -33,7 +33,12 @@ function visibleParts(clip,progress,armed){
 export async function loadRig(url,clips={}){
  const renderer=new WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});
  try{
-  renderer.setSize(renderSize,renderSize,false);
+  // Only reduce the invisible GPU readback resolution in fast Canvas mode,
+  // NOT the actual Blender Guardian mesh, rig, lighting or animations.
+  // Gameplay displays the 3D result at 110px (often ~65 physical pixels).
+  const rigPixels=window.__mindFastIsometric?144:renderSize;
+  renderer.setPixelRatio(1);
+  renderer.setSize(rigPixels,rigPixels,false);
   renderer.setClearColor(0,0);
   renderer.toneMapping=ACESFilmicToneMapping;
   renderer.toneMappingExposure=1.13;
@@ -125,7 +130,10 @@ export async function loadRig(url,clips={}){
     // When hardware is under load, lower only the expensive pose sampling.
     // Never delay a new attack clip, gear state or significant turn.
     const measured=window.__mindDiagnostics?.fps||60;
-    const interval=1/(measured<22?12:measured<32?18:measured<45?25:36);
+    // Preserve 60 Hz movement but cap original 3D pose sampling in
+    // Canvas mode to ~25 Hz. Attacks and significant turns stay immediate.
+    const budget=window.__mindFastIsometric?Math.min(measured,37):measured;
+    const interval=1/(budget<22?12:budget<32?18:budget<45?25:36);
     const urgent=clip!==previousClip||armed!==lastArmed||
      yaw===null||Math.abs(Math.atan2(Math.sin(angle-yaw),Math.cos(angle-yaw)))>
       (measured<32?.21:.12);
