@@ -9,10 +9,10 @@ const catalog={
   // One authored stone material only. Old room files use aliases,
   // normalized at import, instead of loading contradictory flat styles.
   'dungeon-ashlar':{
-   label:'Kerker · hochauflösender Quaderstein',base:'#505460',grout:'#22242b',
+   label:'Dreckiger Kerker · durchgehende Bodenkarte',base:'#505460',grout:'#22242b',
    accent:'#a9a3a1',pattern:'blender-ashlar',
    asset:artRoot+'tiles/floor-prison-01.webp',
-   source:'Blender Cycles · 512 × 512'
+   source:'Handgestaltete prozedurale Bodenmap · 4096 × 4096; feste 32×32 Welteinheiten'
   }
  },
  walls:{
