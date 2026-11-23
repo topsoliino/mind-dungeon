@@ -7,19 +7,35 @@ window.MindRoomArt=(()=>{
  const ROOT='./assets/',ROOT_GUARDIAN='../art/player-study/';
  const images=new Map(),watchers=[];
  const emit=()=>watchers.forEach(listener=>listener());
- function preload(key,src){
-  const result={img:null,ready:false,failed:false,src};
+ // Load the published 30m atlas when available. During slow art builds
+ // fall back to the EXACT original 2K Poly Haven Diffuse JPEG so users see
+ // real floor/wall graphics immediately, never an empty grey material.
+ function preload(key,src,fallbackSrc=null,worldWidth=null){
+  const result={img:null,ready:false,failed:false,src,kind:'atlas',
+                worldWidth,fallbackSrc,attemptedFallback:false};
   images.set(key,result);
   const img=new Image();
   result.img=img;
   img.onload=()=>{
    if(img.naturalWidth<700||img.naturalHeight<700){
     result.failed=true;
-    console.warn('Original source photo too small:',key);
-   }else result.ready=true;
+    console.warn('Editor material too small:',key);
+   }else{
+    result.failed=false;
+    result.ready=true;
+   }
    emit();
   };
-  img.onerror=()=>{result.failed=true;emit()};
+  img.onerror=()=>{
+   if(result.fallbackSrc&&!result.attemptedFallback){
+    result.attemptedFallback=true;
+    result.kind='diffuse';
+    console.info('Room Atelier: original Poly Haven diffuse fallback for',key);
+    img.src=result.fallbackSrc;
+    return;
+   }
+   result.failed=true;emit();
+  };
   img.src=src;
   return result;
  }
@@ -37,7 +53,13 @@ window.MindRoomArt=(()=>{
   ['dungeon-wet-mud','floor-albedo-08.jpg','floor-atlas-08.jpg','brown_mud_03',false],
   ['stone','wall-albedo-01.jpg','wall-atlas-01.jpg','rock_wall_17',true],
   ['stone-cut','wall-albedo-02.jpg','wall-atlas-02.jpg','rock_wall_16',true],
-  ['stone-old','wall-albedo-03.jpg','wall-atlas-03.jpg','old_stone_wall',true]
+  ['stone-old','wall-albedo-03.jpg','wall-atlas-03.jpg','old_stone_wall',true],
+  ['stone-rough-12','wall-albedo-04.jpg','wall-atlas-04.jpg','rock_wall_12',true],
+  ['stone-rough-13','wall-albedo-05.jpg','wall-atlas-05.jpg','rock_wall_13',true],
+  ['stone-rough-14','wall-albedo-06.jpg','wall-atlas-06.jpg','rock_wall_14',true],
+  ['stone-rough-15','wall-albedo-07.jpg','wall-atlas-07.jpg','rock_wall_15',true],
+  ['stone-castle-slates','wall-albedo-08.jpg','wall-atlas-08.jpg','castle_wall_slates',true],
+  ['stone-castle-aged','wall-albedo-09.jpg','wall-atlas-09.jpg','castle_wall_varriation',true]
  ];
  for(const [key] of PHOTOS)images.set(key,{img:null,ready:false,failed:false,src:''});
  // Load each material independently. A malformed variant record must NEVER
@@ -47,10 +69,10 @@ window.MindRoomArt=(()=>{
  async function loadPhotographicMaterials(){
   let manifest=null;
   try{
-   const response=await fetch(ROOT+'tiles/manifest.json?v=eight-floors-v7',{cache:'no-store'});
+   const response=await fetch(ROOT+'tiles/manifest.json?v=nine-walls-v8',{cache:'no-store'});
    if(!response.ok)throw Error('Materialmanifest HTTP '+response.status);
    manifest=await response.json();
-   if(!['mind-dungeon-room-tiles/v6','mind-dungeon-room-tiles/v7'].includes(manifest.schema)||
+   if(!['mind-dungeon-room-tiles/v6','mind-dungeon-room-tiles/v7','mind-dungeon-room-tiles/v8'].includes(manifest.schema)||
       manifest.textureMode!=='uv-ready-polyhaven-diffuse')
     throw Error('Falsche Materialmanifest-Version');
   }catch(error){
@@ -83,7 +105,9 @@ window.MindRoomArt=(()=>{
    // The known v6 atlas filenames are unique to the corrected Diffuse pipeline.
    // Even during a stale Pages deployment, try these exact editor-local assets.
    const version=valid?atlas.sha256:'eight-floors-v7';
-   preload(style,ROOT+'tiles/'+atlasFile+'?v='+version);
+   preload(style,ROOT+'tiles/'+atlasFile+'?v='+version,
+     'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/'+assetId+
+     '/'+assetId+'_diff_2k.jpg',cat?.worldWidth);
   }
  }
  void loadPhotographicMaterials();
@@ -178,7 +202,18 @@ window.MindRoomArt=(()=>{
   if(image){
    const x=(room.width-30)*.5,y=(room.height-30)*.5;
    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-   ctx.drawImage(image,x,y,30,30);
+   const resource=images.get(room.floorStyle);
+   if(resource?.kind==='atlas'){
+    ctx.drawImage(image,x,y,30,30);
+   }else{
+    // Temporary direct-source fallback until the editor-only CI bakes its
+    // non-repeating 30m atlas. Keep the native photographed stone scale.
+    const worldW=resource?.worldWidth||2;
+    const worldH=worldW*image.naturalHeight/image.naturalWidth;
+    for(let v=0;v<room.height;v+=worldH)
+     for(let u=0;u<room.width;u+=worldW)
+      ctx.drawImage(image,u,v,worldW,worldH);
+   }
   }else{
    ctx.fillStyle='#484846';ctx.fillRect(0,0,room.width,room.height);
   }
@@ -190,8 +225,12 @@ window.MindRoomArt=(()=>{
   if(!image)return false;
   // A 30-metre horizontal wall strip, 2 metres vertically. Source is actual
   // FLAT diffuse material, not a photograph of a tilted wall demo.
-  const sourceX=Math.max(0,Math.min(29,along))*image.naturalWidth/30;
-  const sourceW=image.naturalWidth/30;
+  const resource=images.get(style);
+  const span=resource?.kind==='atlas'?30:(resource?.worldWidth||2);
+  const sourceX=resource?.kind==='atlas'?
+    Math.max(0,Math.min(29,along))*image.naturalWidth/30:
+    (((along%span)+span)%span)*image.naturalWidth/span;
+  const sourceW=image.naturalWidth/span;
   ctx.save();
   ctx.beginPath();ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);
   ctx.lineTo(bottomB.x,bottomB.y);ctx.lineTo(bottomA.x,bottomA.y);
@@ -202,7 +241,13 @@ window.MindRoomArt=(()=>{
                 bottomA.x-topA.x,bottomA.y-topA.y,
                 topA.x,topA.y);
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-  ctx.drawImage(image,sourceX,0,sourceW,image.naturalHeight,0,0,1,1);
+  // Two crops if a one-metre wall section crosses the original diffuse edge.
+  const usable=Math.min(sourceW,image.naturalWidth-sourceX);
+  const portion=usable/sourceW;
+  ctx.drawImage(image,sourceX,0,usable,image.naturalHeight,0,0,portion,1);
+  if(portion<.999999)
+   ctx.drawImage(image,0,0,sourceW-usable,image.naturalHeight,
+                 portion,0,1-portion,1);
   ctx.restore();
   return true;
  }
@@ -211,11 +256,12 @@ window.MindRoomArt=(()=>{
   const walls=PHOTOS.filter(p=>p[4]&&getPhoto(p[0])).length;
   return {
    tiles:floors+'/8 Poly-Haven-Böden',
-   wallPhotos:walls+'/3 Poly-Haven-Mauern',
+   wallPhotos:walls+'/9 Poly-Haven-Mauern',
    guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
-   tileReady:floors>0,wallsReady:walls===3,
+   tileReady:floors>0,wallsReady:walls===9,
    assetWarning:atlasWarning,
-   failedTextures:PHOTOS.filter(p=>images.get(p[0])?.failed).map(p=>p[0])
+   failedTextures:PHOTOS.filter(p=>images.get(p[0])?.failed).map(p=>p[0]),
+   fallbackTextures:PHOTOS.filter(p=>images.get(p[0])?.ready&&images.get(p[0])?.kind==='diffuse').map(p=>p[0])
   };
  }
  return {drawGuardian,drawRoomFloor,drawWallFace,status,onChange(callback){watchers.push(callback)}};
