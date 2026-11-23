@@ -1,76 +1,83 @@
 {
-  "schema": "mind-dungeon-room-tiles/v2",
-  "source": "Blender wall meshes; two photo floors and two photo medieval-wall maps (Poly Haven CC0)",
-  "floorMaterial": "photoreal-scanned-cc0",
+  "schema": "mind-dungeon-room-tiles/v3",
+  "source": "Original Poly Haven primary-preview PNG photographs; no filters or generated dirt",
+  "textureMode": "original-photo-byte-identical",
+  "license": "CC0: https://polyhaven.com/license",
+  "floorMaterial": "original-photo-byte-identical",
+  "wallMaterial": "original-photo-byte-identical",
   "floorVariants": {
-    "dungeon-ashlar": "floor-prison-01.webp",
-    "dungeon-cut-stone": "floor-prison-02.jpg"
+    "dungeon-ashlar": "floor-prison-01.png",
+    "dungeon-cut-stone": "floor-prison-02.png"
   },
-  "wallMaterial": "photoreal-scanned-cc0",
   "wallVariants": {
-    "stone": "wall-masonry-01.jpg",
-    "stone-cut": "wall-masonry-02.jpg"
+    "stone": "wall-masonry-01.png",
+    "stone-cut": "wall-masonry-02.png"
   },
-  "wallPhotoWorldDimensions": [
-    32,
+  "assetInfo": {
+    "dungeon-ashlar": {
+      "file": "floor-prison-01.png",
+      "asset": "monastery_stone_floor",
+      "sourcePage": "https://polyhaven.com/a/monastery_stone_floor",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/monastery_stone_floor.png?height=2048&quality=95",
+      "sha256": "ba3747b6eefb610b21c24025e3d6ca63acbb66389a4f342485e77e356c123f54",
+      "dimensions": [
+        1600,
+        800
+      ],
+      "byteIdenticalToSource": true
+    },
+    "dungeon-cut-stone": {
+      "file": "floor-prison-02.png",
+      "asset": "rectangular_paving",
+      "sourcePage": "https://polyhaven.com/a/rectangular_paving",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/rectangular_paving.png?height=2048&quality=95",
+      "sha256": "68b681436bb8bffe8de48b204187690bed52ecc9c1fdab88cf1f148fa644b336",
+      "dimensions": [
+        1600,
+        800
+      ],
+      "byteIdenticalToSource": true
+    },
+    "stone": {
+      "file": "wall-masonry-01.png",
+      "asset": "medieval_wall_02",
+      "sourcePage": "https://polyhaven.com/a/medieval_wall_02",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/medieval_wall_02.png?height=2048&quality=95",
+      "sha256": "d917ae53e89674c06be34a84afb7f0fd7e3f34667814f8db3632e828c8568d38",
+      "dimensions": [
+        1600,
+        800
+      ],
+      "byteIdenticalToSource": true
+    },
+    "stone-cut": {
+      "file": "wall-masonry-02.png",
+      "asset": "stone_block_wall",
+      "sourcePage": "https://polyhaven.com/a/stone_block_wall",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/stone_block_wall.png?height=2048&quality=95",
+      "sha256": "89cb4c1c4a9dd371770840d6ce1e3e8811c473ac139a82ef062dd80f7ac72961",
+      "dimensions": [
+        1600,
+        800
+      ],
+      "byteIdenticalToSource": true
+    }
+  },
+  "floorGenerator": "beta/room-editor/blender/build-floor-map.py",
+  "floorGeneratorSha256": "1f7f89497892bfbbd5446c7f4fd222806a68e356b61a6c2c72cf2c5c696d3ee4",
+  "wallGenerator": "beta/room-editor/blender/build-wall-maps.py",
+  "wallGeneratorSha256": "cd994e8889ff5e6dbff9a78cb45ebf6c050445cfad16f92d238c5b6f6168cf8e",
+  "floorPhotoWorldSpan": [
+    12,
+    6
+  ],
+  "wallPhotoWorldSpan": [
+    4,
     2
   ],
-  "wallPhotoPixelDimensions": [
-    4096,
-    1024
+  "legacyBlenderWallProjectionFiles": [
+    "wall-prison-x.webp",
+    "wall-prison-y.webp"
   ],
-  "wallGenerator": "beta/room-editor/blender/build-wall-maps.py",
-  "wallGeneratorSha256": "cf54b07b71a9aeedc75643a0d14465f2559e58c05329fe3a68d83d09ba5bedab",
-  "wallSources": [
-    "medieval_wall_02",
-    "stone_block_wall"
-  ],
-  "floorSources": [
-    "monastery_stone_floor",
-    "stone_floor",
-    "rock_embedded_floor",
-    "rectangular_paving",
-    "stone_tiles",
-    "cobblestone_floor_02"
-  ],
-  "floorLicense": "CC0; source photos by Poly Haven",
-  "generator": "beta/room-editor/blender/build-prison-tiles.py",
-  "sha256": "0f4c9e970d9305bd8df95119dba51c399c1b1015a5d5ad8efdeb8db3ce5236fe",
-  "sourceBlend": "../source/prison-tiles.blend",
-  "wallPixelDimensions": [
-    512,
-    512
-  ],
-  "floorPixelDimensions": [
-    4096,
-    4096
-  ],
-  "floorWorldDimensions": [
-    32,
-    32
-  ],
-  "floorGenerator": "beta/room-editor/blender/build-floor-map.py",
-  "floorGeneratorSha256": "e23649326f42596185d622488d4dcd6deea24b6c2b2f5d46b6c19bb765ef7d92",
-  "projection": {
-    "cameraAzimuth": 45,
-    "elevationDegrees": 35.264,
-    "projection": "ORTHO",
-    "orientation": "same x-y and x+y axes as beta/alley-study.js",
-    "floorOrthoScale": 2.65,
-    "wallOrthoScale": 3.25,
-    "wallRootZScale": 0.8660254037844,
-    "wallEditorHeight": 2.0,
-    "pivot": "tile center at z=0; wall center at gameplay z=1",
-    "tileCoordinates": "one world tile equals 48 game world units, projected stepX=42"
-  },
-  "art": {
-    "floor": "floor-prison-01.webp",
-    "floorCut": "floor-prison-02.jpg",
-    "wallRough": "wall-masonry-01.jpg",
-    "wallCut": "wall-masonry-02.jpg",
-    "floorUv": "world-orthographic-32x32-center-crop",
-    "wallStyle": "quarried-prison-stone",
-    "wallX": "wall-prison-x.webp",
-    "wallY": "wall-prison-y.webp"
-  }
+  "gameBetaFilesModified": false
 }
