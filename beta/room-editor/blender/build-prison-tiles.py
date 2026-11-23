@@ -181,7 +181,7 @@ wall=collect('1 × 2 prison wall module',wall_piece)
 wall.scale.z=.8660254037844
 wall.rotation_euler.z=0
 
-bpy.ops.object.camera_add(location=(-5.0,-5.0,5.0))
+bpy.ops.object.camera_add(location=(5.0,5.0,5.0))
 camera=bpy.context.object
 camera.name='AlleyStudy 35.264° isometric orthographic view'
 camera.data.type='ORTHO'
@@ -189,7 +189,7 @@ bpy.context.scene.camera=camera
 
 def aim(loc):
     look=Vector((0,0,loc))
-    camera.location=(-5.0,-5.0,5.0+loc)
+    camera.location=(5.0,5.0,5.0+loc)
     direction=look-camera.location
     camera.rotation_euler=direction.to_track_quat('-Z','Y').to_euler()
 
@@ -245,7 +245,7 @@ print('AUTHORED BLENDER TILE',scene.render.filepath,flush=True)
 show(wall)
 camera.data.ortho_scale=3.25
 aim(.8660254037844)
-for axis,degrees in (('x',0),('y',90)):
+for axis,degrees in (('x',90),('y',0)):
     wall.rotation_euler.z=math.radians(degrees)
     scene.render.filepath=str(OUT/('wall-prison-%s.png'%axis))
     bpy.ops.render.render(write_still=True)
