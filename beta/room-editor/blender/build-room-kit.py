@@ -199,7 +199,7 @@ table = make_model('Prison Table · unrigged',build_table)
 chair = make_model('Prison Chair · unrigged',build_chair)
 
 # Original Guardian-style 35.26° isometric camera, warm key + blue fill.
-bpy.ops.object.camera_add(location=(5.2,-5.2,5.35))
+bpy.ops.object.camera_add(location=(-5.0,-5.0,5.72))
 camera=bpy.context.object
 camera.name='Shared isometric orthographic camera'
 look=Vector((0,0,.72))
@@ -208,9 +208,9 @@ camera.rotation_euler=direction.to_track_quat('-Z','Y').to_euler()
 camera.data.type='ORTHO';camera.data.ortho_scale=3.35
 camera.data.lens=50
 bpy.context.scene.camera=camera
-area('Guardian warm key',(-3,-4,6.5),780,(1.0,.84,.69),4.5)
-area('Guardian blue fill',(4,2,5),485,(.70,.80,1.0),4.0)
-area('Guardian shoulder rim',(-2,3,3),320,(1.0,.9,.80),2.6)
+area('Guardian warm key',(-3.2,-4.4,6.8),950,(1.0,.84,.68),4.2)
+area('Guardian blue fill',(4.4,2.2,5.2),420,(.68,.79,1.0),3.9)
+area('Guardian shoulder rim',(-1.8,3.0,3.3),310,(1.0,.92,.82),2.1)
 world=bpy.context.scene.world
 if not world:
     world=bpy.data.worlds.new('Guardian neutral atmosphere')
@@ -218,14 +218,14 @@ if not world:
 world.use_nodes=True
 background=world.node_tree.nodes.get('Background')
 background.inputs['Color'].default_value=(.28,.32,.40,1)
-background.inputs['Strength'].default_value=.65
+background.inputs['Strength'].default_value=.58
 
 scene=bpy.context.scene
 scene.render.engine='CYCLES'
 scene.cycles.samples=max(12,min(96,opt.samples))
 scene.cycles.use_denoising=True
-scene.render.resolution_x=384
-scene.render.resolution_y=384
+scene.render.resolution_x=512
+scene.render.resolution_y=512
 scene.render.resolution_percentage=100
 scene.render.film_transparent=True
 scene.render.image_settings.file_format='PNG'
@@ -233,11 +233,11 @@ scene.render.image_settings.color_mode='RGBA'
 scene.render.image_settings.color_depth='8'
 try:
     scene.view_settings.view_transform='Filmic'
-    scene.view_settings.look='Medium High Contrast'
-    scene.view_settings.exposure=0
+    scene.view_settings.look='High Contrast'
+    scene.view_settings.exposure=.10
     scene.view_settings.gamma=1
 except Exception:
-    pass
+    scene.view_settings.look='Medium High Contrast'
 try:scene.camera.data.lens=50
 except:pass
 
