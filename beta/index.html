@@ -2632,7 +2632,9 @@ function descendAtLanding(selected=null){
  if(s.floor||s.pending||s.transition||s.stairRide)return false;
  const distance=c=>Math.hypot(player.x-c.top.x*48,player.y-c.top.y*48);
  const c=selected??alleyVertical.connectorsAt(rockyPrison.storey-2).slice().sort((a,b)=>distance(a)-distance(b))[0];
- if(!selected&&c&&distance(c)>(alleyVertical.nearby(player,0,100)?.distance??100))return false;
+ // The previous comparison against the CURRENT (upward) connector
+ // wrongly suppressed nearby downhill hatches on stacked floors.
+ if(!selected&&c&&distance(c)>130)return false;
  if(!c)return false;
  if(c.kind==='stairs'&&distance(c)<50){
   const previous=rockyPrison.storey-1;
