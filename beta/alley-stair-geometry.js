@@ -275,6 +275,21 @@ function select(generator,placeLadder,reserved=null,previousKind=null){
   if(viable.length){
    viable.sort((a,b)=>b.score-a.score);
    for(const model of viable){
+    // Check the actual tread and landing polygons against every wall,
+    // including perimeter walls near a rotated or curved outer rail.
+    const intersectsWall=(corners,[x0,y0,x1,y1])=>{
+     const box=[vec(x0-.08,y0-.08),vec(x1+.08,y0-.08),vec(x1+.08,y1+.08),vec(x0-.08,y1+.08)];
+     const separated=(points,other)=>points.some((a,i)=>{
+      const b=points[(i+1)%points.length],nx=a.y-b.y,ny=b.x-a.x;
+      const project=p=>p.x*nx+p.y*ny;
+      return Math.max(...points.map(project))<Math.min(...other.map(project))||
+       Math.max(...other.map(project))<Math.min(...points.map(project));
+     });
+     return !separated(box,corners)&&!separated(corners,box);
+    };
+    const [left,back,right,front]=model.region;
+    const walls=generator.walls.filter(({area:[x,y,r,b]})=>x<=right+.1&&r>=left-.1&&y<=front+.1&&b>=back-.1);
+    if(walls.some(w=>model.steps.concat(model.landings).some(p=>intersectsWall(p.corners,w.area))))continue;
     const plan=withUpperDeck(model);
     if((!placeLadder||placeLadder(plan))&&candidateAccessible(generator,plan))return plan;
    }
