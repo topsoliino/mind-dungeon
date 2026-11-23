@@ -90,3 +90,11 @@ Die Schaltfläche **Spiel-Wächter** blendet den echten Originalatlas aus `../ar
 ### Schutz der Spiel-Beta
 
 Alle Änderungen der Bodenkarte und des Editors liegen ausschließlich unter `beta/room-editor/`. Das eigentliche Spiel (`beta/index.html`, `beta/dungeon-guardian*.js`, `beta/dungeon-isometric.js`, Generator usw.) wird nicht geändert. Der schon bestehende Asset-Workflow darf weiterhin ausschließlich die Editor-Assets publizieren.
+
+### Fotorealistische Bodenkarte (V2)
+
+`blender/build-floor-map.py` verwendet **echte fotografische Oberflächenaufnahmen**, statt Steinpolygone zu simulieren. Die Grundlage stammt aus drei CC0-Texturen: [Monastery Stone Floor](https://polyhaven.com/a/monastery_stone_floor), [Stone Floor](https://polyhaven.com/a/stone_floor), [Rock Embedded Floor](https://polyhaven.com/a/rock_embedded_floor). Als kombinierte 4096×4096-WebP-Datei werden die Fotos aus überlappenden, weich maskierten Bereichen gesetzt; danach folgen zurückhaltende, großräumige Feuchtigkeits- und Schmutzmasken. Steinmaßstab und UV-Projektion ändern sich zwischen kleinen und großen Räumen nicht.
+
+**Assetquelle:** [Poly Haven](https://polyhaven.com/) – [CC0](https://polyhaven.com/license). Die API wird ausschließlich beim offline GitHub-Asset-Build mit eigenem User-Agent genutzt; der eigentliche Browser lädt ausschließlich die bereits gebackene Datei aus dem Editorordner. Quelle auch im Editor vermerkt. Das Foto ist **kein Rendering des Wächters** und kein Ersatz-Charakter.
+
+Der Build sollte nach einer Änderung an `beta/room-editor/blender/**` durch den bereits existierenden Workflow ausgelöst werden. Validierung: In `assets/tiles/manifest.json` muss anschließend `floorPixelDimensions: [4096, 4096]` stehen. Bei ausbleibendem Build läuft der zusammenhängende Editor-Vorschauboden weiter.
