@@ -1,80 +1,134 @@
 {
-  "schema": "mind-dungeon-room-tiles/v3",
-  "source": "Original Poly Haven primary-preview PNG photographs; no filters or generated dirt",
+  "schema": "mind-dungeon-room-tiles/v4",
+  "source": "Six unchanged Poly Haven primary preview PNGs, no added dirt, tint or rotation",
   "textureMode": "original-photo-byte-identical",
   "license": "CC0: https://polyhaven.com/license",
   "floorMaterial": "original-photo-byte-identical",
   "wallMaterial": "original-photo-byte-identical",
   "floorVariants": {
     "dungeon-ashlar": "floor-prison-01.png",
-    "dungeon-cut-stone": "floor-prison-02.png"
+    "dungeon-coast-rocks": "floor-prison-02.png",
+    "dungeon-cut-stone": "floor-prison-03.png"
   },
   "wallVariants": {
     "stone": "wall-masonry-01.png",
-    "stone-cut": "wall-masonry-02.png"
+    "stone-cut": "wall-masonry-02.png",
+    "stone-old": "wall-masonry-03.png"
   },
   "assetInfo": {
     "dungeon-ashlar": {
       "file": "floor-prison-01.png",
-      "asset": "monastery_stone_floor",
-      "sourcePage": "https://polyhaven.com/a/monastery_stone_floor",
-      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/monastery_stone_floor.png?height=2048&quality=95",
-      "sha256": "ba3747b6eefb610b21c24025e3d6ca63acbb66389a4f342485e77e356c123f54",
+      "asset": "dark_rock_02",
+      "sourcePage": "https://polyhaven.com/a/dark_rock_02",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/dark_rock_02.png?height=2048&quality=95",
+      "sha256": "06896f29346aad36f42d91e9beac039613fd341ebc8fbfdc66da7fa3199892a1",
       "dimensions": [
         1600,
         800
       ],
-      "byteIdenticalToSource": true
+      "worldWidth": 4.0,
+      "worldHeight": 2.0,
+      "worldUnitsPerMetre": 1.0,
+      "scaleMethod": "Poly Haven real-world texture size, calibrated to Guardian",
+      "byteIdenticalToSource": true,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false
+    },
+    "dungeon-coast-rocks": {
+      "file": "floor-prison-02.png",
+      "asset": "coast_sand_rocks_02",
+      "sourcePage": "https://polyhaven.com/a/coast_sand_rocks_02",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/coast_sand_rocks_02.png?height=2048&quality=95",
+      "sha256": "ff4121bccb1920fb81e1f1ce18a2fdbaf2c4583974d4af5865f0fcc0d57448a5",
+      "dimensions": [
+        1600,
+        800
+      ],
+      "worldWidth": 15.0,
+      "worldHeight": 7.5,
+      "worldUnitsPerMetre": 1.0,
+      "scaleMethod": "Poly Haven real-world texture size, calibrated to Guardian",
+      "byteIdenticalToSource": true,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false
     },
     "dungeon-cut-stone": {
-      "file": "floor-prison-02.png",
-      "asset": "rectangular_paving",
-      "sourcePage": "https://polyhaven.com/a/rectangular_paving",
-      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/rectangular_paving.png?height=2048&quality=95",
-      "sha256": "68b681436bb8bffe8de48b204187690bed52ecc9c1fdab88cf1f148fa644b336",
+      "file": "floor-prison-03.png",
+      "asset": "cobblestone_floor_09",
+      "sourcePage": "https://polyhaven.com/a/cobblestone_floor_09",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/cobblestone_floor_09.png?height=2048&quality=95",
+      "sha256": "adad00702222387ba1025e625c384c31fe4bcd92643026bb6c678fea0f845470",
       "dimensions": [
         1600,
         800
       ],
-      "byteIdenticalToSource": true
+      "worldWidth": 2.2,
+      "worldHeight": 1.1,
+      "worldUnitsPerMetre": 1.0,
+      "scaleMethod": "Poly Haven real-world texture size, calibrated to Guardian",
+      "byteIdenticalToSource": true,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false
     },
     "stone": {
       "file": "wall-masonry-01.png",
-      "asset": "medieval_wall_02",
-      "sourcePage": "https://polyhaven.com/a/medieval_wall_02",
-      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/medieval_wall_02.png?height=2048&quality=95",
-      "sha256": "d917ae53e89674c06be34a84afb7f0fd7e3f34667814f8db3632e828c8568d38",
+      "asset": "rock_wall_17",
+      "sourcePage": "https://polyhaven.com/a/rock_wall_17",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/rock_wall_17.png?height=2048&quality=95",
+      "sha256": "2ad596391929672c35b3bc6dfcb2efb5e38efef0581250a90b428b38491b05e0",
       "dimensions": [
         1600,
         800
       ],
-      "byteIdenticalToSource": true
+      "worldWidth": 1.8,
+      "worldHeight": 0.9,
+      "worldUnitsPerMetre": 1.0,
+      "scaleMethod": "Poly Haven real-world texture size, calibrated to Guardian",
+      "byteIdenticalToSource": true,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false
     },
     "stone-cut": {
       "file": "wall-masonry-02.png",
-      "asset": "stone_block_wall",
-      "sourcePage": "https://polyhaven.com/a/stone_block_wall",
-      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/stone_block_wall.png?height=2048&quality=95",
-      "sha256": "89cb4c1c4a9dd371770840d6ce1e3e8811c473ac139a82ef062dd80f7ac72961",
+      "asset": "rock_wall_16",
+      "sourcePage": "https://polyhaven.com/a/rock_wall_16",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/rock_wall_16.png?height=2048&quality=95",
+      "sha256": "b3ec6d78c8eb6481ec090f140c1c286cf3da2eb9389673052c64cdeb36218ddc",
       "dimensions": [
         1600,
         800
       ],
-      "byteIdenticalToSource": true
+      "worldWidth": 2.0,
+      "worldHeight": 1.0,
+      "worldUnitsPerMetre": 1.0,
+      "scaleMethod": "Poly Haven real-world texture size, calibrated to Guardian",
+      "byteIdenticalToSource": true,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false
+    },
+    "stone-old": {
+      "file": "wall-masonry-03.png",
+      "asset": "old_stone_wall",
+      "sourcePage": "https://polyhaven.com/a/old_stone_wall",
+      "sourceImage": "https://cdn.polyhaven.com/asset_img/primary/old_stone_wall.png?height=2048&quality=95",
+      "sha256": "09ff330cd0924ed05fa631f1dab0ec78ccbf832782dae7d666f8266b4c4812ef",
+      "dimensions": [
+        1600,
+        800
+      ],
+      "worldWidth": 2.0,
+      "worldHeight": 1.0,
+      "worldUnitsPerMetre": 1.0,
+      "scaleMethod": "Poly Haven real-world texture size, calibrated to Guardian",
+      "byteIdenticalToSource": true,
+      "imageRotationDegrees": 0,
+      "imageMirrored": false
     }
   },
   "floorGenerator": "beta/room-editor/blender/build-floor-map.py",
-  "floorGeneratorSha256": "1f7f89497892bfbbd5446c7f4fd222806a68e356b61a6c2c72cf2c5c696d3ee4",
+  "floorGeneratorSha256": "98ff82e953ea428bce13869da6d69f6501ff99b5eb804924e3ebe96a863ae3a5",
   "wallGenerator": "beta/room-editor/blender/build-wall-maps.py",
-  "wallGeneratorSha256": "cd994e8889ff5e6dbff9a78cb45ebf6c050445cfad16f92d238c5b6f6168cf8e",
-  "floorPhotoWorldSpan": [
-    12,
-    6
-  ],
-  "wallPhotoWorldSpan": [
-    4,
-    2
-  ],
+  "wallGeneratorSha256": "493cd57100b8eb6f9f0c7861aa4848c8b27d3d4b75636492f44384f730087341",
   "legacyBlenderWallProjectionFiles": [
     "wall-prison-x.webp",
     "wall-prison-y.webp"
