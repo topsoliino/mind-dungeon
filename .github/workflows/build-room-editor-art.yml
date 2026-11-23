@@ -1,0 +1,72 @@
+name: Build Room Atelier furniture (Blender orthographic)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - beta/room-editor/blender/**
+      - .github/workflows/build-room-editor-art.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mind-dungeon-room-editor-art
+  cancel-in-progress: false
+
+jobs:
+  furniture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Check editable Blender and packing scripts
+        run: |
+          python3 -m py_compile beta/room-editor/blender/build-room-kit.py beta/room-editor/blender/pack-room-kit.py
+      - name: Install Blender and lossless intermediate image support
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender python3-pil
+      - name: Sculpt and render actual unrigged 3D prison table and chair
+        run: |
+          mkdir -p /tmp/md-room-editor-raw
+          blender -b --factory-startup -t 4 --python-exit-code 1 -P beta/room-editor/blender/build-room-kit.py -- --raw /tmp/md-room-editor-raw --samples 40
+      - name: Pack all eight transparent Blender views
+        run: |
+          python3 beta/room-editor/blender/pack-room-kit.py /tmp/md-room-editor-raw
+          test -s beta/room-editor/assets/source/room-kit.blend
+          test -s beta/room-editor/assets/manifest.json
+          test "$(find beta/room-editor/assets/furniture -name '*.webp' | wc -l)" -eq 8
+      - name: Publish ONLY editor artwork; never touch live dungeon files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          source_head=$(git rev-parse HEAD)
+          artdir=$(mktemp -d)
+          trap 'rm -rf "$artdir"' EXIT
+          cp -a beta/room-editor/assets/. "$artdir/"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git diff --quiet "$source_head" origin/main --                beta/room-editor/blender/build-room-kit.py                beta/room-editor/blender/pack-room-kit.py; then
+              echo "A newer editor Blender source exists. Skipping stale output."
+              exit 0
+            fi
+            git reset --hard origin/main
+            mkdir -p beta/room-editor/assets
+            cp -a "$artdir/." beta/room-editor/assets/
+            git add -f beta/room-editor/assets/manifest.json                beta/room-editor/assets/source/room-kit.blend                beta/room-editor/assets/furniture/*.webp
+            if git diff --cached --quiet; then
+              echo "All furniture renders already up-to-date."
+              exit 0
+            fi
+            git commit -m "Blender: publish Room Atelier oak table and chair 4-view sprite assets"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          echo "Failed to publish furniture without a concurrent commit."
+          exit 1
