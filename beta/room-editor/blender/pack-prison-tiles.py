@@ -107,10 +107,10 @@ manifest={
  "license":"CC0: https://polyhaven.com/license",
  "floorMaterial":"derived-large-stochastic-albedo-atlas",
  "wallMaterial":"derived-world-aligned-diffuse-wall-atlas",
- "floorVariants":{k:v[0] for k,v in VARIANTS.items() if k in ATLASES},
+ "floorVariants":{k:v[0] for k,v in VARIANTS.items() if k.startswith("dungeon-")},
  "floorAtlases":{k:v for k,v in ATLASES.items() if k.startswith("dungeon-")},
  "wallAtlases":{k:v for k,v in ATLASES.items() if not k.startswith("dungeon-")},
- "wallVariants":{k:v[0] for k,v in VARIANTS.items() if k not in ATLASES},
+ "wallVariants":{k:v[0] for k,v in VARIANTS.items() if not k.startswith("dungeon-")},
  "assetInfo":asset_info,"atlasInfo":atlas_info,
  "floorGenerator":"beta/room-editor/blender/build-floor-map.py",
  "floorGeneratorSha256":hashlib.sha256(FLOOR_SOURCE.read_bytes()).hexdigest(),
@@ -123,5 +123,10 @@ manifest={
  "legacyBlenderWallProjectionFiles":["wall-prison-x.webp","wall-prison-y.webp"],
  "gameBetaFilesModified":False
 }
+# Regression: exactly three floors and three walls, no cross-category leakage.
+assert set(manifest["floorVariants"]) == {k for k in VARIANTS if k.startswith("dungeon-")}
+assert set(manifest["wallVariants"]) == {k for k in VARIANTS if not k.startswith("dungeon-")}
+assert set(manifest["floorAtlases"]) == set(manifest["floorVariants"])
+assert set(manifest["wallAtlases"]) == set(manifest["wallVariants"])
 (OUT/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n")
 print("VALIDATED: 6 original UV diffuse maps + 3 large floor atlases + 3 world-aligned wall atlases",flush=True)
