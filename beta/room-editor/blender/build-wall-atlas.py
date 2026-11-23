@@ -1,7 +1,7 @@
-"""Build 3 perspective-free UV-aligned wall-strip atlases, 30m wide and 2m tall.
+"""Build 9 perspective-free UV-aligned wall-strip atlases, 30m wide and 2m tall.
 
 Only UV-ready original Diffuse JPGs, never Poly Haven primary preview images.
-Bakes three softly phase-varied repeat-free wall strips, with all source brick
+Bakes nine softly phase-varied repeat-free wall strips, with all source brick
 rows remaining horizontal in wall (u,vertical-height) coordinates. No extra
 grout, tint, fake shadow or tilted 'floor-on-wall' material.
 """
@@ -17,6 +17,12 @@ SPECS=(
  ("wall-albedo-01.jpg","wall-atlas-01.jpg",1.8,49101),
  ("wall-albedo-02.jpg","wall-atlas-02.jpg",2.0,59219),
  ("wall-albedo-03.jpg","wall-atlas-03.jpg",2.0,61397),
+ ("wall-albedo-04.jpg","wall-atlas-04.jpg",1.6,72651),
+ ("wall-albedo-05.jpg","wall-atlas-05.jpg",2.0,83107),
+ ("wall-albedo-06.jpg","wall-atlas-06.jpg",1.8,94133),
+ ("wall-albedo-07.jpg","wall-atlas-07.jpg",1.9,105599),
+ ("wall-albedo-08.jpg","wall-atlas-08.jpg",2.5,113867),
+ ("wall-albedo-09.jpg","wall-atlas-09.jpg",2.0,123733),
 )
 
 def periodic(image,dx,dy):
