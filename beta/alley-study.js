@@ -83,6 +83,79 @@
  }
  const facadeArt=window.AlleyArchitecture.create({project,polygon,line});
  const route=window.AlleyRoute??null;
+ // The two requested Room Atelier photo materials are VISUAL ONLY.
+ // Geometry, floor navigation, enemies and procedural generation remain intact.
+ const dungeonMaterial=generatorMode?(()=>{
+  const base=new URL('./room-editor/assets/tiles/',document.currentScript.src).href;
+  const loaded={floor:null,wall:null},listeners=[];
+  const signal=()=>listeners.forEach(fn=>fn());
+  const load=(key,local,fallback)=>{
+   const image=new Image();
+   image.crossOrigin='anonymous';
+   image.onload=()=>{
+    if(image.naturalWidth>0){
+     loaded[key]={image,worldWidth:key==='floor'?
+       (image.src.includes('floor-atlas')?30:1.3):
+       (image.src.includes('wall-atlas')?30:2)};
+     signal();
+    }
+   };
+   image.onerror=()=>{
+    if(!image.didMaterialFallback){
+     image.didMaterialFallback=true;image.src=fallback;
+    }else console.warn('Isometric material unavailable:',key);
+   };
+   image.src=base+local;
+  };
+  load('floor','floor-atlas-08.jpg',
+   'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/brown_mud_03/brown_mud_03_diff_2k.jpg');
+  load('wall','wall-atlas-02.jpg',
+   'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rock_wall_16/rock_wall_16_diff_2k.jpg');
+  const paintFloor=(ctx,area)=>{
+   const entry=loaded.floor;if(!entry)return false;
+   const [minU,minV,maxU,maxV]=area;
+   const [ox,oy]=project(0,0),[ux,uy]=project(1,0),[vx,vy]=project(0,1);
+   const spanX=entry.worldWidth;
+   const spanY=spanX*entry.image.naturalHeight/entry.image.naturalWidth;
+   ctx.save();ctx.beginPath();trace(ctx,corners(area));ctx.clip();
+   ctx.transform(ux-ox,uy-oy,vx-ox,vy-oy,ox,oy);
+   // All cells share one world origin, so no reset at individual tile edges.
+   const firstX=Math.floor(minU/spanX)*spanX;
+   const firstY=Math.floor(minV/spanY)*spanY;
+   for(let y=firstY;y<maxV;y+=spanY)
+    for(let x=firstX;x<maxU;x+=spanX)
+     ctx.drawImage(entry.image,x,y,spanX,spanY);
+   ctx.restore();
+   return true;
+  };
+  const paintWall=(ctx,wall)=>{
+   const entry=loaded.wall;
+   if(!entry||!wall.axis||!Number.isFinite(wall.p))return false;
+   const {start,end,p,height}=wall;
+   if(!(end>start&&height>0))return false;
+   const side=.075;
+   const span=entry.worldWidth;
+   const along=wall.axis==='u'?[[p+side,start],[p+side,end]]:
+               [[start,p+side],[end,p+side]];
+   const topA=project(...along[0],height),topB=project(...along[1],height);
+   const botA=project(...along[0]),botB=project(...along[1]);
+   ctx.save();
+   ctx.beginPath();trace(ctx,[topA,topB,botB,botA]);ctx.clip();
+   ctx.transform(topB[0]-topA[0],topB[1]-topA[1],
+                 botA[0]-topA[0],botA[1]-topA[1],topA[0],topA[1]);
+   const image=entry.image,iw=image.naturalWidth,ih=image.naturalHeight;
+   const worldA=((start%span)+span)%span;
+   const sx=worldA/span*iw,sw=(end-start)/span*iw;
+   const take=Math.min(sw,iw-sx),fraction=take/sw;
+   ctx.drawImage(image,sx,0,take,ih,0,0,fraction,1);
+   if(fraction<.99999)
+    ctx.drawImage(image,0,0,sw-take,ih,fraction,0,1-fraction,1);
+   ctx.restore();
+   return true;
+  };
+  return {paintFloor,paintWall,onReady:fn=>listeners.push(fn)};
+ })():null;
+
  const vertical=generatorMode?window.AlleyVertical:null;
  const stone={
   basalt:{pitch:[.47,.29],colors:['#4e5363','#565c6e','#5d6272','#494e5f','#626674','#535565'],edge:'#7e849388'},
@@ -93,6 +166,7 @@
  };
  function paving(ctx,{area,material},random) {
   const [minU,minV,maxU,maxV]=area;
+  if(generatorMode&&/^grey-/.test(material)&&dungeonMaterial?.paintFloor(ctx,area))return;
   const {pitch:[du,dv],colors,edge}=stone[material];
   ctx.save();
   ctx.beginPath();trace(ctx,corners(area));ctx.clip();
@@ -263,7 +337,11 @@
      [wall.p-th,begin,wall.p+th,end]:[begin,wall.p-th,end,wall.p+th]};
    });
   });
-  const roomWalls=renderWalls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>route.renderWall(ctx,wall,routePainter))}));
+  const drawPanel=(ctx,wall)=>{
+   route.renderWall(ctx,wall,routePainter);
+   if(generatorMode)dungeonMaterial?.paintWall(ctx,wall);
+  };
+  const roomWalls=renderWalls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>drawPanel(ctx,wall))}));
   const labSeal=route?.seal?cacheObject(route.seal,88,ctx=>route.renderSeal(ctx,routePainter)):null;
   const verticalImages=vertical?.enabled?vertical.createLayers({...routePainter,cacheObject}):[];
   const artListeners=[],chunkCache=[];
@@ -462,9 +540,9 @@
   const combinedGround=generatorMode&&window.RockyCoastPrison?.enabled&&!sceneControls;
   const bakedGround=combinedGround?[chunks(ctx=>{
    drawUnderlay(ctx,true);drawFloor(ctx,true);
-  },-4)]:generatorMode?[
+  },-4,true)]:generatorMode?[
    chunks(drawUnderlay,-4,true),
-   chunks(drawFloor,-3),
+   chunks(drawFloor,-3,true),
    chunks(ctx=>drawDetails(ctx,groundDetails),-2),
    chunks(ctx=>drawGroundLight(ctx,0),-1)
   ]:[
@@ -480,6 +558,18 @@
     drawDetails(ctx,groundDetails);drawGroundLight(ctx,0);
    }):null;
   if(street)bakedGround.push([{...street,depth:-3,street:true}]);
+  if(dungeonMaterial){
+   dungeonMaterial.onReady(()=>{
+    // Re-bake the existing canvases; Phaser textures refresh via onArtReady.
+    for(const panel of roomWalls)redrawImage(panel.image,ctx=>drawPanel(ctx,panel.wall));
+    for(const {canvas,draw,x,y} of chunkCache){
+     const ctx=canvas.getContext('2d');
+     ctx.resetTransform();ctx.clearRect(0,0,canvas.width,canvas.height);
+     ctx.translate(-x,-y);draw(ctx);
+    }
+    for(const listener of artListeners)listener();
+   });
+  }
   const bakedOverlays=combinedGround?[]:generatorMode?
    chunks(ctx=>drawOverlays(ctx,0),height+1):
    [{canvas:bitmap(ctx=>drawOverlays(ctx,0)),x:0,y:0,depth:height+1}];
