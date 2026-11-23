@@ -39,7 +39,7 @@ function recordingContext(){
 async function main(){
  // The loader awaits fetch+json and all six image onloads.
  for(let i=0;i<15;i++)await Promise.resolve();
- assert.equal(manifest.schema,'mind-dungeon-room-tiles/v7');
+ assert.equal(manifest.schema,'mind-dungeon-room-tiles/v8');
  assert.equal(manifest.textureMode,'uv-ready-polyhaven-diffuse');
  const floorStyles=Object.keys(ctxWindow.MindRoomKit.catalog.floors).sort();
  const wallStyles=Object.entries(ctxWindow.MindRoomKit.catalog.walls)
@@ -104,6 +104,47 @@ async function main(){
      'wall height must be SCREEN VERTICAL, not aligned to the floor plane');
   }
  }
+ await verifyPendingAtlasFallback();
  console.log('Room Atelier UV mapping OK: 8 floors and 9 vertical walls, no runtime repeating tiles');
 }
+
+// If the atlas build is still publishing, missing new v8 atlas files must
+// automatically use the real original Diffuse (without blanking the room).
+async function verifyPendingAtlasFallback(){
+ const env={};
+ const oldSchema={...manifest,
+  schema:'mind-dungeon-room-tiles/v6',
+  floorVariants:Object.fromEntries(Object.entries(manifest.floorVariants).slice(0,3)),
+  floorAtlases:Object.fromEntries(Object.entries(manifest.floorAtlases).slice(0,3)),
+  wallVariants:Object.fromEntries(Object.entries(manifest.wallVariants).slice(0,3)),
+  wallAtlases:Object.fromEntries(Object.entries(manifest.wallAtlases).slice(0,3)),
+  assetInfo:Object.fromEntries(Object.entries(manifest.assetInfo).filter(([style])=>
+   ['dungeon-ashlar','dungeon-coast-rocks','dungeon-cut-stone','stone','stone-cut','stone-old'].includes(style))),
+  atlasInfo:Object.fromEntries(Object.entries(manifest.atlasInfo).filter(([style])=>
+   ['dungeon-ashlar','dungeon-coast-rocks','dungeon-cut-stone','stone','stone-cut','stone-old'].includes(style)))
+ };
+ const sandbox={window:env,console,
+  Image:class Preview{
+   constructor(){this.naturalWidth=2048;this.naturalHeight=2048}
+   set src(url){
+    if(/(?:floor|wall)-atlas-0[4-9]\.jpg/.test(url))this.onerror?.();
+    else this.onload?.();
+   }
+  },
+  fetch:async url=>url.includes('manifest.json')?{ok:true,json:async()=>oldSchema}:{ok:false}
+ };
+ vm.runInNewContext(fs.readFileSync(path.join(root,'catalog.js'),'utf8'),sandbox);
+ vm.runInNewContext(fs.readFileSync(path.join(root,'editor-art.js'),'utf8'),sandbox);
+ for(let i=0;i<25;i++)await Promise.resolve();
+ const status=env.MindRoomArt.status();
+ assert.match(status.tiles,/^8\/8/);
+ assert.match(status.wallPhotos,/^9\/9/);
+ assert.equal(status.fallbackTextures.length,11);
+ assert.equal(status.failedTextures.length,0);
+ const c=recordingContext();
+ env.MindRoomArt.drawRoomFloor(c,{floorStyle:'dungeon-wet-mud',width:7,height:5},
+    (x,y)=>({x:(x-y)*42,y:(x+y)*24.25}));
+ assert.ok(c.calls.length>1,'source fallback must render in native world scale');
+}
+
 main().catch(error=>{console.error(error);process.exitCode=1});
