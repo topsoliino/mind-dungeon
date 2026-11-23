@@ -132,9 +132,9 @@ function drawWall(w){
  const type=cat.walls[w.style];if(!type||!type.height)return;
  const [a,b]=wallEnds(w),h=type.height,base0=pt(...a),base1=pt(...b),
   top0=pt(a[0],a[1],h),top1=pt(b[0],b[1],h),facing=(w.edge==='north'||w.edge==='south');
- if(w.style==='stone'||w.style==='stone-cut'){
+ if(type.render==='photo-wall-map'){
   const along=facing?w.x:w.y;
-  if(window.MindRoomArt?.drawWallFace(ctx,w.style,top0,top1,base0,base1,along))return;
+  if(window.MindRoomArt?.drawWallFace(ctx,w.style,top0,top1,base0,base1,along,h))return;
   // Do not replace the photographic wall with fake Blender bricks,
   // arbitrary grout lines, or extra edge highlights if assets are pending.
   polygon([top0,top1,base1,base0], '#444440', '#282729',.85);
@@ -573,7 +573,8 @@ function refreshUI(){
  $('sceneLabel').textContent=room.name.toUpperCase()+' · '+room.width+' × '+room.height;
  $('gridBtn').classList.toggle('active',showGrid);
  $('undoBtn').disabled=historyPos<=0;$('redoBtn').disabled=historyPos>=history.length-1;
- document.querySelectorAll('.swatch').forEach(el=>el.classList.toggle('active',el.dataset.floor===room.floorStyle));
+ document.querySelectorAll('[data-floor]').forEach(el=>el.classList.toggle('active',el.dataset.floor===room.floorStyle));
+ document.querySelectorAll('[data-wall]').forEach(el=>el.classList.toggle('active',el.dataset.wall===room.wallStyle));
  const list=$('objectList');list.replaceChildren();
  for(const obj of room.furniture){
   const b=document.createElement('button');
@@ -598,6 +599,19 @@ for(const [type,entry] of Object.entries(cat.floors)){
 }
 for(const [type,entry] of Object.entries(cat.walls)){
  const option=document.createElement('option');option.value=type;option.textContent=entry.label;$('wallType').appendChild(option);
+ if(entry.render==='photo-wall-map'){
+  const button=document.createElement('button');
+  button.className='swatch';
+  button.style.background='#4e4b47';
+  button.style.backgroundImage='url("'+entry.asset+'")';
+  button.style.backgroundSize='cover';
+  button.style.backgroundPosition='center';
+  button.dataset.wall=type;
+  button.setAttribute('aria-label','Steinmauer auswählen: '+entry.label);
+  button.title=entry.label+' · '+entry.worldWidth+' m Texturbreite';
+  button.onclick=()=>{$('wallType').value=type;room.wallStyle=type;checkpoint()};
+  $('wallSwatches').appendChild(button);
+ }
 }
 for(const [type,entry] of Object.entries(cat.furniture)){
  const b=document.createElement('button');b.className='catalog-item';
