@@ -615,7 +615,8 @@ for(const [type,entry] of Object.entries(cat.floors)){
  const option=document.createElement('option');option.value=type;option.textContent=entry.label;$('floorType').appendChild(option);
  const b=document.createElement('button');b.className='swatch';
  b.style.background='linear-gradient(150deg,'+entry.accent+','+entry.base+','+entry.grout+')';
- b.style.backgroundImage='linear-gradient(135deg,transparent,#00000040),url("'+entry.asset+'")';
+ // Thumbnail is the exact source image, with no darkening overlay.
+ b.style.backgroundImage='url("'+entry.asset+'")';
  b.style.backgroundSize='cover';
  b.setAttribute('aria-label','Boden wählen: '+entry.label);
  b.dataset.floor=type;b.title=entry.label;b.onclick=()=>{
