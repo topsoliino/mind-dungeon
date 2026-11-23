@@ -488,11 +488,17 @@ c.addEventListener('pointerdown',e=>{
    checkpoint();}
  }else if(tool==='erase'){
   if(hit){room.furniture=room.furniture.filter(f=>f.id!==hit.id);selected=null;checkpoint();}
-  else{const wall=nearestWall(uv.x,uv.y);if(wall){
-   room.walls=room.walls.filter(w=>keyWall(w)!==wall.id);checkpoint();}
-   else{const cell=cursorTile(uv.x,uv.y);if(cell){
-    room.tiles=room.tiles.filter(t=>t.x!==cell.x||t.y!==cell.y);checkpoint();}
-   }}
+  else{
+   const wall=nearestWall(uv.x,uv.y);
+   const nearEdge=Math.min(Math.abs(uv.x-Math.round(uv.x)),
+    Math.abs(uv.y-Math.round(uv.y)))<.23;
+   if(wall&&nearEdge&&room.walls.some(w=>keyWall(w)===wall.id)){
+    room.walls=room.walls.filter(w=>keyWall(w)!==wall.id);checkpoint();
+   }else{
+    const cell=cursorTile(uv.x,uv.y);
+    if(cell){room.tiles=room.tiles.filter(t=>t.x!==cell.x||t.y!==cell.y);checkpoint()}
+   }
+  }
  }
  schedule();
 });
