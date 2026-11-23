@@ -674,8 +674,15 @@ $('importFile').onchange=async e=>{
  }catch(error){alert('Raum konnte nicht importiert werden: '+error.message)}
  e.target.value='';
 };
-$('presetBtn').onclick=()=>{if(!confirm('Musterzelle laden und aktuellen Entwurf ersetzen?'))return;
- room=sanitize(kit.preset);resetHistory();fit();};
+$('presetBtn').onclick=async()=>{
+ if(!confirm('Musterzelle laden und aktuellen Entwurf ersetzen?'))return;
+ let preset=kit.preset;
+ try{
+  const response=await fetch('./presets/prison-cell-01.json',{cache:'no-cache'});
+  if(response.ok)preset=await response.json();
+ }catch(error){console.warn('Editor verwendet eingebautes Zell-Preset:',error)}
+ room=sanitize(preset);resetHistory();fit();
+};
 $('newBtn').onclick=()=>{if(!confirm('Neuen leeren Raum anlegen?'))return;
  room=sanitize({id:'new-prison-room',name:'Neuer Gefängnisraum',width:7,height:5,
   floorStyle:room.floorStyle,wallStyle:'stone',walls:[],furniture:[]});resetHistory();fit();};
