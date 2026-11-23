@@ -1,11 +1,37 @@
 {
   "schema": "mind-dungeon-room-tiles/v2",
-  "source": "Blender wall meshes and one photographic CC0 dungeon-floor bake",
+  "source": "Blender wall meshes; two photo floors and two photo medieval-wall maps (Poly Haven CC0)",
   "floorMaterial": "photoreal-scanned-cc0",
+  "floorVariants": {
+    "dungeon-ashlar": "floor-prison-01.webp",
+    "dungeon-cut-stone": "floor-prison-02.jpg"
+  },
+  "wallMaterial": "photoreal-scanned-cc0",
+  "wallVariants": {
+    "stone": "wall-masonry-01.jpg",
+    "stone-cut": "wall-masonry-02.jpg"
+  },
+  "wallPhotoWorldDimensions": [
+    32,
+    2
+  ],
+  "wallPhotoPixelDimensions": [
+    4096,
+    1024
+  ],
+  "wallGenerator": "beta/room-editor/blender/build-wall-maps.py",
+  "wallGeneratorSha256": "cf54b07b71a9aeedc75643a0d14465f2559e58c05329fe3a68d83d09ba5bedab",
+  "wallSources": [
+    "medieval_wall_02",
+    "stone_block_wall"
+  ],
   "floorSources": [
     "monastery_stone_floor",
     "stone_floor",
-    "rock_embedded_floor"
+    "rock_embedded_floor",
+    "rectangular_paving",
+    "stone_tiles",
+    "cobblestone_floor_02"
   ],
   "floorLicense": "CC0; source photos by Poly Haven",
   "generator": "beta/room-editor/blender/build-prison-tiles.py",
@@ -24,7 +50,7 @@
     32
   ],
   "floorGenerator": "beta/room-editor/blender/build-floor-map.py",
-  "floorGeneratorSha256": "dd2853068d42344a29185e98b6109e7779bf3a59ce153d82de90a3931d0ff68c",
+  "floorGeneratorSha256": "e23649326f42596185d622488d4dcd6deea24b6c2b2f5d46b6c19bb765ef7d92",
   "projection": {
     "cameraAzimuth": 45,
     "elevationDegrees": 35.264,
@@ -39,6 +65,9 @@
   },
   "art": {
     "floor": "floor-prison-01.webp",
+    "floorCut": "floor-prison-02.jpg",
+    "wallRough": "wall-masonry-01.jpg",
+    "wallCut": "wall-masonry-02.jpg",
     "floorUv": "world-orthographic-32x32-center-crop",
     "wallStyle": "quarried-prison-stone",
     "wallX": "wall-prison-x.webp",
