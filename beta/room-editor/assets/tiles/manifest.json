@@ -35,8 +35,8 @@
         2048,
         2048
       ],
-      "worldWidth": 2,
-      "worldHeight": 2,
+      "worldWidth": 2.0,
+      "worldHeight": 2.0,
       "imageRotationDegrees": 0,
       "imageMirrored": false,
       "textureRole": "Diffuse/albedo, flat UV ready",
@@ -51,8 +51,8 @@
         2048,
         2048
       ],
-      "worldWidth": 15,
-      "worldHeight": 15,
+      "worldWidth": 15.0,
+      "worldHeight": 15.0,
       "imageRotationDegrees": 0,
       "imageMirrored": false,
       "textureRole": "Diffuse/albedo, flat UV ready",
@@ -99,8 +99,8 @@
         2048,
         2048
       ],
-      "worldWidth": 2,
-      "worldHeight": 2,
+      "worldWidth": 2.0,
+      "worldHeight": 2.0,
       "imageRotationDegrees": 0,
       "imageMirrored": false,
       "textureRole": "Diffuse/albedo, flat UV ready",
@@ -115,8 +115,8 @@
         2048,
         2048
       ],
-      "worldWidth": 2,
-      "worldHeight": 2,
+      "worldWidth": 2.0,
+      "worldHeight": 2.0,
       "imageRotationDegrees": 0,
       "imageMirrored": false,
       "textureRole": "Diffuse/albedo, flat UV ready",
@@ -131,8 +131,8 @@
         4096,
         4096
       ],
-      "worldWidth": 30,
-      "worldHeight": 30,
+      "worldWidth": 30.0,
+      "worldHeight": 30.0,
       "sourceStyle": "dungeon-ashlar",
       "sourceSha256": "da78fb6dd90414ada98f6e1627aca6bc1acb480c8bce7aabfbde8e3beb666a71",
       "method": "soft-phase-stochastic-UV-blending-no-color-grading"
@@ -144,8 +144,8 @@
         4096,
         4096
       ],
-      "worldWidth": 30,
-      "worldHeight": 30,
+      "worldWidth": 30.0,
+      "worldHeight": 30.0,
       "sourceStyle": "dungeon-coast-rocks",
       "sourceSha256": "98a8850f24cba18e4c99e46c56f5675f910809ee7f75df3e8587ec9e27088ed6",
       "method": "soft-phase-stochastic-UV-blending-no-color-grading"
@@ -157,8 +157,8 @@
         4096,
         4096
       ],
-      "worldWidth": 30,
-      "worldHeight": 30,
+      "worldWidth": 30.0,
+      "worldHeight": 30.0,
       "sourceStyle": "dungeon-cut-stone",
       "sourceSha256": "368366454a716139bc30fb0e31b0610ff7c278b50ad5f71059efc5359c2eede2",
       "method": "soft-phase-stochastic-UV-blending-no-color-grading"
@@ -170,8 +170,8 @@
         4096,
         768
       ],
-      "worldWidth": 30,
-      "worldHeight": 2,
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
       "sourceStyle": "stone",
       "sourceSha256": "b1f0234cb8d6f60807d237557e30c4c46952d33fece4630400724808d8d2f6c5",
       "method": "soft-phase-stochastic-UV-blending-no-color-grading"
@@ -183,8 +183,8 @@
         4096,
         768
       ],
-      "worldWidth": 30,
-      "worldHeight": 2,
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
       "sourceStyle": "stone-cut",
       "sourceSha256": "2f97acca865d0940cff5c2e6e64d7a71d6bab15c28d25a0863e6f622b094e0ad",
       "method": "soft-phase-stochastic-UV-blending-no-color-grading"
@@ -196,8 +196,8 @@
         4096,
         768
       ],
-      "worldWidth": 30,
-      "worldHeight": 2,
+      "worldWidth": 30.0,
+      "worldHeight": 2.0,
       "sourceStyle": "stone-old",
       "sourceSha256": "97b705f9f5acb69890e734cd60d52294d926623dff681572acb37cc52b385801",
       "method": "soft-phase-stochastic-UV-blending-no-color-grading"
