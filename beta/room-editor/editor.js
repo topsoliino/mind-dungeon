@@ -9,7 +9,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const rand=(x,y,s=0)=>{let n=Math.imul(x+1009,374761393)+Math.imul(y+41,668265263)+Math.imul(s+1,2246822519);n=Math.imul(n^n>>>13,1274126177);return ((n^n>>>16)>>>0)/4294967295};
 const quant=x=>Math.round(x*4)/4;
 let room=clone(kit.preset),selected=null,tool='select',chosenFurniture='prison-table';
-let showGuardian=true,showGrid=true,playing=false,dragging=null,hover=null,dirty=true,frame=0;
+let showGuardian=true,showGrid=false,playing=false,dragging=null,hover=null,dirty=true,frame=0;
 let width=0,height=0,zoom=1,ox=0,oy=0;
 let hero={x:3.5,y:2.6,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
 let playHP=new Map();
@@ -118,34 +118,6 @@ function resize(){
  dirty=true;
 }
 new ResizeObserver(resize).observe($('canvasWrap'));
-function tileStyle(x,y){return room.tiles.find(t=>t.x===x&&t.y===y)?.style||room.floorStyle}
-function drawTile(x,y){
- const info=cat.floors[tileStyle(x,y)],corners=[pt(x,y),pt(x+1,y),pt(x+1,y+1),pt(x,y+1)];
- const r=rand(x,y),r2=rand(x,y,15);
- polygon(corners,info.base,info.grout,.8);
- const variation=r>.6?'#ffffff10':'#00000012';
- polygon([pt(x+.06,y+.06),pt(x+.94,y+.06),pt(x+.94,y+.94),pt(x+.06,y+.94)],variation);
- // Pattern strokes live INSIDE the same isometric tile footprint.
- if(info.pattern==='ashlar'||info.pattern==='brick'){
-  const div=info.pattern==='brick'?3:2;
-  for(let i=1;i<div;i++){
-   const h=i/div;
-   line([pt(x+.09,y+h),pt(x+.91,y+h)],info.grout,1.35);
-  }
-  line([pt(x+.45+r*.12,y+.12),pt(x+.45+r*.12,y+.46)],info.grout,.95);
-  line([pt(x+.58-r*.14,y+.53),pt(x+.58-r*.14,y+.91)],info.grout,.95);
- }else if(info.pattern==='slate'){
-  line([pt(x+.13,y+.23),pt(x+.38,y+.13),pt(x+.68,y+.29)],info.grout,1);
-  line([pt(x+.35,y+.66),pt(x+.58,y+.77),pt(x+.85,y+.71)],info.accent,.5);
- }else{
-  for(let i=0;i<4;i++){
-   const a=.18+i*.18,b=.26+(i%2)*.27;
-   line([pt(x+a-.09,y+b),pt(x+a+.09,y+b+.035)],info.grout,.9);
-  }
- }
- if(r>.48)line([pt(x+.2,y+.18),pt(x+.28,y+.22),pt(x+.26+r2*.4,y+.36)],info.accent,.45);
- if(showGrid)polygon(corners,null,'#c1bdbe19',.6);
-}
 function wallEnds(w){
  if(w.edge==='north'||w.edge==='south')return [[w.x,w.y],[w.x+1,w.y]];
  return [[w.x,w.y],[w.x,w.y+1]];
@@ -324,7 +296,8 @@ function draw(){
  // a 5x5 room crops it, a 30x30 room uncovers almost all of it.
  const floorReady=window.MindRoomArt?.drawRoomFloor(ctx,room,pt);
  if(!floorReady){
-  for(let x=0;x<room.width;x++)for(let y=0;y<room.height;y++)drawTile(x,y);
+  // Neutral-only fallback. Never resurrect the old artificial painted tiles.
+  polygon([pt(0,0),pt(room.width,0),pt(room.width,room.height),pt(0,room.height)],'#484744');
  }
  // Original photographs stay clean: NO fake grime, dirt, stains or per-cell overlays.
  // Grid is an optional EDITOR overlay, not part of the authored floor artwork.
