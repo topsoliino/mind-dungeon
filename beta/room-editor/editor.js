@@ -253,16 +253,16 @@ function shadeFurniture(type,obj,paint,outline,highlight){
 }
 function drawFurniture(obj){
  if(playing&&playHP.has(obj.id)&&playHP.get(obj.id)<=0)return;
- const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=168*zoom;
+ const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=184*zoom;
  ctx.save();
  ctx.globalAlpha=.4;ctx.fillStyle='#000';
  ctx.beginPath();ctx.ellipse(p.x,p.y+5*zoom,spec.footprint.w*P.stepX*zoom*.75,
   spec.footprint.h*P.stepY*zoom*.8,0,0,TAU);ctx.fill();ctx.restore();
  const sprite=assets.get(spriteName(obj.type,obj.rot));
  if(sprite?.ready){
-  // Blender ortho convention is camera-ground at 75% of a square cut.
+  // Blender ortho target .72m projects the ground pivot to 68.3% of the cut.
   ctx.save();ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(sprite.img,p.x-size*.5,p.y-size*.76,size,size);ctx.restore();
+  ctx.drawImage(sprite.img,p.x-size*.5,p.y-size*.683,size,size);ctx.restore();
  }else shadeFurniture(obj.type,obj,'#876c58','#302a2d','#ae866d');
  if(selected===obj.id){
   polygon(footprint(obj).map(({x,y})=>pt(x,y)), '#ffc97618',
