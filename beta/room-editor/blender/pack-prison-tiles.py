@@ -19,6 +19,7 @@ SOURCE=Path(__file__).resolve().parent/"build-prison-tiles.py"
 FLOOR_SOURCE=SOURCE.parent/"build-floor-map.py"
 WALL_SOURCE=SOURCE.parent/"build-wall-maps.py"
 ATLAS_SOURCE=SOURCE.parent/"build-floor-atlas.py"
+WALL_ATLAS_SOURCE=SOURCE.parent/"build-wall-atlas.py"
 OUT=SOURCE.parent.parent/"assets"/"tiles"
 RAW=Path(sys.argv[1] if len(sys.argv)>1 else "/tmp/md-room-editor-raw")
 OUT.mkdir(parents=True,exist_ok=True)
@@ -38,6 +39,7 @@ for name in ("floor-prison-01","wall-prison-x","wall-prison-y"):
 subprocess.run([sys.executable,str(FLOOR_SOURCE)],check=True)
 subprocess.run([sys.executable,str(WALL_SOURCE)],check=True)
 subprocess.run([sys.executable,str(ATLAS_SOURCE)],check=True)
+subprocess.run([sys.executable,str(WALL_ATLAS_SOURCE)],check=True)
 
 # Actual diffuse maps have source-specific aspect ratios and true UV mapping.
 # The editor calibrates each to approximate source metre coverage; do not
@@ -53,7 +55,10 @@ VARIANTS={
 ATLASES={
  "dungeon-ashlar":"floor-atlas-01.jpg",
  "dungeon-coast-rocks":"floor-atlas-02.jpg",
- "dungeon-cut-stone":"floor-atlas-03.jpg"
+ "dungeon-cut-stone":"floor-atlas-03.jpg",
+ "stone":"wall-atlas-01.jpg",
+ "stone-cut":"wall-atlas-02.jpg",
+ "stone-old":"wall-atlas-03.jpg"
 }
 asset_info={}
 for style,(filename,asset_id,width_world) in VARIANTS.items():
@@ -81,28 +86,30 @@ for style,filename in ATLASES.items():
     path=OUT/filename
     data=path.read_bytes()
     with Image.open(path) as im:
-        if im.size!=(4096,4096):
-            raise SystemExit("Incorrect 30-metre atlas "+filename)
+        expected=(4096,4096) if style.startswith("dungeon-") else (4096,768)
+        if im.size!=expected:
+            raise SystemExit("Incorrect atlas dimensions "+filename+" "+str(im.size))
     atlas_info[style]={
      "file":filename,
      "sha256":hashlib.sha256(data).hexdigest(),
-     "dimensions":[4096,4096],
+     "dimensions":[4096,4096] if style.startswith("dungeon-") else [4096,768],
      "worldWidth":30.0,
-     "worldHeight":30.0,
+     "worldHeight":30.0 if style.startswith("dungeon-") else 2.0,
      "sourceStyle":style,
      "sourceSha256":asset_info[style]["sha256"],
      "method":"soft-phase-stochastic-UV-blending-no-color-grading"
     }
 
 manifest={
- "schema":"mind-dungeon-room-tiles/v5",
+ "schema":"mind-dungeon-room-tiles/v6",
  "source":"Six UV-ready Poly Haven original Diffuse maps (not perspective presentation previews)",
  "textureMode":"uv-ready-polyhaven-diffuse",
  "license":"CC0: https://polyhaven.com/license",
  "floorMaterial":"derived-large-stochastic-albedo-atlas",
- "wallMaterial":"unmodified-flat-diffuse",
+ "wallMaterial":"derived-world-aligned-diffuse-wall-atlas",
  "floorVariants":{k:v[0] for k,v in VARIANTS.items() if k in ATLASES},
- "floorAtlases":{k:v for k,v in ATLASES.items()},
+ "floorAtlases":{k:v for k,v in ATLASES.items() if k.startswith("dungeon-")},
+ "wallAtlases":{k:v for k,v in ATLASES.items() if not k.startswith("dungeon-")},
  "wallVariants":{k:v[0] for k,v in VARIANTS.items() if k not in ATLASES},
  "assetInfo":asset_info,"atlasInfo":atlas_info,
  "floorGenerator":"beta/room-editor/blender/build-floor-map.py",
@@ -111,8 +118,10 @@ manifest={
  "wallGeneratorSha256":hashlib.sha256(WALL_SOURCE.read_bytes()).hexdigest(),
  "atlasGenerator":"beta/room-editor/blender/build-floor-atlas.py",
  "atlasGeneratorSha256":hashlib.sha256(ATLAS_SOURCE.read_bytes()).hexdigest(),
+ "wallAtlasGenerator":"beta/room-editor/blender/build-wall-atlas.py",
+ "wallAtlasGeneratorSha256":hashlib.sha256(WALL_ATLAS_SOURCE.read_bytes()).hexdigest(),
  "legacyBlenderWallProjectionFiles":["wall-prison-x.webp","wall-prison-y.webp"],
  "gameBetaFilesModified":False
 }
 (OUT/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n")
-print("VALIDATED: six raw UV diffuse maps + 3 non-grid-repeating floor atlases",flush=True)
+print("VALIDATED: 6 original UV diffuse maps + 3 large floor atlases + 3 world-aligned wall atlases",flush=True)
