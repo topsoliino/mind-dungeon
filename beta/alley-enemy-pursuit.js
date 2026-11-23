@@ -84,7 +84,7 @@ window.AlleyEnemyPursuit=(()=>{
    e.x=pose.x;e.y=pose.y;e.alleyZ=pose.z+(Math.min(ride.from,ride.to)-base())*height;
    e.facing=pose.angle;e.angle=pose.angle;
    e.moving=true;
-   e.phase+=dt;
+   e.ratMoveAngle=pose.angle;
    if(ride.age>=ride.duration){
     e.alleyFloor=ride.to;e.alleyZ=prison?0:e.alleyFloor*height;
     e.alleyClimb=null;resetNavigation(e);
@@ -116,7 +116,7 @@ window.AlleyEnemyPursuit=(()=>{
     time:e.alleyLastSeen.time};
    e.alleyMode='investigate';resetNavigation(e);
   }
-  function update(e,hero,dt,now,mover){
+  function update(e,hero,dt,now,mover,groundSpeed=e.skeleton?92:119){
    if(!e||e.hp<=0)return false;
    if(!e.alleyHome){
     e.alleyFloor??=0;e.alleyZ=prison?0:e.alleyFloor*height;
@@ -161,15 +161,15 @@ window.AlleyEnemyPursuit=(()=>{
      if(returning){e.alleyMode='guard';e.alleyLastSeen=null;}
      return true;
     }
-    if(d(e,portal.entry)<17){
+    if(d(e,portal.entry)<=1){
      const up=target.floor>ownFloor(e);
      e.alleyClimb={connector:portal.connector,up,from:ownFloor(e),to:ownFloor(e)+(up?1:-1),age:0,
-      duration:portal.connector.kind==='ladder'?3.25:
-       Math.max(2.5,portal.connector.duration*1.15)};
+      duration:portal.connector.kind==='ladder'?portal.connector.duration:
+       portal.connector.length/Math.max(1,groundSpeed*(up?.68:.83))};
      e.alleyRouteKey=null;
      return true;
     }
-    walk(e,portal.entry,dt,now,mover,e.skeleton?92:119);
+    walk(e,portal.entry,dt,now,mover,groundSpeed);
     return true;
    }
    if(d(e,target)<24){
@@ -191,3 +191,4 @@ window.AlleyEnemyPursuit=(()=>{
  }
  return {create};
 })();
+

@@ -72,7 +72,7 @@ function aimEnemy(e,angle){e.angle=angle;e.facing=angle;}
 function updateEnemy(e,dt){
  // Floor-aware sight/memory handles guards before legacy 2D encounter logic.
  // It also cancels attacks while climbing or separated by an OG slab.
- if(api.alleyEnemyPursuit?.update(e,player,dt,combatClock,moveEnemy))return;
+ if(api.alleyEnemyPursuit?.update(e,player,dt,combatClock,moveEnemy,enemyRules.attacks[e.type]?.speed))return;
  const labRat=e.bossRole==='rat'&&regionAt(player.x,player.y)===floor.bossArena?.id;
  if(!e.veilPhase&&!labRat&&!enemyEncounterReady(e)){
   e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.emerge=Math.max(0,(e.emerge||0)-dt);
@@ -856,3 +856,4 @@ return {act,moveFrom,dodgeDog,stormTimer(value){if(Number.isFinite(value))stormD
 }
 root.DungeonEnemySim={create,lionRake};
 })(typeof window==='undefined'?globalThis:window);
+

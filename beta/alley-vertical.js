@@ -204,6 +204,7 @@ const stairSurfaces=plan.steps.concat(plan.landings);
 const points=stairSurfaces.flatMap(part=>part.corners).concat(plan.posts.flatMap(({p,radius})=>[{x:p.x-radius,y:p.y-radius},{x:p.x+radius,y:p.y+radius}]));
 const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
 const bounds=[Math.min(...xs)-.1,Math.min(...ys)-.1,Math.max(...xs)+.1,Math.max(...ys)+.1];
+stairsConnector.length=totalLength*48;
 const navigation=window.AlleyStairNavigation.make(plan);
 function overStair(u,v,r=0){
  const p={x:u,y:v};
@@ -257,7 +258,7 @@ function walkStairs(progress){
  return {...stairPath.at(-1),face:stairsConnector.face};
 }
 function pose(connector,up,t){
- const p=clamp(t),phase=smooth(clamp((p-.09)/.82));
+ const p=clamp(t),phase=p;
  let current,travel=phase;
  if(connector.kind==='stairs'){
   current=walkStairs(up?phase:1-phase);
@@ -467,20 +468,10 @@ function createLayers({project,polygon,line,cacheObject}){
   });
   return {kind:'descending-access',level:0,downId:link.id,image,depth:0};
  }):[];
- const upperLanding=cacheObject(stairs.area,HEIGHT+40,ctx=>{
-  const top=plan.top,delta=.38;
-  const caps=plan.landings.filter(l=>l.top);
-  const plates=caps.length?caps.map(l=>l.corners):[[
-   {x:top.x-delta,y:top.y-delta},{x:top.x+delta,y:top.y-delta},
-   {x:top.x+delta,y:top.y+delta},{x:top.x-delta,y:top.y+delta}
-  ]];
-  for(const corners of plates)drawPrism(ctx,corners,HEIGHT,HEIGHT-13,false);
- });
  return [
   ...descending,...slabs,
   ...stairObjects,...doorFrames,
-  ...ladderLayers,
-  {kind:'upper-landing',image:upperLanding,depth:5200,level:1}
+  ...ladderLayers
  ];
 }
 // Clicks target a 3D point on the stair centreline. Explicit foot/head
@@ -539,3 +530,4 @@ const shared={
 };
 window.AlleyVertical=new Proxy(shared,{get:(self,key)=>key in self?self[key]:current()[key]});
 })();
+

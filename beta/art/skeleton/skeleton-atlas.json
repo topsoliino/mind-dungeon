@@ -29,7 +29,8 @@
       "cartwheel-exit-left": 10,
       "throw": 10,
       "throw-run": 10,
-      "death": 10
+      "death": 10,
+      "climb": 12
     },
     "bow": {
       "idle": 8,
@@ -41,7 +42,8 @@
       "double-shoot-run": 10,
       "throw": 10,
       "throw-run": 10,
-      "death": 10
+      "death": 10,
+      "climb": 12
     }
   }
 }

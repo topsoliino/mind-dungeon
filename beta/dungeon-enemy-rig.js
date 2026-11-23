@@ -341,7 +341,29 @@ export async function bakeSkeletonAtlas(kind,clip,{cell=112,views=32,frames=8}={
   atlasBakers.set(kind,baker);
  }
  const {settings,stage,mixer,action,renderer}=baker;
- const spec=settings.clips[clip];
+ // Both kits use the same unarmed skeleton on the rungs. Retarget the
+ // Guardian's alternating reach, elbow flexion and opposite knee lift.
+ const ladder=clip==='climb';
+ const spec=ladder?settings.clips.idle:settings.clips[clip];
+ const joints=new Map();
+ if(ladder)stage.pivot.traverse(node=>{
+  if(node.isBone)joints.set(node.name,node);
+  if(node.name.includes('bow')&&node.name.includes('Skeleton'))node.visible=false;
+ });
+ const rest=new Map([...joints].map(([name,bone])=>[name,bone.quaternion.clone()]));
+ function ladderPose(t){
+  for(const [name,bone] of joints)bone.quaternion.copy(rest.get(name));
+  for(const [side,sign] of [['L',1],['R',-1]]){
+   const reach=sign*Math.sin(2*Math.PI*t);
+   const bend=(name,angle)=>joints.get(name+side)?.rotateX(angle);
+   bend('Arm',-1.65-.52*reach);
+   bend('Forearm',-.55+.28*reach);
+   bend('Thigh',.23-.47*reach);
+   bend('Shin',-.32+.26*reach);
+   bend('Foot',.19);
+  }
+  joints.get('Chest')?.rotateX(-.20);
+ }
  if(!spec)throw Error('Missing original Blender action '+kind+':'+clip);
  const [start,count]=spec;
  const atlas=document.createElement('canvas');
@@ -355,6 +377,7 @@ export async function bakeSkeletonAtlas(kind,clip,{cell=112,views=32,frames=8}={
    const sample=(start+column/(frames-1)*(count-1))/settings.fps;
    action.paused=false;action.enabled=true;
    mixer.setTime(sample);
+   if(ladder)ladderPose(column/frames);
    renderer.render(stage.scene,stage.camera);
    context.drawImage(renderer.domElement,column*cell,row*cell,cell,cell);
   }
@@ -362,6 +385,7 @@ export async function bakeSkeletonAtlas(kind,clip,{cell=112,views=32,frames=8}={
   const pixels=context.getImageData(0,row*cell,cell,cell).data;
   for(let i=3;i<pixels.length;i+=4)if(pixels[i]>30){nonempty++;break;}
  }
+ if(ladder)stage.pivot.traverse(node=>{if(node.name.includes('bow')&&node.name.includes('Skeleton'))node.visible=true;});
  if(nonempty<views-2)throw Error('Invisible '+kind+':'+clip+' Blender atlas');
  const data=atlas.toDataURL('image/webp',.94);
  if(!data.startsWith('data:image/webp;base64,'))
@@ -377,3 +401,4 @@ export function disposeSkeletonAtlasBakers(){
  }
  atlasBakers.clear();
 }
+

@@ -8,6 +8,13 @@ window.AlleySkeleton=(()=>{
   if(!spec||!e.skeleton)return null;
   let clip=e.moving?'run':'idle',t=(e.phase*(e.moving?1.65:.8))%1;
   if(deathAge!==null){clip='death';t=Math.min(1,deathAge/deathDuration);}
+  else if(e.alleyClimb){
+   const ride=e.alleyClimb;
+   if(ride.connector.kind==='ladder'){
+    clip='climb';t=(ride.age/ride.duration*3)%1;
+    if(!ride.up)t=1-t;
+   }else{clip='run';t=(ride.age*1.65)%1;}
+  }
   else if(e.skeletonAction){
    const a=e.skeletonAction;
    clip=a.name;
@@ -52,7 +59,7 @@ window.AlleySkeleton=(()=>{
  const TAU=Math.PI*2,VIEWS=32,ELEVATION=Math.atan(1/Math.sqrt(2));
  const sheets=new Map(),pending=new Map();
  let atlas=null;
- const name=(kit,clip)=>kit+'-'+clip;
+ const name=(kit,clip)=>clip==='climb'?'both-climb':kit+'-'+clip;
  const wrap=(n,max)=>((n%max)+max)%max;
  async function ensure(kit,clip){
   if(!atlas?.clips?.[kit]?.[clip])return null;
@@ -61,7 +68,7 @@ window.AlleySkeleton=(()=>{
   if(pending.has(key))return pending.get(key);
   const task=(async()=>{
    try{
-    const src='beta/art/skeleton/atlas-'+kit+'-'+clip+
+    const src=clip==='climb'?'beta/art/skeleton/atlas-both-climb.webp?v=1':'beta/art/skeleton/atlas-'+kit+'-'+clip+
      '.webp?v='+atlas.source[kit].slice(0,16);
     const image=new Image();image.src=src;
     await image.decode();
@@ -79,7 +86,7 @@ window.AlleySkeleton=(()=>{
  }
  async function load(){
   try{
-   const response=await fetch('beta/art/skeleton/skeleton-atlas.json?v=1',
+   const response=await fetch('beta/art/skeleton/skeleton-atlas.json?v=2',
     {cache:'no-cache'});
    if(!response.ok)throw Error('Original skeleton atlases not published yet');
    const config=await response.json();
@@ -92,7 +99,7 @@ window.AlleySkeleton=(()=>{
    atlas=config;
    const loaded=await Promise.all([
     ensure('sabre','idle'),ensure('sabre','run'),
-    ensure('bow','idle'),ensure('bow','run')
+    ensure('bow','idle'),ensure('bow','run'),ensure('bow','climb')
    ]);
    if(loaded.every(Boolean)){
     // Predecode the first likely melee and ranged attack while the loading
@@ -112,7 +119,7 @@ window.AlleySkeleton=(()=>{
   sheets.has('bow-idle')&&sheets.has('bow-run'));}
  function loaded(){return [...sheets].map(([key,image])=>({
   key:'alley-skeleton-baked-'+key,image,
-  columns:atlas.clips[key.split('-')[0]][key.slice(key.indexOf('-')+1)],
+  columns:atlas.clips[key.startsWith('both-')?'bow':key.split('-')[0]][key.slice(key.indexOf('-')+1)],
   rows:VIEWS,cell:atlas.cell
  }));}
  function sprite(e,iso,rules,deathAge=null){
@@ -147,3 +154,4 @@ window.AlleySkeleton=(()=>{
  }
  return {choose,encounters,load,hasBaked,loaded,sprite};
 })();
+

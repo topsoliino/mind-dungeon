@@ -174,7 +174,6 @@
      (crossing.up?Math.max(0,Math.min(1,(liftProgress-.84)/.16)):
       Math.max(0,Math.min(1,(.18-liftProgress)/.18))):
      (vertical?.state.floor===1?1:0);
-   const raised=Boolean(vertical&&(vertical.state.floor===1||vertical.state.stairRide||vertical.state.transition));
    const verticalObjects=upperArchitecture.map(part=>{
     const prison=window.RockyCoastPrison;
     let visible=part.level===0||reveal>0;
@@ -186,11 +185,9 @@
      else visible&&=vertical.hasStairs();
     }
     const alpha=part.level===1?reveal:1;
-    // Treads and spiral pillars belong to the SAME sorting plane as the
-    // Guardian while climbing. The previous 0-vs-7000 mismatch forced the
-    // player in front of every step/column, regardless of physical position.
-    const stairPart=part.kind==='stair-tread'||part.kind==='stair-landing'||part.kind==='stair-spindle';
-    const depth=part.depth+(raised&&stairPart&&(part.surfaceZ??Infinity)>(vertical.state.z+.5)?7000:0);
+    // The staircase is rigid. Reordering individual treads as the
+    // actor changes height reverses overlapping stone faces mid-stride.
+    const depth=part.depth;
     return {...part.image,depth,alpha,visible};
    });
    const stacked=prison?.enabled&&!prison.last;
@@ -318,3 +315,4 @@
  }
  window.DungeonIsometric={create,toView,toWorld,viewAngle,width,height};
 })();
+

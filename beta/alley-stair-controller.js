@@ -50,13 +50,10 @@ function controller({plan,state,nav,length,speeds,curving,canExit,walkStairs,alo
   // Ignore the opposite portal's very centre: spiral stairheads may
   // overlap in XY, but ordinary off-centre upper entry must remain possible.
   if(!approach.allowed)return false;
-  const {frame,sideways}=approach,
-   safeSide=clamp(sideways,-plan.width*.5+nav.RADIUS+.02,
-    plan.width*.5-nav.RADIUS-.02);
-  const landing={x:frame.entry.x+frame.side.x*safeSide,
-   y:frame.entry.y+frame.side.y*safeSide};
-  const origin=nav.legalTarget(landing);
-  if(!origin)return false;
+  // Acquire the ribbon at the actor's actual feet. Until the footprint
+  // fits, ordinary floor movement keeps approaching the entrance.
+  const origin=where;
+  if(!nav.canStand(origin))return false;
   const ride={x:origin.x,y:origin.y,s:up?0:length,dir:up?1:-1,
    lateral:0,gait:0,target:null,path:null,entry:up?'bottom':'top',
    traveled:0,leftEntry:false,exitTarget:null};
@@ -287,3 +284,4 @@ function controller({plan,state,nav,length,speeds,curving,canExit,walkStairs,alo
 }
 window.AlleyStairController={make:controller};
 })();
+
