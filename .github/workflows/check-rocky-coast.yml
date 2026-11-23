@@ -13,6 +13,9 @@ on:
       - tools/check-rocky-coast.cjs
       - tools/check-rocky-coast-stairs.cjs
       - tools/check-rocky-coast-descent.cjs
+      - beta/alley-study.js
+      - beta/dungeon-guardian-rig.js
+      - tools/check-guardian-entrance.cjs
       - beta/alley-stair-geometry.js
       - beta/alley-vertical.js
       - .github/workflows/check-rocky-coast.yml
@@ -31,3 +34,4 @@ jobs:
           node tools/check-rocky-coast.cjs
           node tools/check-rocky-coast-stairs.cjs
           node tools/check-rocky-coast-descent.cjs
+          node tools/check-guardian-entrance.cjs
