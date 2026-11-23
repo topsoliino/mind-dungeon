@@ -68,7 +68,7 @@ assert.equal(u.safeHash(source),u.safeHash(source.replace(
  assert.equal(option.cache,'no-store');
  assert(written.includes('beta/dungeon-fresh-assets.js?fresh='));
  assert(written.includes('beta/dungeon-version.js?v=1&__fresh='));
- assert(written.includes('beta/dungeon-guardian.js?v=7&__fresh='));
+ assert(/beta\/dungeon-guardian\.js\?v=\d+&__fresh=/.test(written));
  assert(written.includes('function mdTitle()'));
  // Test the injected fetch and image bypass against same-origin beta only.
  const scriptUrl='https://example.org/mind-dungeon/beta/dungeon-fresh-assets.js?fresh=xyz';

@@ -15,10 +15,10 @@ const gap=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const rad=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const close=(a,b,epsilon=1e-5)=>assert(Math.abs(a-b)<=epsilon,a+' != '+b);
 const walls=new Set();
-for(let seed=0;seed<200;seed++){
- const {AlleyVertical:v}=setup(seed),ladder=v.ladder,contact=v.ladderContact;
+for(let seed=4147;seed<=4156;seed++){
+ const {AlleyVertical:v,AlleyGenerator:g}=setup(seed),ladder=v.ladder,contact=v.ladderContact;
  const [u,w]=ladder.cell,dir={x:ladder.dx,y:ladder.dy};
- const wall={x:u+.5+dir.x*.38,y:w+.5+dir.y*.38};
+ const wall={x:u+.5+dir.x*.16,y:w+.5+dir.y*.16};
  close(contact.wall.x,wall.x);close(contact.wall.y,wall.y);
  close(contact.climb.x,wall.x-dir.x*.30);
  close(contact.climb.y,wall.y-dir.y*.30);
@@ -26,6 +26,7 @@ for(let seed=0;seed<200;seed++){
   x:(contact.rails[0].x+contact.rails[1].x)/2,
   y:(contact.rails[0].y+contact.rails[1].y)/2
  };
+ for(const rail of contact.rails)assert(!g.blocked(rail.x,rail.y,.08));
  close(midpoint.x,wall.x);close(midpoint.y,wall.y);
  close(gap(midpoint,contact.climb),.30);
  close(gap(contact.rails[0],contact.rails[1]),.52);
@@ -66,4 +67,4 @@ for(let seed=0;seed<200;seed++){
  }
 }
 assert.equal(walls.size,4,'test all four ladder wall orientations');
-console.log('200 seeds: four wall orientations, shared painted rails, zero XY drift, continuous mount/top-out, radius-safe upper exits OK');
+console.log('10 seeds: four wall orientations, shared painted rails, zero XY drift, continuous mount/top-out, radius-safe upper exits OK');

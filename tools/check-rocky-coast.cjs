@@ -24,7 +24,7 @@ for(let level=1;level<=4;level++){
   const root=region(level,storey),g=root.AlleyGenerator,d=root.RockyCoastPrison;
   assert(g.enabled,'Dungeon interior greybox missing at level '+level);
   assert.equal(d.level,level);
-  assert.equal(g.rooms.length,10,'Ten connected rooms on level '+level);
+  assert.equal(g.rooms.filter(r=>r.kind==='raum').length,15,'Fifteen chambers on level '+level);
   const entrances=level===1?1:0,exits=level===4?1:0;
   assert.equal(g.portals.length,entrances+exits,
    'Only L1 may have an exterior entrance, only L4 may have an exit');
@@ -35,11 +35,11 @@ for(let level=1;level<=4;level++){
   assert.equal(g.stairs.length,1,
    'Only L1-L3 have an upward physical stair');
   if(!entrances){
-   assert.equal(g.doors.length,8,'Later levels have no starter alley doorway');
+   assert.equal(g.doors.length,g.rooms.length-2,'Later levels have no starter alley doorway');
    assert(g.blocked(12,4.5,.20)&&g.blocked(12,5.5,.20),
     'Previous street entrance must be a SOLID collision wall');
   }else{
-   assert.equal(g.doors.length,9);
+   assert.equal(g.doors.length,g.rooms.length-1);
    assert.equal(d.link({x:g.outdoorEntrance.x*48,y:g.outdoorEntrance.y*48},g),null,
     'L1 entrance must not act as an exit or skip floors');
   }

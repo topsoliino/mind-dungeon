@@ -12,6 +12,12 @@ Dieser Link lädt die **neueste veröffentlichte Testversion**, inklusive frisch
 
 Die [Hauptversion](https://topsoliino.github.io/mind-dungeon/) ist nicht der aktuelle Playtest-Einstieg.
 
+## Rocky-Coast-Generator
+
+Die vier Innenebenen verwenden zehn reproduzierbare Durchläufe (`run=4147` bis `4156`). Jede Ebene hat einen Grundriss mit 15 Kammern plus Gängen. Die Stockwerke teilen diesen Grundriss. Zehn Wissensaltäre, fünf Goldtruhen, zwei versiegelte Türen, ein Brautisch und ein Fledermaushändler verteilen sich einmal pro Ebene auf die Stockwerke. Ebene 5 ist die offene Landschaft.
+
+`beta/alley-level-sites.js` plant die Standorte nach der Treppenerzeugung. Die Interaktion läuft über E. Eine richtige Karteikartenantwort öffnet eine versiegelte Tür. Brautisch und Händler sind vorerst Platzhalter. Die Platzierung aller 40 Innenkarten prüft `node tools/check-alley-level-sites.cjs`. Den Sichtverlust, die Suchwege und die Rückkehr zum Wachposten prüft `node tools/check-alley-search.cjs`.
+
 ## Übergabe für KI und neue Mitwirkende
 
 Die spielbare isometrische Version liegt in `beta/`. Der Einstieg `beta/index.html` setzt die Basis für relative Asset-URLs auf das Projektverzeichnis. Einen lokalen Webserver deshalb im Projektverzeichnis starten. Bei direkter Arbeit über GitHub einzelne Dateien am selben Commit lesen und Änderungen gegen den aktuellen Branch-Stand schreiben. Parallel können Blender-Jobs neue Assets auf `main` veröffentlichen.

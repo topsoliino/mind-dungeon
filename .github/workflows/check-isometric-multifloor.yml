@@ -12,6 +12,10 @@ on:
       - beta/alley-generator.js
       - beta/dungeon-enemy-sim.js
       - beta/index.html
+      - beta/alley-level-sites.js
+      - beta/rocky-coast-prison.js
+      - tools/check-alley-level-sites.cjs
+      - tools/check-alley-search.cjs
       - tools/check-isometric-multifloor.cjs
 
 permissions:
@@ -25,3 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Seed 4148 - all upper slabs, tracking, last seen search and real combat
         run: node tools/check-isometric-multifloor.cjs
+      - name: Search routes and seeded level contents
+        run: |
+          node tools/check-alley-search.cjs
+          node tools/check-alley-level-sites.cjs

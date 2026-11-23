@@ -26,16 +26,16 @@ assert.equal(skeleton.choose(sword,rules).clip,'idle');
 sword.windup=.59;
 assert.equal(skeleton.choose(sword,rules).clip,'strike');
 sword.windup=0;
-for(const action of ['combo','slash','overhead','cartwheel-enter','cartwheel',
- 'cartwheel-exit','throw']){
+for(const action of ['combo','slash','overhead','throw']){
  sword.skeletonAction={name:action,age:.1,duration:.5};
  assert.equal(skeleton.choose(sword,rules).clip,action);
 }
-sword.skeletonWheelSide=-1;
-for(const action of ['cartwheel-enter','cartwheel','cartwheel-exit']){
- sword.skeletonAction={name:action,age:.25,duration:.5};
- assert.equal(skeleton.choose(sword,rules).clip,action+'-left');
-}
+sword.moving=true;
+sword.skeletonAction={name:'flee',age:.25,duration:.5};
+assert.equal(skeleton.choose(sword,rules).clip,'run');
+sword.skeletonAction.name='slash';
+assert.equal(skeleton.choose(sword,rules).clip,'slash-run');
+sword.moving=false;
 sword.skeletonAction=null;
 assert.equal(skeleton.choose(sword,rules,1).clip,'death');
 const bow={...sword,skeleton:'bow',type:0,skeletonAction:{name:'double-shoot',age:.2,duration:.8}};

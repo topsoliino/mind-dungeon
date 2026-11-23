@@ -188,7 +188,7 @@ const run=async()=>{
    return out;
   });
   assert.equal(result.visuals.length,3);
-  assert.equal(result.artStatus?.guardian,'3D LIVE');
+  assert.match(result.artStatus?.guardian??'',/^Wächter-GLB · .+/);
   assert.equal(result.artStatus?.skeleton,'3D LIVE');
   assert.equal(result.artStatus?.rat,'3D LIVE');
   for(const [name,meter] of Object.entries(result.meter)){

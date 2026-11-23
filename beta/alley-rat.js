@@ -41,12 +41,11 @@ window.AlleyRat=(()=>{
  function choose(e,rules,deathAge){
   if(deathAge!==null)return {clip:'death',t:clamp(deathAge/DEATH_SECONDS)};
   if(e.alleyClimb)return {clip:'run',t:(e.alleyClimb.age*2)%1};
-  if(e.moving&&!e.ratMotion)return {clip:'run',t:e.gait??(e.phase*2)%1};
   const motion=e.ratMotion;
   if(motion&&motion.time>0)
    return {clip:motion.name,t:clamp(1-motion.time/motion.duration)};
   const spec=rules.attacks[e.type];
-  if(spec&&(e.windup>0||e.runAttack>0||e.recover>0)){
+  if(!e.moving&&spec&&(e.windup>0||e.runAttack>0||e.recover>0)){
    const clip=e.ratAttackClip==='combo'?'combo':'bite';
    const t=e.windup>0?.25*(1-e.windup/spec.windup):
     e.runAttack>0?.25+.57*(1-e.runAttack/Math.max(.01,e.runDuration)):
@@ -66,7 +65,7 @@ window.AlleyRat=(()=>{
    else if(Math.abs(Math.sin(difference))>.70&&Math.abs(Math.cos(difference))<.72)
     clip=Math.sin(difference)>0?'strafe-right':'strafe-left';
   }
-  return {clip,t:((e.phase*(stalk?1.05:e.moving?2.0:.85))%1+1)%1};
+  return {clip,t:e.moving&&Number.isFinite(e.gait)?e.gait:((e.phase*(stalk?1.05:e.moving?2.0:.85))%1+1)%1};
  }
  function sprite(e,iso,rules,deathAge=null){
   if(!e||e.type!==rules.RAT)return null; // Electro-rats retain their own effect.
