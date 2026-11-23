@@ -119,12 +119,22 @@
    const spanY=spanX*entry.image.naturalHeight/entry.image.naturalWidth;
    ctx.save();ctx.beginPath();trace(ctx,corners(area));ctx.clip();
    ctx.transform(ux-ox,uy-oy,vx-ox,vy-oy,ox,oy);
-   // All cells share one world origin, so no reset at individual tile edges.
-   const firstX=Math.floor(minU/spanX)*spanX;
-   const firstY=Math.floor(minV/spanY)*spanY;
-   for(let y=firstY;y<maxV;y+=spanY)
-    for(let x=firstX;x<maxU;x+=spanX)
-     ctx.drawImage(entry.image,x,y,spanX,spanY);
+   // One pattern fill per generated floor strip instead of hundreds of
+   // drawImage calls when the 1.3-metre Brown Mud Diffuse fallback is used.
+   // Texture coordinates stay anchored at the global world origin.
+   const pattern=ctx.createPattern?.(entry.image,'repeat');
+   if(pattern?.setTransform&&typeof DOMMatrix==='function'){
+    pattern.setTransform(new DOMMatrix([spanX/entry.image.naturalWidth,0,
+                                       0,spanY/entry.image.naturalHeight,0,0]));
+    ctx.fillStyle=pattern;
+    ctx.fillRect(minU,minV,maxU-minU,maxV-minV);
+   }else{
+    const firstX=Math.floor(minU/spanX)*spanX;
+    const firstY=Math.floor(minV/spanY)*spanY;
+    for(let y=firstY;y<maxV;y+=spanY)
+     for(let x=firstX;x<maxU;x+=spanX)
+      ctx.drawImage(entry.image,x,y,spanX,spanY);
+   }
    ctx.restore();
    return true;
   };
