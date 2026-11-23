@@ -12,12 +12,17 @@ window.MindRoomArt=(()=>{
   images.set(key,result);
   const img=new Image();
   result.img=img;
-  img.onload=()=>{result.ready=true;emit()};
+  img.onload=()=>{
+   if(key==='floor'&&(img.naturalWidth!==4096||img.naturalHeight!==4096)){
+    result.failed=true;console.warn('Old tile atlas detected; continuous floor build not published yet');
+   }else result.ready=true;
+   emit();
+  };
   img.onerror=()=>{result.failed=true;emit()};
   img.src=src;
   return result;
  }
- preload('floor',ROOT+'tiles/floor-prison-01.webp');
+ preload('floor',ROOT+'tiles/floor-prison-01.webp?v=continuous-32-v1');
  preload('wall-x',ROOT+'tiles/wall-prison-x.webp');
  preload('wall-y',ROOT+'tiles/wall-prison-y.webp');
  // In the game the Guardian's pre-rendered atlas is the verified fallback
@@ -25,7 +30,7 @@ window.MindRoomArt=(()=>{
  let guardianAtlas=null,guardianBody=[],guardianWeapon=[],guardianStatus='loading';
  async function loadGuardian(){
   try{
-   const response=await fetch(ROOT_GUARDIAN+'guardian-frames.json?v=18');
+   const response=await fetch(ROOT_GUARDIAN+'guardian-frames.json?v=18',{cache:'no-cache'});
    if(!response.ok)throw Error('guardian frame manifest unavailable');
    guardianAtlas=await response.json();
    const load=(name)=>{
@@ -68,19 +73,8 @@ window.MindRoomArt=(()=>{
   ctx.globalAlpha=.33;ctx.fillStyle='#090c14';
   ctx.beginPath();ctx.ellipse(p.x,p.y+3*zoom,14*zoom,6*zoom,0,0,Math.PI*2);ctx.fill();
   ctx.restore();
-  if(guardianStatus!=='ready'){
-   // Visible armored-human silhouette ONLY while the authentic atlas loads.
-   // Never show the former sphere/eye placeholder.
-   ctx.save();
-   ctx.translate(p.x,p.y);
-   ctx.fillStyle='#242b35';
-   ctx.beginPath();ctx.ellipse(0,-30*zoom,15*zoom,30*zoom,0,0,Math.PI*2);ctx.fill();
-   ctx.fillStyle='#8f95a0';
-   ctx.fillRect(-13*zoom,-49*zoom,26*zoom,30*zoom);
-   ctx.fillStyle='#b9b9b7';ctx.fillRect(-9*zoom,-67*zoom,18*zoom,19*zoom);
-   ctx.fillStyle='#36363d';ctx.fillRect(-7*zoom,-58*zoom,14*zoom,5*zoom);
-   ctx.restore();return false;
-  }
+  // Never invent a proxy character: only the real game Guardian may appear.
+  if(guardianStatus!=='ready')return false;
   const name=vault>0?'vault':moving?'walk':'idle';
   const [start,count]=guardianAtlas.clips[name];
   // Walking is cyclic. Vault is a one-shot synchronized with the light
@@ -101,19 +95,28 @@ window.MindRoomArt=(()=>{
   ctx.restore();
   return true;
  }
- // Tile sprites rendered by Blender at 512×512 from an orthographic camera
- // aligned to AlleyStudy's screen axes. Each artwork is larger than a tile:
- // its empty transparent padding makes the world foot pivot exact.
- const ASSET_PX=512;
- const UNIT_WORLD_X=42;
- const FLOOR_ORTHO=2.65,WALL_ORTHO=3.25;
+ // One continuous 32x32 world-unit floor artwork. Small rooms reveal a centered
+ // crop; large rooms reveal more of the SAME map. No texture scaling per room.
+ const WORLD_FLOOR=32,UNIT_WORLD_X=42,WALL_ORTHO=3.25;
  function spriteSize(ortho,zoom){return UNIT_WORLD_X*ortho*Math.SQRT2*zoom}
- function drawFloor(ctx,center,zoom){
+ function drawRoomFloor(ctx,room,project){
   const asset=images.get('floor');
   if(!asset?.ready)return false;
-  const size=spriteSize(FLOOR_ORTHO,zoom);
+  const corners=[project(0,0),project(room.width,0),
+                 project(room.width,room.height),project(0,room.height)];
+  const origin=corners[0],ex=project(1,0),ey=project(0,1);
+  ctx.save();
+  ctx.beginPath();ctx.moveTo(corners[0].x,corners[0].y);
+  for(let i=1;i<corners.length;i++)ctx.lineTo(corners[i].x,corners[i].y);
+  ctx.closePath();ctx.clip();
+  // Image coordinates become WORLD coordinates before the isometric projection.
+  ctx.transform(ex.x-origin.x,ex.y-origin.y,ey.x-origin.x,ey.y-origin.y,
+                origin.x,origin.y);
+  const offsetX=(room.width-WORLD_FLOOR)/2,offsetY=(room.height-WORLD_FLOOR)/2;
   ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(asset.img,center.x-size/2,center.y-size/2,size,size);
+  ctx.imageSmoothingQuality='high';
+  ctx.drawImage(asset.img,offsetX,offsetY,WORLD_FLOOR,WORLD_FLOOR);
+  ctx.restore();
   return true;
  }
  function drawWall(ctx,center,axis,zoom){
@@ -126,11 +129,11 @@ window.MindRoomArt=(()=>{
  }
  function status(){
   return {
-   tiles:[...images.values()].filter(x=>x.ready).length+'/3',
+   tiles:(images.get('floor')?.ready?'1/1 – 4096px':'0/1 – Karte lädt'),
    guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
    tileReady:images.get('floor')?.ready||false,
    wallsReady:images.get('wall-x')?.ready&&images.get('wall-y')?.ready
   };
  }
- return {drawGuardian,drawFloor,drawWall,status,onChange(callback){watchers.push(callback)}};
+ return {drawGuardian,drawRoomFloor,drawWall,status,onChange(callback){watchers.push(callback)}};
 })();
