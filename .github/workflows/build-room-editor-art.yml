@@ -13,7 +13,8 @@ permissions:
 
 concurrency:
   group: mind-dungeon-room-editor-art
-  cancel-in-progress: false
+  # Source changes invalidate any earlier partially rendered set.
+  cancel-in-progress: true
 
 jobs:
   furniture:
