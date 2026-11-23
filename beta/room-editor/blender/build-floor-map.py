@@ -1,142 +1,218 @@
-"""Build one non-tiled 4096px dark-medieval prison-floor artwork.
+"""Build a photographic dark-medieval dungeon floor for the standalone room editor.
 
-One 32x32-world-unit canvas. Smaller rooms crop it at native world scale;
-room size never rescales individual stones. Requires Pillow, no Blender.
-Run: python3 beta/room-editor/blender/build-floor-map.py
+One 4096x4096 baked RGB WebP, covering exactly 32x32 room-grid units.
+Small rooms crop the original at unchanged scale (not tiles or repeated runtime art).
+The base uses real scanned, CC0 photographic albedo by Poly Haven, *not*
+polygons pretending to be natural stone. Asset URLs are resolved through the
+documented public API during the asset build; the browser never calls the API.
+
+Source assets:
+ https://polyhaven.com/a/monastery_stone_floor
+ https://polyhaven.com/a/stone_floor
+ https://polyhaven.com/a/rock_embedded_floor
+All Poly Haven assets are CC0: https://polyhaven.com/license
+API: https://polyhaven.com/our-api
 """
+from __future__ import annotations
+
+import argparse
+from io import BytesIO
+import json
 from pathlib import Path
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
-import math
 import random
 import sys
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
-ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'assets' / 'tiles' / 'floor-prison-01.webp'
-SEED = 0xD00D6E
+from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageOps
+
 SIZE = 4096
 WORLD = 32
-PPU = SIZE / WORLD
-R = random.Random(SEED)
+SEED = 0xDA7A6E
+ASSETS = ("monastery_stone_floor", "stone_floor", "rock_embedded_floor")
+ROOT = Path(__file__).resolve().parents[1]
+DEST = ROOT / "assets" / "tiles" / "floor-prison-01.webp"
+USER_AGENT = "MindDungeonRoomAtelier/2.0 (CC0 art build; https://github.com/topsoliino/mind-dungeon)"
+rng = random.Random(SEED)
+RESAMPLE = Image.Resampling.LANCZOS
 
-def p(v):
-    return round(v * PPU)
 
-def random_noise(pixels):
-    layer = Image.new('L', (pixels, pixels))
-    layer.putdata(bytes(R.randrange(256) for _ in range(pixels * pixels)))
-    return layer.resize((SIZE, SIZE), Image.Resampling.BICUBIC)
+def fetch(url: str) -> bytes:
+    request = Request(url, headers={"User-Agent": USER_AGENT,
+                                    "Accept": "application/json,image/jpeg,image/png,*/*"})
+    with urlopen(request, timeout=45) as response:
+        return response.read()
 
-def polygon_around(cx, cy, radius_x, radius_y, points=8):
-    phase = R.random() * math.tau
-    vertices = []
-    for i in range(points):
-        theta = phase + math.tau*i/points
-        shape = R.uniform(.76, 1.14)
-        vertices.append((p(cx + math.cos(theta)*radius_x*shape),
-                         p(cy + math.sin(theta)*radius_y*shape)))
-    return vertices
 
-def jitter_color(rgb, d):
-    return tuple(max(0, min(255, c + d + R.randrange(-5, 6))) for c in rgb)
-
-def line_organic(draw, x, y, length, direction, width, fill):
-    points = [(p(x), p(y))]
-    for i in range(1, 5):
-        t = i / 4
-        warp = math.sin(t*math.pi)*R.uniform(-.05,.05)
-        px = x + math.cos(direction)*length*t - math.sin(direction)*warp
-        py = y + math.sin(direction)*length*t + math.cos(direction)*warp
-        points.append((p(px), p(py)))
-    draw.line(points, fill=fill, width=width, joint='curve')
-
-# Base: layered, deterministic dirt mineral mottling with detail at several scales.
-n1, n2, n3 = random_noise(66), random_noise(256), random_noise(1024)
-tone = ImageChops.add(ImageChops.multiply(n1, Image.new('L', n1.size, 144)),
-                      ImageChops.multiply(n2, Image.new('L', n2.size, 66)), scale=1.0)
-tone = Image.blend(tone, n3, .13)
-ground = ImageOps.colorize(tone, black='#171b20', white='#535054')
-d = ImageDraw.Draw(ground, 'RGBA')
-
-# Uneven stone paving with irregular missing sections; no grid, seams or repeating texture.
-stone_colors = [(63,65,68),(72,70,71),(75,73,70),(62,65,72),
-                (86,80,76),(56,62,67),(82,78,77),(67,64,65)]
-stones = []
-for row in range(56):
-    y = (row + .43) * WORLD / 56
-    x = -R.uniform(0,.7)
-    while x < WORLD:
-        step = R.uniform(.37,.82)
-        x += step
-        if R.random() < .24:
+def resolve_diffuse_file(manifest: dict) -> str:
+    """Accept current and earlier Poly Haven /files/<id> map variants."""
+    preferred = ("Diffuse", "diffuse", "diff", "Color", "color", "BaseColor", "Albedo", "albedo")
+    for key in preferred:
+        if key not in manifest:
             continue
-        cx = x + R.uniform(-.18,.18)
-        cy = y + R.uniform(-.16,.16)
-        rx = R.uniform(.22,.53)
-        ry = R.uniform(.15,.39)
-        pts = polygon_around(cx,cy,rx,ry,points=R.randrange(6,10))
-        base = jitter_color(R.choice(stone_colors),R.randint(-10,9))
-        shadow = tuple(max(0,c-22) for c in base)
-        d.polygon([(u+3,v+4) for u,v in pts],fill=(*shadow,218))
-        d.polygon(pts,fill=(*base,228),outline=(25,27,30,205),width=R.choice([2,3,4]))
-        # Chips / lichen-like mineral striation inside each polygon.
-        if R.random() < .64:
-            x0,y0 = cx-R.uniform(0,rx*.45),cy-R.uniform(0,ry*.4)
-            line_organic(d,x0,y0,R.uniform(.07,.28),R.uniform(-1.3,1.3),2,(19,21,24,118))
-        if R.random() < .20:
-            stones.append((cx,cy,rx,ry))
+        data = manifest[key]
+        if isinstance(data, dict):
+            for resolution in ("4k", "2k", "1k"):
+                entries = data.get(resolution, {})
+                if not isinstance(entries, dict):
+                    continue
+                for fmt in ("jpg", "jpeg", "png"):
+                    item = entries.get(fmt, {})
+                    if isinstance(item, dict) and item.get("url"):
+                        return item["url"]
+    # Newer APIs occasionally use different case/keys.
+    candidates = []
+    def recurse(obj, keys=()):
+        if isinstance(obj, dict):
+            if isinstance(obj.get("url"), str):
+                url = obj["url"]
+                ident = " ".join(keys).lower() + " " + url.lower()
+                if ("diff" in ident or "albedo" in ident or "basecolor" in ident) \
+                        and urlparse(url).path.lower().endswith((".jpg", ".jpeg", ".png")):
+                    score = (3 if "4k" in ident else 2 if "2k" in ident else 1 if "1k" in ident else 0)
+                    candidates.append((score,url))
+            for key,value in obj.items():
+                recurse(value,keys+(str(key),))
+    recurse(manifest)
+    if not candidates:
+        raise RuntimeError("No photographic diffuse JPG/PNG map found in Poly Haven files")
+    return max(candidates,key=lambda item:item[0])[1]
 
-# Wet, compacted soil and trapped mold are translucent and irregular, not geometric tiles.
-weather = Image.new('RGBA',(SIZE,SIZE))
-wd = ImageDraw.Draw(weather,'RGBA')
-for i in range(130):
-    x,y = R.uniform(-1,WORLD+1),R.uniform(-1,WORLD+1)
-    rx,ry = R.uniform(.12,.9),R.uniform(.12,.8)
-    col = R.choice([(17,18,19,65),(21,23,25,92),(56,44,37,49),
-                    (28,35,33,80),(32,33,38,76)])
-    wd.polygon(polygon_around(x,y,rx,ry,R.randrange(8,13)),fill=col)
-weather=weather.filter(ImageFilter.GaussianBlur(9))
-ground=Image.alpha_composite(ground.convert('RGBA'),weather)
-d=ImageDraw.Draw(ground,'RGBA')
 
-# Stone chips, pebbles, filth, hairline fractures, oxidized dust and old straw.
-for i in range(5800):
-    x,y=R.uniform(0,WORLD),R.uniform(0,WORLD)
-    radius=R.choice([.006,.009,.013,.019,.032,.047])
-    col=R.choice([(13,16,18,120),(26,28,27,170),(100,91,79,111),
-                  (113,105,90,86),(38,36,33,165)])
-    d.ellipse((p(x-radius),p(y-radius*.6),p(x+radius),p(y+radius*.6)),fill=col)
-for i in range(440):
-    x,y=R.uniform(0,WORLD),R.uniform(0,WORLD)
-    angle=R.uniform(-math.pi,math.pi)
-    length=R.uniform(.08,.6)
-    col=R.choice([(13,14,17,145),(27,23,22,115),(117,108,90,74)])
-    line_organic(d,x,y,length,angle,R.choice([1,2,3]),col)
-for cx,cy,rx,ry in stones:
-    angle=R.uniform(0,math.tau)
-    length=R.uniform(.08,.23)
-    line_organic(d,cx,cy,length,angle,2,(10,12,14,195))
-for i in range(210):
-    x,y=R.uniform(0,WORLD),R.uniform(0,WORLD)
-    angle=R.uniform(0,math.tau)
-    length=R.uniform(.06,.38)
-    line_organic(d,x,y,length,angle,R.choice([1,2]),(126,102,65,R.randrange(85,175)))
+def load_photographs(source_dir: Path | None) -> dict[str, Image.Image]:
+    images = {}
+    for asset in ASSETS:
+        if source_dir:
+            candidates = [source_dir/(asset+ext) for ext in (".jpg",".jpeg",".png")]
+            filename = next((p for p in candidates if p.is_file()),None)
+            if filename is None:
+                raise FileNotFoundError(f"Offline test source absent: {asset}")
+            raw = filename.read_bytes()
+        else:
+            catalog = json.loads(fetch("https://api.polyhaven.com/files/"+asset))
+            file_url = resolve_diffuse_file(catalog)
+            if not urlparse(file_url).hostname in ("dl.polyhaven.org","cdn.polyhaven.org"):
+                raise RuntimeError("Unexpected Poly Haven asset host: "+file_url)
+            raw = fetch(file_url)
+        with Image.open(BytesIO(raw)) as source:
+            source.load()
+            if min(source.size) < 800:
+                raise RuntimeError(f"Photographic source too small: {asset} {source.size}")
+            images[asset] = ImageOps.exif_transpose(source).convert("RGB")
+        print("CC0 photo ready:",asset,images[asset].size,flush=True)
+    return images
 
-# Sparse ancient puddles: soft damp fringes plus sharp, low-specular central deposits.
-water = Image.new('RGBA',(SIZE,SIZE))
-w = ImageDraw.Draw(water,'RGBA')
-for i in range(19):
-    x,y=R.uniform(.5,WORLD-.5),R.uniform(.5,WORLD-.5)
-    rx,ry=R.uniform(.20,.67),R.uniform(.09,.34)
-    w.polygon(polygon_around(x,y,rx,ry,11),fill=(14,23,26,72))
-water=water.filter(ImageFilter.GaussianBlur(12))
-ground=Image.alpha_composite(ground,water)
 
-# Tiny neutral warm/cool grain connects the floor to Guardian's high-contrast metal.
-grain=random_noise(1024)
-grain_color=ImageOps.colorize(grain,black='#1c1c1e',white='#77716c').convert('RGBA')
-ground=Image.blend(ground,grain_color,.075).convert('RGB')
-OUT.parent.mkdir(parents=True,exist_ok=True)
-ground.save(OUT,'WEBP',quality=88,method=6)
-if not OUT.is_file() or OUT.stat().st_size < 100_000:
-    raise SystemExit('Floor map export missing or unexpectedly small')
-print(f'ONE CONTINUOUS DARK-MEDIEVAL FLOOR: {OUT} ({SIZE}x{SIZE}, {OUT.stat().st_size} bytes)',flush=True)
+def photo_crop(image: Image.Image, side_px: int) -> Image.Image:
+    """Natural-scale scan excerpts: no newly drawn or artificially outlined stones."""
+    w,h=image.size
+    longest = min(w,h)
+    crop_side = rng.randrange(max(512,int(longest*.53)),longest+1)
+    x = rng.randrange(0,w-crop_side+1)
+    y = rng.randrange(0,h-crop_side+1)
+    result=image.crop((x,y,x+crop_side,y+crop_side))
+    result=result.transpose(rng.choice((Image.Transpose.ROTATE_90,
+                                        Image.Transpose.ROTATE_180,
+                                        Image.Transpose.ROTATE_270,
+                                        Image.Transpose.FLIP_LEFT_RIGHT)))
+    return result.resize((side_px,side_px),RESAMPLE)
+
+
+def feather_mask(side: int, edge: int) -> Image.Image:
+    """Blend photo patches softly; no checkered straight edges."""
+    mask=Image.new("L",(side,side))
+    draw=ImageDraw.Draw(mask)
+    draw.rectangle((edge,edge,side-edge,side-edge),fill=255)
+    return mask.filter(ImageFilter.GaussianBlur(edge*.60))
+
+
+def fractal_noise(size: int, levels: tuple[int,...]) -> Image.Image:
+    """Correlated natural discoloration; no regular tiling or tiled material."""
+    output=Image.new("L",(size,size),0)
+    total=0
+    for n in levels:
+        pixels=Image.frombytes("L",(n,n),rng.randbytes(n*n))
+        layer=pixels.resize((size,size),Image.Resampling.BICUBIC)
+        weight=max(1,int(80/(1+levels.index(n))))
+        output=ImageChops.add(output,layer.point(lambda x,w=weight:x*w//255),scale=1)
+        total+=weight
+    return ImageEnhance.Contrast(output).enhance(1.4)
+
+
+def build_photo_atlas(images: dict[str,Image.Image]) -> Image.Image:
+    # Start with actual scanned stone, not noise. Every overlay remains photographic.
+    background=photo_crop(images[ASSETS[0]],SIZE)
+    background=ImageEnhance.Color(background).enhance(.75)
+
+    # Different natural-scale scan excerpts, rotated and heavily overlapped;
+    # the boundary softness removes square stamps and visible tile repetition.
+    patch_size=1152
+    stride=704
+    mask=feather_mask(patch_size,180)
+    origins=list(range(-352,SIZE,stride))
+    for y in origins:
+        for x in origins:
+            asset=rng.choices(ASSETS,weights=(.66,.20,.14),k=1)[0]
+            patch=photo_crop(images[asset],patch_size)
+            patch=ImageEnhance.Color(patch).enhance(.78)
+            patch=ImageEnhance.Brightness(patch).enhance(rng.uniform(.80,1.03))
+            xx=x+rng.randrange(-90,91)
+            yy=y+rng.randrange(-90,91)
+            background.paste(patch,(xx,yy),mask)
+    return background
+
+
+def age_and_weather(image: Image.Image) -> Image.Image:
+    # Real photographed rock + compacted dirt gets cooler shadows, low chroma
+    # and uneven surface dampness. No drawn stone polygons or regular seams.
+    image=ImageEnhance.Color(image).enhance(.68)
+    image=ImageEnhance.Contrast(image).enhance(1.22)
+    image=ImageEnhance.Brightness(image).enhance(.70)
+
+    macro=fractal_noise(SIZE,(14,48,128,350))
+    grime=ImageOps.autocontrast(macro,cutoff=(6,5))
+    grime_mask=grime.point(lambda v:max(0,min(110,int((125-v)*1.30))))
+    image=Image.composite(Image.new("RGB",(SIZE,SIZE),(29,27,26)),image,grime_mask)
+
+    # Photo-grain based microvariation is subdued to preserve genuine scanned
+    # stone detail, while moss, moisture and sediment stay irregularly distributed.
+    wet=Image.new("L",(SIZE,SIZE))
+    draw=ImageDraw.Draw(wet)
+    for i in range(135):
+        x=rng.randrange(SIZE);y=rng.randrange(SIZE)
+        rx=rng.randrange(35,300);ry=rng.randrange(30,190)
+        opacity=rng.randrange(25,115)
+        draw.ellipse((x-rx,y-ry,x+rx,y+ry),fill=opacity)
+    wet=wet.filter(ImageFilter.GaussianBlur(85))
+    noise=fractal_noise(SIZE,(48,128,320))
+    wet=ImageChops.multiply(wet,ImageOps.autocontrast(noise))
+    wet=ImageEnhance.Contrast(wet).enhance(1.5)
+    image=Image.composite(Image.new("RGB",(SIZE,SIZE),(26,31,34)),image,wet)
+
+    # Aging near random areas: a restrained mineral wash, not painted ellipses.
+    silt_mask=ImageOps.invert(fractal_noise(SIZE,(17,70,210)))
+    silt_mask=silt_mask.point(lambda v:max(0,min(45,(v-110)//2)))
+    image=Image.composite(Image.new("RGB",(SIZE,SIZE),(71,60,46)),image,silt_mask)
+    return image
+
+
+def build(output: Path, source_dir: Path | None):
+    images=load_photographs(source_dir)
+    print("Composing one 4096px photobased stone/dirt floor…",flush=True)
+    image=age_and_weather(build_photo_atlas(images))
+    output.parent.mkdir(parents=True,exist_ok=True)
+    image.save(output,format="WEBP",quality=88,method=5)
+    if output.stat().st_size<350_000:
+        raise RuntimeError("Floor image unusually tiny: photobased output missing?")
+    with Image.open(output) as verify:
+        assert verify.size==(SIZE,SIZE) and verify.mode=="RGB"
+    print(f"REAL PHOTOGRAPHIC DUNGEON FLOOR: {output} ({output.stat().st_size} bytes)",flush=True)
+
+
+if __name__=="__main__":
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--source-dir",type=Path,default=None,
+                        help="Optional local JPG copies for offline validation")
+    parser.add_argument("--output",type=Path,default=DEST)
+    args=parser.parse_args()
+    build(args.output,args.source_dir)
