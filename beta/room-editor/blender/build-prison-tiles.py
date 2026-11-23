@@ -85,6 +85,7 @@ def cube(name,loc,dims,mat,bevel=0):
     ob.name=name;ob.dimensions=dims
     bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
     ob.data.materials.append(mat)
+    if hasattr(ob.data,'use_auto_smooth'):ob.data.use_auto_smooth=True
     if bevel:
         mod=ob.modifiers.new('chipped stone edge','BEVEL')
         mod.width=min(bevel,min(dims)*.22)
@@ -216,7 +217,10 @@ background.inputs['Strength'].default_value=.58
 scene=bpy.context.scene
 scene.render.engine='CYCLES'
 scene.cycles.samples=max(12,min(96,opt.samples))
-scene.cycles.use_denoising=True
+# Ubuntu's packaged Blender was built without OpenImageDenoiser.
+# Cycles still computes the authentic PBR lighting; use enough actual
+# samples instead of requesting the unavailable external denoiser.
+scene.cycles.use_denoising=False
 scene.render.resolution_x=512
 scene.render.resolution_y=512
 scene.render.resolution_percentage=100
