@@ -23,41 +23,47 @@ window.MindRoomArt=(()=>{
   img.src=src;
   return result;
  }
- // Texture options must come from a verified, published material manifest.
- // Assets are independently selectable, and the same map is sampled across
- // consecutive wall segments at a fixed scale without 1-tile repetitions.
- const PHOTO_KEYS=['floor','floor-cut','wall-photo-stone','wall-photo-stone-cut'];
- for(const key of PHOTO_KEYS)images.set(key,{img:null,ready:false,failed:false,src:''});
+ // Six CC0 photos. Accept ONLY the new manifest mapping, source SHA and
+ // physically calibrated width. No recolor or artificial dirt at runtime.
+ const PHOTOS=[
+  ['dungeon-ashlar','floor-prison-01.png','dark_rock_02',false],
+  ['dungeon-coast-rocks','floor-prison-02.png','coast_sand_rocks_02',false],
+  ['dungeon-cut-stone','floor-prison-03.png','cobblestone_floor_09',false],
+  ['stone','wall-masonry-01.png','rock_wall_17',true],
+  ['stone-cut','wall-masonry-02.png','rock_wall_16',true],
+  ['stone-old','wall-masonry-03.png','old_stone_wall',true]
+ ];
+ const PHOTO_KEYS=PHOTOS.map(info=>info[0]);
+ for(const key of PHOTO_KEYS)
+  images.set(key,{img:null,ready:false,failed:false,src:''});
  async function loadPhotographicMaterials(){
   try{
-   const response=await fetch(ROOT+'tiles/manifest.json?v=original-material-v4',{cache:'no-cache'});
+   const response=await fetch(ROOT+'tiles/manifest.json?v=wet-dungeon-six-v1',{cache:'no-cache'});
    if(!response.ok)throw Error('Material manifest unavailable');
    const manifest=await response.json();
-   if(manifest.textureMode!=='original-photo-byte-identical'||
-      manifest.floorMaterial!=='original-photo-byte-identical'||
-      manifest.wallMaterial!=='original-photo-byte-identical')
-    throw Error('Original untouched photo materials not published yet');
-   if(!/^[0-9a-f]{64}$/.test(manifest.floorGeneratorSha256||'')||
-      !/^[0-9a-f]{64}$/.test(manifest.wallGeneratorSha256||''))
-    throw Error('Material build hash missing');
-   const materials=[
-    ['floor','dungeon-ashlar',manifest.floorVariants?.['dungeon-ashlar']],
-    ['floor-cut','dungeon-cut-stone',manifest.floorVariants?.['dungeon-cut-stone']],
-    ['wall-photo-stone','stone',manifest.wallVariants?.stone],
-    ['wall-photo-stone-cut','stone-cut',manifest.wallVariants?.['stone-cut']]
-   ];
-   const allowed=/^(floor-prison-0[12]\.png|wall-masonry-0[12]\.png)$/;
-   for(const [key,style,file] of materials){
+   if(manifest.schema!=='mind-dungeon-room-tiles/v4'||
+      manifest.textureMode!=='original-photo-byte-identical')
+    throw Error('Six new Poly Haven photos are not published yet');
+   const selections=[];
+   for(const [style,file,assetId,wall] of PHOTOS){
     const info=manifest.assetInfo?.[style];
-    if(typeof file!=='string'||!allowed.test(file)||info?.file!==file||
+    const expected=(wall?manifest.wallVariants:manifest.floorVariants)?.[style];
+    const catalog=(wall?window.MindRoomKit.catalog.walls:window.MindRoomKit.catalog.floors)[style];
+    if(expected!==file||info?.file!==file||info?.asset!==assetId||
+       info.byteIdenticalToSource!==true||
+       info.imageRotationDegrees!==0||info.imageMirrored!==false||
        !/^[0-9a-f]{64}$/.test(info?.sha256||'')||
-       info.byteIdenticalToSource!==true)
-      throw Error('Original photo asset missing or unverified: '+style);
-    preload(key,ROOT+'tiles/'+file+'?v='+info.sha256);
+       !Number.isFinite(info?.worldWidth)||Math.abs(info.worldWidth-catalog.worldWidth)>.01)
+      throw Error('Missing or incorrectly scaled original: '+style);
+    selections.push([style,ROOT+'tiles/'+file+'?v='+info.sha256]);
    }
+   for(const [style,src] of selections)preload(style,src);
   }catch(error){
-   for(const key of PHOTO_KEYS)images.get(key).failed=true;
-   console.warn('Room Atelier photographic materials pending:',error.message);
+   for(const key of PHOTO_KEYS){
+    const info=images.get(key);
+    if(!info.ready)info.failed=true;
+   }
+   console.warn('Room Atelier six-photo build not yet available:',error.message);
    emit();
   }
  }
@@ -132,11 +138,44 @@ window.MindRoomArt=(()=>{
   ctx.restore();
   return true;
  }
- // The assets are imported byte-for-byte from Poly Haven's visible
- // previews, not authored or color-graded by the editor. Only the camera
- // projection maps those unchanged source pixels onto our room geometry.
+ // The photos are transferred UNCHANGED. The only transformation is
+ // mapping source picture coordinates into the isometric world geometry.
+ // Poly Haven specifies each photo's physical size in metres. Our preview
+ // is calibrated to about 1 game-grid unit per metre (Guardian ~2 units tall).
+ // A photo does not restart on every floor tile or every wall segment.
+ function getPhoto(style){
+  const entry=images.get(style);
+  return entry?.ready?entry.img:null;
+ }
+ function photoSpan(style,image,wall){
+  const data=wall?window.MindRoomKit.catalog.walls[style]:
+                  window.MindRoomKit.catalog.floors[style];
+  const width=data?.worldWidth;
+  if(!Number.isFinite(width)||width<=0)return null;
+  return [width,width*image.naturalHeight/image.naturalWidth];
+ }
+ function fillOriginal(ctx,image,scaleX,scaleY,x,y,w,h){
+  // The Pattern transform is in WORLD coordinates, not CSS/screen pixels.
+  // This is a single GPU-friendly fill even for 30x30 rooms.
+  const pattern=ctx.createPattern(image,'repeat');
+  if(pattern&&typeof pattern.setTransform==='function'&&
+     typeof DOMMatrix==='function'){
+   pattern.setTransform(new DOMMatrix([
+    scaleX/image.naturalWidth,0,0,scaleY/image.naturalHeight,-x,-y
+   ]));
+   ctx.fillStyle=pattern;
+   ctx.fillRect(0,0,w,h);
+   return;
+  }
+  // Correctly aligned fallback for older browsers without pattern transforms.
+  const firstX=-(x%scaleX+scaleX)%scaleX;
+  const firstY=-(y%scaleY+scaleY)%scaleY;
+  for(let py=firstY;py<h;py+=scaleY)
+   for(let px=firstX;px<w;px+=scaleX)
+    ctx.drawImage(image,px,py,scaleX,scaleY);
+ }
  function drawRoomFloor(ctx,room,project){
-  const asset=images.get(room.floorStyle==='dungeon-cut-stone'?'floor-cut':'floor');
+  const image=getPhoto(room.floorStyle);
   const corners=[project(0,0),project(room.width,0),
                  project(room.width,room.height),project(0,room.height)];
   const origin=corners[0],ex=project(1,0),ey=project(0,1);
@@ -144,63 +183,49 @@ window.MindRoomArt=(()=>{
   ctx.beginPath();ctx.moveTo(corners[0].x,corners[0].y);
   for(let i=1;i<corners.length;i++)ctx.lineTo(corners[i].x,corners[i].y);
   ctx.closePath();ctx.clip();
-  // Transform the existing image plane only. Never draw dirt or colored
-  // overlays, and never modify the original source pixels.
   ctx.transform(ex.x-origin.x,ex.y-origin.y,ey.x-origin.x,ey.y-origin.y,
                 origin.x,origin.y);
-  if(asset?.ready){
-   const img=asset.img;
-   // A 2:1 original scan occupies 12x6 world units at readable stone
-   // size. Repeat the UNCHANGED image only for rooms larger than the map.
-   const spanY=6,spanX=spanY*img.naturalWidth/img.naturalHeight;
-   const centerX=(room.width-spanX)/2,centerY=(room.height-spanY)/2;
-   const firstX=centerX+Math.floor(-centerX/spanX)*spanX;
-   const firstY=centerY+Math.floor(-centerY/spanY)*spanY;
+  if(image){
+   const [spanX,spanY]=photoSpan(room.floorStyle,image,false);
    ctx.imageSmoothingEnabled=true;
    ctx.imageSmoothingQuality='high';
-   for(let y=firstY;y<room.height;y+=spanY)
-    for(let x=firstX;x<room.width;x+=spanX)
-     ctx.drawImage(img,x,y,spanX,spanY);
+   // World-anchored orientation: x-axis of original texture == room x-axis.
+   fillOriginal(ctx,image,spanX,spanY,0,0,room.width,room.height);
   }else{
-   // Neutral placeholder instead of the old fake stone polygons and grime.
-   ctx.fillStyle='#484744';ctx.fillRect(0,0,room.width,room.height);
+   ctx.fillStyle='#454545';ctx.fillRect(0,0,room.width,room.height);
   }
   ctx.restore();
   return true;
  }
- function drawWallFace(ctx,style,topA,topB,bottomA,bottomB,along){
-  const key=style==='stone-cut'?'wall-photo-stone-cut':'wall-photo-stone';
-  const asset=images.get(key);
-  if(!asset?.ready)return false;
-  const img=asset.img;
-  // Each photo covers four world units by two wall-height units. Sampling
-  // adjacent slices retains source continuity; the image is NEVER rebuilt.
-  const columns=Math.max(1,Math.round(2*img.naturalWidth/img.naturalHeight));
-  const part=((along%columns)+columns)%columns;
-  const unit=img.naturalWidth/columns;
+ function drawWallFace(ctx,style,topA,topB,bottomA,bottomB,along,height=2){
+  const image=getPhoto(style);
+  if(!image)return false;
+  const [spanX,spanY]=photoSpan(style,image,true);
   ctx.save();
-  ctx.beginPath();ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);
+  ctx.beginPath();
+  ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);
   ctx.lineTo(bottomB.x,bottomB.y);ctx.lineTo(bottomA.x,bottomA.y);
   ctx.closePath();ctx.clip();
+  // Canvas coordinates (u,v) travel along each wall and down its height.
+  // A full wall is height metres; v is normalized to 0..1 here.
   ctx.transform(topB.x-topA.x,topB.y-topA.y,
                 bottomA.x-topA.x,bottomA.y-topA.y,topA.x,topA.y);
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='high';
-  ctx.drawImage(img,part*unit,0,unit,img.naturalHeight,0,0,1,1);
+  // Image spans spanX metres along the wall, spanY metres vertically.
+  // The negative offset ensures adjacent segments sample contiguous pixels.
+  fillOriginal(ctx,image,spanX,spanY/height,along,0,1,1);
   ctx.restore();
   return true;
  }
  function status(){
-  const floors=['floor','floor-cut'].filter(k=>images.get(k)?.ready).length;
-  const walls=['wall-photo-stone','wall-photo-stone-cut'].filter(k=>images.get(k)?.ready).length;
+  const floors=PHOTOS.filter(p=>!p[3]&&getPhoto(p[0])).length;
+  const walls=PHOTOS.filter(p=>p[3]&&getPhoto(p[0])).length;
   return {
-   tiles:floors+'/2 Originalböden',
-   wallPhotos:walls+'/2 Originalmauern',
+   tiles:floors+'/3 Poly-Haven-Böden',
+   wallPhotos:walls+'/3 Poly-Haven-Mauern',
    guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
-   tileReady:floors>0,
-   wallsReady:walls===2,
-   floorReady:images.get('floor')?.ready||false,
-   floorCutReady:images.get('floor-cut')?.ready||false,
+   tileReady:floors>0,wallsReady:walls===3
   };
  }
  return {drawGuardian,drawRoomFloor,drawWallFace,status,onChange(callback){watchers.push(callback)}};
