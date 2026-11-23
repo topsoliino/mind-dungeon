@@ -3,7 +3,7 @@
  *
  * node beta/room-editor/tests/uv-mapping.test.js
  *
- * Verifies that the wall source is a REAL Diffuse map, never a perspective
+ * Verifies that all eleven materials use REAL Diffuse maps, never perspective
  * preview, that one floor atlas covers the entire room without restarted
  * tile patterns, and neighboring wall segments use adjacent source pixels.
  * Does not mutate any main game files.
@@ -39,7 +39,7 @@ function recordingContext(){
 async function main(){
  // The loader awaits fetch+json and all six image onloads.
  for(let i=0;i<15;i++)await Promise.resolve();
- assert.equal(manifest.schema,'mind-dungeon-room-tiles/v6');
+ assert.equal(manifest.schema,'mind-dungeon-room-tiles/v7');
  assert.equal(manifest.textureMode,'uv-ready-polyhaven-diffuse');
  const floorStyles=Object.keys(ctxWindow.MindRoomKit.catalog.floors).sort();
  const wallStyles=Object.entries(ctxWindow.MindRoomKit.catalog.walls)
@@ -48,6 +48,8 @@ async function main(){
  // A previous build accidentally exported the wall materials inside
  // floorVariants and left wallVariants empty; this caused ALL six UI images
  // to stay gray (0/3 floors, 0/3 walls). Test both category partitions.
+ assert.equal(floorStyles.length,8);
+ assert.equal(wallStyles.length,3);
  assert.deepEqual(Object.keys(manifest.floorVariants).sort(),floorStyles,
    'floorVariants must contain only the three floor styles');
  assert.deepEqual(Object.keys(manifest.wallVariants).sort(),wallStyles,
@@ -55,7 +57,7 @@ async function main(){
  assert.deepEqual(Object.keys(manifest.floorAtlases).sort(),floorStyles);
  assert.deepEqual(Object.keys(manifest.wallAtlases).sort(),wallStyles);
  const art=ctxWindow.MindRoomArt,status=art.status();
- assert.match(status.tiles,/^3\/3/);
+ assert.match(status.tiles,/^8\/8/);
  assert.match(status.wallPhotos,/^3\/3/);
  const geo=(x,y)=>({x:(x-y)*42,y:(x+y)*42/Math.sqrt(3)});
  for(const style of Object.keys(ctxWindow.MindRoomKit.catalog.floors)){
@@ -64,6 +66,10 @@ async function main(){
   assert.ok(info.file.startsWith('floor-albedo-'));
   assert.equal(info.textureRole,'Diffuse/albedo, flat UV ready');
   assert.equal(s.worldWidth,info.worldWidth);
+  assert.equal(info.byteIdenticalToSource,true,'the original diffuse must be unchanged');
+  assert.equal(atlas.sourceSha256,info.sha256,'atlas must derive from this material');
+  assert.equal(atlas.worldHeight,30);
+  assert.ok(manifest.floorAtlases[style].startsWith('floor-atlas-'));
   assert.equal(atlas.worldWidth,30);
   for(const [w,h] of [[4,4],[7,5],[30,30]]){
    const c=recordingContext();
@@ -96,6 +102,6 @@ async function main(){
      'wall height must be SCREEN VERTICAL, not aligned to the floor plane');
   }
  }
- console.log('Room Atelier UV mapping OK: 3 floors and 3 vertical walls, no runtime repeating tiles');
+ console.log('Room Atelier UV mapping OK: 8 floors and 3 vertical walls, no runtime repeating tiles');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
