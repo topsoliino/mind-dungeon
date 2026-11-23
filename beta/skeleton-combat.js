@@ -58,15 +58,15 @@ function create(hooks){
     travel(e,angle,spec.speed*1.8,dt,angle);
     const strikes=[.13,.30,.47,.64,.81,.99];
     while(a.hits<strikes.length&&crossed(strikes[a.hits])){
-     hit(e,hero,'Säbelcombo',6,80,angle);a.hits++;
+     hit(e,hero,'Säbelcombo',6,64,angle);a.hits++;
     }
    }else if(a.name==='slash'){
     if(a.age<.42)travel(e,angle,spec.speed*1.4,dt,angle);
     else if(a.age>.47)travel(e,back,spec.speed*2.25,dt,angle);
-    if(crossed(.38))hit(e,hero,'Säbelschnitt',18,90,angle);
+    if(crossed(.38))hit(e,hero,'Säbelschnitt',18,72,angle);
    }else if(a.name==='overhead'){
     if(a.age<.47)travel(e,angle,spec.speed,dt,angle);
-    if(crossed(.50))hit(e,hero,'Überkopfschlag',24,84,angle);
+    if(crossed(.50))hit(e,hero,'Überkopfschlag',24,67,angle);
    }else if(a.name==='throw'){
     if(d>90)travel(e,angle,spec.speed*.60,dt,angle);
    }
@@ -100,7 +100,7 @@ function create(hooks){
    }
    return;
   }
-  if(e.skeletonCooldown<=0&&d<177){
+  if(e.skeletonCooldown<=0&&d<140){
    e.skeletonChoice=(e.skeletonChoice||0)+1;
    const name=['combo','slash','overhead'][(e.skeletonChoice-1)%3];
    begin(e,name);

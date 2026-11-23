@@ -767,11 +767,11 @@ function fireBolt(e,type){
  const speed=type==='bow'?330:445;
  if(e.skeleton==='bow'){
   const dx=Math.cos(e.angle),dy=Math.sin(e.angle);
-  const lead=api.arrowGroundClear(e.x+dx*12,e.y+dy*12)?12:0;
+  const lead=api.arrowGroundClear(e.x+dx*12,e.y+dy*12,e.alleyFloor??0)?12:0;
   const x=e.x+dx*lead,y=e.y+dy*lead;
   const gravity=240,z=40,targetTime=Math.max(.14,Math.hypot(e.target.x-x,e.target.y-y)/speed);
   const vz=(24-z)/targetTime+.5*gravity*targetTime;
-  state.bolts.push({x,y,z:z+(e.alleyZ||0),vz,gravity,angle:e.angle,speed,type,
+  state.bolts.push({x,y,z:z+(root.RockyCoastPrison?.enabled?0:(e.alleyZ||0)),vz,gravity,angle:e.angle,speed,type,
     alleyFloor:e.alleyFloor??0,
    life:(vz+Math.sqrt(vz*vz+2*gravity*z))/gravity,origin:origin(e,'Pfeil')});
   return;
@@ -801,7 +801,7 @@ function updateBolts(dt){
     if(!api.arrowGroundClear(x,y,p.alleyFloor??0))return false;
     const step=elapsed/steps;
     p.z+=p.vz*step-.5*p.gravity*step*step;p.vz-=p.gravity*step;
-    if(api.alleyEnemyPursuit&&p.z<(p.alleyFloor??0)*132)return false;
+    if(api.alleyEnemyPursuit&&p.z<(root.RockyCoastPrison?.enabled?0:(p.alleyFloor??0)*132))return false;
    }else if(!approaching&&(inRest(x,y)||wall(x,y)||gateBlocked(x,y)||floor.doorAt(x,y)))return false;
    const prop=!approaching&&furnitureAt(x,y,2);
    if(prop){

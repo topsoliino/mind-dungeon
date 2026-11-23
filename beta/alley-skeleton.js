@@ -46,11 +46,15 @@ window.AlleySkeleton=(()=>{
     if(Math.hypot(point.x-alley.spawn.x,point.y-alley.spawn.y)<168||
        encounters.some(p=>Math.hypot(point.x-p.x,point.y-p.y)<112)||
        !alley.walkable(point.x,point.y,19)||!alley.routeTo(alley.spawn,point))continue;
-    encounters.push({...point,roomId:room.id,skeleton:encounters.length%2?'bow':'sabre'});
+    encounters.push({...point,roomId:room.id});
     break;
    }
    if(encounters.length>=limit)break;
   }
+  // Put a bow in the first reachable encounter, including single-spawn floors.
+  const closest=encounters.slice().sort((a,b)=>Math.hypot(a.x-alley.spawn.x,a.y-alley.spawn.y)-
+   Math.hypot(b.x-alley.spawn.x,b.y-alley.spawn.y));
+  closest.forEach((spawn,i)=>{spawn.skeleton=i%2?'sabre':'bow';});
   return encounters;
  }
  // Authoritative Blender GLB snapshots, baked OFFLINE to 32 full 3D

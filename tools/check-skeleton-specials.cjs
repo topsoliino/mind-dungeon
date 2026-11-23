@@ -22,13 +22,14 @@ function encounter(kit,distance,options={}){
  const sim=window.DungeonEnemySim.create({
   floor,enemyRules:rules,state,save:{floor:1},
   items:{foes:[],foeAttack:[]},balance:{counterSeconds:.3},
+  alleyEnemyPursuit:options.storey==null?null:{update:()=>false,heroFloor:()=>options.storey},
   actorRadius:()=>12,nearActor:no,enemyEncounterReady:()=>true,
   coopActors:()=>[actor],getEnemies:()=>[enemy],
   takeDamage:(hero,amount)=>{hits.push(amount);return false;},
   applyPoison:(hero,opts)=>{poisons.push(opts);hero.poison={};},
   maxHP:()=>100,rand:()=>options.random??.95,
   soundWorld:name=>{sounds.push(name);return true;},landArrow:noop,
-  arrowGroundClear:x=>x<wallX,arrowTargetHeight:()=>options.height??0,
+  arrowGroundClear:(x,y,storey)=>x<wallX&&(options.storey==null||storey===options.storey),arrowTargetHeight:()=>options.height??0,
   moveActor:(e,dx,dy)=>{e.x+=dx;e.y+=dy;}
  });
  let time=0;
@@ -49,6 +50,14 @@ function encounter(kit,distance,options={}){
   'single and double arrow clips must be triggered');
  assert(bow.enemy.x<0,'archer should retreat while shooting');
  assert(bow.hits.length>=1,'arrows must still be able to hit the hero');
+}
+{
+ window.RockyCoastPrison={enabled:true};
+ const upstairs=encounter('bow',190,{storey:2});
+ upstairs.enemy.alleyFloor=upstairs.actor.alleyFloor=2;
+ for(let i=0;i<850;i++)upstairs.advance();
+ assert(upstairs.hits.length>0,'an archer on storey three must be able to hit a hero on that storey');
+ delete window.RockyCoastPrison;
 }
 {
  const sword=encounter('sabre',48);

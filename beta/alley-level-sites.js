@@ -36,6 +36,15 @@
   }
   if(!best)throw Error('Kein freier Platz für '+kind+' in '+prefix);
   add(kind,floor,best.room,best.u,best.w,{gold:kind==='chest'?8+Math.floor(roll()*13):0});
+  if(kind==='chest'){
+   // Face the closest doorway into this chamber. The four baked lock faces
+   // point along +v, +u, -v and -u respectively in the projected floor.
+   const approaches=g.rooms[best.room].exits.flatMap(d=>d.edges.flat());
+   const nearest=approaches.reduce((a,b)=>Math.hypot(a[0]+.5-best.u,a[1]+.5-best.w)<
+    Math.hypot(b[0]+.5-best.u,b[1]+.5-best.w)?a:b);
+   const du=nearest[0]+.5-best.u,dv=nearest[1]+.5-best.w;
+   sites.at(-1).turn=Math.abs(du)>Math.abs(dv)?(du>0?1:3):(dv>0?0:2);
+  }
   roomCounts.set(best.room,(roomCounts.get(best.room)||0)+1);
  }
  for(let i=0;i<2;i++){

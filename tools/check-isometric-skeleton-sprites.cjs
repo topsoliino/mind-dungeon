@@ -47,7 +47,7 @@ const world={spawn:{x:24,y:24},walkable:()=>true,
  routeTo:()=>({goal:{x:0,y:0},steps:[]})};
 const spawns=skeleton.encounters({rooms},world);
 assert.equal(spawns.length,4);
-assert.deepEqual(Array.from(spawns,p=>p.skeleton),['sabre','bow','sabre','bow']);
+assert.deepEqual(Array.from(spawns,p=>p.skeleton),['bow','sabre','bow','sabre']);
 assert(spawns.every(p=>Math.hypot(p.x-24,p.y-24)>=168));
 assert.equal(JSON.stringify(spawns),JSON.stringify(skeleton.encounters({rooms},world)));
 assert.equal(skeleton.encounters({rooms:[]},world).length,0);

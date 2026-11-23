@@ -7,7 +7,10 @@ for(let seed=4147;seed<4157;seed++)for(let level=1;level<=4;level++){
  const g=env.AlleyGenerator,plan=g.levelSites,v=env.AlleyVertical,p=env.RockyCoastPrison;
  assert.equal(g.rooms.filter(r=>r.kind==='raum').length,15);
  for(const [kind,count] of Object.entries({altar:10,chest:5,door:2,brew:1,merchant:1}))assert.equal(plan.sites.filter(s=>s.kind===kind).length,count);
- for(const s of plan.sites){for(const link of [...v.connectorsAt(s.floor),...(s.floor?v.connectorsAt(s.floor-1):[])])assert.notEqual(s.room,link.roomId);
+ for(const s of plan.sites){
+  if(s.kind==='chest')assert([0,1,2,3].includes(s.turn));
+  if(s.kind==='door')assert([2,3,4,5,6].includes(s.half*2));
+  for(const link of [...v.connectorsAt(s.floor),...(s.floor?v.connectorsAt(s.floor-1):[])])assert.notEqual(s.room,link.roomId);
  p.atStorey(s.floor+1,()=>{assert.equal(g.blocked(s.x/48,s.y/48,.25),s.kind==='door');if(s.kind==='door'){plan.unlock(s);assert(!g.blocked(s.x/48,s.y/48,.25));}});
  }
  console.log(seed,level,'ok');
