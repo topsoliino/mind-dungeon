@@ -241,13 +241,24 @@ window.MindRoomArt=(()=>{
                 bottomA.x-topA.x,bottomA.y-topA.y,
                 topA.x,topA.y);
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-  // Two crops if a one-metre wall section crosses the original diffuse edge.
+  // During direct-source fallback preserve physical scale in BOTH
+  // directions: e.g. a 1.6-metre scan must not stretch to a 2-metre wall.
+  // Instead repeat the original albedo vertically until the wall is filled.
   const usable=Math.min(sourceW,image.naturalWidth-sourceX);
   const portion=usable/sourceW;
-  ctx.drawImage(image,sourceX,0,usable,image.naturalHeight,0,0,portion,1);
-  if(portion<.999999)
-   ctx.drawImage(image,0,0,sourceW-usable,image.naturalHeight,
-                 portion,0,1-portion,1);
+  const sourceH=resource?.kind==='atlas'?height:
+                 span*image.naturalHeight/image.naturalWidth;
+  const drawStrip=(v,worldH)=>{
+   const dv=worldH/height;
+   const sy=0,sh=(worldH/sourceH)*image.naturalHeight;
+   ctx.drawImage(image,sourceX,sy,usable,sh,0,v/height,portion,dv);
+   if(portion<.999999)
+    ctx.drawImage(image,0,sy,sourceW-usable,sh,
+                  portion,v/height,1-portion,dv);
+  };
+  if(resource?.kind==='atlas')drawStrip(0,height);
+  else for(let v=0;v<height;v+=sourceH)
+   drawStrip(v,Math.min(sourceH,height-v));
   ctx.restore();
   return true;
  }
