@@ -26,7 +26,7 @@
   const climbing=loadLayer(root,['guardian-climbing.webp']).then(([image])=>image).catch(()=>null);
   if(settings?.ok)light=await settings.json();
   try{
-   const {loadRig}=await import('./dungeon-guardian-rig.js?v=6');
+   const {loadRig}=await import('./dungeon-guardian-rig.js?v=7');
    return {atlas,climbing:await climbing,rig:await loadRig(root+'guardian-rig.glb.gz?v=3',atlas.clips)};
   }catch(error){
    console.warn('3D-Wächter nicht verfügbar. Sprite-Wächter wird verwendet.',error);
