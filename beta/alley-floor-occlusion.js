@@ -13,8 +13,9 @@ window.AlleyFloorOcclusion=(()=>{
   // ground plane. It is not an absolute level number. Sorting by
   // alleyFloor===1 or Boolean(alleyClimb) makes low-level rats and skeletons
   // draw IN FRONT of the second-storey slab.
-  const relative=Number.isFinite(enemy.alleyZ)?enemy.alleyZ:
-   Math.max(0,(realFloor-base)*height);
+  const relative=ride?(Number.isFinite(enemy.alleyZ)?enemy.alleyZ:0):
+   realFloor===base+1?height:
+   Number.isFinite(enemy.alleyZ)?enemy.alleyZ:0;
   const depthBand=relative>=height*.73?7000:0;
   if(!ride)return {visible:realFloor===viewFloor,depthBand};
   const t=clamp((ride.age||0)/Math.max(.001,ride.duration||1));
