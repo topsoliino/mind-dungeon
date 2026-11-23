@@ -25,7 +25,7 @@
   <p class="small quiet">1 Rasterfeld = 48 Spieleinheiten. Raumgrößen bleiben jederzeit veränderbar.</p>
   <hr>
   <div class="panel-heading"><span class="overline">02 / MATERIAL</span><h2>Bodenplatten</h2></div>
-  <label for="floorType">Stein und Muster</label><select id="floorType"></select>
+  <label for="floorType">Kerkerboden-Oberfläche</label><select id="floorType"></select>
   <div id="floorSwatches" class="swatches"></div>
   <div class="panel-heading extra"><h2>Wandtiles</h2></div>
   <label for="wallType">Bauteil zum Platzieren</label><select id="wallType"></select>
@@ -33,17 +33,18 @@
   <hr>
   <div class="panel-heading"><span class="overline">03 / OBJEKTE</span><h2>Blender-Möbel</h2></div>
   <div id="furnitureCatalog" class="catalog"></div>
-  <p class="small quiet" id="assetInfo">512-Pixel-Blender-Render: ein Gefängnisboden, ein Steinwandstil und je vier Möbelansichten. Originaler Wächter-Atlas im Spieltest.</p>
+  <p class="small quiet" id="assetInfo">Durchgehende 4096-Pixel-Kerkerbodenkarte, echte Blender-Steinwände und vier Ansichten je Möbelstück. Original-Wächter als Referenz aus dem Hauptspiel.</p>
   <div class="editor-info"><strong>Eigenständiges Tool</strong><span>Der bestehende Dungeon-Generator und seine Greybox-Dateien werden nicht bearbeitet. Die Raumdaten können später importiert werden.</span></div>
  </aside>
  <main class="workspace">
   <nav class="toolbar" aria-label="Werkzeuge">
    <button data-tool="select" class="tool active" title="Auswahl / Verschieben (V)"><span>↖</span> Auswahl</button>
-   <button data-tool="floor" class="tool" title="Boden bemalen (B)"><span>▰</span> Boden</button>
+   <button data-tool="floor" class="tool" title="Schmutz- und Feuchtigkeitsakzente malen (B)"><span>▰</span> Boden</button>
    <button data-tool="wall" class="tool" title="Wände / Gitter setzen (W)"><span>▥</span> Wand</button>
    <button data-tool="place" class="tool" title="Möbel platzieren (F)"><span>▣</span> Möbel</button>
    <button data-tool="erase" class="tool" title="Objekt oder Wand entfernen (E)"><span>⌫</span> Löschen</button>
    <span class="toolbar-break"></span>
+   <button id="guardianBtn" class="tool active" title="Originalen Wächter aus dem Hauptspiel als Stil- und Größenreferenz ein-/ausblenden">◆ Spiel-Wächter lädt …</button>
    <button id="playBtn" class="tool play" title="Kollision testen (P)">▶ Spieltest</button>
    <button id="gridBtn" class="tool active subtle" title="Raster ein-/ausblenden (G)"># Raster</button>
    <button id="fitBtn" title="Raum in Ansicht einpassen">⤢</button>
@@ -80,6 +81,6 @@
  </aside>
 </div>
 <script src="./catalog.js?v=2"></script>
-<script src="./editor-art.js?v=1"></script>
-<script src="./editor.js?v=4"></script>
+<script src="./editor-art.js?v=6"></script>
+<script src="./editor.js?v=9"></script>
 </body></html>
