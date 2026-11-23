@@ -13,9 +13,9 @@ window.MindRoomArt=(()=>{
   const img=new Image();
   result.img=img;
   img.onload=()=>{
-   if((key==='floor'||key==='floor-cut')&&(img.naturalWidth!==4096||img.naturalHeight!==4096)||
-      key.startsWith('wall-photo-')&&(img.naturalWidth!==4096||img.naturalHeight!==1024)){
-    result.failed=true;console.warn('Old tile atlas detected; continuous floor build not published yet');
+   if(img.naturalWidth<700||img.naturalHeight<700){
+    result.failed=true;
+    console.warn('Original source photo too small:',key);
    }else result.ready=true;
    emit();
   };
@@ -30,25 +30,30 @@ window.MindRoomArt=(()=>{
  for(const key of PHOTO_KEYS)images.set(key,{img:null,ready:false,failed:false,src:''});
  async function loadPhotographicMaterials(){
   try{
-   const response=await fetch(ROOT+'tiles/manifest.json?v=material-v3',{cache:'no-cache'});
+   const response=await fetch(ROOT+'tiles/manifest.json?v=original-material-v4',{cache:'no-cache'});
    if(!response.ok)throw Error('Material manifest unavailable');
    const manifest=await response.json();
-   if(manifest.floorMaterial!=='photoreal-scanned-cc0'||
-      manifest.wallMaterial!=='photoreal-scanned-cc0')
-    throw Error('Two photographic floors and walls not published yet');
+   if(manifest.textureMode!=='original-photo-byte-identical'||
+      manifest.floorMaterial!=='original-photo-byte-identical'||
+      manifest.wallMaterial!=='original-photo-byte-identical')
+    throw Error('Original untouched photo materials not published yet');
    if(!/^[0-9a-f]{64}$/.test(manifest.floorGeneratorSha256||'')||
       !/^[0-9a-f]{64}$/.test(manifest.wallGeneratorSha256||''))
     throw Error('Material build hash missing');
    const materials=[
-    ['floor',manifest.floorVariants?.['dungeon-ashlar'],manifest.floorGeneratorSha256],
-    ['floor-cut',manifest.floorVariants?.['dungeon-cut-stone'],manifest.floorGeneratorSha256],
-    ['wall-photo-stone',manifest.wallVariants?.stone,manifest.wallGeneratorSha256],
-    ['wall-photo-stone-cut',manifest.wallVariants?.['stone-cut'],manifest.wallGeneratorSha256]
+    ['floor','dungeon-ashlar',manifest.floorVariants?.['dungeon-ashlar']],
+    ['floor-cut','dungeon-cut-stone',manifest.floorVariants?.['dungeon-cut-stone']],
+    ['wall-photo-stone','stone',manifest.wallVariants?.stone],
+    ['wall-photo-stone-cut','stone-cut',manifest.wallVariants?.['stone-cut']]
    ];
-   const allowed=/^(floor-prison-0[12]\.(?:webp|jpg)|wall-masonry-0[12]\.jpg)$/;
-   for(const [key,file,hash] of materials){
-    if(typeof file!=='string'||!allowed.test(file))throw Error('Bad photo asset '+key);
-    preload(key,ROOT+'tiles/'+file+'?v='+hash);
+   const allowed=/^(floor-prison-0[12]\.png|wall-masonry-0[12]\.png)$/;
+   for(const [key,style,file] of materials){
+    const info=manifest.assetInfo?.[style];
+    if(typeof file!=='string'||!allowed.test(file)||info?.file!==file||
+       !/^[0-9a-f]{64}$/.test(info?.sha256||'')||
+       info.byteIdenticalToSource!==true)
+      throw Error('Original photo asset missing or unverified: '+style);
+    preload(key,ROOT+'tiles/'+file+'?v='+info.sha256);
    }
   }catch(error){
    for(const key of PHOTO_KEYS)images.get(key).failed=true;
@@ -129,43 +134,13 @@ window.MindRoomArt=(()=>{
   ctx.restore();
   return true;
  }
- // One continuous 32x32 world-unit floor artwork. Small rooms reveal a centered
- // crop; large rooms reveal more of the SAME map. No texture scaling per room.
- // Low-cost cohesive placeholder while the high-detail WebP is being built.
- // Never fall back to visibly repeated floor tiles.
- let previewFloor=null;
- function getPreviewFloor(){
-  if(previewFloor)return previewFloor;
-  const image=document.createElement('canvas');image.width=image.height=1536;
-  const gc=image.getContext('2d'),size=image.width;
-  let seed=173641;
-  const rnd=()=>{seed=(Math.imul(1664525,seed)+1013904223)|0;return (seed>>>0)/4294967296};
-  gc.fillStyle='#303035';gc.fillRect(0,0,size,size);
-  for(let i=0;i<2800;i++){
-   const x=rnd()*size,y=rnd()*size,rx=7+rnd()*30,ry=5+rnd()*21;
-   const c=Math.floor(47+rnd()*36);
-   gc.fillStyle='rgb('+c+','+(c-1)+','+(c+1)+')';
-   gc.strokeStyle='#202228';gc.lineWidth=1.7;
-   gc.beginPath();
-   for(let j=0;j<7;j++){
-    const a=j*Math.PI*2/7,dist=.72+rnd()*.3;
-    const px=x+Math.cos(a)*rx*dist,py=y+Math.sin(a)*ry*dist;
-    if(!j)gc.moveTo(px,py);else gc.lineTo(px,py);
-   }
-   gc.closePath();gc.fill();gc.stroke();
-  }
-  for(let i=0;i<12000;i++){
-   const c=rnd()>.5?'#16191d':'#837b7055';
-   gc.fillStyle=c;const sz=.4+rnd()*2.8;
-   gc.fillRect(rnd()*size,rnd()*size,sz,sz*.65);
-  }
-  previewFloor=image;return image;
- }
- const WORLD_FLOOR=32,UNIT_WORLD_X=42,WALL_ORTHO=3.25;
+ // The assets are imported byte-for-byte from Poly Haven's visible
+ // previews, not authored or color-graded by the editor. Only the camera
+ // projection maps those unchanged source pixels onto our room geometry.
+ const UNIT_WORLD_X=42,WALL_ORTHO=3.25;
  function spriteSize(ortho,zoom){return UNIT_WORLD_X*ortho*Math.SQRT2*zoom}
  function drawRoomFloor(ctx,room,project){
   const asset=images.get(room.floorStyle==='dungeon-cut-stone'?'floor-cut':'floor');
-  const floorImage=asset?.ready?asset.img:getPreviewFloor();
   const corners=[project(0,0),project(room.width,0),
                  project(room.width,room.height),project(0,room.height)];
   const origin=corners[0],ex=project(1,0),ey=project(0,1);
@@ -173,44 +148,49 @@ window.MindRoomArt=(()=>{
   ctx.beginPath();ctx.moveTo(corners[0].x,corners[0].y);
   for(let i=1;i<corners.length;i++)ctx.lineTo(corners[i].x,corners[i].y);
   ctx.closePath();ctx.clip();
-  // Image coordinates become WORLD coordinates before the isometric projection.
+  // Transform the existing image plane only. Never draw dirt or colored
+  // overlays, and never modify the original source pixels.
   ctx.transform(ex.x-origin.x,ex.y-origin.y,ey.x-origin.x,ey.y-origin.y,
                 origin.x,origin.y);
-  const offsetX=(room.width-WORLD_FLOOR)/2,offsetY=(room.height-WORLD_FLOOR)/2;
-  ctx.imageSmoothingEnabled=true;
-  ctx.imageSmoothingQuality='high';
-  ctx.drawImage(floorImage,offsetX,offsetY,WORLD_FLOOR,WORLD_FLOOR);
+  if(asset?.ready){
+   const img=asset.img;
+   // A 2:1 original scan occupies 12x6 world units at readable stone
+   // size. Repeat the UNCHANGED image only for rooms larger than the map.
+   const spanY=6,spanX=spanY*img.naturalWidth/img.naturalHeight;
+   const centerX=(room.width-spanX)/2,centerY=(room.height-spanY)/2;
+   const firstX=centerX+Math.floor(-centerX/spanX)*spanX;
+   const firstY=centerY+Math.floor(-centerY/spanY)*spanY;
+   ctx.imageSmoothingEnabled=true;
+   ctx.imageSmoothingQuality='high';
+   for(let y=firstY;y<room.height;y+=spanY)
+    for(let x=firstX;x<room.width;x+=spanX)
+     ctx.drawImage(img,x,y,spanX,spanY);
+  }else{
+   // Neutral placeholder instead of the old fake stone polygons and grime.
+   ctx.fillStyle='#484744';ctx.fillRect(0,0,room.width,room.height);
+  }
   ctx.restore();
   return true;
  }
- // A true world-mapped facade: the photo source spans 32 connected horizontal
- // wall units by 2 vertical units. Each segment crops the corresponding span;
- // segment seams never restart the 1-unit sample at the left edge.
  function drawWallFace(ctx,style,topA,topB,bottomA,bottomB,along){
   const key=style==='stone-cut'?'wall-photo-stone-cut':'wall-photo-stone';
   const asset=images.get(key);
   if(!asset?.ready)return false;
-  const img=asset.img,unit=img.naturalWidth/32;
-  const position=Math.max(0,Math.min(31,Math.trunc(along)));
+  const img=asset.img;
+  // Each photo covers four world units by two wall-height units. Sampling
+  // adjacent slices retains source continuity; the image is NEVER rebuilt.
+  const columns=Math.max(1,Math.round(2*img.naturalWidth/img.naturalHeight));
+  const part=((along%columns)+columns)%columns;
+  const unit=img.naturalWidth/columns;
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);
+  ctx.beginPath();ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);
   ctx.lineTo(bottomB.x,bottomB.y);ctx.lineTo(bottomA.x,bottomA.y);
   ctx.closePath();ctx.clip();
   ctx.transform(topB.x-topA.x,topB.y-topA.y,
                 bottomA.x-topA.x,bottomA.y-topA.y,topA.x,topA.y);
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='high';
-  ctx.drawImage(img,position*unit,0,unit,img.naturalHeight,0,0,1,1);
-  ctx.restore();
-  // A restrained rough coping edge gives the otherwise flat photographic
-  // facade a sense of medieval masonry thickness and depth.
-  ctx.save();
-  ctx.lineWidth=2.4;
-  ctx.strokeStyle=style==='stone-cut'?'#5b5955':'#48494b';
-  ctx.beginPath();ctx.moveTo(topA.x,topA.y);ctx.lineTo(topB.x,topB.y);ctx.stroke();
-  ctx.lineWidth=.8;ctx.strokeStyle='#aaa49a66';
-  ctx.beginPath();ctx.moveTo(topA.x,topA.y-1);ctx.lineTo(topB.x,topB.y-1);ctx.stroke();
+  ctx.drawImage(img,part*unit,0,unit,img.naturalHeight,0,0,1,1);
   ctx.restore();
   return true;
  }
@@ -226,8 +206,8 @@ window.MindRoomArt=(()=>{
   const floors=['floor','floor-cut'].filter(k=>images.get(k)?.ready).length;
   const walls=['wall-photo-stone','wall-photo-stone-cut'].filter(k=>images.get(k)?.ready).length;
   return {
-   tiles:floors+'/2 Foto-Böden',
-   wallPhotos:walls+'/2 Foto-Mauern',
+   tiles:floors+'/2 Originalböden',
+   wallPhotos:walls+'/2 Originalmauern',
    guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
    tileReady:floors>0,
    wallsReady:walls===2,
