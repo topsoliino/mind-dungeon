@@ -59,10 +59,13 @@ window.AlleySkeleton=(()=>{
  const TAU=Math.PI*2,VIEWS=32,ELEVATION=Math.atan(1/Math.sqrt(2));
  const sheets=new Map(),pending=new Map();
  let atlas=null;
+ // Shared equipment-free climbing sheet is published separately from
+ // the generated per-weapon manifest.
+ const framesFor=(kit,clip)=>clip==='climb'?12:atlas?.clips?.[kit]?.[clip];
  const name=(kit,clip)=>clip==='climb'?'both-climb':kit+'-'+clip;
  const wrap=(n,max)=>((n%max)+max)%max;
  async function ensure(kit,clip){
-  if(!atlas?.clips?.[kit]?.[clip])return null;
+  if(!atlas||!framesFor(kit,clip))return null;
   const key=name(kit,clip);
   if(sheets.has(key))return sheets.get(key);
   if(pending.has(key))return pending.get(key);
@@ -72,7 +75,7 @@ window.AlleySkeleton=(()=>{
      '.webp?v='+atlas.source[kit].slice(0,16);
     const image=new Image();image.src=src;
     await image.decode();
-    if(image.width!==atlas.cell*atlas.clips[kit][clip]||
+    if(image.width!==atlas.cell*framesFor(kit,clip)||
        image.height!==atlas.cell*VIEWS)
      throw Error('Unexpected Blender atlas dimensions '+kit+':'+clip);
     sheets.set(key,image);return image;
@@ -99,12 +102,12 @@ window.AlleySkeleton=(()=>{
    atlas=config;
    const loaded=await Promise.all([
     ensure('sabre','idle'),ensure('sabre','run'),
-    ensure('bow','idle'),ensure('bow','run'),ensure('bow','climb')
+    ensure('bow','idle'),ensure('bow','run')
    ]);
    if(loaded.every(Boolean)){
     // Predecode the first likely melee and ranged attack while the loading
     // screen is up. Their real bone animation will be available immediately.
-    await Promise.allSettled([ensure('sabre','combo'),ensure('bow','shoot')]);
+    await Promise.allSettled([ensure('sabre','combo'),ensure('bow','shoot'),ensure('bow','climb')]);
     return true;
    }
    atlas=null;sheets.clear();
@@ -119,7 +122,7 @@ window.AlleySkeleton=(()=>{
   sheets.has('bow-idle')&&sheets.has('bow-run'));}
  function loaded(){return [...sheets].map(([key,image])=>({
   key:'alley-skeleton-baked-'+key,image,
-  columns:atlas.clips[key.startsWith('both-')?'bow':key.split('-')[0]][key.slice(key.indexOf('-')+1)],
+  columns:framesFor(key.split('-')[0],key.slice(key.indexOf('-')+1)),
   rows:VIEWS,cell:atlas.cell
  }));}
  function sprite(e,iso,rules,deathAge=null){
@@ -134,7 +137,7 @@ window.AlleySkeleton=(()=>{
    e.moving&&sheets.has(name(kit,'run'))?'run':'idle';
   const image=sheets.get(name(kit,shown));
   if(!image)return null;
-  const frames=atlas.clips[kit][shown],column=Math.max(0,
+  const frames=framesFor(kit,shown),column=Math.max(0,
    Math.min(frames-1,Math.floor(selected.t*frames)));
   const heading=Number.isFinite(e.facing)?e.facing:
    Number.isFinite(e.angle)?e.angle:0;

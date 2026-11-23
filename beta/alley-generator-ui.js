@@ -86,14 +86,15 @@ function mount({generator:g,player,iso}){
   };
  }
  const field=panel.querySelector('#iso-gen-seed');
- function setSeed(v){
+ function setSeed(v,randomStyle=false){
   const n=Math.max(0,Math.min(4294967295,Math.floor(Number(v)||0)));
   const url=new URL(window.location.href);
   url.searchParams.set('szene','gasse');url.searchParams.set('modus','generator');
+  if(randomStyle)url.searchParams.delete('treppe');
   url.searchParams.set('seed',String(n));url.searchParams.set('v','20');window.location.assign(url.href);
  }
  panel.querySelector('#iso-gen-apply').onclick=()=>setSeed(field.value);
- panel.querySelector('#iso-gen-new').onclick=()=>setSeed((g.requestedSeed+1)>>>0);
+ panel.querySelector('#iso-gen-new').onclick=()=>setSeed((g.requestedSeed+1)>>>0,true);
  field.onkeydown=e=>{if(e.key==='Enter')setSeed(field.value);};
  const canvas=panel.querySelector('#iso-gen-map'),display=canvas.getContext('2d');
  const background=document.createElement('canvas');
@@ -122,6 +123,7 @@ function mount({generator:g,player,iso}){
  const vertical=window.AlleyVertical;
  function drawBackground(){
   const links=vertical?.connectors||[];
+  if(vertical?.enabled){styleSelect.value=vertical.plan.kind;summaries[1].textContent=links.length?vertical.plan.style:'';}
   const ladders=links.filter(link=>link.kind==='ladder').length;
   panel.querySelector('#iso-gen-access').textContent=links.length?
    '· 1 Treppe'+(ladders?' · '+ladders+(ladders===1?' Leiter':' Leitern'):''):'· Ausgang zur Küste';

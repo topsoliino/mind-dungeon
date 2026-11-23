@@ -101,7 +101,7 @@ function placeLadder(plan){
 }
 const state={floor:0,z:0,transition:null,pending:null,stairRide:null,crouching:false};
 function buildFlight(parity,previous){
-const plan=grammar.select(generator,placeLadder,previous?.plan.region),room=plan.room;
+const plan=grammar.select(generator,placeLadder,previous?.plan.region,previous?.plan.kind),room=plan.room;
 const ladder=plan.ladder,upper=plan.upper;
 // Share ONE wall-space reference for ladder artwork and player root motion.
 // The wall rails sit .38 of a cell outward from the ladder-cell centre.
@@ -144,6 +144,8 @@ const stairsConnector={
  face:Math.atan2(plan.path[1].y-plan.path[0].y,plan.path[1].x-plan.path[0].x),
  duration:Math.max(2.1,plan.length*.19),variant:plan.kind
 };
+stairsConnector.mouth=plan.steps.slice(-4);
+stairsConnector.lip=plan.path.at(-1);
 const ladders=plan.ladders??[ladder];
 const connectors=[stairsConnector,...ladders.map(l=>({
  flight:parity,id:l.id,roomId:l.roomId,kind:'ladder',floorFrom:0,floorTo:1,
@@ -523,6 +525,21 @@ const flightAt=i=>flights[(i%2+2)%2];
 const current=()=>flightAt(prison.storey-1);
 const shared={
  state,
+ previousStairEntry(actor,dx,dy){
+  if(prison.storey<2||state.floor||state.transition||state.pending||state.stairRide)return false;
+  const index=prison.storey-2,flight=flightAt(index);
+  if(distance({x:actor.x/48,y:actor.y/48},flight.plan.top)>flight.plan.width*.5+1)return false;
+  state.floor=1;state.z=HEIGHT;
+  let entered=false;
+  try{entered=prison.atStorey(index+1,()=>flight.tryEnterStairs(actor,dx,dy));}
+  finally{if(!entered){state.floor=0;state.z=0;}}
+  return entered;
+ },
+ inMouth(link,x,y,z){
+  if(link.kind==='ladder')return z>=HEIGHT-35;
+  return z>=link.mouth[0].prev-.01&&(distance({x,y},link.top)<.6||
+   link.mouth.some(step=>insideConvex({x,y},step.corners)));
+ },
  connectorsAt:i=>i<0?[]:flightAt(i).connectorsAt(i),
  pose:(link,...args)=>flights[link.flight??0].pose(link,...args),
  createLayers:painter=>flights.flatMap((flight,i)=>flight.createLayers(painter)

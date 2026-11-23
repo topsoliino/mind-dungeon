@@ -223,12 +223,12 @@
     cross?cross.age/Math.max(.001,cross.duration):0;
    const floor=vertical?.state.floor??0;
    const old=lastLayerRefresh;
-   if(old&&old.images===images&&old.opened===opened&&old.floor===floor&&
+   if(old&&old.images===images&&old.opened===opened&&old.floor===floor&&old.storey===prison?.storey&&
     old.stage===stage&&Math.hypot(old.x-player.x,old.y-player.y)<9&&
     Math.abs(old.progress-progress)<.025&&
     (!view||old.camera&&Math.abs(old.camera.x-view.x)<14&&
      Math.abs(old.camera.y-view.y)<14&&Math.abs(old.camera.zoom-(view.zoom||1))<.015))return;
-   lastLayerRefresh={images,opened,floor,stage,progress,x:player.x,y:player.y,
+   lastLayerRefresh={images,opened,floor,storey:prison?.storey,stage,progress,x:player.x,y:player.y,
     camera:view?{x:view.x,y:view.y,zoom:view.zoom||1}:null};
    const current=layers(player,opened);
    // Discard static wall/tread tiles outside the viewport before Phaser

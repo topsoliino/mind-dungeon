@@ -199,15 +199,19 @@ function candidateAccessible(generator,model){
  }
  return false;
 }
-function select(generator,placeLadder,reserved=null){
+function select(generator,placeLadder,reserved=null,previousKind=null){
  const asked=new URLSearchParams(window.location.search).get('treppe');
- // Preserve the original seed->stair family mapping while allowing the
- // closed U-form to appear occasionally in ordinary generated levels.
- const originalStyles=styles.filter(s=>s!=='switchback-closed');
- const preferred=styles.includes(asked)?asked:
-  generator.seed%13===8?'switchback-closed':
-  originalStyles[generator.seed%originalStyles.length],
-  order=[preferred,...styles.filter(s=>s!==preferred)];
+ // Rank all families deterministically, including the fallbacks when a
+ // large flight doesn't fit. Prefer a different family on the next floor.
+ let salt=(generator.seed^(previousKind?0x9e3779b9:0))>>>0;
+ const order=styles.slice();
+ for(let i=order.length-1;i>0;i--){
+  salt=(Math.imul(salt,1664525)+1013904223)>>>0;
+  const j=Math.floor(salt/4294967296*(i+1));
+  [order[i],order[j]]=[order[j],order[i]];
+ }
+ if(previousKind)order.push(...order.splice(order.indexOf(previousKind),1));
+ if(styles.includes(asked))order.unshift(...order.splice(order.indexOf(asked),1));
  const doorCells=generator.doors.flatMap(d=>d.edges.flatMap(([a,b])=>[a,b]));
  const viable=[];
  for(const style of order){
