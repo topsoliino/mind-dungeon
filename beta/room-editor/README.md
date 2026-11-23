@@ -7,7 +7,7 @@
 ## Benutzung
 
 * **V**: Möbel selektieren/ziehen, rechts Eigenschaften ändern.
-* **B**: einzelne Bodenplatten bemalen (Dropdown links bestimmt das Material).
+* **B**: zusätzliche Schmutz-/Feuchtigkeitsspuren als weiche, lokal editierbare Akzente malen. Die eigentliche Bodenkarte ist ein zusammenhängendes Artwork.
 * **W**: auf eine Kante klicken, um Steinwand, Gitter, Gittertür oder offenen Durchgang zu platzieren.
 * **F**: Tisch oder Stuhl platzieren; Katalog links bestimmt den Typ.
 * **E**: Möbel/Wand/Boden-Sondertile entfernen.
@@ -26,12 +26,13 @@
 | `editor.css` | Oberfläche |
 | `catalog.js` | Boden-/Wand-Katalog und Möbel-Eigenschaften, vorinstallierte Gefängniszelle |
 | `editor.js` | Projektion, Zeichenreihenfolge, Interaktionen, Undo, Kollision, Spieltest, Export |
-| `editor-art.js` | High-res-Blender-Wand- und Bodenbilder sowie ORIGINALEN vorgerenderten Wächter-Atlas laden; kein Three.js und kein neues Rig |
+| `editor-art.js` | Original-Blender-Wandbilder und eine durchgehende 4096px-Bodenkarte sowie ORIGINALEN vorgerenderten Wächter-Atlas laden; kein Three.js und kein neues Rig |
 | `presets/prison-cell-01.json` | Eigenständig importierbare Gefängniszelle |
 | `blender/build-room-kit.py` | **Tatsächliche 3D-Modelle**: Tisch, Stuhl; physische Bretter, Beine, Eisennägel, Material-/Lichtsetup |
 | `blender/pack-room-kit.py` | Vier Ansichten je Möbelstück in 512×512 WebP + Manifest packen |
-| `blender/build-prison-tiles.py` | Ein 512px-Quadersteinboden und eine Mauer mit zwei gerenderten Orientierungen; echtes Cycles-Rendering, Material-Noise, Bevels, warmer Key und kaltes Fill |
-| `blender/pack-prison-tiles.py` | Packt `floor-prison-01.webp`, `wall-prison-x.webp`, `wall-prison-y.webp` samt Maßstabs-/Kameramanifest |
+| `blender/build-prison-tiles.py` | Ein vorhandener 512px-Referenzboden und zwei Blender-Maueransichten; in der App wird stattdessen die zusammenhängende 4096px-Bodenkarte verwendet |
+| `blender/build-floor-map.py` | Erzeugt ein deterministisches, 4096×4096 Pixel großes, zusammenhängendes Kerkerboden-Artwork mit unregelmäßigen Steinflächen, Schlamm, Schmutz, Feuchtigkeit, Bruchkanten und Stroh |
+| `blender/pack-prison-tiles.py` | Erzeugt und verpackt die 4096px-Bodenkarte und beide 512px-Blender-Maueransichten; die vorhandene Asset-CI wird ohne Workflow-Anpassung wiederverwendet |
 | `assets/source/prison-tiles.blend` | Editierbare Modellquelle der Steinarchitektur |
 | `assets/tiles/` | Originale hochauflösende Blender-Architekturbilder, nicht prozeduraler Runtime-Shader |
 | `assets/source/room-kit.blend` | Render-Workflow erzeugt die editierbare Blender-Szene |
@@ -72,7 +73,7 @@ Wanddaten definieren *physische Kanten* in Rasterkoordinaten. `north/south` gehe
 
 Im Editor-Spieltest wird kein neuer Wächter erzeugt. `editor-art.js` liest **`beta/art/player-study/guardian-frames.json`** plus die Originalbilder `guardian-body.webp`, `guardian-body-2.webp` und `guardian-weapon.webp`. Idle, Walk und Vault werden aus den tatsächlichen Frame-Metadaten abgespielt; das ist der bewährte günstige Sprite-Renderpfad des Spiels, aber ohne den laufenden 3D-Renderer.
 
-Steinarchitektur und Möbel nutzen dieselbe 35,264°-orthografische Kamera, kontrastreiches Filmic, warmen Key, kühles Fill und physische Material-/Kantenmodelle. Ein Steinboden ist **ein** Tile-Stil; die Mauer ist **ein** Stil mit zwei Sichtprojektionen, da X- und Y-Wandkanten im isometrischen Raum anders liegen. Die Möbel haben jeweils **vier** eigenständig vorgerenderte Ansichten bei 0°, 90°, 180° und 270°.
+Mauern und Möbel nutzen dieselbe 35,264°-orthografische Kamera, kontrastreiches Filmic, warmen Key, kühles Fill und physische Material-/Kantenmodelle. Der Boden ist dagegen **eine** große top-down-authored 4096px-Karte über fest **32×32 Welteinheiten**. Die editorseitige isometrische UV-Transformation bewahrt die Größe jedes Kratzers und Steins bei 2×2, 7×5 oder 30×30 Feldern; kleinere Räume sehen einen **zentrierten Ausschnitt** und dehnen keine Textur. Die Schere ist die physische Grundrisspolygon-Grenze. Das Raster ist ausschließlich eine optionale UI-Ebene. Die Mauer ist **ein** Stil mit zwei Sichtprojektionen, die Möbel je vier unabhängig gerenderte Ansichten.
 
 ### 3D-Renderpipeline
 
@@ -81,3 +82,11 @@ Steinarchitektur und Möbel nutzen dieselbe 35,264°-orthografische Kamera, kont
 Die automatisierte Veröffentlichung hat ausschließlich Schreibrechte auf `beta/room-editor/assets/`, ist gegen zwischenzeitliche Quellcode-Updates abgesichert und greift **niemals in den bestehenden Wächter- oder Dungeon-Code ein**.
 
 **Hinweis:** Der Editor ist ein Layout-/Kollisions-Prototyp für einzelne Räume. Sein „Spieltest“ ist eine leichtgewichtige geometrische Probe und **keine** vollständige Reproduktion der bestehenden Phaser-Kampf-/Gegnerphysik. Die Daten lassen sich beim späteren Generator-Import auf die eigentlichen Spielregeln mappen.
+
+### Original-Wächter als Editorreferenz
+
+Die Schaltfläche **Spiel-Wächter** blendet den echten Originalatlas aus `../art/player-study/` im Bearbeitungsmodus ein oder aus. Im Spieltest bleibt dieselbe reale Spielfigur steuerbar. Fehlende Originaldaten zeigen einen Fehlerzustand, keine nachgebaute Ersatzfigur.
+
+### Schutz der Spiel-Beta
+
+Alle Änderungen der Bodenkarte und des Editors liegen ausschließlich unter `beta/room-editor/`. Das eigentliche Spiel (`beta/index.html`, `beta/dungeon-guardian*.js`, `beta/dungeon-isometric.js`, Generator usw.) wird nicht geändert. Der schon bestehende Asset-Workflow darf weiterhin ausschließlich die Editor-Assets publizieren.
