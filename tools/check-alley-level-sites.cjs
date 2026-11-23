@@ -11,7 +11,10 @@ for(let seed=4147;seed<4157;seed++)for(let level=1;level<=4;level++){
   if(s.kind==='chest')assert([0,1,2,3].includes(s.turn));
   if(s.kind==='door')assert([2,3,4,5,6].includes(s.half*2));
   for(const link of [...v.connectorsAt(s.floor),...(s.floor?v.connectorsAt(s.floor-1):[])])assert.notEqual(s.room,link.roomId);
- p.atStorey(s.floor+1,()=>{assert.equal(g.blocked(s.x/48,s.y/48,.25),s.kind==='door');if(s.kind==='door'){plan.unlock(s);assert(!g.blocked(s.x/48,s.y/48,.25));}});
+ p.atStorey(s.floor+1,()=>{assert.equal(g.blocked(s.x/48,s.y/48,.25),['door','chest','altar'].includes(s.kind));if(s.kind==='door'){
+   assert.equal(plan.strike(s,100),undefined);
+   plan.unlock(s);assert(g.blocked(s.x/48,s.y/48,.25));assert.equal(plan.strike(s,100),220);
+   assert.equal(plan.strike(s,220),0);assert(!g.blocked(s.x/48,s.y/48,.25));}});
  }
  console.log(seed,level,'ok');
 }

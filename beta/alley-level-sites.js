@@ -63,11 +63,24 @@
   add('door',floor,door.to,u,w,{vertical,half,open:false});
  }
  const floor=()=>p.enabled?p.storey-1:0;
- const locks=sites.filter(s=>s.kind==='door');
+ const solids=sites.filter(s=>['door','chest','altar'].includes(s.kind));
  const wallBlocked=g.blocked;
- g.blocked=(u,w,r=0)=>wallBlocked(u,w,r)||locks.some(s=>!s.open&&s.floor===floor()&&
-  Math.abs(u-s.x/48)<r+(s.vertical?.09:s.half)&&Math.abs(w-s.y/48)<r+(s.vertical?s.half:.09));
- function unlock(s){if(!s.open){s.open=true;g.clearNavigation();}}
+ g.blocked=(u,w,r=0)=>wallBlocked(u,w,r)||solids.some(s=>{
+  if(s.floor!==floor()||s.open)return false;
+  const dx=Math.abs(u-s.x/48),dy=Math.abs(w-s.y/48);
+  if(s.kind==='door')return dx<r+(s.vertical?.09:s.half)&&dy<r+(s.vertical?s.half:.09);
+  if(s.kind==='altar')return Math.hypot(dx,dy)<.48+r;
+  const across=s.turn%2===0;
+  return Math.hypot(Math.max(0,dx-(across?.42:.28)),Math.max(0,dy-(across?.28:.42)))<=r;
+ });
+ function remove(s){s.open=true;g.clearNavigation();}
+ function unlock(s){s.unsealed=true;s.hp??=320;}
+ function strike(s,damage){
+  if(!s.unsealed||s.open)return;
+  s.hp=Math.max(0,s.hp-damage);
+  if(!s.hp)remove(s);
+  return s.hp;
+ }
  function active(){return v.state.floor||v.state.transition||v.state.stairRide?[]:sites.filter(s=>s.floor===floor());}
- g.levelSites={sites,labels,active,unlock};
+ g.levelSites={sites,labels,active,unlock,strike,remove};
 })();

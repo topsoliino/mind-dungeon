@@ -28,14 +28,15 @@ def render(name,span):
  scene.render.resolution_x=scene.render.resolution_y=round(span*144)
  scene.render.resolution_percentage=100
  scene.render.filepath=str(out/(name+'.png'));b.ops.render.render(write_still=True)
-b.ops.import_scene.gltf(filepath=source)
-lid=b.data.objects['treasure_chest_lid'];lock=b.data.objects['treasure_chest_lock']
-for opened in (False,True):
- lid.rotation_mode='XYZ';lid.rotation_euler.x=math.radians(-78 if opened else 0);lock.hide_render=opened
- for turn in range(4):
-  angle=-pi/4-turn*pi/2
-  cam.location.x=math.sqrt(98)*cos(angle);cam.location.y=math.sqrt(98)*sin(angle);aim(cam,(0,0,0))
-  render(('chest-open-' if opened else 'chest-')+str(turn),2.6)
+if source!='fixtures':
+ b.ops.import_scene.gltf(filepath=source)
+ lid=b.data.objects['treasure_chest_lid'];lock=b.data.objects['treasure_chest_lock']
+ for opened in (False,True):
+  lid.rotation_mode='XYZ';lid.rotation_euler.x=math.radians(-78 if opened else 0);lock.hide_render=opened
+  for turn in range(4):
+   angle=-pi/4-turn*pi/2
+   cam.location.x=math.sqrt(98)*cos(angle);cam.location.y=math.sqrt(98)*sin(angle);aim(cam,(0,0,0))
+   render(('chest-open-' if opened else 'chest-')+str(turn),2.6)
 cam.location.x=7;cam.location.y=-7;aim(cam,(0,0,0))
 for o in list(scene.objects):
  if o.type=='MESH':b.data.objects.remove(o,do_unlink=True)
@@ -91,6 +92,31 @@ for width in range(2,7):
    a=j*2*pi/24;c=(j+1)*2*pi/24
    bar(radius*cos(a),.98+radius*sin(a),radius*cos(c),.98+radius*sin(c),-.17,w,mat)
  for (x,z),(u,v) in zip([(0,.75),(-.12,.98),(0,1.20),(.12,.98)], [(-.12,.98),(0,1.20),(.12,.98),(0,.75)]):bar(x,z,u,v,-.18,.035,glow)
- render('seal-'+str(width),max(5,width*1.2))
+ if source!='fixtures':render('seal-'+str(width),max(5,width*1.2))
+ for obj in scene.objects:
+  if obj.type=='MESH' and obj.active_material==glow:obj.hide_render=True
+ render('spent-'+str(width),max(5,width*1.2))
  for o in list(scene.objects):
   if o.type=='MESH':b.data.objects.remove(o,do_unlink=True)
+
+# An octagonal basalt lectern with bronze mouldings and an illuminated codex.
+def drum(z,low,high,height,mat,sides=8):
+ b.ops.mesh.primitive_cone_add(vertices=sides,radius1=low,radius2=high,depth=height,location=(0,0,z))
+ o=b.context.object;o.data.materials.append(mat)
+ edge=o.modifiers.new('Rounded moulding','BEVEL');edge.width=.012;edge.segments=3
+ o.modifiers.new('Face normals','WEIGHTED_NORMAL')
+for args in [(.06,.54,.54,.12,stone),(.15,.51,.41,.07,brass),(.24,.43,.31,.12,stone),
+ (.50,.31,.34,.43,stone),(.72,.34,.37,.04,brass),(.82,.37,.51,.16,stone),
+ (.925,.52,.52,.05,brass),(.98,.51,.46,.07,stone)]:drum(*args)
+paper=material('Parchment',(.38,.22,.08),(.94,.80,.54),0,18,.88)
+for side in [-1,1]:
+ tilt=-side*.16
+ block(side*.185,0,1.055,.385,.54,.04,wood,tilt)
+ block(side*.18,0,1.09,.36,.50,.055,paper,tilt)
+ for row in range(6):
+  block(side*.18,-.16+row*.06,1.12,.21-(row%3)*.021,.009,.007,brass,tilt)
+for j in range(8):
+ a=(j+.5)*pi/4
+ b.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=.044,location=(.323*cos(a),.323*sin(a),.58))
+ b.context.object.data.materials.append(glow)
+render('altar',2.6)

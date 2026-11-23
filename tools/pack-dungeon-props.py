@@ -6,7 +6,7 @@ import sys
 source,destination=map(Path,sys.argv[1:])
 items={}
 for p in sorted(source.glob('*.png')):
- im=Image.open(p).convert('RGBA');n=im.width;box=im.getbbox();s=im.crop(box);span=max(5,1.2*int(p.stem[-1])) if p.stem.startswith('seal') else 2.6
+ im=Image.open(p).convert('RGBA');n=im.width;box=im.getbbox();s=im.crop(box);span=max(5,1.2*int(p.stem[-1])) if p.stem.startswith(('seal','spent')) else 2.6
  # Independent crops retain the ground pivot of the orthographic camera.
  s.thumbnail((round(s.width*.7),round(s.height*.7)),Image.Resampling.LANCZOS)
  items[p.stem]=(s,[(n/2-box[0])/(box[2]-box[0]),(n/2-box[1])/(box[3]-box[1]),span*(box[2]-box[0])/n,span*(box[3]-box[1])/n])
