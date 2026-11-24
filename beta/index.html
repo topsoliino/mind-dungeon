@@ -2682,8 +2682,17 @@ function useLevelSite(site){
  }else if(site.kind==='chest'){
   if(!guardian||save.rockySites?.[site.id])return;
   const [du,dv]=[[0,1],[1,0],[0,-1],[-1,0]][site.turn];
-  const goal={x:site.x+du*37,y:site.y+dv*37},route=alley.routeTo(player,goal);
-  if(!route||Math.hypot(route.goal.x-goal.x,route.goal.y-goal.y)>2){tell('Der Weg zum Schloss ist versperrt.');return;}
+  // A closer reach to the chest lock, with the original distance as
+  // a fallback whenever the 29px approach would collide with something.
+  let goal=null,route=null;
+  for(const distance of [29,33,37]){
+   const candidate={x:site.x+du*distance,y:site.y+dv*distance};
+   const attempt=alley.routeTo(player,candidate);
+   if(attempt&&Math.hypot(attempt.goal.x-candidate.x,attempt.goal.y-candidate.y)<=2){
+    goal=candidate;route=attempt;break;
+   }
+  }
+  if(!route){tell('Der Weg zum Schloss ist versperrt.');return;}
   alleyMove=alleyMarker=null;alleyRoute=route.steps.length?route.steps.slice():[goal];
   alleyRoute.chestSite=site;finishAlleyApproach();
  }else tell(site.kind==='brew'?'Brautisch · Platz für die Brauerei':'Fledermaushändler · Handelsplatz');
