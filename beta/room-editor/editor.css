@@ -24,6 +24,7 @@ hr{height:1px;background:var(--line);border:0;margin:20px 0}
 .catalog{display:flex;flex-direction:column;gap:9px}
 .catalog-item{display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:9px}
 .catalog-item.selected{border-color:var(--gold);background:#39302f}.catalog-icon{width:53px;height:53px;display:grid;place-items:center;background:#151720;border:1px solid #454048;border-radius:6px;font-size:27px;color:#d7bc99}
+.catalog-thumb{display:block;width:51px;height:51px;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 2px 2px #0009)}
 .catalog-item strong{font-size:12px;display:block}.catalog-item small{display:block;color:var(--muted);margin-top:5px;font-size:10px}
 .editor-info{display:grid;gap:7px;border:1px solid #45404a;border-left:3px solid var(--gold);border-radius:5px;padding:11px;font-size:11px;margin-top:23px;background:#24232a}
 .editor-info span{line-height:1.6;color:var(--muted)}
