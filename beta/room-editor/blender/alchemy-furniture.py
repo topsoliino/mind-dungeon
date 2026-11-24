@@ -101,154 +101,346 @@ def _candle(x,y,z,size=.11):
     flame=material('Alchemy | flame ochre', 'ffad43', .23)
     _part('Small amber flame',(x,y,z+size*1.62),(.032,.030,.085),flame,.018)
 
-def _table_base(alchemy=False):
-    # 1.85m x 0.95m carved oak workbench, 4 feet and supported lower shelf.
-    for x in (-.79,.79):
-        for y in (-.355,.355):
-            _part('Mortised oak square workbench leg',(x,y,.44),(.14,.14,.86),_fwood,.021)
-            _part('Riveted iron foot collar',(x,y,.09),(.154,.154,.16),_firon,.013)
-            for off in (-.040,.040):
-                _pin('Collar hammered rivet',(x+off,y+.083,.13),.012)
-    for y in (-.38,.38):
-        _part('Long apron',(0,y,.758),(1.65,.095,.16),_fdark,.017)
-        _part('Forged apron strap',(0,y,.692),(1.70,.030,.039),_firon,.005)
-        for x in (-.65,-.2,.2,.65):_pin('Apron rivet',(x,y-.05,.71),.012)
-    for x in (-.77,.77):
-        _part('End apron',(x,0,.77),(.105,.69,.15),_fwood,.013)
-    for y in (-.355,.355):
-        _part('Lower shelf joists',(0,y,.245),(1.52,.095,.10),_fdark,.012)
-    for idx in range(4):
-        yy=-.34+idx*.226
-        _part('Separate lower oak shelf plank',(0,yy,.25),(1.49,.220,.055),
-              _fwood if idx%2 else _fdark,.009)
-    for idx in range(5):
-        yy=-.4+idx*.20
-        _part('Uneven thick oak tabletop board',(0,yy,.925+(idx%2)*.006),
-              (1.87,.195,.13),[_fwood,_fedge,_fwood,_fdark,_fwood][idx],.019)
-        for x in (-.88,.88):
-            _pin('Flush copper-clenched nail',(x,yy,1.001+(idx%2)*.006),.011,_firon)
-    # Vertical backboard is characteristic of the prior brewing asset.
-    for x in (-.83,.83):
-        _part('Rear upright oak pillar',(x,.43,1.28),(.15,.16,.69),_fwood,.019)
-        _part('Rear upright iron top cap',(x,.43,1.585),(.168,.18,.11),_firon,.011)
-    for i in range(7):
-        x=-.7+i*.232
-        _part('Scratched vertical backboard',(x,.455,1.25),(.227,.08,.50),
-              [_fwood,_fdark,_fwood,_fedge][_math.floor(i)%4],.012)
-    _part('Heavy backboard brace',(0,.475,1.48),(1.65,.11,.12),_fdark,.015)
-    _rod('Horizontal rack rod',(-.78,.40,1.66),(.78,.40,1.66),.020,_firon)
-    for x in (-.63,0,.63):
-        _pin('Rack wrought iron stud',(x,.38,1.51),.02,_firon)
-    # Folded linen / cloth runner with physically modeled frayed red stripes.
-    _part('Rough folded linen',( -.48,-.17,1.017),(.57,.31,.021),_fcloth,.009)
-    for x in (-.67,-.61):
-        _part('Linen faded red band',(x,-.17,1.033),(.025,.32,.004),_fstripe,.003)
-    _book(.48,.12,1.018)
-    _candle(-.68,.17,1.02,.12)
-    if alchemy:
-        # Hammered copper distillation rig on a grate/heater; independent
-        # objects so users can open the .blend and edit individual pieces.
-        for x in (.11,.58):
-            for y in (-.08,.25):
-                _part('Alembic forge leg',(x,y,1.092),(.05,.05,.13),_firon,.007)
-        _part('Copper still hearth',(.35,.085,1.11),(.53,.39,.17),_firon,.025)
-        for x in (.16,.25,.36,.47,.56):
-            _part('Glowing ember inside hearth',(x,-.097,1.113),(.037,.02,.055),_flight,.007)
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=28,ring_count=12,location=(.34,.08,1.34))
-        ob=bpy.context.object;ob.name='Hand-hammered copper still belly';ob.scale=(.26,.24,.22)
-        ob.data.materials.append(_fcopper)
-        cylinder('Copper alembic cap',(.34,.08,1.54),.12,.11,_fcopper,22)
-        cylinder('Copper joint collar',(.34,.08,1.61),.085,.037,_fbrass,20)
-        for x in (.18,.50):
-            _part('Copper forge straps',(x,.08,1.31),(.017,.45,.23),_firon,.006)
-        _pipe('Copper swan-neck',( (.34,.08,1.62),(.38,.06,1.78),(.60,.00,1.78),(.70,-.01,1.59)),.028)
-        # Copper condensation coil: discrete toroidal turns + vertical spine.
-        for z in (1.36,1.40,1.44,1.48,1.52):
-            bpy.ops.mesh.primitive_torus_add(major_radius=.10,minor_radius=.018,
-                                             location=(.70,-.01,z),major_segments=28,minor_segments=10)
-            bpy.context.object.name='Condenser coil copper turn'
-            bpy.context.object.data.materials.append(_fcopper)
-        _rod('Condenser copper vertical downpipe',(.70,-.01,1.54),(.70,-.01,1.24),.016,_fcopper)
-        _bottle('Red potion collector',(.67,-.12,1.019),.20)
-        for i,xx in enumerate((-.55,-.35,-.17)):
-            _bottle('Herb jar on shelf', (xx,.27,1.016),.17+(.02*(i%2)))
-        # Stone mortar and pestle; visible on the mostly open left side.
-        cylinder('Stone mortar base',(-.18,-.16,1.06),.096,.10,_fstone,18)
-        _rod('Stone pestle',(-.21,-.17,1.09),(-.08,-.12,1.23),.026,_fstone)
-        # Hanging plants are meshes rather than flat image cards.
-        for cluster,(xx,mat) in enumerate(((-.39,_fgreen),(-.21,_fpurple))):
-            _rod('Twine tied herb bundle',(xx,.40,1.64),(xx,.37,1.43),.008,_fcloth)
-            for i in range(7):
-                ang=i*2.4
-                _part('Dry herb leaf',(xx+.045*_math.cos(ang),.35+.035*_math.sin(ang),
-                   1.52-i*.015),(.045,.012,.065),mat,.009)
 
-def _chair_base(arm=False):
-    w=.36 if arm else .31
-    depth=.33
-    back_height=1.40 if arm else 1.51
-    for x in (-w,w):
+# Geometrically distinct furniture, not reskins of the original prison set.
+# Each object is assembled from separately editable physical mesh parts.
+def _sphere(label, xyz, xyz_scale, mat, segments=24):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=segments,ring_count=12,location=xyz)
+    obj=bpy.context.object
+    obj.name=label
+    obj.scale=xyz_scale
+    obj.data.materials.append(mat)
+    return obj
+
+def _band(label, xyz, size, mat=_firon):
+    return _part(label,xyz,size,mat,.008)
+
+def _braced_legs(width=.77, depth=.36, height=.91, thickness=.16):
+    for x in (-width,width):
         for y in (-depth,depth):
-            legheight=back_height if y>0 else (.84 if arm else .72)
-            _part('Square carved chair post',(x,y,legheight/2),(.115,.112,legheight),_fwood,.017)
-            _part('Forged iron chair shoe',(x,y,.07),(.125,.121,.14),_firon,.010)
-            for off in (-.018,.02):_pin('Chair foot nails',(x+off,y-.066,.105),.009,_fbrass)
-    seat_w=2*w+.16
-    for j in range(4):
-        xx=-w+.02+j*(2*w-.04)/3
-        _part('Separate thick seat plank',(xx,0,.72),(.20,.75,.12),
-              [_fedge,_fwood,_fdark,_fwood][j],.018)
-    for x in (-w,w):
-        _part('Chair longitudinal stretcher',(x,0,.29),(.072,.70,.076),_fdark,.010)
+            _part('Heavy axe-hewn oak leg',(x,y,height/2),
+                (thickness,thickness,height),_fwood,.026)
+            _part('Massive riveted iron leg shoe',(x,y,.092),
+                (thickness+.035,thickness+.037,.18),_firon,.015)
+            for z in (.062,.132):
+                _pin('Hammered leg rivet',(x,y-.105,z),.017,_fbrass)
     for y in (-depth,depth):
-        _part('Chair transverse stretcher',(0,y,.33),(2*w,.07,.071),_fdark,.010)
-    for x in (-w,w):
-        _part('Hand-forged chair leg side shield',(x,-depth,.67),(.135,.029,.15),_firon,.01)
-        _pin('Chair shield rivet',(x,-depth-.023,.67),.018,_fbrass)
-    # Mechanical wear is modeled on individual parts, not drawn over PNGs.
-    # Solid backboard and two forged rails, with matching visible wood grain.
-    for j in range(3):
-        xx=-w+.11+j*(w-.11)
-        _part('Carved upright backrest stave',(xx,depth+.018,1.12),(.19,.072,.59),_fwood,.016)
-    _part('Dark high back crest',(0,depth+.02,back_height-.11),(2*w+.12,.11,.17),_fedge,.028)
-    _part('Forged iron crest rim',(0,depth-.043,back_height-.15),(2*w+.10,.018,.040),_firon,.007)
-    for xx in (-w*.65,0,w*.65):
-        _pin('Brass crest rivet',(xx,depth-.054,back_height-.15),.021,_fbrass)
-    _part('Chair linen cushion',(0,-.015,.79),(seat_w-.09,.63,.065),_fcloth,.023)
-    # Physical brass-inlaid alchemical signet on the outward backrest face.
-    # Four slim bars compose the circle's cardinal etching and tiny center boss.
-    bpy.ops.mesh.primitive_torus_add(major_radius=.105,minor_radius=.010,
-            location=(0,depth+.067,1.17),major_segments=30,minor_segments=8)
-    mark=bpy.context.object;mark.name='Embossed alchemist ring sigil'
+        _part('Mortised long apron',(0,y,.76),(width*2+.11,.102,.16),_fdark,.016)
+        _band('Forged apron lower edge',(0,y-.064,.695),(width*2+.12,.019,.031))
+        for x in (-.6,-.24,.23,.6):
+            _pin('Apron iron nail',(x,y-.073,.705),.015,_fbrass)
+    for x in (-width,width):
+        _part('Substantial short apron',(x,0,.765),(.095,depth*2,.15),_fdark,.012)
+        _part('Diagonal underbracing',(x,0,.55),(.08,depth*1.9,.065),_fwood,.009)
+    for y in (-depth,depth):
+        _part('Lower oak stretcher',(0,y,.23),(width*2,.090,.08),_fdark,.013)
+    for i in range(4):
+        y=-depth+.06+i*(depth*2-.12)/3
+        _part('Lower shelf hand-hewn boards',(0,y,.255),
+            (width*2-.11,.21,.048),_fwood if i%2 else _fdark,.008)
+
+def _thick_top(width=1.89, depth=1.02, level=.91):
+    # Five independent irregular planks; not one flat primitive slab.
+    for i in range(5):
+        y=-depth*.40+i*depth*.20
+        z=level+.004*(i%3)
+        _part('Worn oak tabletop slab %d'%i,(0,y,z),
+              (width,depth*.198,.127),
+              [_fwood,_fwood,_fedge,_fdark,_fwood][i],.022)
+        for x in (-width*.46,width*.46):
+            _pin('Wrought iron hand-driven nail',(x,y,z+.068),.011,_firon)
+    for x in (-width*.44,width*.44):
+        for i in range(2):
+            y=-depth*.28+i*depth*.56
+            _part('Scratched raised knot in grain',(x,y,level+.069),
+                   (.093,.013,.003),_fdark,.002)
+
+def _striped_runner(x,y,z):
+    _part('Rough worn linen runner',(x,y,z),(.56,.35,.025),_fcloth,.012)
+    for xx in (-.20,-.13):
+        _part('Burgundy woven runner stripe',(x+xx,y,z+.014),(.031,.33,.005),_fstripe,.002)
+    _part('Folded rough linen lip',(x,y-.163,z-.038),(.56,.027,.095),_fcloth,.006)
+
+def _high_rail(left=-.82,right=.82,rear=.45,z=1.71):
+    _rod('Continuous black iron hanging rail',(left,rear,z),(right,rear,z),.020,_firon)
+    for x in (-.57,0,.57):
+        _sphere('Rusted iron hanging ring',(x,rear,z),(.034,.034,.034),_firon,12)
+
+def _wood_backboard(left=-.80,right=.80,rear=.47,base=.99,top=1.62):
+    # Separate silhouette: raised workshop screen with stepped left gable,
+    # hand-sawn individual planks and broad forged top rail.
+    _part('Workshop left pierced timber post',(left,rear,(base+top)/2),
+          (.15,.17,top-base),_fwood,.019)
+    _part('Workshop right pierced timber post',(right,rear,(base+top)/2),
+          (.15,.17,top-base),_fwood,.019)
+    for i in range(7):
+        x=left+.125+(right-left-.25)*i/6
+        height=top-base-.10+(.05 if i%3==0 else 0)
+        _part('Hand-sawn vertical alchemist panel',(x,rear,base+height/2),
+              (.195,.073,height),[_fwood,_fdark,_fedge,_fwood][i%4],.010)
+        _part('Deep vertical seam',(x+.103,rear-.043,base+height/2),
+              (.009,.010,height*.80),_fdark,.001)
+    _part('Upper planked cap rail',(0,rear,top-.07),(right-left+.17,.14,.12),_fdark,.019)
+    for x in (-.73,.73):
+        _part('Decorative iron rail socket',(x,rear,top-.07),(.08,.168,.10),_firon,.011)
+    _high_rail(left,right,rear,top+.08)
+
+def _workbench_v2():
+    # Tall heavy writing/repair workbench, strongly different from the small
+    # original prison table. No brewing copper machinery on this independent prop.
+    _braced_legs(.80,.365,.92,.17)
+    _thick_top(1.95,1.02,.935)
+    _wood_backboard(-.84,.84,.48,1.02,1.69)
+    # Thick side shelf / distinctive stepped upper-left workshop casework.
+    for z in (1.22,1.49):
+        _part('Upper left hutch shelf',(-.46,.29,z),(.67,.27,.055),_fwood,.009)
+        _band('Hutch shelf front forged lip',(-.46,.135,z+.004),(.69,.025,.031))
+    _part('Stepped high left workshop gable',(-.75,.46,1.65),(.26,.19,.30),_fedge,.028)
+    for z in (1.17,1.47):
+        _pin('Gable plate iron boss',(-.75,.344,z),.025,_fbrass)
+    _book(.47,-.12,1.003)
+    _striped_runner(-.49,-.19,1.008)
+    _candle(-.69,.08,1.004,.13)
+    _rod('Wall rack forged hooks',(.28,.40,1.80),(.69,.40,1.80),.013,_firon)
+    for x in (.36,.48,.61):
+        _rod('Drop forged tool hook',(x,.37,1.80),(x,.37,1.70),.012,_firon)
+    # Wood grain grooves, shallow gouges and oxidised metal on the top rim.
+    for i in range(9):
+        x=-.58+i*.14
+        y=-.03+.17*_math.sin(i*3.1)
+        _part('Scraped oak grain incision',(x,y,1.009),(.09,.006,.003),
+              _fdark,.001)
+    for x in (-.88,.88):
+        for y in (-.34,.35):
+            _part('Dark forged corner protector',(x,y,1.003),(.14,.15,.016),
+                  _firon,.006)
+            _pin('Iron corner rivet',(x,y,1.023),.018,_fbrass)
+
+def _wooden_barrel(x,y,z=.27,scale=1):
+    # A rounded multi-stave cask on its side below the alchemist worktop.
+    _sphere('Bulging wooden oak cask',(x,y,z+.16*scale),
+            (.23*scale,.17*scale,.22*scale),_fwood,20)
+    for i in (-.1,.1):
+        _band('Curved cask black hoop',(x+i*scale,y,z+.16*scale),
+              (.031*scale,.35*scale,.37*scale),_firon)
+
+def _alembic_v2():
+    # Large silhouette-critical copper retort, not a little generic jar.
+    # Almost half the bench is an iron stove, condenser and cooling coil.
+    x=.31;y=-.02
+    for xx in (.04,.54):
+        for yy in (-.22,.19):
+            _part('Blacksmith wrought forge stand',(xx,yy,1.105),
+                  (.055,.055,.19),_firon,.009)
+    _part('Blackened square copper furnace',(x,y,1.12),(.58,.46,.22),_firon,.024)
+    _part('Open arched hearth vent',(x,-.25,1.11),(.30,.019,.12),_fdark,.016)
+    for j in range(6):
+        xx=.13+j*.07
+        _part('Orange glowing hot embers',(xx,-.268,1.115),(.028,.012,.052),
+              _flight,.006)
+    _sphere('Large hammer-finished copper alembic belly',(x,y,1.39),
+            (.270,.245,.260),_fcopper,40)
+    cylinder('Copper still bottom ring',(x,y,1.24),.258,.050,_fcopper,32)
+    cylinder('Alembic pressed copper lid',(x,y,1.61),.168,.069,_fcopper,28)
+    cylinder('Bell-shaped alembic funnel neck',(x,y,1.695),.075,.12,_fcopper,24)
+    for side in (-.23,.23):
+        _band('Alembic bolted forged holding strap',(x+side,y,1.35),
+              (.031,.52,.23),_firon)
+        for yy in (-.14,.14):
+            _pin('Alembic retaining rivet',(x+side,yy,1.44),.013,_fbrass)
+    _pipe('Tall copper swan neck from the retort',[
+        (x,y,1.75),(.39,-.01,1.91),(.59,-.02,1.88),
+        (.76,-.08,1.72),(.76,-.08,1.63)],.029,_fcopper)
+    # Clearly recognisable spiral condenser, unlike the earlier tiny coil.
+    _rod('Coil dark forged stand',(.70,-.05,1.04),(.70,-.05,1.60),.028,_firon)
+    for i in range(6):
+        z=1.31+i*.064
+        bpy.ops.mesh.primitive_torus_add(major_radius=.118,
+                     minor_radius=.019,major_segments=30,minor_segments=10,
+                     location=(.70,-.05,z))
+        coil=bpy.context.object
+        coil.name='Copper condenser winding %d'%i
+        coil.data.materials.append(_fcopper)
+    _pipe('Condenser return outlet',[(.70,-.05,1.30),(.70,-.17,1.25),
+                  (.66,-.22,1.19)],.019,_fcopper)
+    _bottle('Medicinal red tincture collection flask',(.67,-.24,1.015),.23)
+
+def _brew_station_v2():
+    # Separately constructed station. Giant copper still on the RIGHT,
+    # high stepped herb shelving on the LEFT, tall rear drying rail.
+    _braced_legs(.77,.35,.92,.16)
+    _thick_top(1.87,1.02,.93)
+    for x in (-.79,.79):
+        _part('Raised apothecary back posts',(x,.44,1.38),
+            (.16,.16,.81),_fwood,.022)
+        _part('Dented wrought iron post cap',(x,.44,1.745),
+            (.18,.18,.105),_firon,.011)
+    # Open railing allows the large copper silhouette to remain visible.
+    _part('Raised alchemical back beam',(0,.46,1.68),(1.66,.15,.15),_fdark,.015)
+    _high_rail(-.76,.76,.38,1.82)
+    # Asymmetric left-hand apothecary shelves (recognisable frontal structure).
+    for z in (1.23,1.47):
+        _part('Apothecary left wooden shelf',(-.46,.32,z),
+              (.68,.34,.057),_fwood,.016)
+        _band('Shelving forged edge',(-.45,.139,z),(.68,.026,.034))
+    for x in (-.73,-.17):
+        _part('Alchemy narrow shelf support',(x,.40,1.39),
+              (.065,.07,.54),_fedge,.007)
+    _part('High left carved apothecary wing',(-.77,.40,1.59),
+          (.19,.21,.35),_fdark,.020)
+    for x,sc in ((-.63,.13),(-.46,.145),(-.27,.12)):
+        _bottle('Amber alchemy ingredient bottle',(x,.20,1.23),sc)
+    for x in (-.67,-.42,-.20):
+        _pin('Apothecary shelf nail',(x,.133,1.23),.013,_fbrass)
+    _alembic_v2()
+    _striped_runner(-.55,-.25,1.008)
+    _candle(-.69,-.10,1.01,.145)
+    _candle(-.48,-.22,1.008,.10)
+    cylinder('Carved granite mortar bowl',(-.20,-.18,1.08),.13,.115,_fstone,20)
+    _rod('Stone pestle arm',(-.21,-.19,1.09),(-.07,-.23,1.26),.034,_fstone)
+    _book(-.32,.13,1.005)
+    # High hanging herbs make this immediately identifiable as a brew table.
+    for i,(xx,mat) in enumerate(((-.48,_fgreen),(-.22,_fpurple),(.04,_fgreen))):
+        _rod('Dry herbs twine', (xx,.39,1.80),(xx,.38,1.62),.011,_fcloth)
+        for k in range(8):
+            t=k*2.37
+            xx2=xx+(.065+(.02 if k%2 else 0))*_math.cos(t)
+            yy2=.39+.044*_math.sin(t)
+            z=1.71-k*.023
+            _sphere('Torn botanist leaf',(xx2,yy2,z),
+                    (.034,.014,.062),mat,10)
+    _wooden_barrel(.41,.02,.28)
+    for x in (-.45,-.22):
+        _bottle('Lower shelf flask',(x,.08,.28),.17)
+    _part('Linen herb-sack on low shelf',(-.53,-.10,.36),
+          (.28,.23,.18),_fcloth,.04)
+
+def _gothic_back(width=.39,rear=.325,base=.89,top=1.79):
+    # One actual pointed-arch mesh (rather than three cubes pretending to arch).
+    outline=[(-width,base),(width,base),
+             (width,top-.27),(.26,top-.09),(0,top),
+             (-.26,top-.09),(-width,top-.27)]
+    verts=[(x,rear-.046,z) for x,z in outline]+[
+        (x,rear+.047,z) for x,z in outline]
+    n=len(outline)
+    faces=[tuple(range(n-1,-1,-1)),tuple(range(n,2*n))]
+    faces += [(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+    mesh=bpy.data.meshes.new('Seven-sided pointed cathedral chair panel')
+    mesh.from_pydata(verts,[],faces);mesh.update()
+    ob=bpy.data.objects.new('Physical pointed Gothic oak back',mesh)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.data.materials.append(_fdark)
+    bevel=ob.modifiers.new('Soft hand-carved Gothic corners','BEVEL')
+    bevel.width=.014;bevel.segments=3
+    ob.modifiers.new('Weighted wooden panel normals','WEIGHTED_NORMAL')
+    for x in (-width,width):
+        _part('Thick gothic outer stanchions',(x,rear,top*.5),
+            (.12,.14,top),_fwood,.018)
+        _part('Rusted Gothic spine foot',(x,rear,.07),
+            (.14,.16,.14),_firon,.011)
+    # Medieval pointed cap arches and inset iron straps.
+    _rod('Left Gothic silhouette iron arc',(-width,rear-.063,top-.28),
+         (0,rear-.063,top+.010),.022,_firon)
+    _rod('Right Gothic silhouette iron arc',(width,rear-.063,top-.28),
+         (0,rear-.063,top+.010),.022,_firon)
+    _band('Gothic horizontal iron transverse crest',(0,rear-.070,top-.34),
+          (width*1.84,.025,.063))
+    for x in (-.22,0,.22):
+        _pin('Cathedral wrought iron crest bolt',(x,rear-.092,top-.34),.023,_fbrass)
+
+def _chair_seat(width=.34,depth=.32):
+    for x in (-width,width):
+        for y in (-depth,depth):
+            _part('Hand-scarred oak chair leg',(x,y,.385),
+                  (.13,.13,.77),_fwood,.020)
+            _band('Solid cold iron chair foot',(x,y,.075),(.14,.14,.148))
+    for y in (-depth,depth):
+        _part('Seat under rail',(0,y,.53),(width*2+.06,.08,.14),
+              _fdark,.013)
+    for x in (-width,width):
+        _part('Raised stretchers',(x,0,.29),(.07,depth*2+.04,.10),
+              _fedge,.011)
+    for i in range(4):
+        x=-width+.10+i*(width*2-.2)/3
+        _part('Chair seat plank no.%d'%i,(x,0,.745),
+              (.21,depth*2+.09,.105),
+              [_fwood,_fedge,_fwood,_fdark][i],.014)
+
+def _heraldic_sigils(y,z,r=.14):
+    bpy.ops.mesh.primitive_torus_add(major_radius=r,minor_radius=.016,
+              major_segments=32,minor_segments=10,location=(0,y,z))
+    mark=bpy.context.object
+    mark.name='Forged brass sigil with physical torus ring'
     mark.rotation_euler.x=_math.pi/2
     mark.data.materials.append(_fbrass)
-    _part('Sigil horizontal stroke',(0,depth+.080,1.17),(.19,.014,.010),_fbrass,.003)
-    _part('Sigil vertical stroke',(0,depth+.080,1.17),(.014,.014,.19),_fbrass,.003)
-    _part('Sigil center stud',(0,depth+.096,1.17),(.035,.017,.035),_fcopper,.005)
-    for x in (-.12,-.07):
-        _part('Chair faded stripe',(x,-.012,.828),(.025,.59,.007),_fstripe,.004)
-    if arm:
-        for x in (-w,w):
-            _part('Wooden armrest | curved worn',(x,-.06,1.01),(.123,.60,.12),_fedge,.039)
-            _part('Forged arm support',(x,-.27,.91),(.125,.05,.09),_firon,.015)
-            _pin('Brass arm anchor',(x,-.29,1.01),.018,_fbrass)
-        _part('Armchair crest second wooden crossbeam',(0,depth+.02,1.04),(2*w+.12,.10,.14),_fdark,.018)
-        for x in (-w,w):
-            bpy.ops.mesh.primitive_uv_sphere_add(segments=16,ring_count=8,location=(x,depth,back_height+.035))
-            ob=bpy.context.object;ob.name='Chair iron finial';ob.scale=(.08,.08,.08)
-            ob.data.materials.append(_fbrass)
-    else:
-        # High-backed arc illusion from three tiered physical crest pieces.
-        _part('Carved gothic middle crest',(0,depth+.02,back_height+.007),(.35,.12,.10),_fedge,.030)
-        _part('Carved gothic crown',(0,depth+.02,back_height+.065),(.17,.12,.065),_fbrass,.023)
+    _rod('Carved diagonal alchemical mark one',(-r*.70,y+.007,z-r*.70),
+         (r*.70,y+.007,z+r*.70),.013,_fbrass)
+    _rod('Carved diagonal alchemical mark two',(r*.70,y+.007,z-r*.70),
+         (-r*.70,y+.007,z+r*.70),.013,_fbrass)
+    _sphere('Medallion brass center',(0,y+.02,z),(.034,.016,.034),_fcopper)
 
-work=make_model('Alchemy Work Table | independent oak furniture',lambda:_table_base(False))
-brew=make_model('Compact Brewing Table | alchemy still + workbench',lambda:_table_base(True))
+def _high_chair_v2():
+    # Narrow cathedral-backed study chair with pointed gothic arch.
+    _chair_seat(.31,.30)
+    _gothic_back(.34,.315,.84,1.80)
+    _part('Full linen seat cushion',(0,-.04,.81),(.59,.56,.055),_fcloth,.025)
+    for x in (-.13,-.08):
+        _part('Faded striping across high chair cushion',(x,-.04,.843),
+              (.026,.55,.007),_fstripe,.002)
+    # Signet must face the camera, not be buried against the back panel.
+    _heraldic_sigils(.385,1.36,.155)
+    for x in (-.34,.34):
+        _band('Tall spine forged back bracket',(x,.392,1.35),
+              (.14,.022,.17))
+        for z in (1.31,1.39):
+            _pin('Gothic spine black rivet',(x,.407,z),.013,_fbrass)
+    _band('Footboard rear wrought iron binding',(0,.333,.97),
+          (.72,.022,.067))
+
+def _arm_chair_v2():
+    # A shorter, wider, far more massive 3-D armchair with visible arms,
+    # turned metal finials and a straight raised alchemical back.
+    _chair_seat(.37,.345)
+    for x in (-.375,.375):
+        _part('Thick alchemist chair back pillar',(x,.34,1.20),
+              (.15,.16,.70),_fwood,.022)
+        _band('Back pillar wrought iron collar',(x,.34,1.47),
+              (.169,.17,.13))
+        _sphere('Large beaten brass ball finial',(x,.34,1.57),
+                (.105,.105,.105),_fbrass,20)
+    for i in range(5):
+        x=-.28+i*.14
+        _part('Deep vertical armchair backboard plank',(x,.355,1.27),
+              (.145,.075,.42),[_fwood,_fdark,_fedge,_fwood,_fdark][i],.009)
+    _part('Strong horizontal upper armchair crest',(0,.345,1.49),
+          (.88,.16,.15),_fdark,.028)
+    _band('Distinct upper black forge crest rim',(0,.258,1.48),
+          (.87,.026,.064))
+    _part('Wider dark-red leather seat pad',(0,-.015,.82),
+          (.70,.62,.077),_fleather,.032)
+    # Front hanging burlap cushion fringe and well worn armrests.
+    _part('Frayed beige cloth over right chair arm',(.373,-.17,1.10),
+          (.155,.25,.030),_fcloth,.012)
+    for x in (-.37,.37):
+        _part('Broad smoothed timber armrest',(x,-.10,1.08),
+              (.18,.73,.16),_fedge,.045)
+        _part('Sculpted diagonal arm supporter',(x,-.27,.90),
+              (.11,.086,.30),_fdark,.019)
+        _band('Cold iron armrest end sleeve',(x,-.426,1.08),
+              (.18,.10,.17))
+        _pin('Visible iron armrest bolt',(x,-.482,1.08),.028,_fbrass)
+    _heraldic_sigils(.407,1.28,.132)
+    for x in (-.40,.40):
+        for y in (-.35,.35):
+            _pin('Hammered chair shoe rivet',(x,y-.078,.08),.011,_fbrass)
+
+work=make_model('Alchemy Work Table | raised medieval hutch and timber joinery',_workbench_v2)
+brew=make_model('Compact Brewing Table | copper alembic and herb apothecary',_brew_station_v2)
 # 20 percent smaller across ALL three dimensions, preserving perspective
 # and floor pivot alignment. Collision footprint is likewise 80 percent.
 brew.scale=(.8,.8,.8)
-highback=make_model('High-Back Medieval Chair | oak and iron',lambda:_chair_base(False))
-armchair=make_model('Medieval Alchemist Armchair | oak and iron',lambda:_chair_base(True))
+highback=make_model('High-Back Gothic Chair | pointed cathedral back',_high_chair_v2)
+armchair=make_model('Alchemist Armchair | leather seat, brass finials and iron arms',_arm_chair_v2)
 ALCHEMY_MODELS=[
     ('work-table',work),('brew-table-small',brew),
     ('chair-highback',highback),('chair-arm',armchair)
