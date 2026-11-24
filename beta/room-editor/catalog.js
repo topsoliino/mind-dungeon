@@ -169,7 +169,7 @@ const catalog={
    footprint:{w:1.04,h:.58},height:.51,
    destroyable:true,vaultable:true,blocksMovement:true,blocksProjectiles:true,
    maxHP:150,material:'stained oak + leather restraints + iron winch',render:'blender-ortho-4'
-,
+  },
   'torture-iron-cage':{
    label:'Eiserner Hängekäfig',kind:'cage',asset:artRoot+'furniture/iron-cage',extension:'png',editorSpriteScale:.5,
    footprint:{w:0.79,h:0.55},height:1.2,
