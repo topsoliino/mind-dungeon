@@ -372,21 +372,27 @@
    draw(ctx);
   };
   facadeArt.onReady(()=>{
+   const changed=[];
    if(!generatorMode){
     const backdropContext=underlay.getContext('2d');
     backdropContext.clearRect(0,0,width,height);
     drawUnderlay(backdropContext);
+    changed.push(underlay);
    }
-   homes.forEach(home=>redrawImage(home.image,ctx=>facadeArt.building(ctx,home)));
+   homes.forEach(home=>{
+    redrawImage(home.image,ctx=>facadeArt.building(ctx,home));
+    changed.push(home.image.canvas);
+   });
    redrawImage(gateway,ctx=>facadeArt.arch(ctx,gate));
-   // Re-render only the cached background tiles when facade atlases load.
-   // Ground, light and stair geometry remain fixed and never need rebaking.
+   changed.push(gateway.canvas);
+   // Report changed canvases, not the entire scene's 400+ textures.
    for(const {canvas,draw,x,y} of chunkCache){
     const ctx=canvas.getContext('2d');
     ctx.resetTransform();ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.translate(-x,-y);draw(ctx);
+    changed.push(canvas);
    }
-   for(const listener of artListeners)listener();
+   for(const listener of artListeners)listener(changed);
   });
   const toggles=Object.fromEntries([...(sceneControls?.querySelectorAll('input')??[])].map(input=>[input.value,input]));
   const enabled=layer=>toggles[layer]?.checked??layer!=='logic';
@@ -579,15 +585,20 @@
   if(street)bakedGround.push([{...street,depth:-3,street:true}]);
   if(dungeonMaterial){
    dungeonMaterial.onReady(kind=>{
-    // Only the affected cached layer is re-baked, once per loaded material.
-    if(kind==='wall')for(const panel of roomWalls)
+    // Re-bake the affected CPU canvases. The Phaser renderer uploads only
+    // changed canvases visible in its viewport, deferring all distant walls.
+    const changed=[];
+    if(kind==='wall')for(const panel of roomWalls){
      redrawImage(panel.image,ctx=>drawPanel(ctx,panel));
+     changed.push(panel.image.canvas);
+    }
     if(kind==='floor')for(const {canvas,draw,x,y} of chunkCache){
      const ctx=canvas.getContext('2d');
      ctx.resetTransform();ctx.clearRect(0,0,canvas.width,canvas.height);
      ctx.translate(-x,-y);draw(ctx);
+     changed.push(canvas);
     }
-    for(const listener of artListeners)listener();
+    for(const listener of artListeners)listener(changed);
    });
   }
   const bakedOverlays=combinedGround?[]:generatorMode?
