@@ -10,6 +10,7 @@ const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const rand=(x,y,s=0)=>{let n=Math.imul(x+1009,374761393)+Math.imul(y+41,668265263)+Math.imul(s+1,2246822519);n=Math.imul(n^n>>>13,1274126177);return ((n^n>>>16)>>>0)/4294967295};
 const quant=x=>Math.round(x*4)/4;
+const precise=x=>Math.round(x*1000)/1000;
 let room=clone(kit.preset),selected=null,tool='select',chosenFurniture='prison-table';
 let showGuardian=true,showGrid=false,playing=false,dragging=null,hover=null,dirty=true,frame=0;
 let width=0,height=0,zoom=1,ox=0,oy=0;
@@ -87,7 +88,7 @@ function sanitize(raw){
   if(!cat.furniture[item.type]||!Number.isFinite(item.x)||!Number.isFinite(item.y))continue;
   const w=cat.furniture[item.type],rot=((Math.round(Number(item.rot)||0)/90%4)+4)%4*90;
   next.furniture.push({id:String(item.id||'furn-'+(next.furniture.length+1)).slice(0,64),
-   type:item.type,x:quant(item.x),y:quant(item.y),rot,
+   type:item.type,x:precise(item.x),y:precise(item.y),rot,
    destroyable:typeof item.destroyable==='boolean'?item.destroyable:w.destroyable,
    vaultable:typeof item.vaultable==='boolean'?item.vaultable:w.vaultable,
    blocksMovement:typeof item.blocksMovement==='boolean'?item.blocksMovement:w.blocksMovement});
