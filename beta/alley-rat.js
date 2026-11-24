@@ -40,7 +40,6 @@ window.AlleyRat=(()=>{
  }
  function choose(e,rules,deathAge){
   if(deathAge!==null)return {clip:'death',t:clamp(deathAge/DEATH_SECONDS)};
-  if(e.alleyClimb)return {clip:'run',t:(e.alleyClimb.age*2)%1};
   const motion=e.ratMotion;
   if(motion&&motion.time>0)
    return {clip:motion.name,t:clamp(1-motion.time/motion.duration)};

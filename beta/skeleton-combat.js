@@ -30,6 +30,7 @@ function create(hooks){
  function update(e,hero,dt,spec,d,angle,visible){
   e.skeletonCooldown=Math.max(0,(e.skeletonCooldown||0)-dt);
   e.soulCooldown=Math.max(0,(e.soulCooldown??5)-dt);
+  const onStairs=e.alleyClimb?.connector.kind==='stairs';
   let a=e.skeletonAction;
   aim(e,angle);
   if(!e.aggro&&!a)return;
@@ -38,7 +39,7 @@ function create(hooks){
    const crossed=t=>old<t&&a.age>=t;
    const back=angle+Math.PI,bow=e.skeleton==='bow';
    if(bow){
-    if(d<260||a.name==='flee')
+    if(!onStairs&&(d<260||a.name==='flee'))
      travel(e,back,spec.speed*(a.name==='flee'?2.3:1.72),dt,angle);
     else if(d>spec.range*.83)
      travel(e,angle,spec.speed*.8,dt,angle);
@@ -82,16 +83,16 @@ function create(hooks){
    if(d>80)advance(e,dt,spec.speed*1.1,false);
    return;
   }
-  if(e.soulCooldown<=0&&d<350&&random()<.22){
+  if(!onStairs&&e.soulCooldown<=0&&d<350&&random()<.22){
    begin(e,'throw');return;
   }
   if(e.skeleton==='bow'){
-   if(d<105&&e.skeletonCooldown<=.12){
+   if(!onStairs&&d<105&&e.skeletonCooldown<=.12){
     begin(e,'flee');
    }else if(e.skeletonCooldown<=0&&d<spec.range*1.25){
     e.skeletonShots=(e.skeletonShots||0)+1;
     begin(e,e.skeletonShots%3===0?'double-shoot':'shoot');
-   }else if(d<210){
+   }else if(!onStairs&&d<210){
     travel(e,angle+Math.PI,spec.speed*1.68,dt,angle);
    }else if(d>spec.range*.86){
     advance(e,dt,spec.speed*.9,true);

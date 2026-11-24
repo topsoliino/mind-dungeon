@@ -29,6 +29,41 @@ window.AlleyEnemyPursuit=(()=>{
    if(ride)return base()+(ride.entry==='bottom'?1:0);
    return base()+vertical.state.floor;
   };
+  function surface(e){
+   const ride=e?e.alleyClimb:vertical.state.stairRide;
+   if(!ride)return {floor:e?ownFloor(e):heroFloor()};
+   if(e&&ride.connector.kind!=='stairs')return {floor:-1};
+   const t=e?ride.age/ride.duration:ride.s/vertical.stairLength;
+   return {lower:e?Math.min(ride.from,ride.to):base(),t:e&&!ride.up?1-t:t,
+    length:e?ride.connector.length:vertical.stairLength*48,
+    z:e?vertical.pose(ride.connector,ride.up,t).z:vertical.state.z};
+  }
+  function reachable(a,b,distance){
+   if(a.lower==null&&b.lower==null)return a.floor>=0&&a.floor===b.floor;
+   if(a.lower==null)return reachable(b,a,distance);
+   let t=b.t,z=b.z;
+   if(b.lower==null){
+    t=b.floor-a.lower;
+    if(t!==0&&t!==1)return false;
+    z=t*height;
+   }else if(a.lower!==b.lower)return false;
+   // Reject overlapping arms of a switchback and actors behind a slab.
+   return Math.abs(a.z-z)<=42&&Math.abs(a.t-t)*a.length<=distance+24;
+  }
+  const canFight=(e,hero)=>reachable(surface(e),surface(),d(e,hero));
+  const onTread=(lower,x,y)=>lower!=null&&onFloor(lower,()=>vertical.overStair(x/48,y/48));
+  function stairLine(e,hero){
+   const a=surface(e),b=surface(),lower=a.lower??b.lower;
+   if(lower==null||!reachable(a,b,d(e,hero)))return false;
+   const landing=a.lower==null?a:b.lower==null?b:null;
+   const count=Math.max(1,Math.ceil(d(e,hero)/8));
+   for(let i=0;i<=count;i++){
+    const x=e.x+(hero.x-e.x)*i/count,y=e.y+(hero.y-e.y)*i/count;
+    if(!onTread(lower,x,y)&&(!landing||!onFloor(landing.floor,()=>
+     alley.walkableOnFloor(x,y,plane(landing.floor),0))))return false;
+   }
+   return true;
+  }
   const inSight=(e,hero)=>{
    if(ownFloor(e)!==heroFloor())return false;
    if(d(e,hero)>350)return false;
@@ -81,16 +116,27 @@ window.AlleyEnemyPursuit=(()=>{
   }
   function climb(e,dt){
    const ride=e.alleyClimb;
-   ride.age=Math.min(ride.duration,ride.age+dt);
+   ride.age=Math.max(0,Math.min(ride.duration,ride.age+dt));
    const pose=vertical.pose(ride.connector,ride.up,ride.age/ride.duration);
    e.x=pose.x;e.y=pose.y;e.alleyZ=pose.z+(Math.min(ride.from,ride.to)-base())*height;
    e.facing=pose.angle;e.angle=pose.angle;
    e.moving=true;
    e.ratMoveAngle=pose.angle;
-   if(ride.age>=ride.duration){
-    e.alleyFloor=ride.to;e.alleyZ=(ride.to-base())*height;
+   if(ride.age>=ride.duration||(dt<0&&ride.age===0)){
+    e.alleyFloor=ride.age===0?ride.from:ride.to;e.alleyZ=(e.alleyFloor-base())*height;
     e.alleyClimb=null;resetNavigation(e);
    }
+  }
+  function moveOnStairs(e,dx,dy){
+   const ride=e.alleyClimb;
+   if(ride?.connector.kind!=='stairs')return false;
+   const t=ride.age/ride.duration;
+   const a=vertical.pose(ride.connector,ride.up,Math.max(0,t-.001));
+   const b=vertical.pose(ride.connector,ride.up,Math.min(1,t+.001));
+   const sx=b.x-a.x,sy=b.y-a.y;
+   const along=(dx*sx+dy*sy)/Math.max(.001,Math.hypot(sx,sy));
+   if(Math.abs(along)>.001)climb(e,along/ride.connector.length*ride.duration);
+   return true;
   }
   function idle(e,dt){
    e.phase=(e.phase||0)+dt;e.moving=false;
@@ -125,7 +171,23 @@ window.AlleyEnemyPursuit=(()=>{
     e.alleyHome={x:e.x,y:e.y,floor:e.alleyFloor};
     e.alleyMode='guard';
    }
-   if(e.alleyClimb){idle(e,dt);climb(e,dt);return true;}
+   if(e.alleyClimb){
+    const ride=e.alleyClimb;
+    const self=surface(e),target=surface();
+    if(self.lower!=null){
+     e.alleyZ=self.z+(self.lower-base())*height;
+     if(reachable(self,target,d(e,hero))&&d(e,hero)<(e.skeleton==='bow'?340:85)){
+      e.aggro=Math.max(e.aggro||0,1);return false;
+     }
+    }
+    idle(e,dt);e.skeletonAction=null;e.ratMotion=null;
+    const reverse=self.lower!=null&&target.lower===self.lower&&
+     (target.t-self.t)*(ride.up?1:-1)<0;
+    climb(e,reverse?-dt:dt);return true;
+   }
+   if(vertical.state.stairRide&&canFight(e,hero)&&d(e,hero)<70){
+    e.aggro=Math.max(e.aggro||0,1);return false;
+   }
    e.alleyZ=(ownFloor(e)-base())*height;
    const seen=inSight(e,hero);
    if(seen){
@@ -179,7 +241,7 @@ window.AlleyEnemyPursuit=(()=>{
      const up=target.floor>ownFloor(e);
      e.alleyClimb={connector:portal.connector,up,from:ownFloor(e),to:ownFloor(e)+(up?1:-1),age:0,
       duration:portal.connector.kind==='ladder'?portal.connector.duration:
-       portal.connector.length/Math.max(1,groundSpeed*(up?.68:.83))};
+       portal.connector.length/Math.max(1,groundSpeed)};
      e.alleyRouteKey=null;
      return true;
     }
@@ -201,7 +263,7 @@ window.AlleyEnemyPursuit=(()=>{
    }
    return true;
   }
-  return {update,inSight,heroFloor,destinationFloor,ownFloor};
+  return {update,inSight,heroFloor,destinationFloor,ownFloor,surface,reachable,canFight,onTread,stairLine,moveOnStairs};
  }
  return {create};
 })();

@@ -8,12 +8,9 @@ window.AlleySkeleton=(()=>{
   if(!spec||!e.skeleton)return null;
   let clip=e.moving?'run':'idle',t=e.moving?(e.gait??(e.phase*1.65)%1):(e.phase*.8)%1;
   if(deathAge!==null){clip='death';t=Math.min(1,deathAge/deathDuration);}
-  else if(e.alleyClimb){
-   const ride=e.alleyClimb;
-   if(ride.connector.kind==='ladder'){
-    clip='climb';t=(ride.age/ride.duration*3)%1;
-    if(!ride.up)t=1-t;
-   }else{clip='run';t=(ride.age*1.65)%1;}
+  else if(e.alleyClimb?.connector.kind==='ladder'){
+   const ride=e.alleyClimb;clip='climb';t=(ride.age/ride.duration*3)%1;
+   if(!ride.up)t=1-t;
   }
   else if(e.skeletonAction){
    const a=e.skeletonAction;

@@ -31,7 +31,7 @@ function create(api){
   throwVessel:(e,angle)=>soulController?.throwVessel(e,angle),
   damage:(e,hero,name,amount)=>asHero(hero,
    ()=>damageActive(origin(e,name),amount,{physical:.88,dark:.12})),
-  blocked:(e,hero)=>gateLineBlocked(e.x,e.y,hero.x,hero.y)||
+  blocked:(e,hero)=>combatBlocked(e,hero)||
    Boolean(furnitureBetween(e.x,e.y,hero.x,hero.y,3)),
   random:()=>rand(0,1)
  });
@@ -55,13 +55,13 @@ function create(api){
   updateEnemy(e,dt);
   if(e.skeleton||e.type===enemyRules.RAT){
    const distance=Math.hypot(e.x-x,e.y-y);
-   e.moving=distance>.001||Boolean(e.alleyClimb);
+   e.moving=distance>.001||e.alleyClimb?.connector.kind==='ladder';
    e.gait=((e.gait||0)+distance/(e.skeleton?54:37))%1;
   }
  }
 function moveEnemy(e,dx,dy){
  const {x,y}=e;
- moveActor(e,dx,dy);
+ if(!api.alleyEnemyPursuit?.moveOnStairs(e,dx,dy))moveActor(e,dx,dy);
  const moved=Math.hypot(e.x-x,e.y-y);
  if(moved<=.05)return;
  e.facing=Math.atan2(e.y-y,e.x-x);e.moving=true;
@@ -74,6 +74,9 @@ function moveEnemy(e,dx,dy){
   e.audioStride%=stride;
   soundWorld(cue,e,{gain,cooldown});
  }
+}
+function combatBlocked(e,hero){
+ return !api.alleyEnemyPursuit?.stairLine(e,hero)&&gateLineBlocked(e.x,e.y,hero.x,hero.y,e.type===EAGLE);
 }
 function aimEnemy(e,angle){e.angle=angle;e.facing=angle;}
 function updateEnemy(e,dt){
@@ -108,7 +111,7 @@ function updateEnemy(e,dt){
  e.phase+=dt;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;e.moving=false;
  const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy),angle=Math.atan2(dy,dx);
  const range=eyeRange(e,angle);
- const line=d<range*1.22&&!gateLineBlocked(e.x,e.y,player.x,player.y,e.type===EAGLE);
+ const line=d<range*1.22&&!combatBlocked(e,player);
  const spotted=line&&d<=range;
  if(spotted||labRat)enemyRules.alert(e);
  else e.aggro=Math.max(0,(e.aggro||0)-dt);
@@ -147,7 +150,7 @@ function updateEnemy(e,dt){
     if(after<contacts[i])break;
     e.ratHits=i+1;
     if(!clear||d>spec.range+15||Math.cos(angle-e.angle)<.48||
-       gateLineBlocked(e.x,e.y,player.x,player.y))continue;
+       combatBlocked(e,player))continue;
     const amount=combo?(i===0?4:5):7;
     if(!strikeCover(e,amount)&&damageActive(origin(e,combo?'Doppelbiss':'Biss'),amount,{physical:1})){
      // The normal .75 s hero i-frame would silently nullify bite #2.
@@ -519,6 +522,10 @@ function frostSites(e){
 }
 // Route around walls and solid props when the direct approach is blocked.
 function pursue(e,dt,speed,clear,goal=player){
+ if(e.alleyClimb?.connector.kind==='stairs'){
+  const a=Math.atan2(goal.y-e.y,goal.x-e.x);
+  moveEnemy(e,Math.cos(a)*speed*dt,Math.sin(a)*speed*dt);return;
+ }
  const radius=actorRadius(e),distance=Math.hypot(goal.x-e.x,goal.y-e.y);
  const a=Math.atan2(goal.y-e.y,goal.x-e.x),check=Math.min(distance,22);
  let target=goal;
@@ -770,10 +777,14 @@ function fireBolt(e,type){
   const lead=api.arrowGroundClear(e.x+dx*12,e.y+dy*12,e.alleyFloor??0)?12:0;
   const x=e.x+dx*lead,y=e.y+dy*lead;
   const gravity=240,z=40,targetTime=Math.max(.14,Math.hypot(e.target.x-x,e.target.y-y)/speed);
-  const vz=(24-z)/targetTime+.5*gravity*targetTime;
-  state.bolts.push({x,y,z:z+(root.RockyCoastPrison?.enabled?0:(e.alleyZ||0)),vz,gravity,angle:e.angle,speed,type,
+  const source=api.alleyEnemyPursuit?.surface(e),target=api.alleyEnemyPursuit?.surface();
+  const lower=source?.lower??target?.lower;
+  const launch=lower!=null?(e.alleyZ||0):root.RockyCoastPrison?.enabled?0:(e.alleyZ||0);
+  const dest=lower!=null?api.arrowTargetHeight(player):launch;
+  const vz=(dest+24-launch-z)/targetTime+.5*gravity*targetTime;
+  state.bolts.push({x,y,z:z+launch,source,lower,startX:x,startY:y,storey:root.RockyCoastPrison?.storey,vz,gravity,angle:e.angle,speed,type,
     alleyFloor:e.alleyFloor??0,
-   life:(vz+Math.sqrt(vz*vz+2*gravity*z))/gravity,origin:origin(e,'Pfeil')});
+   life:(vz+Math.sqrt(vz*vz+2*gravity*(z+Math.max(0,launch))))/gravity,origin:origin(e,'Pfeil')});
   return;
  }
  state.bolts.push({x:e.x,y:e.y,angle:e.angle,speed,life:1.23,alleyFloor:e.alleyFloor??0,
@@ -798,7 +809,8 @@ function updateBolts(dt){
    const x=p.x+dx/steps,y=p.y+dy/steps;
    const approaching=p.type==='trap'&&(p.angle===0?x<p.entryX:x>p.entryX);
    if(p.gravity){
-    if(!api.arrowGroundClear(x,y,p.alleyFloor??0))return false;
+    if(p.lower!=null&&p.storey!==root.RockyCoastPrison?.storey)return false;
+    if(!api.alleyEnemyPursuit?.onTread(p.lower,x,y)&&!api.arrowGroundClear(x,y,p.alleyFloor??0))return false;
     const step=elapsed/steps;
     p.z+=p.vz*step-.5*p.gravity*step*step;p.vz-=p.gravity*step;
     if(api.alleyEnemyPursuit&&p.z<(root.RockyCoastPrison?.enabled?0:(p.alleyFloor??0)*132))return false;
@@ -815,7 +827,7 @@ function updateBolts(dt){
     soundWorld('bolt_fly',p,{group:'projectile-pass',cooldown:.09,priority:2,rate:p.type==='trap'?1.19:1});
    }
    const target=coopActors().find(hero=>hero.dash<=0&&
-     (!api.alleyEnemyPursuit||p.alleyFloor===api.alleyEnemyPursuit.heroFloor())&&
+     (!api.alleyEnemyPursuit||(p.source?api.alleyEnemyPursuit.reachable(p.source,api.alleyEnemyPursuit.surface(),Math.hypot(p.x-p.startX,p.y-p.startY)):p.alleyFloor===api.alleyEnemyPursuit.heroFloor()))&&
      Math.hypot(p.x-hero.x,p.y-hero.y)<13&&
     (!p.gravity||(p.z>=api.arrowTargetHeight(hero)&&p.z<=api.arrowTargetHeight(hero)+52)));
    if(target){
