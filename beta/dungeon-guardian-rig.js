@@ -28,6 +28,9 @@ function visibleParts(clip,progress,armed){
  }else if(clip.startsWith('drink')){
   if(progress>=.1&&progress<.93)visible.add('face');
   if(progress>=.24&&progress<.91)visible.add('cup');
+ }else if(clip==='pickup'||clip==='pickup-crouched'){
+  // The real Blender export contains this carried loot mesh.
+  if(progress>=.46&&progress<.84)visible.add('ruby');
  }
  return visible;
 }
