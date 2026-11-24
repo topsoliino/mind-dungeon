@@ -3,8 +3,9 @@
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
   "generatorSha256": "7b1eabae8e8270ce648378e956b4cec341e7890abe8d3619eb0fb22d4ddb648b",
-  "alchemyGeneratorSha256": "93a9db1eb148d8d58498745c60c9cd1f2506b0d6d4f0659abae96fa7afb1849e",
+  "alchemyGeneratorSha256": "019eba788853ee401404873702a8ef7c4c4d2e4dd56bac0e752253020ae9d63b",
   "tortureGeneratorSha256": "7d7ccea899d6407f851600ff073470cad75a278766633262eb5b4581573db71f",
+  "floorGeneratorSha256": "7ce11e453f5909a483ed6afa5a8eb15ab3a11c9c0f65054e8342d77c4da2249e",
   "pixelDensity": {
     "legacyOrthoScale": 3.35,
     "newFurnitureOrthoScale": 1.675,
@@ -422,6 +423,236 @@
         180,
         270
       ]
+    },
+    "floor-rubble": {
+      "catalogId": "floor-rubble",
+      "footprint": [
+        0.75,
+        0.51
+      ],
+      "height": 0.15,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "blocksProjectiles": false,
+      "maxHP": 60,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-bones": {
+      "catalogId": "floor-bones",
+      "footprint": [
+        0.76,
+        0.47
+      ],
+      "height": 0.13,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": false,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 0,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-rug": {
+      "catalogId": "floor-rug",
+      "footprint": [
+        0.82,
+        0.52
+      ],
+      "height": 0.05,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": false,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 0,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-chains": {
+      "catalogId": "floor-chains",
+      "footprint": [
+        0.82,
+        0.5
+      ],
+      "height": 0.06,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": false,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 0,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-wood": {
+      "catalogId": "floor-wood",
+      "footprint": [
+        0.86,
+        0.5
+      ],
+      "height": 0.16,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "blocksProjectiles": false,
+      "maxHP": 45,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-moss": {
+      "catalogId": "floor-moss",
+      "footprint": [
+        0.7,
+        0.46
+      ],
+      "height": 0.1,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": false,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 0,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-scrolls": {
+      "catalogId": "floor-scrolls",
+      "footprint": [
+        0.67,
+        0.44
+      ],
+      "height": 0.09,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": false,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 0,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-puddles": {
+      "catalogId": "floor-puddles",
+      "footprint": [
+        0.77,
+        0.55
+      ],
+      "height": 0.03,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": false,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 0,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-pottery": {
+      "catalogId": "floor-pottery",
+      "footprint": [
+        0.73,
+        0.46
+      ],
+      "height": 0.17,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": false,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 0,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "floor-cloth": {
+      "catalogId": "floor-cloth",
+      "footprint": [
+        0.71,
+        0.52
+      ],
+      "height": 0.12,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": false,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 0,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
     }
   },
   "files": {
@@ -538,6 +769,66 @@
       "90": "assets/furniture/washbasin-90.png",
       "180": "assets/furniture/washbasin-180.png",
       "270": "assets/furniture/washbasin-270.png"
+    },
+    "floor-rubble": {
+      "0": "assets/furniture/floor-rubble-0.png",
+      "90": "assets/furniture/floor-rubble-90.png",
+      "180": "assets/furniture/floor-rubble-180.png",
+      "270": "assets/furniture/floor-rubble-270.png"
+    },
+    "floor-bones": {
+      "0": "assets/furniture/floor-bones-0.png",
+      "90": "assets/furniture/floor-bones-90.png",
+      "180": "assets/furniture/floor-bones-180.png",
+      "270": "assets/furniture/floor-bones-270.png"
+    },
+    "floor-rug": {
+      "0": "assets/furniture/floor-rug-0.png",
+      "90": "assets/furniture/floor-rug-90.png",
+      "180": "assets/furniture/floor-rug-180.png",
+      "270": "assets/furniture/floor-rug-270.png"
+    },
+    "floor-chains": {
+      "0": "assets/furniture/floor-chains-0.png",
+      "90": "assets/furniture/floor-chains-90.png",
+      "180": "assets/furniture/floor-chains-180.png",
+      "270": "assets/furniture/floor-chains-270.png"
+    },
+    "floor-wood": {
+      "0": "assets/furniture/floor-wood-0.png",
+      "90": "assets/furniture/floor-wood-90.png",
+      "180": "assets/furniture/floor-wood-180.png",
+      "270": "assets/furniture/floor-wood-270.png"
+    },
+    "floor-moss": {
+      "0": "assets/furniture/floor-moss-0.png",
+      "90": "assets/furniture/floor-moss-90.png",
+      "180": "assets/furniture/floor-moss-180.png",
+      "270": "assets/furniture/floor-moss-270.png"
+    },
+    "floor-scrolls": {
+      "0": "assets/furniture/floor-scrolls-0.png",
+      "90": "assets/furniture/floor-scrolls-90.png",
+      "180": "assets/furniture/floor-scrolls-180.png",
+      "270": "assets/furniture/floor-scrolls-270.png"
+    },
+    "floor-puddles": {
+      "0": "assets/furniture/floor-puddles-0.png",
+      "90": "assets/furniture/floor-puddles-90.png",
+      "180": "assets/furniture/floor-puddles-180.png",
+      "270": "assets/furniture/floor-puddles-270.png"
+    },
+    "floor-pottery": {
+      "0": "assets/furniture/floor-pottery-0.png",
+      "90": "assets/furniture/floor-pottery-90.png",
+      "180": "assets/furniture/floor-pottery-180.png",
+      "270": "assets/furniture/floor-pottery-270.png"
+    },
+    "floor-cloth": {
+      "0": "assets/furniture/floor-cloth-0.png",
+      "90": "assets/furniture/floor-cloth-90.png",
+      "180": "assets/furniture/floor-cloth-180.png",
+      "270": "assets/furniture/floor-cloth-270.png"
     }
   }
 }
