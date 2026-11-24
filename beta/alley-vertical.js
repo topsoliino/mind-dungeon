@@ -295,7 +295,23 @@ function pose(connector,up,t){
   clip:connector.kind==='ladder'?(up?'climb-up':'climb-down'):'walk',
   landing:p>.82?clamp((p-.82)/.18):0};
 }
-function createLayers({project,polygon,line,cacheObject}){
+function createLayers({project,polygon,line,cacheObject,cacheStair=cacheObject,pattern}){
+ function tread(ctx,points,z,color,edge){
+  const face=points.map(p=>project(p.x,p.y,z));polygon(ctx,face,color,edge);
+  if(!pattern)return;
+  const [x,y]=project(0,0,z),k=2.4/192,[u,v]=project(k,0,z),[w,h]=project(0,k,z);
+  pattern(ctx,'stairFloor',face,[u-x,v-y,w-x,h-y,x,y]);
+ }
+ function masonry(ctx,a,b,base,z,color,edge){
+  const face=[project(a.x,a.y,base),project(b.x,b.y,base),project(b.x,b.y,z),project(a.x,a.y,z)];
+  polygon(ctx,face,color,edge);
+  if(!pattern)return;
+  const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy);
+  if(!len)return;
+  const [x,y]=project(a.x,a.y),[u,v]=project(b.x,b.y);
+  const along=(a.x*dx+a.y*dy)/len,tx=(u-x)/len,ty=(v-y)/len;
+  pattern(ctx,'stairWall',face,[tx*2/192,ty*2/192,0,96/192,x-tx*along,y-ty*along]);
+ }
  const batches=new Map();
  for(const str of upper){
   const [u,v]=str.split(',').map(Number),id=key(Math.floor(u/8),Math.floor(v/8));
@@ -305,21 +321,18 @@ function createLayers({project,polygon,line,cacheObject}){
  const slabs=Array.from(batches.values(),cells=>{
   const xs=cells.map(p=>p[0]),ys=cells.map(p=>p[1]);
   const bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs)+1,Math.max(...ys)+1];
-  return {kind:'upper-deck',level:1,depth:4000,image:cacheObject(bounds,HEIGHT+34,ctx=>{
+  return {kind:'upper-deck',level:1,depth:4000,image:cacheStair(bounds,HEIGHT+34,ctx=>{
   const palette=['#687787','#728494','#677785','#788c99'];
   // The upper floor consists of genuine Z-elevated tiles. The cutout matches
   // the actual stair shaft instead of a fictitious hole in a rectangle.
   for(const [u,v] of cells){
    const id=Math.abs((u*23+v*41)%4);
-   polygon(ctx,[project(u,v,HEIGHT),project(u+1,v,HEIGHT),
-    project(u+1,v+1,HEIGHT),project(u,v+1,HEIGHT)],
+   tread(ctx,[{x:u,y:v},{x:u+1,y:v},{x:u+1,y:v+1},{x:u,y:v+1}],HEIGHT,
     palette[id],'#96a8b4');
    if(!upper.has(key(u+1,v)))
-    polygon(ctx,[project(u+1,v,HEIGHT),project(u+1,v+1,HEIGHT),
-     project(u+1,v+1,HEIGHT-17),project(u+1,v,HEIGHT-17)],'#435464','#7b90a0');
+    masonry(ctx,{x:u+1,y:v},{x:u+1,y:v+1},HEIGHT-17,HEIGHT,'#435464','#7b90a0');
    if(!upper.has(key(u,v+1)))
-    polygon(ctx,[project(u,v+1,HEIGHT),project(u+1,v+1,HEIGHT),
-     project(u+1,v+1,HEIGHT-17),project(u,v+1,HEIGHT-17)],'#394c5b','#748896');
+    masonry(ctx,{x:u,y:v+1},{x:u+1,y:v+1},HEIGHT-17,HEIGHT,'#394c5b','#748896');
   }
   })};
  });
@@ -337,47 +350,42 @@ function createLayers({project,polygon,line,cacheObject}){
   return Math.sign(area)*(b.y-a.y-b.x+a.x)>1e-8;
  }
  function drawPrism(ctx,corners,z,base,posts=false){
-  const low=corners.map(p=>project(p.x,p.y,base));
-  const high=corners.map(p=>project(p.x,p.y,z));
 
   for(let i=0;i<corners.length;i++){
    const j=(i+1)%corners.length;
    if(!front(corners,i))continue;
-   polygon(ctx,[low[i],low[j],high[j],high[i]],
+   masonry(ctx,corners[i],corners[j],base,z,
     i%2?'#697788':'#536174','#354352');
   }
   if(posts&&base>5)for(const corner of corners){
    const q=.085,x=corner.x,y=corner.y;
    const pts=[{x:x-q,y:y-q},{x:x+q,y:y-q},
-    {x:x+q,y:y+q},{x:x-q,y:y+q}],
-    foot=pts.map(p=>project(p.x,p.y,0)),
-    cap=pts.map(p=>project(p.x,p.y,base));
+    {x:x+q,y:y+q},{x:x-q,y:y+q}];
    for(let i=0;i<4;i++){
     const j=(i+1)%4;
     if(!front(pts,i))continue;
-    polygon(ctx,[foot[i],foot[j],cap[j],cap[i]],
+    masonry(ctx,pts[i],pts[j],0,base,
      i%2?'#586778':'#788798','#424e5c');
    }
-   polygon(ctx,cap,'#adb8bf','#354452');
+   tread(ctx,pts,base,'#adb8bf','#354452');
   }
-  polygon(ctx,high,'#939ca8','#d4d6db');
+  tread(ctx,corners,z,'#939ca8','#d4d6db');
  }
  for(const [index,step] of plan.steps.entries()){
-  const image=cacheObject(boundsFor(step.corners),HEIGHT+58,ctx=>{
+  const image=cacheStair(boundsFor(step.corners),HEIGHT+58,ctx=>{
    const [a,b,c,d]=step.corners,z=step.z,prev=step.prev;
    const top=p=>project(p.x,p.y,z),
-    low=p=>project(p.x,p.y,prev),
-    base=p=>project(p.x,p.y,plan.cfg.open?Math.max(0,z-13):0);
+    baseZ=plan.cfg.open?Math.max(0,z-13):0;
    // Closed flights have stone infill to the floor; open flights have a
    // 13px load-bearing soffit and allow passage under high sections.
-   if(front(step.corners,3))polygon(ctx,[base(a),base(d),top(d),top(a)],'#485565','#343d4b');
-   if(front(step.corners,1))polygon(ctx,[base(b),base(c),top(c),top(b)],'#647384','#3e4654');
-   if(front(step.corners,0))polygon(ctx,[low(a),low(b),top(b),top(a)],'#555f70','#424a57');
+   if(front(step.corners,3))masonry(ctx,a,d,baseZ,z,'#485565','#343d4b');
+   if(front(step.corners,1))masonry(ctx,b,c,baseZ,z,'#647384','#3e4654');
+   if(front(step.corners,0))masonry(ctx,a,b,prev,z,'#555f70','#424a57');
    // At the head of a solid straight flight there is no next tread
    // to conceal the end wall. Its foundation reaches the ground.
    const solidHead=plan.kind.startsWith('straight')&&index===plan.steps.length-1;
-   if(front(step.corners,2)&&(plan.cfg.open||solidHead))polygon(ctx,[base(c),base(d),top(d),top(c)],'#485565','#343d4b');
-   polygon(ctx,[top(a),top(b),top(c),top(d)],
+   if(front(step.corners,2)&&(plan.cfg.open||solidHead))masonry(ctx,c,d,baseZ,z,'#485565','#343d4b');
+   tread(ctx,step.corners,z,
     index%2?'#98a3b0':'#939eaf','#d1c9ca');
    line(ctx,[top(a),top(b)],'#d9ced0',1.8);
    // Keep rail geometry local to each flight; do not draw a diagonal
@@ -397,7 +405,7 @@ function createLayers({project,polygon,line,cacheObject}){
  for(const landing of plan.landings.filter(l=>!l.top)){
   const center=landing.corners.reduce((p,q)=>({x:p.x+q.x/landing.corners.length,
    y:p.y+q.y/landing.corners.length}),{x:0,y:0});
-  const image=cacheObject(boundsFor(landing.corners),HEIGHT+58,ctx=>
+  const image=cacheStair(boundsFor(landing.corners),HEIGHT+58,ctx=>
    drawPrism(ctx,landing.corners,landing.z,
     plan.cfg.open?Math.max(0,landing.z-13):0,plan.cfg.open));
   stairObjects.push({kind:'stair-landing',image,level:0,surfaceZ:landing.z,
@@ -407,7 +415,7 @@ function createLayers({project,polygon,line,cacheObject}){
   const p=post.p,r=post.radius,
    corners=[{x:p.x-r,y:p.y-r},{x:p.x+r,y:p.y-r},
     {x:p.x+r,y:p.y+r},{x:p.x-r,y:p.y+r}];
-  const image=cacheObject(boundsFor(corners),post.z1+20,ctx=>
+  const image=cacheStair(boundsFor(corners),post.z1+20,ctx=>
    drawPrism(ctx,corners,post.z1,0,false));
   stairObjects.push({kind:'stair-spindle',image,level:0,
    depth:project(p.x,p.y,0)[1]+.3});
@@ -463,7 +471,7 @@ function createLayers({project,polygon,line,cacheObject}){
    const {x,y}=link.bottom;
    return [{x:x-.38,y:y-.38},{x:x+.38,y:y-.38},{x:x+.38,y:y+.38},{x:x-.38,y:y+.38}];
   })();
-  const image=cacheObject(boundsFor(hatch),8,ctx=>{
+  const image=cacheStair(boundsFor(hatch),8,ctx=>{
    const openings=link.kind==='stairs'?steps.map(step=>step.corners):[hatch];
    for(const points of openings)polygon(ctx,points.map(p=>project(p.x,p.y,0)),'#252b38','#535b66');
    ctx.save();ctx.beginPath();

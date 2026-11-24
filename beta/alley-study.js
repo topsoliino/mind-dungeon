@@ -111,6 +111,19 @@
    'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/brown_mud_03/brown_mud_03_diff_2k.jpg');
   load('wall','wall-atlas-02.jpg',
    'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rock_wall_16/rock_wall_16_diff_2k.jpg');
+  load('stairFloor','floor-albedo-05.jpg','https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/cobblestone_floor_03/cobblestone_floor_03_diff_2k.jpg');
+  load('stairWall','wall-albedo-02.jpg','https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rock_wall_16/rock_wall_16_diff_2k.jpg');
+  function stairPattern(ctx,key,points,matrix){
+   const entry=loaded[key];if(!entry||!ctx.createPattern)return;
+   if(!entry.tile){
+    const tile=document.createElement('canvas');tile.width=tile.height=192;
+    tile.getContext('2d').drawImage(entry.image,0,0,192,192);entry.tile=tile;
+   }
+   const pattern=ctx.createPattern(entry.tile,'repeat');
+   if(!pattern?.setTransform||typeof DOMMatrix!=='function')return;
+   pattern.setTransform(new DOMMatrix(matrix));
+   ctx.save();ctx.fillStyle=pattern;ctx.beginPath();trace(ctx,points);ctx.fill();ctx.restore();
+  }
   const paintFloor=(ctx,area)=>{
    const entry=loaded.floor;if(!entry)return false;
    const [minU,minV,maxU,maxV]=area;
@@ -163,7 +176,7 @@
    ctx.restore();
    return true;
   };
-  return {paintFloor,paintWall,onReady:fn=>listeners.push(fn)};
+  return {paintFloor,paintWall,stairPattern,onReady:fn=>listeners.push(fn)};
  })():null;
 
  const vertical=generatorMode?window.AlleyVertical:null;
@@ -365,7 +378,11 @@
   };
   const roomWalls=renderWalls.map(wall=>({...wall,image:cacheObject(wall.area,wall.height,ctx=>drawPanel(ctx,wall))}));
   const labSeal=route?.seal?cacheObject(route.seal,88,ctx=>route.renderSeal(ctx,routePainter)):null;
-  const verticalImages=vertical?.enabled?vertical.createLayers({...routePainter,cacheObject}):[];
+  const stairCaches=[];
+  function cacheStair(area,height,draw){
+   const image=cacheObject(area,height,draw);stairCaches.push({image,draw});return image;
+  }
+  const verticalImages=vertical?.enabled?vertical.createLayers({...routePainter,cacheObject,cacheStair,pattern:dungeonMaterial?.stairPattern}):[];
   const artListeners=[],chunkCache=[];
   const redrawImage=(image,draw)=>{
    const ctx=image.canvas.getContext('2d');
@@ -591,6 +608,9 @@
     // Re-bake the affected CPU canvases. The Phaser renderer uploads only
     // changed canvases visible in its viewport, deferring all distant walls.
     const changed=[];
+    if(kind==='stairFloor'||kind==='stairWall')for(const {image,draw} of stairCaches){
+     redrawImage(image,draw);changed.push(image.canvas);
+    }
     if(kind==='wall')for(const panel of roomWalls){
      redrawImage(panel.image,ctx=>drawPanel(ctx,panel));
      changed.push(panel.image.canvas);
