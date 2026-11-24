@@ -145,6 +145,9 @@ const stairsConnector={
  duration:Math.max(2.1,plan.length*.19),variant:plan.kind
 };
 stairsConnector.mouth=plan.steps.slice(-4);
+// Keep the traversal and enemy visibility tests tied to the original mouth.
+stairsConnector.visibleSteps=plan.steps.slice(plan.kind.startsWith('spiral')?
+ -Math.ceil(plan.steps.length*.57):-6);
 stairsConnector.lip=plan.path.at(-1);
 const ladders=plan.ladders??[ladder];
 const connectors=[stairsConnector,...ladders.map(l=>({
@@ -415,10 +418,19 @@ function createLayers({project,polygon,line,cacheObject,cacheStair=cacheObject,p
   const p=post.p,r=post.radius,
    corners=[{x:p.x-r,y:p.y-r},{x:p.x+r,y:p.y-r},
     {x:p.x+r,y:p.y+r},{x:p.x-r,y:p.y+r}];
-  const image=cacheStair(boundsFor(corners),post.z1+20,ctx=>
-   drawPrism(ctx,corners,post.z1,0,false));
-  stairObjects.push({kind:'stair-spindle',image,level:0,
-   depth:project(p.x,p.y,0)[1]+.3});
+  // The spindle crosses many tread heights. A single sprite at its foot
+  // cannot occlude a guardian on the far side of the upper turn.
+  const cut=HEIGHT*.52;
+  for(const [base,top] of [[0,cut],[cut,post.z1]]){
+   const image=cacheStair(boundsFor(corners),top+20,ctx=>{
+    for(let i=0;i<corners.length;i++)if(front(corners,i))
+     masonry(ctx,corners[i],corners[(i+1)%corners.length],base,top,
+      i%2?'#697788':'#536174','#354352');
+    if(top===post.z1)tread(ctx,corners,top,'#939ca8','#d4d6db');
+   });
+   stairObjects.push({kind:'stair-spindle',image,level:0,spindleTop:base>0,
+    depth:project(p.x,p.y,0)[1]+.3});
+  }
  }
  const doorFrames=generator.portals.map(door=>{
   const sx=door.dy,sy=-door.dx;
@@ -569,4 +581,5 @@ const shared={
 };
 window.AlleyVertical=new Proxy(shared,{get:(self,key)=>key in self?self[key]:current()[key]});
 })();
+
 
