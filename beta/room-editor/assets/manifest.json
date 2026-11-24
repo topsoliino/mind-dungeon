@@ -3,7 +3,7 @@
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
   "generatorSha256": "7d812cb11ea75e7f29a5a3f297b04c3e0d34c8400fb1425ce4b64dcf1a96c63a",
-  "alchemyGeneratorSha256": "f29b2543d17030560e661da74fbcabcddf7b66bf653a85f75cbe54db61826540",
+  "alchemyGeneratorSha256": "347c5151e64a1fc40cffd855931c7ccdcd0c36134d0f7b82c4c1e42acd6020ee",
   "blend": "assets/source/room-kit.blend",
   "dimensions": {
     "width": 512,
@@ -64,7 +64,7 @@
         1.85,
         1.05
       ],
-      "height": 1.66,
+      "height": 1.8,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
@@ -83,7 +83,7 @@
         1.48,
         0.84
       ],
-      "height": 1.44,
+      "height": 1.56,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
@@ -104,7 +104,7 @@
         0.8,
         0.8
       ],
-      "height": 1.57,
+      "height": 1.8,
       "destroyable": true,
       "vaultable": true,
       "blocksMovement": true,
@@ -123,7 +123,7 @@
         0.92,
         0.88
       ],
-      "height": 1.48,
+      "height": 1.68,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
