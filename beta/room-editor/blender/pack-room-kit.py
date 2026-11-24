@@ -107,6 +107,27 @@ for name in new_items:
    im.save(dest,'PNG',optimize=True,compress_level=7)
    print(dest.name,dest.stat().st_size,'bytes')
  
+# True Blender/Cycles prison bar meshes have a head-on PBR surface render.
+# They are projected onto the exact 1 x (1 or 2) metre isometric wall plane.
+# Only two small PNGs are needed instead of 4 camera views per wall style.
+wall_views={
+ 'bars-full':{'file':'prison-grille-full-front.png','height':2.0,'orthoScale':2.5},
+ 'bars-half':{'file':'prison-grille-half-front.png','height':1.0,'orthoScale':1.5}
+}
+wall_dir=ASSETS/'walls'
+wall_dir.mkdir(parents=True,exist_ok=True)
+for style,spec in wall_views.items():
+ src=raw/spec['file']
+ if not src.exists():
+  raise SystemExit('Missing authentic Blender prison wall render: '+str(src))
+ with Image.open(src) as original:
+  rgba=original.convert('RGBA')
+  if rgba.size!=(512,512) or not rgba.getchannel('A').getbbox():
+   raise SystemExit('Invalid Blender dark prison iron grille: '+str(src))
+  dest=wall_dir/spec['file']
+  rgba.save(dest,'PNG',optimize=True,compress_level=7)
+  print(dest.name,dest.stat().st_size,'bytes (wrought iron wall art)')
+
 manifest={
  'schema':'mind-dungeon-room-art/v1',
  'source':'Blender 3D editable meshes, no rig',
@@ -115,6 +136,9 @@ manifest={
  'alchemyGeneratorSha256':hashlib.sha256((HERE/'alchemy-furniture.py').read_bytes()).hexdigest(),
  'tortureGeneratorSha256':hashlib.sha256((HERE/'torture-chamber-furniture.py').read_bytes()).hexdigest(),
  'floorGeneratorSha256':hashlib.sha256((HERE/'abandoned-floor-clutter.py').read_bytes()).hexdigest(),
+ 'prisonBarsGeneratorSha256':hashlib.sha256((HERE/'dungeon-prison-bars.py').read_bytes()).hexdigest(),
+ 'wallViews':{name:{**spec,'asset':'assets/walls/'+spec['file'],'projection':'front-orthographic-to-wall-plane'}
+  for name,spec in wall_views.items()},
  'pixelDensity':{'legacyOrthoScale':3.35,'newFurnitureOrthoScale':1.675,'editorSpriteScale':.5},
  'blend':'assets/source/room-kit.blend',
  'dimensions':{'width':512,'height':512},
