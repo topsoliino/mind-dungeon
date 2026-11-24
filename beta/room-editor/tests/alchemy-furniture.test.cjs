@@ -30,13 +30,24 @@ const expected={
  'torture-wheel': ['torture-wheel',.82,.50],
  'torture-prison-cage': ['prison-cage',.65,.57],
  'torture-washbasin': ['washbasin',.78,.47],
+ 'floor-rubble': ['floor-rubble',.75,.51],
+ 'floor-bones': ['floor-bones',.76,.47],
+ 'floor-rug': ['floor-rug',.82,.52],
+ 'floor-chains': ['floor-chains',.82,.50],
+ 'floor-wood': ['floor-wood',.86,.50],
+ 'floor-moss': ['floor-moss',.70,.46],
+ 'floor-scrolls': ['floor-scrolls',.67,.44],
+ 'floor-puddles': ['floor-puddles',.77,.55],
+ 'floor-pottery': ['floor-pottery',.73,.46],
+ 'floor-cloth': ['floor-cloth',.71,.52],
 };
-assert.equal(Object.keys(catalog.furniture).length,19,'19 room props: two original prison objects and 17 Blender dungeon props');
+assert.equal(Object.keys(catalog.furniture).length,29,'29 room props: 19 existing items and 10 new Blender floor groups');
 assert.equal(catalog.furniture['prison-table'].asset,'assets/furniture/table');
 assert.equal(catalog.furniture['prison-chair'].asset,'assets/furniture/chair');
 const build=fs.readFileSync(path.join(root,'blender/build-room-kit.py'),'utf8');
 const models=fs.readFileSync(path.join(root,'blender/alchemy-furniture.py'),'utf8');
 const torture=fs.readFileSync(path.join(root,'blender/torture-chamber-furniture.py'),'utf8');
+const floor=fs.readFileSync(path.join(root,'blender/abandoned-floor-clutter.py'),'utf8');
 const pack=fs.readFileSync(path.join(root,'blender/pack-room-kit.py'),'utf8');
 const editor=fs.readFileSync(path.join(root,'editor.js'),'utf8');
 assert.match(build,/for rot in \(0,90,180,270\)/);
@@ -59,8 +70,18 @@ for(const [id,[name,w,h]] of Object.entries(expected)){
  assert.equal(prop.editorSpriteScale,.5,'Half-size viewport display required');
  assert.equal(prop.footprint.w,w);
  assert.equal(prop.footprint.h,h);
- assert.equal(prop.blocksMovement,true);
- if(name==='torture-wheel' || name==='iron-cage' || name==='interrogation-chair' || name==='tool-table' ||
+ const isFloor=id.startsWith('floor-');
+ if(isFloor){
+  assert.equal(prop.category,'floor-clutter');
+  assert.equal(prop.kind,'clutter');
+  assert.equal(prop.blocksMovement,id==='floor-rubble'||id==='floor-wood','Only heavy rubble and beams block the Guardian');
+  assert.equal(prop.blocksProjectiles,false);
+ }else{
+  assert.equal(prop.blocksMovement,true);
+ }
+ if(name.startsWith('floor-')){
+  assert.ok(floor.includes("('"+name+"',"),'Floor group not declared as Blender geometry '+name);
+ }else if(name==='torture-wheel' || name==='iron-cage' || name==='interrogation-chair' || name==='tool-table' ||
   name==='chain-wall' || name==='iron-maiden' || name==='ember-brazier' || name==='pillory' ||
   name==='prison-cage' || name==='washbasin'){
   assert.ok(torture.includes("('"+name+"',"),'Model not declared in Blender torture collection '+name);
@@ -76,7 +97,7 @@ if(fs.existsSync(manifestFile)){
  const manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));
  // The render workflow publishes assets in its own commit; do not fail a
  // source-only CI run while the existing manifest is still on the older revision.
- if(manifest.items?.['washbasin']){
+ if(manifest.items?.['floor-cloth']){
   for(const [id,[name]] of Object.entries(expected)){
    assert.equal(manifest.items[name].catalogId,id);
    for(const rot of [0,90,180,270]){
@@ -86,6 +107,9 @@ if(fs.existsSync(manifestFile)){
   }
  }
 }
-assert.match(models,/TORTURE_MODELS/,'new torture props must be loaded into main Cycles pipeline');
-assert.equal(Object.keys(expected).length,17);
-console.log('Room Atelier: 19 furniture models, 76 isometric 90-degree sprites, original content retained — OK');
+assert.match(models,/TORTURE_MODELS/,'torture props must remain loaded into main Cycles pipeline');
+assert.match(models,/ALCHEMY_MODELS\.extend\(FLOOR_MODELS\)/,'floor clutter must render in the same editable Blender file');
+assert.match(editor,/spec\.category!=='floor-clutter'/,'floor patches should not receive giant furniture shadow');
+assert.match(editor,/BODENDEKORATION/,'group the new floor props in the editor palette');
+assert.equal(Object.keys(expected).length,27);
+console.log('Room Atelier: 29 props, 116 directional views; 10 floor clutter groups and nonblocking rules — OK');
