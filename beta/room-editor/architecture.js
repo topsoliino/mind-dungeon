@@ -67,7 +67,7 @@ function surfaceAt(room,cat,x,y,placement){
  let chosen={height:0,obj:null,blocked:false};
  for(const obj of room.furniture||[]){
   const spec=cat.furniture[obj.type];
-  if(spec?.category!=='architectural-floor'||!spec.surface)continue;
+  if(!spec?.surface||!['architectural-floor','wall-architecture'].includes(spec.category))continue;
   const b=placement.bounds(obj,cat);
   if(!b||!within(b,x,y))continue;
   const surf=spec.surface;
