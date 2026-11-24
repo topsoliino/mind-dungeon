@@ -74,7 +74,7 @@ const testRun=bossTest||isometricTest;
 const iso=window.DungeonIsometric,alley=isometricTest?iso.create():null;
 let alleyRoute=null,alleyMove=null,alleyMarker=null,alleyRoll=null,alleyZoom=1.2,guardian=null;
 let alleyStairFloorGoal=null; // deferred ground route after descending the physical stairs
-let alleySwing=null,alleyQueuedLight=null,alleyHit=null,alleyChest=null,alleyNextLight='down',alleyGait=0,alleyGaitBlend=0;
+let alleySwing=null,alleyQueuedLight=null,alleyHit=null,alleyChest=null,alleyPickup=null,alleyNextLight='down',alleyGait=0,alleyGaitBlend=0;
 let alleySneaking=false,alleyGaitMode='run',alleyItemWalkUntil=0;
 const alleyVertical=alley?.vertical?.enabled?alley.vertical:null;
 const rockyPrison=window.RockyCoastPrison?.enabled?window.RockyCoastPrison:null;
@@ -864,6 +864,24 @@ function receiveLoot(item){
  else if(item.kind==='bones')save.bones+=item.bundle===3?3:1;
  else save.inventory.push(item);
 }
+// The real Guardian Blender atlas includes the 18-frame ground-loot clip.
+// Award items at the frame when the hand reaches the ground, not on E.
+function startGroundPickup(orb){
+ if(!orb)return;
+ if(!alley||!guardian?.atlas?.clips?.pickup||!guardian.atlas.interactions?.pickup){
+  claimSoul(orb);return;
+ }
+ if(alleyPickup||alleyChest||alleyHit||alleySwing||alleyRoute||vault||
+    isConsuming()||heldAttack||player.attack>0||player.dash>0||
+    alleyVertical?.state.stairRide||alleyVertical?.state.transition||
+    (orb.id&&coopTransferBusy))return;
+ if(Math.hypot(orb.x-player.x,orb.y-player.y)>58||
+    !alley.clearLine(player.x,player.y,orb.x,orb.y))return;
+ alleyMove=alleyMarker=null;player.moving=false;
+ player.dir=Math.atan2(orb.y-player.y,orb.x-player.x);
+ alleyPickup={...guardian.atlas.interactions.pickup,orb,elapsed:0,triggered:false,
+  clip:alleySneaking?'pickup-crouched':'pickup'};
+}
 function claimSoul(orb){
  if(!orb)return;
  if(orb.id){if(coopRemoteLoot.some(current=>current.id===orb.id))takeCoopOrb(orb);return;}
@@ -1284,7 +1302,7 @@ const gameMusicScene=()=>!atTitle&&world.inSanctuary(player.x,player.y)?'shrine'
 function show(content,type='menu'){
  touch.reset();
  document.body.classList.remove('mobile-playing');
- if(alley){alleyRoute=alleyMove=alleyMarker=alleyRoll=alleySwing=alleyQueuedLight=alleyChest=null;player.attack=0;}
+ if(alley){alleyRoute=alleyMove=alleyMarker=alleyRoll=alleySwing=alleyQueuedLight=alleyChest=alleyPickup=null;player.attack=0;}
  if(type!=='dialogue')endConversation();
  unmountTitleGlow?.();unmountTitleGlow=null;
  if(!paused&&type!=='quiz'&&performance.now()-lastUiSound>48)soundUI('ui_open');
@@ -1997,7 +2015,7 @@ let breakDebris=[];
 let impactBursts=[],heldAttack=null,combatClock=0,consumeMove=null,vault=null;
 function isConsuming(){return Boolean(consumeMove||authorityMode&&consumePose(authorityOwn?.pose));}
 function startAttack(input,canVault=false){
- if(bossIntro()||modalType||paused||alleyVertical?.state.pending||alleyVertical?.state.transition||mdNavigatingToNewCharacter||heroFallProgress()>=0||vault||alleyHit||alleyChest||player.wallRecoil||player.attack>0||player.dash>0||heldAttack||isConsuming()||save.consumeQueue.length)return;
+ if(bossIntro()||modalType||paused||alleyVertical?.state.pending||alleyVertical?.state.transition||mdNavigatingToNewCharacter||heroFallProgress()>=0||vault||alleyHit||alleyChest||alleyPickup||player.wallRecoil||player.attack>0||player.dash>0||heldAttack||isConsuming()||save.consumeQueue.length)return;
  const jumping=canVault&&tryVault();
  if(authorityMode){
   if(canVault){
@@ -2454,7 +2472,7 @@ function openChest(index){
 }
 function canApproachAlleyChest(){
  if(generationMode)return false;
- return !alleyRoute&&!alleyChest&&!alleyHit&&!vault&&!isConsuming()&&!heldAttack&&player.dash<=0&&player.attack<=0&&
+ return !alleyRoute&&!alleyChest&&!alleyPickup&&!alleyHit&&!vault&&!isConsuming()&&!heldAttack&&player.dash<=0&&player.attack<=0&&
   !save.opened.includes(0)&&alley.canInteract(player);
 }
 function approachAlleyChest(){
@@ -2674,7 +2692,7 @@ function lootLevelChest(site){
  chestFoley(site,true);soundWorld('loot_gold',site);persist();tell('+'+site.gold+' Gold');
 }
 function useLevelSite(site){
- if(alleyHit||alleySwing||alleyChest||alleyRoute||player.dash>0)return;
+ if(alleyHit||alleySwing||alleyChest||alleyPickup||alleyRoute||player.dash>0)return;
  if(site.kind==='altar'||site.kind==='door'){
   if(site.open||site.unsealed)return;
   player.dir=Math.atan2(site.y-player.y,site.x-player.x);
@@ -2697,14 +2715,14 @@ function useLevelSite(site){
   alleyRoute.chestSite=site;finishAlleyApproach();
  }else tell(site.kind==='brew'?'Brautisch · Platz für die Brauerei':'Fledermaushändler · Handelsplatz');
 }
-function interact(){if(bossIntro()||modalType||paused||vault||isConsuming()||heroFallProgress()>=0||mdNavigatingToNewCharacter)return;
+function interact(){if(bossIntro()||modalType||paused||vault||alleyPickup||isConsuming()||heroFallProgress()>=0||mdNavigatingToNewCharacter)return;
 if(alley){
  if(near?.kind==='level-site'){useLevelSite(near.site);return;}
  if(descendAtLanding())return;
  const passage=rockyPrison?.link(player,window.AlleyGenerator);
  if(passage){goRockyFloor(passage.target,passage.entry,passage.storey);return;}
  if(generationMode&&near?.kind!=='soul'){approachAlleyVertical();return;}
- if(near?.kind==='soul'&&!alleyHit&&!alleyChest){claimSoul(near.orb);return;}
+ if(near?.kind==='soul'&&!alleyHit&&!alleyChest){startGroundPickup(near.orb);return;}
  if(near?.kind==='iso-archive'){
   const question=selectQuestion(0)||questions[0];
   if(question)quiz(0,'iso-archive',null,question);
@@ -2853,7 +2871,7 @@ function facePoint(target){
 }
 function faceMouse(){facePoint(mouseWorld());}
 function nextAlleyMove(){
- if(alleyVertical?.state.transition||!alleyMove||alleyRoute||alleyHit||alleyChest||alleySwing||heldAttack||player.dash>0)return null;
+ if(alleyVertical?.state.transition||!alleyMove||alleyRoute||alleyHit||alleyChest||alleyPickup||alleySwing||heldAttack||player.dash>0)return null;
  const task=alleyMove;
  if(!task.steps){
   const route=alley.routeTo(player,task.target);
@@ -3033,7 +3051,7 @@ function startAlleyHit(damage,impactAngle){
  if(alleyHit&&alleyHit.clip==='hit-down')return;
  const threat=enemies.find(enemy=>enemy.hp>0);
  const pushAngle=impactAngle??(threat?Math.atan2(player.y-threat.y,player.x-threat.x):player.dir+Math.PI);
- alleyRoute=alleyMove=alleyMarker=alleySwing=alleyQueuedLight=alleyChest=null;
+ alleyRoute=alleyMove=alleyMarker=alleySwing=alleyQueuedLight=alleyChest=alleyPickup=null;
  clearHeldAttack();
  player.attack=0;player.dir=pushAngle-Math.PI;player.inv=Math.max(player.inv,guardian.atlas.knockback[clip].duration);
  alleyHit={clip,pushAngle,elapsed:0,distance:0};
@@ -3124,6 +3142,14 @@ function updateAlleyActions(dt){
   }
   if(alleyChest&&alleyChest.elapsed>=alleyChest.duration)alleyChest=null;
  }
+ if(alleyPickup){
+  const action=alleyPickup;
+  action.elapsed=Math.min(action.duration,action.elapsed+dt);
+  if(!action.triggered&&action.elapsed>=action.duration*action.event){
+   action.triggered=true;claimSoul(action.orb);
+  }
+  if(action.elapsed>=action.duration)alleyPickup=null;
+ }
  if(alleySwing){
   const action=alleySwing;
   action.elapsed+=dt;
@@ -3183,7 +3209,7 @@ function update(dt){
  player.webSlow=Math.max(0,(player.webSlow||0)-dt);player.grabSlow=Math.max(0,(player.grabSlow||0)-dt);
  shake=Math.max(0,shake-dt*18);
  const {x:inputX,y:inputY}=movementInput();
- const length=alleyHit||alleyChest||alleyVertical?.state.stairRide||alleyVertical?.state.transition?0:Math.hypot(inputX,inputY);
+ const length=alleyHit||alleyChest||alleyPickup||alleyVertical?.state.stairRide||alleyVertical?.state.transition?0:Math.hypot(inputX,inputY);
  // Only intentional keyboard/stick steering cancels click-to-move.
  // Tiny residual touch/controller axes used to kill a right-click route
  // after a few steps, even when the player was not steering manually.
@@ -3214,7 +3240,7 @@ function update(dt){
   alleyRoute=alleyMove=alleyMarker=null;
   dx=dy=0;
  }
- if(!vault&&!alleyHit&&!alleyChest&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!player.wallRecoil&&!isConsuming()&&player.dashCooldown<=0&&
+ if(!vault&&!alleyHit&&!alleyChest&&!alleyPickup&&!alleyVertical?.state.pending&&!alleyVertical?.state.transition&&!player.wallRecoil&&!isConsuming()&&player.dashCooldown<=0&&
   (alley?rollAngle!==null:step||length&&(keys.ShiftLeft||keys.ShiftRight))&&spendStamina(dashCost())){
   clearHeldAttack();
   if(alley){alleyRoute=alleyMove=alleyMarker=alleySwing=alleyQueuedLight=null;player.attack=0;}
@@ -3407,7 +3433,7 @@ if(alley){
   return Math.hypot(dx,dy)<72&&(s.kind==='chest'||s.kind==='altar'||alley.clearLine(player.x,player.y,s.x,s.y));
  });
  near=site?{kind:'level-site',site}:orb&&(alleyVertical?.state.z??0)<20?{kind:'soul',orb}:null;updateGameHud();return;}
- near=alleyHit||alleyChest?null:orb?{kind:'soul',orb}:
+ near=alleyHit||alleyChest||alleyPickup?null:orb?{kind:'soul',orb}:
   !alley.archiveUnlocked()&&alley.nearKnowledge(player)?{kind:'iso-archive'}:
   alley.nearLab(player)?{kind:'iso-lab'}:
   canApproachAlleyChest()?{kind:'chest',i:0}:null;
@@ -5115,6 +5141,8 @@ function alleyGuardianPose(){
  if(alleyHit)return {clip:alleyHit.clip,progress:alleyHit.elapsed/guardian.atlas.knockback[alleyHit.clip].duration,angle:player.dir};
  if(player.dash>0)return {clip:'roll',progress:1-player.dash/player.dashDuration,angle:Math.atan2(player.dashY,player.dashX)};
  if(alleyChest)return {clip:'chest',progress:alleyChest.elapsed/alleyChest.duration,angle:alleyChest.site?player.dir:alley.chestFacing,hideWeapon:true};
+ if(alleyPickup)return {clip:alleyPickup.clip,progress:alleyPickup.elapsed/alleyPickup.duration,
+  angle:player.dir,hideWeapon:true};
  if(alleySwing)return {clip:alleySwing.clip,progress:alleySwing.elapsed/alleySwing.swing.duration,angle:alleySwing.swing.dir};
  if(heldAttack)return {clip:'charge-sword-'+alleyNextLight,progress:(combatClock-heldAttack.started)/.18,angle:player.dir};
  if(consumeMove){
