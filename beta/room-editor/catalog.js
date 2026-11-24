@@ -304,6 +304,118 @@ const catalog={
    footprint:{w:0.71,h:0.52},height:0.12,
    destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
    maxHP:0,material:'degraded linen, dusty burlap',render:'blender-ortho-4'
+  },
+  'wall-stone-pilaster':{
+   label:'W1 · Hervortretender Steinpfeiler',kind:'architectural-wall',category:'wall-architecture',
+   asset:artRoot+'furniture/wall-stone-pilaster',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:0.98,h:0.6},height:2,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:180,material:'damp carved ashlar stone',render:'blender-ortho-4',
+   wallMounted:true
+  },
+  'wall-freestanding-column':{
+   label:'Freistehende Wandsäule',kind:'architectural-wall',category:'wall-architecture',
+   asset:artRoot+'furniture/wall-freestanding-column',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:0.66,h:0.66},height:2,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:180,material:'weathered gothic limestone',render:'blender-ortho-4',
+   wallMounted:true
+  },
+  'wall-wood-pillar':{
+   label:'Hölzerner Stützpfeiler',kind:'architectural-wall',category:'wall-architecture',
+   asset:artRoot+'furniture/wall-wood-pillar',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:0.69,h:0.56},height:2,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:110,material:'heavy aged oak + forged iron',render:'blender-ortho-4',
+   wallMounted:true
+  },
+  'wall-wood-ledge':{
+   label:'Hölzerner Wandvorsprung',kind:'architectural-wall',category:'wall-architecture',
+   asset:artRoot+'furniture/wall-wood-ledge',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:1.1,h:0.91},height:1.4,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:85,material:'oak beams + wrought brackets',render:'blender-ortho-4',
+   wallMounted:true
+  },
+  'wall-stone-cornice':{
+   label:'Steinernes Wandgesims',kind:'architectural-wall',category:'wall-architecture',
+   asset:artRoot+'furniture/wall-stone-cornice',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:1.2,h:0.49},height:2,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:120,material:'carved gothic masonry',render:'blender-ortho-4',
+   wallMounted:true
+  },
+  'wall-statue-knight':{
+   label:'Wandstatue I · Steinritter',kind:'architectural-wall',category:'wall-architecture',
+   asset:artRoot+'furniture/wall-statue-knight',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:0.94,h:0.65},height:1.95,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:135,material:'carved knight statue + masonry',render:'blender-ortho-4',
+   wallMounted:true
+  },
+  'wall-statue-gargoyle':{
+   label:'Wandstatue II · Gargoyle',kind:'architectural-wall',category:'wall-architecture',
+   asset:artRoot+'furniture/wall-statue-gargoyle',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:0.98,h:0.8},height:1.98,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:145,material:'ancient gothic gargoyle stone',render:'blender-ortho-4',
+   wallMounted:true
+  },
+  'wall-broken-masonry':{
+   label:'Herausgebrochener Mauerabschnitt',kind:'architectural-wall',category:'wall-architecture',
+   asset:artRoot+'furniture/wall-broken-masonry',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:1.18,h:0.46},height:2,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:140,material:'broken limestone + exposed masonry',render:'blender-ortho-4',
+   wallMounted:true
+  },
+  'arch-stone-dais':{
+   label:'Erhöhtes Steinpodest',kind:'platform',category:'architectural-floor',
+   asset:artRoot+'furniture/arch-stone-dais',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:1.8,h:1.85},height:0.55,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:170,material:'elevated medieval dungeon architecture',render:'blender-ortho-4',
+   surface:{elevation:0.55,access:'steps',type:'elevated',frontSteps:true}
+  },
+  'arch-sunken-floor':{
+   label:'Abgesenkter Bodenbereich',kind:'platform',category:'architectural-floor',
+   asset:artRoot+'furniture/arch-sunken-floor',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:1.84,h:1.72},height:-0.55,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:190,material:'sunken medieval dungeon architecture',render:'blender-ortho-4',
+   surface:{elevation:-0.55,access:'steps',type:'sunken',frontSteps:true}
+  },
+  'arch-raised-walkway':{
+   label:'Erhöhter Holzsteg',kind:'platform',category:'architectural-floor',
+   asset:artRoot+'furniture/arch-raised-walkway',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:2.16,h:1.5},height:0.74,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:105,material:'elevated medieval dungeon architecture',render:'blender-ortho-4',
+   surface:{elevation:0.74,access:'steps',type:'elevated',frontSteps:true}
+  },
+  'arch-wood-stage':{
+   label:'Kleine Holzbühne',kind:'platform',category:'architectural-floor',
+   asset:artRoot+'furniture/arch-wood-stage',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:1.76,h:1.72},height:0.55,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:95,material:'elevated medieval dungeon architecture',render:'blender-ortho-4',
+   surface:{elevation:0.55,access:'steps',type:'elevated',frontSteps:true}
+  },
+  'arch-broken-stone-slab':{
+   label:'Zerbrochene Bodenplatte',kind:'platform',category:'architectural-floor',
+   asset:artRoot+'furniture/arch-broken-stone-slab',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:1.73,h:1.45},height:0.32,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:140,material:'ramp medieval dungeon architecture',render:'blender-ortho-4',
+   surface:{elevation:0.22,access:'ramp',type:'ramp',frontSteps:true}
+  },
+  'arch-collapsed-floor':{
+   label:'Eingestürzter Zwischenboden',kind:'platform',category:'architectural-floor',
+   asset:artRoot+'furniture/arch-collapsed-floor',extension:'png',editorSpriteScale:1.0,
+   footprint:{w:1.75,h:1.55},height:-0.5,
+   destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:100,material:'collapsed medieval dungeon architecture',render:'blender-ortho-4',
+   surface:{elevation:0,access:'partial',type:'collapsed',frontSteps:true}
   }
 
  }
