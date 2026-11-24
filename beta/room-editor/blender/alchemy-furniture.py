@@ -492,20 +492,264 @@ def _arm_chair_v2():
         for y in (-.35,.35):
             _pin('Hammered chair shoe rivet',(x,y-.078,.08),.011,_fbrass)
 
+
+# ---- Editor furniture expansion: all genuine editable Blender meshes. ----
+# Dark Dungeon construction shares physical oak, aged iron, copper and leather
+# materials above, but uses distinct silhouettes and real piece-by-piece models.
+_weapon_blade=material('Armoury | battle-scratched steel', '85817b', .56, .82,
+                       secondary='b8b2a5', grain=34)
+_weapon_leather=material('Armoury | grime-filled grip leather', '302522', .92,
+                         secondary='5a4031', grain=25)
+_book_olive=material('Library | mould-dark olive calfskin', '31362a', .87,
+                     secondary='656a48', grain=18)
+_book_red=material('Library | aged oxblood leather', '49302c', .87,
+                   secondary='805046', grain=18)
+_book_black=material('Library | aged near-black leather', '292727', .89,
+                     secondary='615a4c', grain=18)
+_rope=material('Torture rack | worn hemp fibres', '89725a', .93,
+               secondary='b59c76', grain=38)
+for _m in (_weapon_blade,_weapon_leather,_book_olive,_book_red,_book_black,_rope):
+    _microtexture(_m,(1.8,12,2.1),7,.20,.026)
+
+def _flat_blade(name, points, width=.016, mat=_weapon_blade):
+    """Physical extrusion of a shaped sword/axe blade profile (no 2D cards)."""
+    verts=[(x,y-width/2,z) for x,y,z in points]
+    verts += [(x,y+width/2,z) for x,y,z in points]
+    n=len(points)
+    faces=[tuple(range(n-1,-1,-1)),tuple(range(n,2*n))]
+    faces += [(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+    mesh=bpy.data.meshes.new(name+' | forging mesh')
+    mesh.from_pydata(verts,[],faces)
+    mesh.update()
+    ob=bpy.data.objects.new(name,mesh)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.data.materials.append(mat)
+    mod=ob.modifiers.new('Light hammer-blade bevel','BEVEL')
+    mod.width=.004;mod.segments=2
+    ob.modifiers.new('Weighted sword normals','WEIGHTED_NORMAL')
+    return ob
+
+def _hanging_sword(x,y,z,length=.92):
+    """Vertical sword, tip down: steel diamond blade, actual crossguard + grip."""
+    _flat_blade('Armoury | long sword with distal taper',[
+        (x-.054,y,z-.15),(x+.054,y,z-.15),
+        (x+.042,y,z-length+.12),(x,y,z-length),
+        (x-.042,y,z-length+.12)],.030)
+    _rod('Blade hand-ground central fuller',(x,y-.024,z-.19),
+         (x,y-.024,z-length+.17),.007,_weapon_blade)
+    _part('Iron quillon crossguard',(x,y,z-.12),(.32,.062,.052),_firon,.014)
+    _rod('Dark leather hilt',(x,y,z-.11),(x,y,z+.17),.028,_weapon_leather)
+    _sphere('Bronze sword pommel',(x,y,z+.20),(.056,.056,.046),_fbrass,18)
+
+def _hanging_axe(x,y,z):
+    _rod('Oak haft of old battle axe',(x,y,z+.21),(x,y,z-1.07),.031,_fedge)
+    _part('Iron axe socket',(x,y,z-.22),(.081,.075,.30),_firon,.011)
+    _flat_blade('Broad forged single axe head',[
+        (x-.01,y,z-.08),(x-.31,y,z-.16),
+        (x-.38,y,z-.34),(x-.31,y,z-.48),
+        (x-.01,y,z-.42)],.050)
+    _band('Axe haft leather grip',(x,y,z-1.00),(.063,.066,.20),_weapon_leather)
+
+def _hanging_spear(x,y,z):
+    _rod('Long spear ash haft',(x,y,z+.19),(x,y,z-1.30),.022,_fedge)
+    _flat_blade('Forged lance leaf-shape spearhead',[
+        (x-.07,y,z+.18),(x,y,z+.43),
+        (x+.07,y,z+.18),(x,y,z-.04)],.035)
+    _band('Iron spear ferrule',(x,y,z-.10),(.063,.066,.13),_firon)
+
+def _weapon_rack_v1():
+    """Freestanding open medieval armoury rack with actual stowed armaments."""
+    for x in (-.76,.76):
+        _part('Rough square oak armoury upright',(x,.27,1.03),
+              (.17,.17,2.06),_fwood,.018)
+        _band('Rust-darkened upright foot shoe',(x,.27,.09),(.20,.20,.18))
+        _band('Top wrought iron upright ferrule',(x,.27,1.98),(.19,.18,.12))
+    for y in (-.30,.34):
+        _part('Foot sledge cross beam',(0,y,.17),(1.72,.19,.20),_fdark,.025)
+    for x in (-.73,.73):
+        _part('Armoury splayed foot bracing',(x,-.03,.34),
+              (.12,.73,.15),_fedge,.017)
+        _rod('Diagonal oak armoury brace',(x,-.12,.49),
+             (x,.26,1.08),.060,_fwood)
+    for z in (.70,1.18,1.93):
+        _part('Massive rear oak rack beam',(0,.29,z),
+              (1.72,.14,.155),_fdark,.015)
+        _band('Iron sword rack front lip',(0,.20,z+.023),
+              (1.75,.029,.035))
+        for x in (-.60,-.30,0,.30,.60):
+            _pin('Weapon stand forged beam bolt',(x,.177,z+.022),.013,_fbrass)
+    for x in (-.57,-.20,.20,.57):
+        # A separated U-bracket makes weapon slots visible from every angle.
+        for dx in (-.057,.057):
+            _rod('Sickle-shaped wrought iron weapon hook',
+                 (x+dx,.19,1.94),(x+dx,-.015,1.91),.016,_firon)
+    _hanging_sword(-.53,.10,1.65,1.03)
+    _hanging_axe(-.13,.055,1.65)
+    _hanging_spear(.32,.09,1.51)
+    _hanging_sword(.62,.105,1.64,.95)
+    # Chipped rear coat of arms + hanging rings.
+    _band('Central heraldic iron shield panel',(0,.378,1.48),
+          (.23,.035,.31))
+    _pin('Heraldry hammered center boss',(0,.346,1.52),.065,_fbrass)
+    for x in (-.72,.72):
+        bpy.ops.mesh.primitive_torus_add(major_radius=.063,minor_radius=.013,
+                  major_segments=20,minor_segments=8,location=(x,.184,1.19))
+        ob=bpy.context.object;ob.name='Free-hanging iron suspension loop'
+        ob.rotation_euler.x=_math.pi/2
+        ob.data.materials.append(_firon)
+
+def _individual_book(x,y,z,w=.065,h=.30,mat=_book_red,lean=0):
+    book=_part('Individual stitched medieval vellum folio',(x,y,z+h*.5),
+          (w,.245,h),mat,.007)
+    book.rotation_euler.y=lean
+    _part('Gilded bronze band on spine',(x,y-.130,z+h*.21),
+          (w*.83,.012,.012),_fbrass,.004)
+    _part('Upper iron spine embossing',(x,y-.131,z+h*.83),
+          (w*.86,.012,.010),_fbrass,.002)
+
+def _bookshelf_v1():
+    """Tall open gothic bookcase with 4 tiers of separately modeled grimoires."""
+    for x in (-.66,.66):
+        for y in (-.245,.245):
+            _part('Tall oak library pillar',(x,y,1.19),
+                  (.15,.17,2.37),_fwood,.024)
+            _band('Forged library foot collar',(x,y,.10),(.172,.19,.20))
+            for z in (.06,.16):
+                _pin('Four-sided foot iron staple',(x,y-.10,z),.013,_fbrass)
+    # Thin rear planks—not a solid front wall that would hide the books.
+    for i in range(7):
+        x=-.56+i*.184
+        _part('Hewn rear bookcase plank',(x,.27,1.20),
+              (.19,.067,2.25),_fdark if i%3==0 else _fwood,.011)
+    for z in (.20,.72,1.24,1.76,2.24):
+        _part('Hand-adzed thick oak book shelf',(0,0,z),
+              (1.45,.70,.09),_fedge if z==1.24 else _fwood,.019)
+        _band('Bookcase forged shelf lip',(0,-.36,z-.012),
+              (1.48,.026,.041))
+        for x in (-.56,0,.56):
+            _pin('Stamped forged shelf fastener',(x,-.385,z-.010),.014,_fbrass)
+    for x in (-.69,.69):
+        _part('Carved outer pilaster with iron hinge groove',(x,0,1.38),
+              (.10,.13,1.74),_fedge,.009)
+    _part('Broad pointed gothic crest rail',(0,.04,2.33),
+          (1.57,.17,.16),_fdark,.025)
+    # A shaped stone-like oak pediment makes a clear, asymmetrical silhouette.
+    _flat_blade('Gothic triangular oak lintel crest',[
+        (-.72,.02,2.37),(0,.02,2.59),(.72,.02,2.37)],.13,_fwood)
+    for x in (-.56,.56):
+        _band('Black iron corner boss',(x,-.09,2.37),(.125,.035,.11))
+    _sphere('Small bookcase carved heraldic finial',(0,-.05,2.52),
+            (.058,.04,.066),_fbrass,18)
+    bookmats=(_book_red,_book_black,_book_olive,_fleather)
+    for shelf,base in enumerate((.765,1.285,1.805)):
+        for j in range(12):
+            x=-.57+j*.097
+            height=.29+.045*((j+shelf)%4)
+            mat=bookmats[(j+2*shelf)%len(bookmats)]
+            _individual_book(x,-.075,base,
+                             .085,height,mat,
+                             lean=.09 if j==3 or j==9 else -.03)
+    # Two larger volumes on bottom shelf.
+    for x in (-.35,.15):
+        _part('Oversized chained tome',(x,-.04,.285),(.37,.34,.12),
+              _book_black,.018)
+        for sx in (-.15,.15):
+            _band('Great tome wrought iron corner',(x+sx,-.06,.35),
+                  (.027,.34,.019))
+    _rod('Iron tether to lower grimoires',(.22,-.19,.41),
+         (.50,-.19,.24),.015,_firon)
+
+def _torture_bench_v1():
+    """Non-graphic medieval rack/bench furniture, no occupant or body."""
+    # Unlike a modern surgical table, the rack has exposed hand-winch drums.
+    for x in (-.90,.90):
+        for y in (-.39,.39):
+            _part('Splintered dark oak torture rack leg',(x,y,.41),
+                  (.17,.17,.80),_fdark,.027)
+            _band('Damaged iron rack foot plate',(x,y,.086),
+                  (.19,.19,.18))
+    for y in (-.42,.42):
+        _part('Long ebony-stained rack stretcher',(0,y,.40),
+              (1.87,.12,.15),_fwood,.020)
+        _band('Heavy forged side tension brace',(0,y,.58),
+              (1.89,.047,.06))
+        for x in (-.72,-.27,.27,.72):
+            _pin('Torture bench iron brace nail',(x,y-.029,.62),.020,_fbrass)
+    for x in (-.87,.87):
+        _part('Thick rack end crossbar',(x,0,.78),(.22,1.0,.17),
+              _fedge,.026)
+        _band('Iron crossbar reinforcing hoop',(x,0,.858),
+              (.19,1.01,.03))
+    for i in range(7):
+        y=-.39+i*.13
+        _part('Uneven rough rack tabletop plank',(0,y,.84),
+              (1.72,.134,.095),_fwood if i%3 else _fdark,.010)
+        for x in (-.76,.76):
+            _pin('Raised bench countersunk nail',(x,y,.90),.011,_firon)
+    # Two large visible wooden windlass rollers supported by end frames.
+    for sx in (-.80,.80):
+        roll=cylinder('Hand-turned timber windlass drum',(sx,0,.95),.156,.91,
+                      _fwood,22)
+        roll.rotation_euler.x=_math.pi/2
+        for y in (-.41,.41):
+            cap=cylinder('Drum dark forged cap',(sx,y,.95),.17,.047,
+                         _firon,22)
+            cap.rotation_euler.x=_math.pi/2
+        _rod('Forged lateral winding spindle',(sx,-.62,.95),
+             (sx,.62,.95),.029,_firon)
+    # Rotating star wheel on right, with strong distinguishable side profile.
+    _sphere('Large blackened crank-wheel hub',(.80,-.69,.95),
+            (.09,.07,.085),_firon)
+    for i in range(6):
+        angle=i*_math.tau/6
+        _rod('Six-spoke windlass iron wheel',
+             (.80,-.69,.95),
+             (.80+.25*_math.cos(angle),-.69,.95+.25*_math.sin(angle)),
+             .018,_firon)
+    for angle in [i*_math.tau/6 for i in range(6)]:
+        _sphere('Hand-wheel knob',
+            (.80+.25*_math.cos(angle),-.69,.95+.25*_math.sin(angle)),
+            (.029,.029,.027),_fbrass,10)
+    # Empty dark leather attachment straps/cuffs indicate purpose.
+    for x in (-.53,.53):
+        for y in (-.27,.27):
+            _band('Empty wrist-and-ankle leather cuff',
+                  (x,y,.929),(.22,.058,.023),_weapon_leather)
+            _pin('Cuff fastening iron rivet',(x+.085,y,.95),
+                 .021,_fbrass)
+            bpy.ops.mesh.primitive_torus_add(
+                major_radius=.055,minor_radius=.012,major_segments=18,
+                minor_segments=8,location=(x+.11,y,.94))
+            ob=bpy.context.object
+            ob.name='Empty wrought iron restraint ring'
+            ob.data.materials.append(_firon)
+    for x in (-.65,.65):
+        _rod('Tensioned exposed hemp rope',(x,-.30,.95),
+             (x,.30,.95),.019,_rope)
+
 work=make_model('Alchemy Work Table | raised medieval hutch and timber joinery',_workbench_v2)
 brew=make_model('Compact Brewing Table | copper alembic and herb apothecary',_brew_station_v2)
 highback=make_model('High-Back Gothic Chair | pointed cathedral back',_high_chair_v2)
 armchair=make_model('Alchemist Armchair | leather seat, brass finials and iron arms',_arm_chair_v2)
+weaponrack=make_model('Dungeon Armoury | open oak weapon rack and forged weapons',_weapon_rack_v1)
+bookshelf=make_model('Forbidden Library | gothic oak books and chained grimoires',_bookshelf_v1)
+torturebench=make_model('Dungeon Cell | unoccupied medieval winch torture bench',_torture_bench_v1)
 
 # User-requested Guardian-relative scale: 55% smaller than the former preview
 # on each axis. The brewing table retains its additional pre-existing 0.8x
 # reduction: it is now .36x its Blender base and .45x its previous preview.
 # Blender geometry, hitboxes and editor display all use matching dimensions.
 GUARDIAN_RELATIVE_FURNITURE_SCALE=.45
-for prop in (work, highback, armchair):
+for prop in (highback, armchair, weaponrack, bookshelf, torturebench):
     prop.scale=(GUARDIAN_RELATIVE_FURNITURE_SCALE,)*3
-brew.scale=(GUARDIAN_RELATIVE_FURNITURE_SCALE*.8,)*3
+# Requested increases are multiplicative on the last published proportions.
+# Previous work table=.45 -> .495 (exactly +10%).
+# Previous compact brew=.45*.8=.36 -> .468 (exactly +30%).
+work.scale=(GUARDIAN_RELATIVE_FURNITURE_SCALE*1.10,)*3
+brew.scale=(GUARDIAN_RELATIVE_FURNITURE_SCALE*.8*1.30,)*3
 ALCHEMY_MODELS=[
     ('work-table',work),('brew-table-small',brew),
-    ('chair-highback',highback),('chair-arm',armchair)
+    ('chair-highback',highback),('chair-arm',armchair),
+    ('weapon-rack',weaponrack),('bookshelf',bookshelf),
+    ('torture-bench',torturebench)
 ]
