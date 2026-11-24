@@ -20,12 +20,23 @@ const expected={
  'dungeon-weapon-rack': ['weapon-rack',.82,.43],
  'dungeon-bookshelf': ['bookshelf',.75,.37],
  'dungeon-torture-bench': ['torture-bench',1.04,.58],
+ 'torture-iron-cage': ['iron-cage',.79,.55],
+ 'torture-interrogation-chair': ['interrogation-chair',.44,.43],
+ 'torture-tool-table': ['tool-table',.76,.45],
+ 'torture-chain-wall': ['chain-wall',.78,.28],
+ 'torture-iron-maiden': ['iron-maiden',.55,.38],
+ 'torture-ember-brazier': ['ember-brazier',.48,.48],
+ 'torture-pillory': ['pillory',.82,.43],
+ 'torture-wheel': ['torture-wheel',.82,.50],
+ 'torture-prison-cage': ['prison-cage',.65,.57],
+ 'torture-washbasin': ['washbasin',.78,.47],
 };
-assert.equal(Object.keys(catalog.furniture).length,9,'Preserve both prison furniture models and all seven new dungeon models');
+assert.equal(Object.keys(catalog.furniture).length,19,'19 room props: two original prison objects and 17 Blender dungeon props');
 assert.equal(catalog.furniture['prison-table'].asset,'assets/furniture/table');
 assert.equal(catalog.furniture['prison-chair'].asset,'assets/furniture/chair');
 const build=fs.readFileSync(path.join(root,'blender/build-room-kit.py'),'utf8');
 const models=fs.readFileSync(path.join(root,'blender/alchemy-furniture.py'),'utf8');
+const torture=fs.readFileSync(path.join(root,'blender/torture-chamber-furniture.py'),'utf8');
 const pack=fs.readFileSync(path.join(root,'blender/pack-room-kit.py'),'utf8');
 const editor=fs.readFileSync(path.join(root,'editor.js'),'utf8');
 assert.match(build,/for rot in \(0,90,180,270\)/);
@@ -49,7 +60,13 @@ for(const [id,[name,w,h]] of Object.entries(expected)){
  assert.equal(prop.footprint.w,w);
  assert.equal(prop.footprint.h,h);
  assert.equal(prop.blocksMovement,true);
- assert.ok(models.includes("('"+name+"',"),'Model not in Blender collection '+name);
+ if(name==='torture-wheel' || name==='iron-cage' || name==='interrogation-chair' || name==='tool-table' ||
+  name==='chain-wall' || name==='iron-maiden' || name==='ember-brazier' || name==='pillory' ||
+  name==='prison-cage' || name==='washbasin'){
+  assert.ok(torture.includes("('"+name+"',"),'Model not declared in Blender torture collection '+name);
+ }else{
+  assert.ok(models.includes("('"+name+"',"),'Model not in Blender collection '+name);
+ }
  assert.ok(pack.includes("'"+name+"':"),'Model not in pack list '+name);
  for(const rotation of [0,90,180,270])
   assert.match(pack,/for rot in \(0,90,180,270\)/);
@@ -59,7 +76,7 @@ if(fs.existsSync(manifestFile)){
  const manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));
  // The render workflow publishes assets in its own commit; do not fail a
  // source-only CI run while the existing manifest is still on the older revision.
- if(manifest.items?.['brew-table-small']){
+ if(manifest.items?.['washbasin']){
   for(const [id,[name]] of Object.entries(expected)){
    assert.equal(manifest.items[name].catalogId,id);
    for(const rot of [0,90,180,270]){
@@ -69,4 +86,6 @@ if(fs.existsSync(manifestFile)){
   }
  }
 }
-console.log('Room Atelier: nine Blender furniture models, 36 90-degree views, +30% brew, +10% writing desk — OK');
+assert.match(models,/TORTURE_MODELS/,'new torture props must be loaded into main Cycles pipeline');
+assert.equal(Object.keys(expected).length,17);
+console.log('Room Atelier: 19 furniture models, 76 isometric 90-degree sprites, original content retained — OK');
