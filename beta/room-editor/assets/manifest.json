@@ -2,12 +2,13 @@
   "schema": "mind-dungeon-room-art/v1",
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
-  "generatorSha256": "24be59e90497b0e44eeadf6ac7b18a4db6d8085c3bd07449b57d71b329469ab7",
+  "generatorSha256": "88c8d5556b4df63b4944cb7a87e38d16c2ce55385708d6eabe39ef7081bccab7",
   "alchemyGeneratorSha256": "c9acc0d74ca0e9848e8d0a17d3f8bd4f3e081711cc81e5074d9f6f6188bcf953",
   "tortureGeneratorSha256": "7d7ccea899d6407f851600ff073470cad75a278766633262eb5b4581573db71f",
   "floorGeneratorSha256": "415d9d15cd650d552c4491c1980a988552536bafe8b314fddf75574c25713b2f",
   "prisonBarsGeneratorSha256": "cb628cadc067b21d12c6b2a7448238c869d68054646d4ca49feee82b5763582d",
-  "architectureGeneratorSha256": "f8355db21dee31f7156a280071d400595acb78df5dd997625326890dc0b1b5b2",
+  "architectureGeneratorSha256": "9de84f03045bf9760605cb88efe1db5906bb541ab8747e560479f354e121442a",
+  "architectureWeatheringSha256": "1047b01e11801af7db7c4701ee8c4ca5e07bf626510b406e579deb4c00550e6f",
   "wallViews": {
     "bars-full": {
       "file": "prison-grille-full-front.png",
