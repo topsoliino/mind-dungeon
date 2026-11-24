@@ -534,7 +534,7 @@ function togglePlay(active){
  $('sceneStatus').textContent=active?'WASD · Rechtsklick Ziel · Linksklick Angriff · Leertaste Vault':'V · Auswahl';
  schedule();
 }
-function canOccupy(x,y){
+function canOccupy(x,y,allowVault=false){
  const r=.17;
  if(x<r||y<r||x>room.width-r||y>room.height-r)return false;
  for(const obj of room.furniture)if(obj.blocksMovement&&
@@ -544,7 +544,7 @@ function canOccupy(x,y){
  }
  const surface=architecture.surfaceAt(room,cat,x,y,placement);
  if(surface.blocked)return false;
- if(playing&&!architecture.transition(room,cat,placement,
+ if(playing&&!allowVault&&!architecture.transition(room,cat,placement,
    {x:hero.x,y:hero.y,z:hero.z||0},{x,y}).allowed)return false;
  for(const wall of room.walls)if(!isNearWall(wall)&&cat.walls[wall.style].solid){
   const [a,b]=wallEnds(wall),d=Math.hypot(b[0]-a[0],b[1]-a[1]);
@@ -591,6 +591,22 @@ function vault(){
   const b=bounds(obj),distance=Math.max(b.right-b.left,b.bottom-b.top)+.7;
   const candidate={x:hero.x+dx*distance,y:hero.y+dy*distance};
   if(canOccupy(candidate.x,candidate.y)){to=candidate;hero.vault=1}
+ }
+ // A wall-mounted wooden ledge at 1.33m is a true platform rather than
+ // decorative art: Space vaults onto/off the ledge within Guardian reach.
+ if(!to){
+  const origin=architecture.surfaceAt(room,cat,hero.x,hero.y,placement);
+  for(const distance of [.45,.65,.85]){
+   const candidate={x:hero.x+dx*distance,y:hero.y+dy*distance};
+   const dest=architecture.surfaceAt(room,cat,candidate.x,candidate.y,placement);
+   const climb=origin.obj?.type==='wall-wood-ledge'||
+    dest.obj?.type==='wall-wood-ledge';
+   if(climb&&Math.abs(dest.height-origin.height)>.29&&
+      Math.abs(dest.height-origin.height)<=1.4&&
+      canOccupy(candidate.x,candidate.y,true)){
+    to=candidate;hero.vault=1;break;
+   }
+  }
  }
  if(to){hero.x=to.x;hero.y=to.y;schedule()}
 }
