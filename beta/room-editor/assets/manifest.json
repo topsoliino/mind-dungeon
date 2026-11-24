@@ -3,7 +3,8 @@
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
   "generatorSha256": "7b1eabae8e8270ce648378e956b4cec341e7890abe8d3619eb0fb22d4ddb648b",
-  "alchemyGeneratorSha256": "586b1d84a46d90029ce3cfe0de80be61084d385043e887ad65180f9cb331a037",
+  "alchemyGeneratorSha256": "93a9db1eb148d8d58498745c60c9cd1f2506b0d6d4f0659abae96fa7afb1849e",
+  "tortureGeneratorSha256": "7d7ccea899d6407f851600ff073470cad75a278766633262eb5b4581573db71f",
   "pixelDensity": {
     "legacyOrthoScale": 3.35,
     "newFurnitureOrthoScale": 1.675,
@@ -211,6 +212,216 @@
         180,
         270
       ]
+    },
+    "iron-cage": {
+      "catalogId": "torture-iron-cage",
+      "footprint": [
+        0.79,
+        0.55
+      ],
+      "height": 1.2,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 140,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "interrogation-chair": {
+      "catalogId": "torture-interrogation-chair",
+      "footprint": [
+        0.44,
+        0.43
+      ],
+      "height": 0.91,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 95,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "tool-table": {
+      "catalogId": "torture-tool-table",
+      "footprint": [
+        0.76,
+        0.45
+      ],
+      "height": 0.76,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 100,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "chain-wall": {
+      "catalogId": "torture-chain-wall",
+      "footprint": [
+        0.78,
+        0.28
+      ],
+      "height": 1.05,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 160,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "iron-maiden": {
+      "catalogId": "torture-iron-maiden",
+      "footprint": [
+        0.55,
+        0.38
+      ],
+      "height": 1.28,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 180,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "ember-brazier": {
+      "catalogId": "torture-ember-brazier",
+      "footprint": [
+        0.48,
+        0.48
+      ],
+      "height": 0.62,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 75,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "pillory": {
+      "catalogId": "torture-pillory",
+      "footprint": [
+        0.82,
+        0.43
+      ],
+      "height": 0.95,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 90,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "torture-wheel": {
+      "catalogId": "torture-wheel",
+      "footprint": [
+        0.82,
+        0.5
+      ],
+      "height": 1.08,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 115,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "prison-cage": {
+      "catalogId": "torture-prison-cage",
+      "footprint": [
+        0.65,
+        0.57
+      ],
+      "height": 0.65,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 110,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "washbasin": {
+      "catalogId": "torture-washbasin",
+      "footprint": [
+        0.78,
+        0.47
+      ],
+      "height": 0.48,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 120,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
     }
   },
   "files": {
@@ -267,6 +478,66 @@
       "90": "assets/furniture/torture-bench-90.png",
       "180": "assets/furniture/torture-bench-180.png",
       "270": "assets/furniture/torture-bench-270.png"
+    },
+    "iron-cage": {
+      "0": "assets/furniture/iron-cage-0.png",
+      "90": "assets/furniture/iron-cage-90.png",
+      "180": "assets/furniture/iron-cage-180.png",
+      "270": "assets/furniture/iron-cage-270.png"
+    },
+    "interrogation-chair": {
+      "0": "assets/furniture/interrogation-chair-0.png",
+      "90": "assets/furniture/interrogation-chair-90.png",
+      "180": "assets/furniture/interrogation-chair-180.png",
+      "270": "assets/furniture/interrogation-chair-270.png"
+    },
+    "tool-table": {
+      "0": "assets/furniture/tool-table-0.png",
+      "90": "assets/furniture/tool-table-90.png",
+      "180": "assets/furniture/tool-table-180.png",
+      "270": "assets/furniture/tool-table-270.png"
+    },
+    "chain-wall": {
+      "0": "assets/furniture/chain-wall-0.png",
+      "90": "assets/furniture/chain-wall-90.png",
+      "180": "assets/furniture/chain-wall-180.png",
+      "270": "assets/furniture/chain-wall-270.png"
+    },
+    "iron-maiden": {
+      "0": "assets/furniture/iron-maiden-0.png",
+      "90": "assets/furniture/iron-maiden-90.png",
+      "180": "assets/furniture/iron-maiden-180.png",
+      "270": "assets/furniture/iron-maiden-270.png"
+    },
+    "ember-brazier": {
+      "0": "assets/furniture/ember-brazier-0.png",
+      "90": "assets/furniture/ember-brazier-90.png",
+      "180": "assets/furniture/ember-brazier-180.png",
+      "270": "assets/furniture/ember-brazier-270.png"
+    },
+    "pillory": {
+      "0": "assets/furniture/pillory-0.png",
+      "90": "assets/furniture/pillory-90.png",
+      "180": "assets/furniture/pillory-180.png",
+      "270": "assets/furniture/pillory-270.png"
+    },
+    "torture-wheel": {
+      "0": "assets/furniture/torture-wheel-0.png",
+      "90": "assets/furniture/torture-wheel-90.png",
+      "180": "assets/furniture/torture-wheel-180.png",
+      "270": "assets/furniture/torture-wheel-270.png"
+    },
+    "prison-cage": {
+      "0": "assets/furniture/prison-cage-0.png",
+      "90": "assets/furniture/prison-cage-90.png",
+      "180": "assets/furniture/prison-cage-180.png",
+      "270": "assets/furniture/prison-cage-270.png"
+    },
+    "washbasin": {
+      "0": "assets/furniture/washbasin-0.png",
+      "90": "assets/furniture/washbasin-90.png",
+      "180": "assets/furniture/washbasin-180.png",
+      "270": "assets/furniture/washbasin-270.png"
     }
   }
 }
