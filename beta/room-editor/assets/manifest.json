@@ -3,7 +3,7 @@
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
   "generatorSha256": "7b1eabae8e8270ce648378e956b4cec341e7890abe8d3619eb0fb22d4ddb648b",
-  "alchemyGeneratorSha256": "7ec98ccefc2b6f5148b5eaf26e61cd5021f6846de7f55dc01ffc6b26b91c2d74",
+  "alchemyGeneratorSha256": "586b1d84a46d90029ce3cfe0de80be61084d385043e887ad65180f9cb331a037",
   "pixelDensity": {
     "legacyOrthoScale": 3.35,
     "newFurnitureOrthoScale": 1.675,
@@ -66,12 +66,12 @@
     "work-table": {
       "catalogId": "alchemy-work-table",
       "footprint": [
-        0.83,
-        0.47
+        0.913,
+        0.517
       ],
-      "height": 0.83,
+      "height": 0.913,
       "spriteScale": 0.5,
-      "modelScale": 0.45,
+      "modelScale": 0.495,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
@@ -87,18 +87,18 @@
     "brew-table-small": {
       "catalogId": "alchemy-brew-table",
       "footprint": [
-        0.67,
-        0.38
+        0.871,
+        0.494
       ],
-      "height": 0.77,
+      "height": 1.001,
       "spriteScale": 0.5,
-      "modelScale": 0.36,
+      "modelScale": 0.468,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
       "maxHP": 120,
       "extension": "png",
-      "scale": 0.36,
+      "scale": 0.468,
       "interaction": "brew",
       "rotations": [
         0,
@@ -148,6 +148,69 @@
         180,
         270
       ]
+    },
+    "weapon-rack": {
+      "catalogId": "dungeon-weapon-rack",
+      "footprint": [
+        0.82,
+        0.43
+      ],
+      "height": 0.98,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 95,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "bookshelf": {
+      "catalogId": "dungeon-bookshelf",
+      "footprint": [
+        0.75,
+        0.37
+      ],
+      "height": 1.18,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "maxHP": 110,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "torture-bench": {
+      "catalogId": "dungeon-torture-bench",
+      "footprint": [
+        1.04,
+        0.58
+      ],
+      "height": 0.51,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
+      "destroyable": true,
+      "vaultable": true,
+      "blocksMovement": true,
+      "maxHP": 150,
+      "extension": "png",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
     }
   },
   "files": {
@@ -186,6 +249,24 @@
       "90": "assets/furniture/chair-arm-90.png",
       "180": "assets/furniture/chair-arm-180.png",
       "270": "assets/furniture/chair-arm-270.png"
+    },
+    "weapon-rack": {
+      "0": "assets/furniture/weapon-rack-0.png",
+      "90": "assets/furniture/weapon-rack-90.png",
+      "180": "assets/furniture/weapon-rack-180.png",
+      "270": "assets/furniture/weapon-rack-270.png"
+    },
+    "bookshelf": {
+      "0": "assets/furniture/bookshelf-0.png",
+      "90": "assets/furniture/bookshelf-90.png",
+      "180": "assets/furniture/bookshelf-180.png",
+      "270": "assets/furniture/bookshelf-270.png"
+    },
+    "torture-bench": {
+      "0": "assets/furniture/torture-bench-0.png",
+      "90": "assets/furniture/torture-bench-90.png",
+      "180": "assets/furniture/torture-bench-180.png",
+      "270": "assets/furniture/torture-bench-270.png"
     }
   }
 }
