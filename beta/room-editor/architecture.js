@@ -11,18 +11,18 @@ const horizontal=w=>w.edge==='north'||w.edge==='south';
 // Camera +X/+Y maps Blender +X to editor +Y and Blender +Y to editor +X.
 // Thus 180 faces into the north wall's +Y interior, 90 into west's +X.
 // Use the same mapping during placement, dragging and saved JSON refresh.
-const mountRotation=w=>horizontal(w)?180:90;
+const geometry=root.MindRoomShape||(typeof module!=='undefined'&&module.exports?require('./shape.js'):null);
+const positiveSide=(room,w)=>!room.floorCells||geometry.sides(room,w).positive;
+const mountRotation=(room,w)=>horizontal(w)?(positiveSide(room,w)?180:0):(positiveSide(room,w)?90:270);
 function wallByRef(room,cat,ref){
  return (room.walls||[]).find(w=>wallKey(w)===ref&&cat.walls[w.style]?.solid&&
-  !(horizontal(w)&&w.y===room.height)&&
-  !(!horizontal(w)&&w.x===room.width))||null;
+  (room.floorCells?(geometry.sides(room,w).positive||geometry.sides(room,w).negative):!(horizontal(w)&&w.y===room.height)&&!(!horizontal(w)&&w.x===room.width)))||null;
 }
 function wallCandidate(room,cat,x,y,range=.48){
  if(!Number.isFinite(x)||!Number.isFinite(y))return null;
  const scored=[];
  for(const w of room.walls||[]){
-  if(!cat.walls[w.style]?.solid||horizontal(w)&&w.y===room.height||
-     !horizontal(w)&&w.x===room.width)continue;
+  if(!cat.walls[w.style]?.solid||!wallByRef(room,cat,wallKey(w)))continue;
   const t=horizontal(w)?x-w.x:y-w.y;
   if(t<-.12||t>1.12)continue;
   const d=horizontal(w)?Math.abs(y-w.y):Math.abs(x-w.x);
@@ -39,13 +39,13 @@ function attach(type,room,cat,x,y,id){
  if(!found)return null;
  const {wall:w,offset}=found;
  const isHorizontal=horizontal(w);
- const halfDepth=spec.footprint.h/2;
+ const halfDepth=(spec.footprint.h/2+.015)*(positiveSide(room,w)?1:-1);
  return {
   id:id||type+'-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*999),
   type,wallRef:wallKey(w),wallOffset:offset,
-  x:isHorizontal?w.x+offset:w.x+halfDepth+.015,
-  y:isHorizontal?w.y+halfDepth+.015:w.y+offset,
-  rot:mountRotation(w),
+  x:isHorizontal?w.x+offset:w.x+halfDepth,
+  y:isHorizontal?w.y+halfDepth:w.y+offset,
+  rot:mountRotation(room,w),
   destroyable:spec.destroyable,vaultable:spec.vaultable,
   blocksMovement:spec.blocksMovement
  };
@@ -56,8 +56,10 @@ function refreshMount(obj,room,cat){
  const wall=wallByRef(room,cat,obj.wallRef);
  if(!wall)return null;
  const offset=clamp(Number(obj.wallOffset)||.5,.25,.75);
- const h=horizontal(wall),d=spec.footprint.h/2+.015;
- return {...obj,wallOffset:offset,rot:mountRotation(wall),
+ const h=horizontal(wall),s=room.floorCells?geometry.sides(room,wall):null;
+ const negative=!!s?.negative&&(!s.positive||(h?obj.y<wall.y:obj.x<wall.x));
+ const d=(spec.footprint.h/2+.015)*(negative?-1:1);
+ return {...obj,wallOffset:offset,rot:h?(negative?0:180):(negative?270:90),
   x:h?wall.x+offset:wall.x+d,
   y:h?wall.y+d:wall.y+offset};
 }
