@@ -133,13 +133,13 @@ const catalog={
  furniture:{
   'prison-table':{
    label:'Massiver Eichentisch',kind:'table',asset:artRoot+'furniture/table',
-   footprint:{w:1.85,h:1.05},height:0.94,
+   footprint:{w:1.41,h:.80},height:.95,bodyHeight:.75,lights:[[0.2432,-0.1216,0.91732,0.22,0.95],[0.38,0.0608,0.86412,0.19,0.85],[0.1292,0.10640000000000001,0.84132,0.18,0.8]],
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
    maxHP:110,material:'dark aged oak + wrought iron',render:'blender-ortho-4'
   },
   'prison-chair':{
    label:'Gefängnisstuhl',kind:'chair',asset:artRoot+'furniture/chair',
-   footprint:{w:.78,h:.79},height:1.28,
+   footprint:{w:.56,h:.57},height:.97,
    destroyable:true,vaultable:true,blocksMovement:true,blocksProjectiles:false,
    maxHP:35,material:'aged oak + wrought iron',render:'blender-ortho-4'
   },
@@ -370,6 +370,22 @@ const catalog={
    maxHP:140,material:'broken limestone + exposed masonry',render:'blender-ortho-4',
    wallMounted:true
   },
+  'light-torch-iron':{label:"Wandfackel · geschmiedete Platte",kind:"light",category:'lighting',asset:artRoot+'furniture/light-torch-iron',extension:'png',editorSpriteScale:1,wallMounted:true,lights:[[0,0.15,1.57,0.6,2.6]],footprint:{w:0.25,h:0.34},height:1.62,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'light-torch-ring':{label:"Wandfackel · Eisenring",kind:"light",category:'lighting',asset:artRoot+'furniture/light-torch-ring',extension:'png',editorSpriteScale:1,wallMounted:true,lights:[[0,0.15,1.57,0.67,2.8]],footprint:{w:0.3,h:0.36},height:1.62,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'light-torch-gothic':{label:"Wandfackel · gotische Konsole",kind:"light",category:'lighting',asset:artRoot+'furniture/light-torch-gothic',extension:'png',editorSpriteScale:1,wallMounted:true,lights:[[0,0.15,1.57,0.74,3]],footprint:{w:0.3,h:0.38},height:1.62,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'light-candle-single':{label:"Kerze · alter Wachsstumpf",kind:"light",category:'lighting',asset:artRoot+'furniture/light-candle-single',extension:'png',editorSpriteScale:1,lights:[[0,0,0.29,0.22,0.95]],footprint:{w:0.23,h:0.23},height:0.29,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'light-candle-cluster':{label:"Kerzen · drei Wachsstümpfe",kind:"light",category:'lighting',asset:artRoot+'furniture/light-candle-cluster',extension:'png',editorSpriteScale:1,lights:[[-0.09,0.045,0.257,0.21,0.95],[0.09,0.04,0.167,0.19,0.85],[0,-0.08,0.337,0.24,1.05]],footprint:{w:0.34,h:0.3},height:0.34,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'light-candle-candelabra':{label:"Kerzen · eiserner Kandelaber",kind:"light",category:'lighting',asset:artRoot+'furniture/light-candle-candelabra',extension:'png',editorSpriteScale:1,lights:[[-0.19,0,0.595,0.21,1],[0,0,0.755,0.24,1.1],[0.19,0,0.595,0.21,1]],footprint:{w:0.52,h:0.28},height:0.76,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'deco-fungi-grey':{label:"Pilze · schiefergraue Gruppe",kind:"clutter",category:'floor-clutter',asset:artRoot+'furniture/deco-fungi-grey',extension:'png',editorSpriteScale:1,footprint:{w:0.6,h:0.54},height:0.16,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'deco-fungi-brown':{label:"Pilze · braune Großgruppe",kind:"clutter",category:'floor-clutter',asset:artRoot+'furniture/deco-fungi-brown',extension:'png',editorSpriteScale:1,footprint:{w:0.66,h:0.6},height:0.27,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'deco-fungi-white':{label:"Pilze · blasse Elfenbeinkappen",kind:"clutter",category:'floor-clutter',asset:artRoot+'furniture/deco-fungi-white',extension:'png',editorSpriteScale:1,footprint:{w:0.6,h:0.54},height:0.16,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'deco-fungi-ochre':{label:"Pilze · ockerfarbene Gruppe",kind:"clutter",category:'floor-clutter',asset:artRoot+'furniture/deco-fungi-ochre',extension:'png',editorSpriteScale:1,footprint:{w:0.6,h:0.54},height:0.16,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'deco-moss-wet':{label:"Moos · feuchter Wandfuß",kind:"clutter",category:'floor-clutter',asset:artRoot+'furniture/deco-moss-wet',extension:'png',editorSpriteScale:1,footprint:{w:0.72,h:0.56},height:0.06,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'deco-moss-thick':{label:"Moos · dichte Polster",kind:"clutter",category:'floor-clutter',asset:artRoot+'furniture/deco-moss-thick',extension:'png',editorSpriteScale:1,footprint:{w:0.74,h:0.58},height:0.07,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'deco-moss-yellow':{label:"Moos · kleine gelbe Wildblüten",kind:"clutter",category:'floor-clutter',asset:artRoot+'furniture/deco-moss-yellow',extension:'png',editorSpriteScale:1,footprint:{w:0.74,h:0.58},height:0.2,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'deco-moss-white':{label:"Moos · kleine weiße Wildblüten",kind:"clutter",category:'floor-clutter',asset:artRoot+'furniture/deco-moss-white',extension:'png',editorSpriteScale:1,footprint:{w:0.74,h:0.58},height:0.2,destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:30,material:'weathered crypt environment',render:'blender-ortho-4'},
+  'ambient-roaches':{label:"Schabenstraße",kind:"ambient",category:'ambient-life',asset:artRoot+'furniture/ambient-roaches',extension:'png',editorSpriteScale:1,ambient:"roach",footprint:{w:0.28,h:0.28},height:0.05,destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:1,material:'weathered crypt environment',render:'procedural-ambient'},
+  'ambient-flies':{label:"Fliegenschwarm",kind:"ambient",category:'ambient-life',asset:artRoot+'furniture/ambient-flies',extension:'png',editorSpriteScale:1,ambient:"fly",footprint:{w:0.28,h:0.28},height:0.55,destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,maxHP:1,material:'weathered crypt environment',render:'procedural-ambient'},
   'arch-stone-dais':{
    label:'Erhöhtes Steinpodest',kind:'platform',category:'architectural-floor',
    asset:artRoot+'furniture/arch-stone-dais',extension:'png',editorSpriteScale:1.0,
