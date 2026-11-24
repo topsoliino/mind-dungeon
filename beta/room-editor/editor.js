@@ -537,6 +537,7 @@ function draw(){
   for(let y=-1;y<=room.height;y++)for(let x=-1;x<=room.width;x++){if(!shape.has(room,x,y)&&![[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>shape.has(room,x+dx,y+dy)))continue;polygon([pt(x,y),pt(x+1,y),pt(x+1,y+1),pt(x,y+1)],null,'#a9c7c54a',.8);}
   if(hover?.kind==='brush'){const {x,y}=hover;polygon([pt(x,y),pt(x+1,y),pt(x+1,y+1),pt(x,y+1)],tool==='shapeAdd'?'#64d7ad50':'#e9798060',tool==='shapeAdd'?'#64d7ad':'#e97980',2);}
  }
+ if(hover?.kind==='brush'&&(tool==='waterAdd'||tool==='waterRemove')&&shape.has(room,hover.x,hover.y)){const {x,y}=hover;polygon([pt(x,y),pt(x+1,y),pt(x+1,y+1),pt(x,y+1)],tool==='waterAdd'?'#76c9d342':'#e9798042',tool==='waterAdd'?'#76c9d3':'#e97980',1.5);}
  if(hover?.kind==='tile'&&tool==='floor'){
   const v=hover;polygon([pt(v.x,v.y),pt(v.x+1,v.y),pt(v.x+1,v.y+1),pt(v.x,v.y+1)],'#f4c87527','#e3bd78',1.2);
  }
@@ -642,6 +643,8 @@ function chooseTool(next){
   floor:'B · ausgewählten Originalboden auf den ganzen Raum anwenden',
    shapeAdd:'N · Bodenfelder malen · Linksklick ziehen, auch am äußeren Rand',
    shapeRemove:'M · Bodenfelder entfernen · Linksklick ziehen',
+   waterAdd:'U · Wasser auf vorhandene Bodenfelder malen · Linksklick ziehen',
+   waterRemove:'I · Wasserfelder entfernen · Boden bleibt erhalten',
   wall:'W · Wandkante anklicken · Gitter und Türen platzieren',
   place:(cat.furniture[chosenFurniture]?.wallMounted||cat.furniture[chosenFurniture]?.category==='wall-architecture')?
    'F · Wandverzierung nur auf vorhandener massiver Wand platzieren':
@@ -670,7 +673,7 @@ function togglePlay(active){
   for(let y=.5;y<room.height&&!found;y+=.5)for(let x=.5;x<room.width&&!found;x+=.5)
    if(canOccupy(x,y)&&architecture.surfaceAt(room,cat,x,y,placement).height===0)
     found={x,y};
-  if(!found){playing=false;playHP.clear();$('editorStatus').textContent='Kein begehbarer Startpunkt im Raum.';return;}
+  if(!found){playing=false;levelDesign.stopAudio();playHP.clear();$('editorStatus').textContent='Kein begehbarer Startpunkt im Raum.';return;}
   hero={...hero,...found};
   hero.z=architecture.surfaceAt(room,cat,hero.x,hero.y,placement).height;
   chooseTool('select');
@@ -760,6 +763,14 @@ function vault(){
  }
  if(to){hero.x=to.x;hero.y=to.y;schedule()}
 }
+function paintWater(screen,add){
+ const uv=toWorld(screen.x,screen.y),x=Math.floor(uv.x),y=Math.floor(uv.y);
+ if(!shape.has(room,x,y))return;
+ const old=room.furniture.find(o=>o.type==='water-cell'&&Math.floor(o.x)===x&&Math.floor(o.y)===y);
+ if(add&&!old){const o=makeInstance('water-cell',x+.5,y+.5,0,'water-'+Date.now().toString(36)+'-'+x+'-'+y);o.x=x+.5;o.y=y+.5;if(fits(o))room.furniture.push(o);}
+ else if(!add&&old){room.furniture=room.furniture.filter(o=>o.id!==old.id);if(selected===old.id)selected=null;}
+ schedule();
+}
 function paintFloor(screen,add){
  const uv=toWorld(screen.x,screen.y),x=Math.floor(uv.x),y=Math.floor(uv.y);
  const result=shape.edit(room,x,y,add,bounds);
@@ -797,8 +808,8 @@ c.addEventListener('pointerdown',e=>{
   dragging={type:'pan',x:e.clientX,y:e.clientY,ox,oy};return;
  }
  c.setPointerCapture(e.pointerId);
- if(tool==='shapeAdd'||tool==='shapeRemove'){
-  dragging={type:'brush',add:tool==='shapeAdd',last:pos};paintFloor(pos,dragging.add);return;
+ if(tool==='shapeAdd'||tool==='shapeRemove'||tool==='waterAdd'||tool==='waterRemove'){
+  const water=tool.startsWith('water');dragging={type:water?'waterbrush':'brush',add:tool==='shapeAdd'||tool==='waterAdd',last:pos};(water?paintWater:paintFloor)(pos,dragging.add);return;
  }
  const hit=hitFurniture(pos.x,pos.y);
  if(tool==='select'){
@@ -856,9 +867,9 @@ c.addEventListener('pointermove',e=>{
  const pos=getPointer(e),uv=toWorld(pos.x,pos.y);
  if(dragging?.type==='pan'){
   ox=dragging.ox+e.clientX-dragging.x;oy=dragging.oy+e.clientY-dragging.y;
- }else if(dragging?.type==='brush'){
+ }else if(dragging?.type==='brush'||dragging?.type==='waterbrush'){
   const last=dragging.last,steps=Math.min(120,Math.max(1,Math.ceil(Math.hypot(pos.x-last.x,pos.y-last.y)/(Math.max(4,P.stepY*zoom*.35)))));
-  for(let i=1;i<=steps;i++)paintFloor({x:last.x+(pos.x-last.x)*i/steps,y:last.y+(pos.y-last.y)*i/steps},dragging.add);
+  for(let i=1;i<=steps;i++)(dragging.type==='waterbrush'?paintWater:paintFloor)({x:last.x+(pos.x-last.x)*i/steps,y:last.y+(pos.y-last.y)*i/steps},dragging.add);
   dragging.last=pos;
  }else if(dragging?.type==='move'){
   const obj=room.furniture.find(f=>f.id===dragging.id);
@@ -879,7 +890,7 @@ c.addEventListener('pointermove',e=>{
   architecturalTarget(pos,uv):uv;
  const portalTarget=tool==='portal'?portals.nearest(room,uv.x,uv.y,Number($('portalWidth').value)):null;
  const brushUV=toWorld(pos.x,pos.y);
- hover=tool==='shapeAdd'||tool==='shapeRemove'?{kind:'brush',x:Math.floor(brushUV.x),y:Math.floor(brushUV.y)}:tool==='portal'?(portalTarget?{kind:'portal',portal:portalTarget}:null):tool==='wall'||tool==='erase'?nearestWall(uv.x,uv.y):
+ hover=tool==='shapeAdd'||tool==='shapeRemove'||tool==='waterAdd'||tool==='waterRemove'?{kind:'brush',x:Math.floor(brushUV.x),y:Math.floor(brushUV.y)}:tool==='portal'?(portalTarget?{kind:'portal',portal:portalTarget}:null):tool==='wall'||tool==='erase'?nearestWall(uv.x,uv.y):
   tool==='floor'?(currentTile?{...currentTile,kind:'tile'}:null):
   target?{x:precise(target.x),y:precise(target.y),kind:'world'}:null;
  $('sceneStatus').textContent=(playing?'Spieltest · ':'')+'Raster '+uv.x.toFixed(2)+' × '+uv.y.toFixed(2)+' · '+(tool==='select'?'Möbel verschieben':tool);
@@ -887,7 +898,7 @@ c.addEventListener('pointermove',e=>{
 });
 function pointerEnd(){
  if(!dragging)return;
- if(dragging.type==='move'||dragging.type==='brush')checkpoint();
+ if(dragging.type==='move'||dragging.type==='brush'||dragging.type==='waterbrush')checkpoint();
  dragging=null;
 }
 c.addEventListener('pointerup',pointerEnd);c.addEventListener('pointercancel',pointerEnd);
@@ -933,6 +944,8 @@ function deleteSelected(){
 }
 function download(){
  const clean=sanitize(room),invalid=clean.portals.filter(p=>!portals.inspect(clean,p,cat,placement).ok);
+ const invalidDesign=clean.furniture.filter(o=>cat.furniture[o.type]?.designKind&&!fits(o,o.id));
+ if(invalidDesign.length&&!confirm('Ungültige Level-Design-Positionen: '+invalidDesign.map(o=>o.id).join(', ')+'. Trotzdem als Entwurf exportieren?'))return;
  if((invalid.length||!clean.portals.length)&&!confirm('Verbindungspunkte fehlen oder sind ungültig. Trotzdem als Entwurf exportieren?'))return;
  const data=JSON.stringify(clean,null,2);
  const blob=new Blob([data+'\n'],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -1101,7 +1114,7 @@ const designCategories={gameplay:'GAMEPLAY · Fokus- und Spawnpunkte',mechanisms
  b.append(icon,contents);b.onclick=()=>{
   chosenFurniture=type;if(!entry.ambient&&!entry.designKind)requestSprite(type,0);
   document.querySelectorAll('[data-furniture]').forEach(el=>el.classList.toggle('selected',el===b));
-  chooseTool('place');
+  chooseTool(type==='water-cell'?'waterAdd':'place');
  };$('furnitureCatalog').appendChild(b);
 }
 document.querySelector('[data-furniture]').classList.add('selected');
@@ -1223,7 +1236,7 @@ window.addEventListener('keydown',e=>{
   if(['arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
   return;
  }
- const shortcuts={v:'select',b:'floor',w:'wall',f:'place',e:'erase',c:'portal',n:'shapeAdd',m:'shapeRemove'};
+ const shortcuts={v:'select',b:'floor',w:'wall',f:'place',e:'erase',c:'portal',n:'shapeAdd',m:'shapeRemove',u:'waterAdd',i:'waterRemove'};
  if(shortcuts[k])chooseTool(shortcuts[k]);
  if(k==='r')rotate(90);
  if(k==='g'){$('gridBtn').click()}
