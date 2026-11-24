@@ -19,7 +19,7 @@ for(const type of Object.keys(cat.furniture))for(const rot of [0,90,180,270]){
  const img=new Image();const name=spriteName(type,rot);assets.set(name,{img,ready:false});
  img.onload=()=>{assets.get(name).ready=true;dirty=true;updateAssetInfo()};
  img.onerror=()=>updateAssetInfo();
- img.src=name+'?v=dungeon-furniture-9-v1';
+ img.src=name+'?v=torture-chamber-19-v1';
 }
 function updateAssetInfo(){
  const furniture=[...assets.values()].filter(v=>v.ready).length;
@@ -651,8 +651,8 @@ for(const [type,entry] of Object.entries(cat.furniture)){
  b.dataset.furniture=type;
  const icon=document.createElement('span');icon.className='catalog-icon';
  const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
- thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=dungeon-furniture-9-v1';
- thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.kind==='rack'?'⚔':entry.kind==='shelf'?'▥':entry.kind==='bench'?'▰':entry.interaction==='brew'?'♨':'▤'};
+ thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=torture-chamber-19-v1';
+ thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.kind==='rack'?'⚔':entry.kind==='shelf'?'▥':entry.kind==='cage'?'▦':entry.kind==='brazier'?'♨':entry.kind==='wheel'?'◎':entry.kind==='wall-prop'?'⛓':entry.kind==='cabinet'?'▯':entry.kind==='stocks'?'▣':entry.kind==='basin'?'◡':entry.kind==='bench'?'▰':entry.interaction==='brew'?'♨':'▤'};
  icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
   entry.footprint.w+' × '+entry.footprint.h+' Felder · '+(entry.vaultable?'überspringbar':'massiv')+'</small>';
