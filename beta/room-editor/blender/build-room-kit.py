@@ -254,15 +254,20 @@ for name,rig in all_furniture:
         for ob in (other,*other.children):
             ob.hide_render=not show
     if name.startswith(('wall-','arch-')):
-        # Architecture uses real world-metre dimensions (2m columns and
-        # 2m-wide stages), not the scaled 45%-Guardian furniture pipeline.
-        # A wider orthographic framing prevents clipping in any 90° view.
+        # Architecture is physically larger (real metre-scale masonry) and
+        # deliberately lit like a damp crypt, not a clean product turntable.
+        # Do not change lighting for older furniture or the prison grilles.
         camera.data.ortho_scale=3.50
         camera.location.z=5.72
         scene.view_settings.exposure=-.42
-        scene.cycles.samples=min(scene.cycles.samples,40)
+        background.inputs['Strength'].default_value=.38
+        bpy.data.objects['Guardian warm key'].data.size=2.65
+        bpy.data.objects['Guardian blue fill'].data.energy=285
+        scene.cycles.samples=min(scene.cycles.samples,48)
     elif name not in ('table','chair'):
-        # Existing furniture uses the established high-density half-scale view.
+        background.inputs['Strength'].default_value=.58
+        bpy.data.objects['Guardian warm key'].data.size=4.2
+        bpy.data.objects['Guardian blue fill'].data.energy=420
         camera.data.ortho_scale=3.35*.5
         camera.location.z=5.72-.72*(1-.5)
         scene.view_settings.exposure=-.42
@@ -277,6 +282,10 @@ for name,rig in all_furniture:
 # furniture: render them straight-on once per height, then use a Canvas
 # isometric wall-face transform in the editor. No stretched furniture sprites,
 # no runtime 3D, and no need to re-fetch four directions for a flat wall.
+# Reset to the established, brighter lighting for existing metal grilles.
+background.inputs['Strength'].default_value=.58
+bpy.data.objects['Guardian warm key'].data.size=4.2
+bpy.data.objects['Guardian blue fill'].data.energy=420
 _bar_src=Path(__file__).parent/'dungeon-prison-bars.py'
 exec(compile(_bar_src.read_text(),str(_bar_src),'exec'),globals())
 for _,other in all_furniture:
