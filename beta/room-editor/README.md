@@ -4,6 +4,9 @@
 
 **Wichtig für ChatGPT Work:** Dies ist ein vollständig isolierter Raumeditor. Der aktuelle Dungeon, alle bestehenden Greyboxen, der Random-Generator, der Wächter, die Gegner und deren Rendering-Pipeline sind *unverändert*. Bitte bei späterer Integration **kein vorhandenes `beta/index.html`, `beta/alley-generator.js` oder `beta/dungeon-isometric.js` überschreiben**. Stattdessen JSON-Vorlagen als optionale Raum-Templates importieren.
 
+
+**Verbindliche Anleitung für ChatGPT Work:** [Room-JSON → Beta-Generator (README-GENERATOR-INTEGRATION.md)](README-GENERATOR-INTEGRATION.md). Vor jeder Template-Integration lesen: Schema, Koordinaten, unveränderliche Wände, Portale, exakte Quoten, Erreichbarkeit, aktuelle Generator-Schnittstellen und Abnahmetests. Die Anleitung beschreibt den Integrationsvertrag; die eigentliche Beta-Integration steht noch aus.
+
 ## Realistisch gerenderte Dark-Dungeon-Gefängnisgitter (Blender / Cycles)
 
 Die beiden neuen Varianten `bars-full` und `bars-half` sind nicht länger
