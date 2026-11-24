@@ -99,7 +99,11 @@ function transition(room,cat,placement,from,to){
  if(Math.abs(next-current)<=.29)return {allowed:true,height:next};
  // Heights are connected by the visible front stairs; direct clipping
  // through the back / side walls of a tall dais is not permitted.
- const bridge=(next>current?dest:origin);
+ // Entering a sunken platform is a *descent*, so the accessible stairs
+ // belong to the destination rather than the higher source floor. Likewise,
+ // leaving a dais uses the stairs attached to the original surface.
+ const bridge=[dest,origin].find(hit=>
+  hit.obj&&cat.furniture[hit.obj.type]?.surface?.access==='steps')||dest;
  const spec=bridge.obj?cat.furniture[bridge.obj.type]:null;
  if(spec?.surface.access==='steps'){
   const b=placement.bounds(bridge.obj,cat);
