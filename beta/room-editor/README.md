@@ -4,6 +4,28 @@
 
 **Wichtig für ChatGPT Work:** Dies ist ein vollständig isolierter Raumeditor. Der aktuelle Dungeon, alle bestehenden Greyboxen, der Random-Generator, der Wächter, die Gegner und deren Rendering-Pipeline sind *unverändert*. Bitte bei späterer Integration **kein vorhandenes `beta/index.html`, `beta/alley-generator.js` oder `beta/dungeon-isometric.js` überschreiben**. Stattdessen JSON-Vorlagen als optionale Raum-Templates importieren.
 
+## Gefängnisgitter: volle Wandhöhe und halbe Wandhöhe
+
+Der Raumeditor unterstützt jetzt zwei neue, separat auswählbare Wandelemente:
+`bars-full` (2,00 m, identisch zur Steinwandhöhe) und `bars-half` (1,00 m,
+exakt halbe Steinwandhöhe). Beide bestehen aus geschmiedeten Stäben,
+Querstreben und Nieten im bestehenden Dark-Dungeon-Look. Sie sind bewusst
+**Wandsegmente** und keine verschiebbaren Möbelsprites: Sie nutzen die
+isometrische 1-m-Wandkante, haben echte Durchblicke und bleiben korrekt
+an die Wandachsen und angrenzende Gittersegmente gekoppelt.
+
+**Bedienung:** Im Panel *Steinwände & Gefängnisgitter* die hohe oder niedrige
+Gitter-Vorschau wählen, dann **W** drücken und die gewünschte Wandkante
+anklicken. Bestehende Wandsegmente können so auf die jeweilige Höhe
+umgeschaltet werden. Beide Varianten blockieren im Editor-Spieltest die
+Wächterbewegung; sie sind zunächst nicht überspringbar. Das bestehende
+`bars`-Modell sowie `gate` bleiben ohne Datenmigration benutzbar.
+Wandtypen überleben JSON-Import, -Export und lokale Speicherung. Die
+kameraseitigen südlichen/östlichen Außenwände bleiben wie bisher ausgeblendet.
+
+Regressionstest: `node beta/room-editor/tests/prison-bars.test.cjs`.
+Keine Live-Spiel-Datei wurde für diese Erweiterung bearbeitet.
+
 ## Wall-flush placement and on-demand loading
 
 Room Atelier places **all furniture and floor clutter down to 0.01 world metres
