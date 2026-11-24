@@ -421,6 +421,22 @@ function draw(){
  if(hover?.kind==='tile'&&tool==='floor'){
   const v=hover;polygon([pt(v.x,v.y),pt(v.x+1,v.y),pt(v.x+1,v.y+1),pt(v.x,v.y+1)],'#f4c87527','#e3bd78',1.2);
  }
+ // Visual voids hide the old continuous stone floor under broken floors and
+ // depressed chambers; separate geometry provides a truthful depth cue.
+ for(const obj of room.furniture){
+  const kind=cat.furniture[obj.type]?.surface?.type;
+  if(kind!=='sunken'&&kind!=='collapsed')continue;
+  const b=bounds(obj),inset=kind==='collapsed'?.18:.12;
+  const x0=b.left+inset,x1=b.right-inset,y0=b.top+inset,y1=b.bottom-inset;
+  polygon([pt(x0,y0),pt(x1,y0),pt(x1,y1),pt(x0,y1)],
+          kind==='collapsed'?'#101011':'#17191b');
+  if(kind==='sunken'){
+   polygon([pt(x0,y1),pt(x1,y1),pt(x1,y1,-.55),pt(x0,y1,-.55)],
+           '#25282c','#111517',.7);
+   polygon([pt(x1,y0),pt(x1,y1),pt(x1,y1,-.55),pt(x1,y0,-.55)],
+           '#222326','#161616',.7);
+  }
+ }
  const layers=[];
  for(const w of room.walls)if(!isNearWall(w))layers.push({depth:wallDepth(w),draw:()=>drawWall(w)});
  // Floor clutter always sits on stone UNDER the Guardian and furniture,
@@ -434,7 +450,8 @@ function draw(){
  if(playing||showGuardian)layers.push({
   depth:pt(playing?hero.x:room.width/2,playing?hero.y:room.height/2).y+.01,
   draw:()=>window.MindRoomArt.drawGuardian(ctx,{
-   point:pt(playing?hero.x:room.width/2,playing?hero.y:room.height/2),
+   point:pt(playing?hero.x:room.width/2,playing?hero.y:room.height/2,
+            playing?(hero.z||0):0),
    angle:playing?hero.face:Math.PI/4,time:playing?hero.clock:0,
    moving:playing&&hero.moving,vault:playing?hero.vault:0,zoom
   })
@@ -505,8 +522,10 @@ function togglePlay(active){
  if(active){
   let found=null;
   for(let y=1;y<room.height&&!found;y+=.5)for(let x=1;x<room.width&&!found;x+=.5)
-   if(canOccupy(x,y))found={x,y};
+   if(canOccupy(x,y)&&architecture.surfaceAt(room,cat,x,y,placement).height===0)
+    found={x,y};
   hero={...hero,...(found||{x:room.width/2,y:room.height/2})};
+  hero.z=architecture.surfaceAt(room,cat,hero.x,hero.y,placement).height;
   chooseTool('select');
  }
  $('playBtn').classList.toggle('active',active);
@@ -523,6 +542,10 @@ function canOccupy(x,y){
   const b=bounds(obj);
   if(x+r>b.left&&x-r<b.right&&y+r>b.top&&y-r<b.bottom)return false;
  }
+ const surface=architecture.surfaceAt(room,cat,x,y,placement);
+ if(surface.blocked)return false;
+ if(playing&&!architecture.transition(room,cat,placement,
+   {x:hero.x,y:hero.y,z:hero.z||0},{x,y}).allowed)return false;
  for(const wall of room.walls)if(!isNearWall(wall)&&cat.walls[wall.style].solid){
   const [a,b]=wallEnds(wall),d=Math.hypot(b[0]-a[0],b[1]-a[1]);
   if(d<.5)continue;
@@ -552,6 +575,9 @@ function playStep(dt){
   else hero.target=null;
  }
  hero.moving=Math.hypot(hero.x-previousX,hero.y-previousY)>.001;
+ const surface=architecture.surfaceAt(room,cat,hero.x,hero.y,placement);
+ const targetZ=surface.blocked?(hero.z||0):surface.height;
+ hero.z+=(targetZ-(hero.z||0))*Math.min(1,dt*11);
  hero.vault=Math.max(0,hero.vault-dt*2.7);
 }
 function vault(){
