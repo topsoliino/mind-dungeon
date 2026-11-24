@@ -325,6 +325,10 @@ _ARCH_WEAR_PROFILES={
 }
 
 for slug,pivot in ARCH_MODELS:
+    if slug.startswith('arch-'):
+        # v3 floor meshes already include dimension-matched weathered masonry/wood;
+        # legacy floating cracks and rubble would break the new surface profile.
+        continue
     sculpt=_ARCH_WEAR_PROFILES[slug]
     seen=set(bpy.context.scene.objects)
     sculpt()
