@@ -20,14 +20,14 @@ items={
   'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':35}
 }
 new_items={
- 'work-table':{'catalogId':'alchemy-work-table','footprint':[1.85,1.05],'height':1.66,
+ 'work-table':{'catalogId':'alchemy-work-table','footprint':[1.85,1.05],'height':1.80,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':115,'extension':'png'},
- 'brew-table-small':{'catalogId':'alchemy-brew-table','footprint':[1.48,.84],'height':1.44,
+ 'brew-table-small':{'catalogId':'alchemy-brew-table','footprint':[1.48,.84],'height':1.56,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':120,'extension':'png',
   'scale':.8,'interaction':'brew'},
- 'chair-highback':{'catalogId':'alchemy-highback-chair','footprint':[.80,.80],'height':1.57,
+ 'chair-highback':{'catalogId':'alchemy-highback-chair','footprint':[.80,.80],'height':1.80,
   'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':45,'extension':'png'},
- 'chair-arm':{'catalogId':'alchemy-armchair','footprint':[.92,.88],'height':1.48,
+ 'chair-arm':{'catalogId':'alchemy-armchair','footprint':[.92,.88],'height':1.68,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':55,'extension':'png'}
 }
 for name in items:
