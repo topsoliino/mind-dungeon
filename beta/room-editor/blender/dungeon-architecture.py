@@ -10,29 +10,101 @@ The wall segments themselves are still authored as proper wall elements.
 import math as _a_math
 import random as _a_random
 _a_random.seed(4817)
-_a_stone=material('Architecture | damp carved dungeon stone','474647',.92,
-                  secondary='898077',grain=23)
-_a_stoneedge=material('Architecture | exposed worn stone edges','888174',.88,
-                  secondary='b0a593',grain=24)
-_a_darkstone=material('Architecture | fractured dark granite','252628',.96,
-                  secondary='51504a',grain=30)
-_a_mortar=material('Architecture | old powdered mortar','5b554b',.96,
-                  secondary='81786b',grain=24)
-_a_rotten=material('Architecture | rotten old blackened timber','322720',.94,
-                  secondary='765442',grain=26)
-_a_woodedge=material('Architecture | grain exposed on freshly broken oak','79553d',.83,
-                  secondary='af8661',grain=31)
-_a_metal=material('Architecture | rusty black forged iron','29282a',.81,.68,
-                  secondary='736052',grain=33)
-_a_bronze=material('Architecture | oxidised copper bronze','69543f',.73,.72,
-                  secondary='b39771',grain=34)
-_a_green=material('Architecture | moss-streaked old stone','384139',.95,
-                  secondary='696d55',grain=27)
+_a_stone=material('Architecture | damp carved dungeon stone','394244',.96,
+                  secondary='68706c',grain=29)
+_a_stoneedge=material('Architecture | exposed worn stone edges','5c605b',.94,
+                  secondary='83847a',grain=30)
+_a_darkstone=material('Architecture | fractured dark granite','1d2427',.98,
+                  secondary='444746',grain=37)
+_a_mortar=material('Architecture | old powdered mortar','373935',.98,
+                  secondary='67665c',grain=30)
+_a_rotten=material('Architecture | rotten old blackened timber','292420',.98,
+                  secondary='5c4537',grain=34)
+_a_woodedge=material('Architecture | grain exposed on freshly broken oak','503c32',.95,
+                  secondary='87634b',grain=38)
+_a_metal=material('Architecture | rusty black forged iron','202427',.90,.65,
+                  secondary='6a5549',grain=37)
+_a_bronze=material('Architecture | oxidised copper bronze','53483e',.84,.66,
+                  secondary='8c745a',grain=41)
+_a_green=material('Architecture | moss-streaked old stone','252e2a',.97,
+                  secondary='56604c',grain=33)
 for _a_m in (_a_stone,_a_stoneedge,_a_darkstone,_a_rotten,_a_woodedge,_a_metal,_a_bronze,_a_green):
     _microtexture(_a_m,(1.3,4.7,1.5),8,.19,.035)
 
+# Art-direction v2: broad damp soot patches overlaid on high-frequency rock
+# grain. Previous materials had only a bright, uniform noisy base colour,
+# making carved stone read like plastic or a board-game piece.
+def _a_aged_surface(mat,dark=.55,large_scale=3.4):
+    nodes=mat.node_tree.nodes
+    links=mat.node_tree.links
+    pbsdf=nodes.get('Principled BSDF')
+    old=list(pbsdf.inputs['Base Color'].links)
+    previous=old[0].from_socket if old else None
+    for connection in old: links.remove(connection)
+    coord=nodes.new('ShaderNodeTexCoord')
+    dirt=nodes.new('ShaderNodeTexNoise')
+    dirt.inputs['Scale'].default_value=large_scale
+    dirt.inputs['Detail'].default_value=6.5
+    dirt.inputs['Roughness'].default_value=.79
+    links.new(coord.outputs['Generated'],dirt.inputs['Vector'])
+    ramp=nodes.new('ShaderNodeValToRGB')
+    ramp.color_ramp.elements[0].position=.28
+    ramp.color_ramp.elements[0].color=(dark,dark*.97,dark*.93,1)
+    ramp.color_ramp.elements[1].position=.73
+    ramp.color_ramp.elements[1].color=(.94,.94,.92,1)
+    links.new(dirt.outputs['Fac'],ramp.inputs[0])
+    mult=nodes.new('ShaderNodeMixRGB')
+    mult.blend_type='MULTIPLY'
+    mult.inputs[0].default_value=.74
+    if previous:
+        links.new(previous,mult.inputs[1])
+    else:
+        mult.inputs[1].default_value=mat.diffuse_color
+    links.new(ramp.outputs['Color'],mult.inputs[2])
+    links.new(mult.outputs['Color'],pbsdf.inputs['Base Color'])
+    # Uneven moisture changes microsurface response, not merely colour.
+    rough=nodes.new('ShaderNodeMapRange')
+    rough.inputs['From Min'].default_value=.18
+    rough.inputs['From Max'].default_value=.78
+    rough.inputs['To Min'].default_value=.78
+    rough.inputs['To Max'].default_value=.99
+    links.new(dirt.outputs['Fac'],rough.inputs['Value'])
+    if mat in (_a_stone,_a_stoneedge,_a_darkstone,_a_green):
+        links.new(rough.outputs['Result'],pbsdf.inputs['Roughness'])
+for _mat in (_a_stone,_a_stoneedge,_a_darkstone,_a_mortar,_a_rotten,
+             _a_woodedge,_a_metal,_a_bronze,_a_green):
+    _a_aged_surface(_mat,.36 if _mat in (_a_rotten,_a_darkstone) else .53,
+                    2.9 if _mat in (_a_stone,_a_rotten,_a_woodedge) else 4.2)
+
 def _a_box(n,p,s,mat=_a_stone,bevel=.013):
-    return cube(n,p,s,mat,bevel)
+    ob=cube(n,p,s,mat,bevel)
+    # Chipped stone and time-warped timber must have actual irregular geometry,
+    # not a clean cube plus dark paint. Deterministic per object and location
+    # guarantees matching renders in all four directions and across builds.
+    if min(s)>=.068 and mat in (_a_stone,_a_stoneedge,_a_darkstone,
+                               _a_mortar,_a_rotten,_a_woodedge):
+        import hashlib
+        seed=int.from_bytes(hashlib.sha256((n+'|'+','.join('%.4f'%v for v in p)).encode()).digest()[:8],'big')
+        rng=_a_random.Random(seed)
+        wood=mat in (_a_rotten,_a_woodedge)
+        for vert in ob.data.vertices:
+            amount=(.041 if wood else .052)
+            # Narrow fragments may crack but do not explode into spikes.
+            vert.co.x+=rng.uniform(-1,1)*min(.024,s[0]*amount)
+            vert.co.y+=rng.uniform(-1,1)*min(.021,s[1]*amount)
+            vert.co.z+=rng.uniform(-1,1)*min(.013,s[2]*(.015 if wood else .032))
+        ob.data.update()
+        # Unequal nail-holes and splinter grooves on sizeable horizontal boards.
+        if wood and max(s[0],s[1])>.80 and s[2]<.19 and 'nail' not in n.lower():
+            yy=p[1]-.09*s[1]
+            for k in range(2):
+                xx=p[0]+(-.23 if k==0 else .17)*s[0]
+                l=min(.34,s[0]*.22)
+                a=cube('Deep split in rain-damaged timber | '+n,
+                       (xx,yy+(k-.5)*s[1]*.16,p[2]+s[2]*.51+.002),
+                       (l,.009,.006),_a_darkstone,.002)
+                a.rotation_euler.z=.06*(k+.5)
+    return ob
 
 def _a_beam(n,start,end,r=.028,mat=_a_metal):
     return _rod(n,start,end,r,mat)
