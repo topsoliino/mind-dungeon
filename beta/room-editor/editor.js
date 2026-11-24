@@ -164,18 +164,38 @@ function drawWall(w){
   // Do not replace the photographic wall with fake Blender bricks,
   // arbitrary grout lines, or extra edge highlights if assets are pending.
   polygon([top0,top1,base1,base0], '#444440', '#282729',.85);
- }else{
-  // Metal grille: real visual gaps; the physical solid still blocks the player.
-  const metal=w.style==='gate'?'#8c7870':'#687887';
-  line([base0,base1],'#242932',4.2);
-  line([top0,top1],'#2a3039',4.5);
-  line([pt(a[0],a[1],h*.52),pt(b[0],b[1],h*.52)],'#555d67',2.7);
+ }else if(type.render==='metal-bars'){
+  // Forged, open prison grilles. The same physical height drives both the
+  // isometric shape and collision style: 2 m full versus 1 m half height.
+  // Build lines directly from the same endpoints as photo walls so bars
+  // connect without a gap on adjacent north/west wall segments.
+  const metal=w.style==='gate'?'#978577':'#777b7b';
+  const rails=type.variant==='half'?[.43]:[.34,.72];
+  line([base0,base1],'#171b1d',5.5);
+  line([base0,base1],'#494849',2.6);
+  line([top0,top1],'#18191b',6.2);
+  line([top0,top1],'#716d68',2.8);
+  for(const ratio of rails){
+   line([pt(a[0],a[1],h*ratio),pt(b[0],b[1],h*ratio)],'#202123',5);
+   line([pt(a[0],a[1],h*ratio),pt(b[0],b[1],h*ratio)],'#5f5a55',2.1);
+  }
   for(let i=0;i<=6;i++){
    const t=i/6,u=a[0]+(b[0]-a[0])*t,v=a[1]+(b[1]-a[1])*t;
-   line([pt(u,v,-.02),pt(u,v,h+.06)],'#1e222b',5.3);
-   line([pt(u,v,-.02),pt(u,v,h+.06)],metal,2.7);
-   line([pt(u,v,0),pt(u,v,h+.05)],'#c5b5a466',.7);
-   if(i===0||i===6)line([pt(u,v,-.03),pt(u,v,h+.1)],'#1d2128',7);
+   // Black iron core, worn metal edges and a faint highlight make each
+   // round vertical bar legible against dark dungeon stone.
+   line([pt(u,v,-.015),pt(u,v,h+.025)],'#18191c',5.2);
+   line([pt(u,v,0),pt(u,v,h)],metal,2.9);
+   line([pt(u,v,.025),pt(u,v,h)],'#c2b6a155',.72);
+   if(i===0||i===6){
+    line([pt(u,v,0),pt(u,v,h+.055)],'#1a1a1c',7.1);
+    line([pt(u,v,0),pt(u,v,h+.038)],'#817a70',2.4);
+   }
+  }
+  // Small hand-forged rivets at the intersections of rails and posts.
+  for(const ratio of rails)for(const t of [0,.5,1]){
+   const u=a[0]+(b[0]-a[0])*t,v=a[1]+(b[1]-a[1])*t;
+   const p=pt(u,v,h*ratio);
+   ctx.fillStyle='#b2a18a';ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1,1.25*zoom),0,TAU);ctx.fill();
   }
   if(w.style==='gate'){
    const u=(a[0]+b[0])*.5,v=(a[1]+b[1])*.5;
@@ -675,21 +695,31 @@ for(const [type,entry] of Object.entries(cat.floors)){
  $('floorSwatches').appendChild(b);
 }
 for(const [type,entry] of Object.entries(cat.walls)){
- const option=document.createElement('option');option.value=type;option.textContent=entry.label;$('wallType').appendChild(option);
+ const option=document.createElement('option');option.value=type;option.textContent=entry.label;
+ $('wallType').appendChild(option);
+ // Metal bars and doors need swatches too: previously they were hidden
+ // in the dropdown despite existing as drawable wall types.
+ if(entry.render!=='photo-wall-map'&&entry.render!=='metal-bars')continue;
+ const button=document.createElement('button');
+ button.className='swatch';
+ button.dataset.wall=type;
+ button.setAttribute('aria-label','Wand wählen: '+entry.label);
+ button.title=entry.label+(entry.variant==='half'?' · 1 m':entry.variant==='full'?' · 2 m':'');
  if(entry.render==='photo-wall-map'){
-  const button=document.createElement('button');
-  button.className='swatch';
   button.style.background='#4e4b47';
   wireSwatchPreview(button,entry);
   button.style.backgroundSize='cover';
   button.style.backgroundPosition='center';
-  button.dataset.wall=type;
-  button.setAttribute('aria-label','Steinmauer auswählen: '+entry.label);
-  button.title=entry.label+' · '+entry.worldWidth+' m Texturbreite';
-  button.onclick=()=>{requestSwatchPreview(button,entry);
-   $('wallType').value=type;room.wallStyle=type;checkpoint()};
-  $('wallSwatches').appendChild(button);
+ }else{
+  button.classList.add('prison-bar-swatch');
+  if(entry.variant==='half')button.classList.add('half-height');
+  button.setAttribute('aria-description',entry.height+' Meter hoch, blockiert Bewegung');
  }
+ button.onclick=()=>{
+  if(entry.render==='photo-wall-map')requestSwatchPreview(button,entry);
+  $('wallType').value=type;room.wallStyle=type;checkpoint();
+ };
+ $('wallSwatches').appendChild(button);
 }
 // Thumbnail bytes are requested only for palette entries near the viewport.
 const thumbnailObserver=('IntersectionObserver' in window)?
