@@ -21,10 +21,10 @@ _fc_rug=material('Clutter | worn burgundy woven floor rug','4d292a',.96,
                  secondary='87534d',grain=43)
 _fc_rug_trim=material('Clutter | antique faded rug ornament','9d8562',.93,
                       secondary='cab48c',grain=38)
-_fc_wet=material('Clutter | cold damp dungeon puddle','263b3f',.17,
-                 secondary='52676c',grain=8)
-_fc_wet_stain=material('Clutter | wet porous floor margin','282d2b',.77,
-                       secondary='464b45',grain=13)
+_fc_wet=material('Clutter | dark reflective dungeon water','111e21',.08,
+                 secondary='273338',grain=6)
+_fc_wet_stain=material('Clutter | nearly black wet porous margin','171c1c',.72,
+                       secondary='343b39',grain=13)
 _fc_moss=material('Clutter | dark green moss tufts','283d2e',.97,
                   secondary='637049',grain=25)
 _fc_fungus=material('Clutter | pale rot fungi','a49e81',.93,
@@ -38,10 +38,10 @@ _fc_pottery=material('Clutter | unglazed fired earthenware','70493c',.86,
                      secondary='af775a',grain=29)
 _fc_glazed=material('Clutter | dark green fractured bottle glass','2e4740',.32,
                     secondary='6b7b64',grain=19)
-_fc_sack=material('Clutter | mold-stained rough burlap','6c6049',.98,
-                 secondary='a29576',grain=32)
-_fc_sack_dark=material('Clutter | soiled bundle linen','4c4840',.96,
-                      secondary='827765',grain=33)
+_fc_sack=material('Clutter | heavily soiled grain burlap','494236',.98,
+                 secondary='75654e',grain=39)
+_fc_sack_dark=material('Clutter | mildewed bundle linen','383631',.96,
+                      secondary='645b4c',grain=33)
 _fc_iron=material('Clutter | rusty dark shackle iron','34302e',.84,.66,
                   secondary='70604d',grain=29)
 for _fc_mat in (_fc_limestone,_fc_mortar,_fc_bone,_fc_rug,_fc_rug_trim,
@@ -70,12 +70,12 @@ def _fc_mesh(n,verts,faces,mat,solidify=0):
         modifier.thickness=solidify
     return ob
 
-def _fc_irregular(n,x,y,radius,z,mat,seed=1,npoints=13):
+def _fc_irregular(n,x,y,radius,z,mat,seed=1,npoints=13,jitter=.38):
     rng=_fc_random.Random(seed)
     ring=[]
     for j in range(npoints):
         a=j*_fc_math.tau/npoints
-        rr=radius*(.79+.38*rng.random())
+        rr=radius*(1-jitter*.5+jitter*rng.random())
         ring.append((x+rr*_fc_math.cos(a),y+rr*_fc_math.sin(a),z+
                      .002*rng.random()))
     verts=[(x,y,z-.002)]+ring
@@ -192,12 +192,12 @@ def _fc_tattered_rug():
 
 def _fc_discarded_chains():
     # Three actual interlinked loops, with recognizable handcuffs.
-    _fc_chain('Heavy iron shackle chain A',(-.69,-.30,.065),
-              (.17,.078,0),8)
-    _fc_chain('Tangled chain B',(-.38,.33,.065),
-              (.15,-.09,0),7)
-    _fc_chain('Tangled chain C',(-.20,-.06,.080),
-              (.13,.11,0),6)
+    _fc_chain('Heavy interlocking iron shackle chain A',(-.57,-.28,.065),
+              (.095,.050,0),10)
+    _fc_chain('Tangled link chain B',(-.42,.31,.065),
+              (.087,-.052,0),10)
+    _fc_chain('Tangled link chain C',(-.18,-.08,.080),
+              (.082,.071,0),9)
     for x,y in ((-.66,-.34),(.65,.24)):
         _fc_ring('Forged floor restraint cuff',(x,y,.071),.108,.025,
                  _fc_iron,rx=.16)
@@ -286,9 +286,9 @@ def _fc_damp_puddles():
     positions=[(-.28,-.17,.34,80),(.31,.16,.29,44),(.02,.41,.22,65)]
     for i,(x,y,r,seed) in enumerate(positions):
         _fc_irregular('Wide dark damp porous stone fringe',
-                      x,y,r*1.28,.013,_fc_wet_stain,seed,20)
+                      x,y,r*1.09,.013,_fc_wet_stain,seed,26,jitter=.13)
         _fc_irregular('Shallow translucent cold standing puddle',
-                      x,y,r,.029,_fc_wet,seed+1,20)
+                      x,y,r,.024,_fc_wet,seed+1,26,jitter=.09)
         for j in range(3):
             a=(i*5+j)*2.63
             _fc_ball('Subtle individual puddle highlight',
@@ -341,6 +341,18 @@ def _fc_burlap_and_linen():
                 .015,_fc_root)
         _fc_ring('Twine tied broken sack mouth',
                  (x+.26,y+.02,.10),.053,.011,_fc_root,rx=.4)
+        # Raised physical stitched wrinkles and cinched mouth distinguish
+        # abandoned grain sacks from smooth blobs at the game camera scale.
+        for j in range(7):
+            ridge=-.24+j*.08
+            _fc_rod('Woven sack crease ridge',
+                    (x+ridge,y-.11,.156-.012*abs(j-3)),
+                    (x+ridge+.036,y+.12,.166-.012*abs(j-3)),
+                    .007,_fc_sack_dark)
+        _fc_ball('Crumpled sack tied neck',
+                 (x+.27,y+.01,.11),(.070,.061,.057),_fc_root)
+        _fc_rod('Dangling dark cord from sack opening',
+                (x+.28,y+.015,.12),(x+.36,y-.08,.03),.011,_fc_root)
     # Ragged free-form fallen linen patch with wrinkles.
     verts=[(-.60,.34,.030),(-.42,.52,.023),(-.18,.49,.052),
            (.10,.60,.029),(.40,.48,.036),(.55,.31,.022),
