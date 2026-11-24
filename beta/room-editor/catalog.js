@@ -425,7 +425,7 @@ const preset={
  schema:'mind-dungeon-room/v1',id:'prison-cell-01',
  name:'Gefängniszelle · Musterraum',width:7,height:5,
  floorStyle:'dungeon-ashlar',wallStyle:'stone',
- tiles:[],walls:[],furniture:[
+ tiles:[],walls:[],portals:[{side:'south',offset:3,width:1},{side:'east',offset:2,width:1}],furniture:[
   {id:'table-01',type:'prison-table',x:1.65,y:1.75,rot:0,destroyable:true,vaultable:false},
   {id:'chair-01',type:'prison-chair',x:4.25,y:2.65,rot:270,destroyable:true,vaultable:true}
  ],notes:'Offene isometrische Gefängniszelle: nur die beiden Rückwände Nord und West; niemals eine kameraseitige Süd- oder Ostwand. Rückseitig eine eiserne Zellentür. Keine Änderung am bestehenden Dungeon.'
