@@ -71,9 +71,12 @@ const room={width:5,height:5,walls:[
  {x:2,y:1,edge:'west',style:'bars-full'},
  {x:2,y:2,edge:'west',style:'bars-half'}
 ],furniture:[]};
+const architecture=require('../architecture.js');
 const canOccupy=new Function('room','cat','isNearWall','wallEnds','bounds',
- 'playing','playHP',extract('canOccupy','playStep')+'return canOccupy')(
- room,cat,()=>false,wallEnds,obj=>placement.bounds(obj,cat),false,new Map());
+ 'playing','playHP','architecture','placement',
+ extract('canOccupy','playStep')+'return canOccupy')(
+ room,cat,()=>false,wallEnds,obj=>placement.bounds(obj,cat),false,
+ new Map(),architecture,placement);
 assert.equal(canOccupy(2,1.5),false);
 assert.equal(canOccupy(2,2.5),false);
 assert.equal(canOccupy(3,2.5),true);
