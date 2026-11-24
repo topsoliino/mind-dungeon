@@ -762,3 +762,10 @@ _torture_source=Path(__file__).parent/'torture-chamber-furniture.py'
 exec(compile(_torture_source.read_text(),str(_torture_source),'exec'),globals())
 ALCHEMY_MODELS.extend(TORTURE_MODELS)
 
+# Floor clutter uses the same Cycles camera, PBR scene and floor-centred root
+# orientation. These are true Blender meshes, not browser sprites assembled by
+# scaling existing furniture. Keep them in the one shared editable .blend file.
+_floor_source=Path(__file__).parent/'abandoned-floor-clutter.py'
+exec(compile(_floor_source.read_text(),str(_floor_source),'exec'),globals())
+ALCHEMY_MODELS.extend(FLOOR_MODELS)
+
