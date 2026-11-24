@@ -22,6 +22,41 @@ let playHP=new Map();
 const assets=new Map();
 const spriteVersion='abandoned-floor-clutter-29-v1';
 function spriteName(type,rot){const spec=cat.furniture[type];return spec.asset+'-'+rot+'.'+(spec.extension||'webp')}
+// The bars are genuine Cycles renders, not CSS gradients or flat line art.
+ // Each small, front-orthographic PBR texture is projected onto a geometrically
+ // exact 1-m wall panel so it joins adjacent stone and iron wall segments.
+ const wallImages=new Map();
+ function requestWallImage(style){
+  const spec=cat.walls[style];if(spec?.render!=='blender-bars')return null;
+  let result=wallImages.get(style);
+  if(result)return result;
+  result={img:new Image(),ready:false,failed:false};
+  wallImages.set(style,result);
+  result.img.onload=()=>{result.ready=true;dirty=true;updateAssetInfo()};
+  result.img.onerror=()=>{result.failed=true;dirty=true;updateAssetInfo()};
+  result.img.src=spec.asset+'?v=forged-prison-bars-pbr-v1';
+  return result;
+ }
+ function drawBlenderBars(w,spec,top0,top1,base0,base1){
+  const render=requestWallImage(w.style);
+  if(!render?.ready)return false;
+  const source=render.img;
+  // A 512px, square orthographic render from a straight-on camera.
+  // The source crop is EXACTLY 1m wide and spec.height tall, without
+  // relying on estimated transparency bounds that would alter spacing.
+  const scale=spec.cameraOrthoScale;
+  const sw=source.naturalWidth/scale,sh=source.naturalHeight*spec.height/scale;
+  const sx=(source.naturalWidth-sw)*.5,sy=(source.naturalHeight-sh)*.5;
+  ctx.save();
+  ctx.transform(top1.x-top0.x,top1.y-top0.y,
+                base0.x-top0.x,base0.y-top0.y,top0.x,top0.y);
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  ctx.drawImage(source,sx,sy,sw,sh,0,0,1,1);
+  ctx.restore();
+  return true;
+ }
+ 
 function spriteUrl(type,rot){return spriteName(type,rot)+'?v='+spriteVersion}
 function requestSprite(type,rot){
  if(!cat.furniture[type])return null;
@@ -158,13 +193,18 @@ function drawWall(w){
  const type=cat.walls[w.style];if(!type||!type.height)return;
  const [a,b]=wallEnds(w),h=type.height,base0=pt(...a),base1=pt(...b),
   top0=pt(a[0],a[1],h),top1=pt(b[0],b[1],h),facing=(w.edge==='north'||w.edge==='south');
+ if(type.render==='blender-bars'&&drawBlenderBars(w,type,top0,top1,base0,base1)){
+  // Precise alpha mesh projection; keep the wall selection highlight.
+  if(hover?.kind==='wall'&&hover.id===keyWall(w))line([top0,top1],'#ffde97',2);
+  return;
+ }
  if(type.render==='photo-wall-map'){
   const along=facing?w.x:w.y;
   if(window.MindRoomArt?.drawWallFace(ctx,w.style,top0,top1,base0,base1,along,h))return;
   // Do not replace the photographic wall with fake Blender bricks,
   // arbitrary grout lines, or extra edge highlights if assets are pending.
   polygon([top0,top1,base1,base0], '#444440', '#282729',.85);
- }else if(type.render==='metal-bars'){
+ }else if(type.render==='metal-bars'||type.render==='blender-bars'){
   // Forged, open prison grilles. The same physical height drives both the
   // isometric shape and collision style: 2 m full versus 1 m half height.
   // Build lines directly from the same endpoints as photo walls so bars
@@ -699,7 +739,7 @@ for(const [type,entry] of Object.entries(cat.walls)){
  $('wallType').appendChild(option);
  // Metal bars and doors need swatches too: previously they were hidden
  // in the dropdown despite existing as drawable wall types.
- if(entry.render!=='photo-wall-map'&&entry.render!=='metal-bars')continue;
+ if(!['photo-wall-map','metal-bars','blender-bars'].includes(entry.render))continue;
  const button=document.createElement('button');
  button.className='swatch';
  button.dataset.wall=type;
