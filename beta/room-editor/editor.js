@@ -14,18 +14,18 @@ let width=0,height=0,zoom=1,ox=0,oy=0;
 let hero={x:3.5,y:2.6,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
 let playHP=new Map();
 const assets=new Map();
-function spriteName(type,rot){return cat.furniture[type].asset+'-'+rot+'.webp'}
+function spriteName(type,rot){const spec=cat.furniture[type];return spec.asset+'-'+rot+'.'+(spec.extension||'webp')}
 for(const type of Object.keys(cat.furniture))for(const rot of [0,90,180,270]){
  const img=new Image();const name=spriteName(type,rot);assets.set(name,{img,ready:false});
  img.onload=()=>{assets.get(name).ready=true;dirty=true;updateAssetInfo()};
  img.onerror=()=>updateAssetInfo();
- img.src=name;
+ img.src=name+'?v=alchemy-20261124';
 }
 function updateAssetInfo(){
  const furniture=[...assets.values()].filter(v=>v.ready).length;
  const art=window.MindRoomArt?.status?.();
  $('assetStatus').textContent=(art?art.tiles+' · '+art.wallPhotos:'Materialien laden')+
-  ' · Möbel '+furniture+'/8 · Wächter '+(art?.guardianAuthentic?'Original':'lädt / nicht verfügbar');
+  ' · Möbel '+furniture+'/'+assets.size+' · Wächter '+(art?.guardianAuthentic?'Original':'lädt / nicht verfügbar');
  const failed=art?.failedTextures?.length||0;
  const fallback=art?.fallbackTextures?.length||0;
  $('assetInfo').textContent=failed?
@@ -208,7 +208,7 @@ function shadeFurniture(type,obj,paint,outline,highlight){
   polygon([q1,q2,p2,p1],sideA,outline,.7);polygon([q2,q3,p3,p2],sideB,outline,.7);
   polygon([q0,q1,q2,q3],top,outline,.85);
  };
- if(type==='prison-table'){
+ if(cat.furniture[type].kind==='table'){
   for(const x of [-.76,.76])for(const y of [-.37,.37])
    cuboid(x-.06,y-.06,x+.06,y+.06,.04,.82,'#52403a','#342724','#40312e');
   cuboid(-.86,-.47,.86,.47,.77,.91,'#775c4b','#322724','#4c352c');
@@ -638,7 +638,7 @@ for(const [type,entry] of Object.entries(cat.walls)){
 for(const [type,entry] of Object.entries(cat.furniture)){
  const b=document.createElement('button');b.className='catalog-item';
  b.dataset.furniture=type;
- const icon=document.createElement('span');icon.className='catalog-icon';icon.textContent=entry.kind==='chair'?'♧':'▤';
+ const icon=document.createElement('span');icon.className='catalog-icon';icon.textContent=entry.kind==='chair'?'♧':entry.interaction==='brew'?'♨':'▤';
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
   entry.footprint.w+' × '+entry.footprint.h+' Felder · '+(entry.vaultable?'überspringbar':'massiv')+'</small>';
  b.append(icon,contents);b.onclick=()=>{
