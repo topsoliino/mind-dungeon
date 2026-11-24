@@ -19,11 +19,15 @@ const placement=require('../placement.js');
 // the regular 2-metre stone-wall catalogue height, not a hard-coded pixel.
 assert.equal(cat.walls['bars-full'].height,cat.walls.stone.height);
 assert.equal(cat.walls['bars-half'].height,cat.walls.stone.height/2);
-for(const name of ['bars','bars-full','bars-half','gate']){
+for(const name of ['bars','bars-full','bars-half','gate'])
  assert.equal(cat.walls[name].solid,true,name+' must block movement');
- assert.equal(cat.walls[name].render,'metal-bars');
+for(const name of ['bars','gate'])assert.equal(cat.walls[name].render,'metal-bars');
+for(const name of ['bars-full','bars-half']){
+ assert.equal(cat.walls[name].render,'blender-bars');
+ assert.match(cat.walls[name].asset,/assets\/walls\/prison-grille-(full|half)-front\.png/);
+ assert.ok(cat.walls[name].cameraOrthoScale>1);
 }
-assert.match(editor,/entry.render!=='photo-wall-map'&&entry.render!=='metal-bars'/);
+assert.match(editor,/\['photo-wall-map','metal-bars','blender-bars'\]/);
 assert.match(editor,/button.classList.add\('prison-bar-swatch'\)/);
 assert.match(css,/\.prison-bar-swatch\.half-height/);
 assert.match(html,/Gefängnisgitter/);
@@ -40,10 +44,10 @@ function renderWall(style,edge='north'){
  const strokes=[],fills=[];
  const ctx={beginPath(){},arc(){},fill(){},fillStyle:''};
  const draw=new Function('cat','isNearWall','wallEnds','pt','line',
-   'polygon','ctx','hover','keyWall','TAU','window','zoom',
+   'polygon','ctx','hover','keyWall','TAU','window','zoom','drawBlenderBars',
    extract('drawWall','oriented')+'return drawWall')(
    cat,()=>false,wallEnds,pt,(points,color,width)=>strokes.push({points,color,width}),
-   (points,fill)=>fills.push({points,fill}),ctx,null,()=>'',Math.PI*2,{},1);
+   (points,fill)=>fills.push({points,fill}),ctx,null,()=>'',Math.PI*2,{},1,()=>false);
  draw({x:1,y:2,edge,style});
  return {strokes,fills};
 }
@@ -91,4 +95,25 @@ assert.equal(serialized.wallStyle,'bars-half');
 assert.deepEqual(serialized.walls.map(w=>w.style),['bars-full','bars-half']);
 assert.deepEqual(sanitize({...original,wallStyle:'bars',walls:[
  {x:1,y:1,edge:'north',style:'bars'}]}).walls.map(w=>w.style),['bars']);
+const modeled=fs.readFileSync(path.join(root,'blender/dungeon-prison-bars.py'),'utf8');
+const builder=fs.readFileSync(path.join(root,'blender/build-room-kit.py'),'utf8');
+const packer=fs.readFileSync(path.join(root,'blender/pack-room-kit.py'),'utf8');
+assert.match(modeled,/PB_WALL_MODELS/);
+assert.match(modeled,/material\('Prison grille \| charcoal-black forged iron'/);
+assert.match(modeled,/_pb_rivet_head/);
+assert.match(builder,/dungeon-prison-bars\.py/);
+assert.match(builder,/RENDERED PHYSICAL IRON GRILLE/);
+assert.match(packer,/wall_views=/);
+assert.match(packer,/wall_dir=ASSETS\/'walls'/);
+assert.match(editor,/function drawBlenderBars\(/);
+assert.match(editor,/ctx\.transform\(top1\.x-top0\.x/);
+assert.match(editor,/if\(type\.render==='blender-bars'&&drawBlenderBars/);
+const manifestPath=path.join(root,'assets/manifest.json');
+if(fs.existsSync(manifestPath)){
+ const manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
+ if(manifest.wallViews){
+  assert.equal(manifest.wallViews['bars-full'].height,2);
+  assert.equal(manifest.wallViews['bars-half'].height,1);
+ }
+}
 console.log('Full/half-height prison bars: rendering, palette, collision and JSON compatibility OK');
