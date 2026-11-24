@@ -351,7 +351,7 @@ function drawFurniture(obj){
  const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=184*zoom*(spec.editorSpriteScale||1);
  // Low-profile dungeon floor clutter is baked with its own Cycles ambient
  // occlusion. The generic furniture contact oval would hide wet puddles/rugs.
- if(spec.category!=='floor-clutter'&&spec.category!=='wall-architecture'){
+ if(!['floor-clutter','wall-architecture','architectural-floor'].includes(spec.category)){
   ctx.save();ctx.globalAlpha=.4;ctx.fillStyle='#000';
   ctx.beginPath();ctx.ellipse(p.x,p.y+5*zoom,spec.footprint.w*P.stepX*zoom*.75,
    spec.footprint.h*P.stepY*zoom*.8,0,0,TAU);ctx.fill();ctx.restore();
@@ -371,7 +371,7 @@ function drawFurniture(obj){
  if(selected===obj.id){
   polygon(footprint(obj).map(({x,y})=>pt(x,y)), '#ffc97618',
    fits(obj,obj.id)?'#f1be6b':'#e86c73',1.9);
-  const handle=pt(obj.x,obj.y,spec.height+.24);
+  const handle=pt(obj.x,obj.y,Math.max(0,spec.height)+.24);
   ctx.beginPath();ctx.arc(handle.x,handle.y,4.1*zoom,0,TAU);
   ctx.fillStyle='#ffdc97';ctx.fill();ctx.lineWidth=1;ctx.strokeStyle='#423024';ctx.stroke();
  }
@@ -430,8 +430,12 @@ function hitFurniture(x,y){
   // Hit testing follows the SHRUNKEN model/footprint; no invisible 117px
   // click box remains around a half-size chair or compact brewing table.
   const reachX=Math.max(15,spec.footprint.w*P.stepX*.85);
-  const reachTop=spec.height*P.stepX*1.25+spec.footprint.h*P.stepY*.5;
-  const reachBottom=Math.max(12,spec.footprint.h*P.stepY*.75);
+  // Sunken rooms/collapsed floors have negative elevation; they must
+  // remain selectable instead of creating a negative click target.
+  const reachTop=Math.max(20,Math.max(0,spec.height)*P.stepX*1.25+
+   spec.footprint.h*P.stepY*.5);
+  const reachBottom=Math.max(12,spec.footprint.h*P.stepY*.75)+
+   Math.max(0,-spec.height)*P.stepX*.8;
   return Math.abs(dx)<reachX&&dy>-reachTop&&dy<reachBottom;
  })||null;
 }
