@@ -428,7 +428,7 @@ const preset={
  tiles:[],walls:[],portals:[{side:'south',offset:3,width:1},{side:'east',offset:2,width:1}],furniture:[
   {id:'table-01',type:'prison-table',x:1.65,y:1.75,rot:0,destroyable:true,vaultable:false},
   {id:'chair-01',type:'prison-chair',x:4.25,y:2.65,rot:270,destroyable:true,vaultable:true}
- ],notes:'Offene isometrische Gefängniszelle: nur die beiden Rückwände Nord und West; niemals eine kameraseitige Süd- oder Ostwand. Rückseitig eine eiserne Zellentür. Keine Änderung am bestehenden Dungeon.'
+ ],notes:'Offene isometrische Gefängniszelle: in dieser Vorlage nur Nord- und Westwände; weitere Außenwände werden lediglich visuell ausgeblendet. Rückseitig eine eiserne Zellentür. Keine Änderung am bestehenden Dungeon.'
 };
 for(let x=0;x<preset.width;x++){
  preset.walls.push({x,y:0,edge:'north',
