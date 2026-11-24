@@ -111,8 +111,19 @@ const catalog={
    worldWidth:2.0,asset:artRoot+'tiles/wall-albedo-09.jpg',
    polyhaven:'castle_wall_varriation',render:'photo-wall-map'
   },
-  bars:{label:'Geschmiedetes Zellen-Gitter',height:2.05,solid:true,asset:'walls/bars'},
-  gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,asset:'walls/gate'},
+  // Keep the original bars ID for existing saved rooms and presets.
+  bars:{label:'Geschmiedetes Zellen-Gitter · klassisch',height:2.05,solid:true,
+   render:'metal-bars',asset:'walls/bars'},
+  'bars-full':{
+   label:'Gefängnisgitter · volle Wandhöhe (2 m)',height:2,solid:true,
+   render:'metal-bars',variant:'full',asset:'walls/bars-full'
+  },
+  'bars-half':{
+   label:'Gefängnisgitter · halbe Wandhöhe (1 m)',height:1,solid:true,
+   render:'metal-bars',variant:'half',asset:'walls/bars-half'
+  },
+  gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,
+   render:'metal-bars',asset:'walls/gate'},
   open:{label:'Offene Wand / Durchgang',height:0,solid:false,asset:null}
  },
  furniture:{
