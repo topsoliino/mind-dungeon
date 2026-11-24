@@ -4,7 +4,8 @@
 const kit=window.MindRoomKit,cat=kit.catalog,P=cat.projection,TAU=Math.PI*2;
 const placement=window.MindRoomPlacement,architecture=window.MindRoomArchitecture,portals=window.MindRoomPortals;
 if(!placement||!architecture||!portals)throw Error('Room Atelier: placement, architecture or portal module missing');
-const shape=window.MindRoomShape;
+const environment=window.MindRoomEnvironment;
+ const shape=window.MindRoomShape;
  if(!shape)throw Error('Room Atelier: floor shape module missing');
  const $=id=>document.getElementById(id);
 const c=$('editorCanvas'),ctx=c.getContext('2d',{alpha:false});
@@ -17,12 +18,12 @@ let room=clone(kit.preset),selected=null,tool='select',chosenFurniture='prison-t
 let showGuardian=true,showGrid=false,playing=false,dragging=null,hover=null,dirty=true,frame=0;
 let width=0,height=0,zoom=1,ox=0,oy=0;
 let hero={x:3.5,y:2.6,z:0,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
-let playHP=new Map();
+let playHP=new Map(),ambientRoutes=new Map(),lastAmbientFrame=0;
 // Demand-load only views actually needed by the current scene.
  // Images are served as immutable, cacheable static files from GitHub Pages;
  // GitHub raw/API requests would add latency and rate limits.
 const assets=new Map();
-const spriteVersion='gothic-ruins-architecture-pbr-v2';
+const spriteVersion='gothic-ruins-architecture-pbr-v2-crypt-v3';
 function spriteName(type,rot){const spec=cat.furniture[type];return spec.asset+'-'+rot+'.'+(spec.extension||'webp')}
 // The bars are genuine Cycles renders, not CSS gradients or flat line art.
  // Each small, front-orthographic PBR texture is projected onto a geometrically
@@ -130,7 +131,7 @@ function sanitize(raw){
    destroyable:typeof item.destroyable==='boolean'?item.destroyable:w.destroyable,
    vaultable:typeof item.vaultable==='boolean'?item.vaultable:w.vaultable,
    blocksMovement:typeof item.blocksMovement==='boolean'?item.blocksMovement:w.blocksMovement};
-  if(w.category==='wall-architecture'){
+  if((w.wallMounted||w.category==='wall-architecture')){
    // Preserve a genuine segment reference. Invalid/orphaned wall decor may
    // not float in space after deletion, import or room resize.
    saved.wallRef=String(item.wallRef||'');
@@ -144,6 +145,7 @@ function sanitize(raw){
  return next;
 }
 function saveLocal(){
+ ambientRoutes.clear();
  try{localStorage.setItem('mind-dungeon-room-atelier-v1',JSON.stringify(room))}catch{}
  $('editorStatus').textContent='Lokal gesichert · '+room.furniture.length+' Möbel · '+room.walls.length+' Wandsegmente';
  dirty=true;
@@ -284,10 +286,12 @@ function fits(obj,ignoreId=null){
  if(room.floorCells&&!shape.contains(room,a))return false;
  // Nonblocking decorations are walk-through but must still respect stone
  // wall planes, otherwise rugs and puddles can appear in the next room.
- if(cat.furniture[obj.type].category!=='wall-architecture'&&
+ if(!cat.furniture[obj.type].wallMounted&&cat.furniture[obj.type].category!=='wall-architecture'&&
     placement.crossesWall(obj,room,cat))return false;
  for(const other of room.furniture){
-  if(other.id===(ignoreId||obj.id)||!other.blocksMovement||!obj.blocksMovement)continue;
+  if(other.id===(ignoreId||obj.id))continue;
+  if(cat.furniture[obj.type].surface&&cat.furniture[other.type]?.surface){const b=bounds(other);if(a.left<b.right-.01&&a.right>b.left+.01&&a.top<b.bottom-.01&&a.bottom>b.top+.01)return false;}
+  if(!other.blocksMovement||!obj.blocksMovement)continue;
   const b=bounds(other);
   if(a.left<b.right-.08&&a.right>b.left+.08&&a.top<b.bottom-.08&&a.bottom>b.top+.08)return false;
  }
@@ -301,6 +305,7 @@ function shadeFurniture(type,obj,paint,outline,highlight){
   polygon([q1,q2,p2,p1],sideA,outline,.7);polygon([q2,q3,p3,p2],sideB,outline,.7);
   polygon([q0,q1,q2,q3],top,outline,.85);
  };
+ if(cat.furniture[type].category==='lighting'){const p=position(0,0,cat.furniture[type].height*.75);ctx.fillStyle='#514940';ctx.beginPath();ctx.ellipse(p.x,p.y,2.5*zoom,6*zoom,0,0,TAU);ctx.fill();return;}
  if(cat.furniture[type].kind==='clutter'){
   polygon(footprint(obj).map(({x,y})=>pt(x,y)), '#4a454180','#8b8271',1);
   return;
@@ -353,10 +358,11 @@ function shadeFurniture(type,obj,paint,outline,highlight){
 }
 function drawFurniture(obj){
  if(playing&&playHP.has(obj.id)&&playHP.get(obj.id)<=0)return;
- const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=184*zoom*(spec.editorSpriteScale||1);
+ const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),floor=spec.category==='architectural-floor',size=(floor||['lighting','ambient-life'].includes(spec.category)||obj.type.startsWith('deco-')?42*Math.SQRT2*3.5:184*(spec.editorSpriteScale||1))*zoom;
+ if(spec.ambient){if(!playing&&(selected===obj.id||obj.id==='ghost')){const p=pt(obj.x,obj.y);ctx.strokeStyle='#c6b49b';ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,7*zoom,0,TAU);ctx.stroke();}return;}
  // Low-profile dungeon floor clutter is baked with its own Cycles ambient
  // occlusion. The generic furniture contact oval would hide wet puddles/rugs.
- if(!['floor-clutter','wall-architecture','architectural-floor'].includes(spec.category)){
+ if(!['floor-clutter','wall-architecture','architectural-floor','lighting','ambient-life'].includes(spec.category)){
   ctx.save();ctx.globalAlpha=.4;ctx.fillStyle='#000';
   ctx.beginPath();ctx.ellipse(p.x,p.y+5*zoom,spec.footprint.w*P.stepX*zoom*.75,
    spec.footprint.h*P.stepY*zoom*.8,0,0,TAU);ctx.fill();ctx.restore();
@@ -365,11 +371,12 @@ function drawFurniture(obj){
  if(sprite?.ready){
   // Blender ortho target .72m projects the ground pivot to 68.3% of the cut.
   ctx.save();ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(sprite.img,p.x-size*.5,p.y-size*.683,size,size);ctx.restore();
+  ctx.drawImage(sprite.img,p.x-size*.5,p.y-size*(floor||spec.category==='lighting'||obj.type.startsWith('deco-')?.5+.72*Math.sqrt(2/3)/3.5:.683),size,size);ctx.restore();
  }else{
   // Match the smaller published in-world scale during a pending Blender build.
   ctx.save();ctx.translate(p.x,p.y);
-  ctx.scale(spec.editorSpriteScale||1,spec.editorSpriteScale||1);
+  const scale=obj.type==='prison-table'?.76:obj.type==='prison-chair'?.72:spec.editorSpriteScale||1;
+  ctx.scale(scale,scale);
   ctx.translate(-p.x,-p.y);
   shadeFurniture(obj.type,obj,'#4a322b','#171316','#74523d');ctx.restore();
  }
@@ -485,23 +492,17 @@ function draw(){
  if(hover?.kind==='tile'&&tool==='floor'){
   const v=hover;polygon([pt(v.x,v.y),pt(v.x+1,v.y),pt(v.x+1,v.y+1),pt(v.x,v.y+1)],'#f4c87527','#e3bd78',1.2);
  }
- // Visual voids hide the old continuous stone floor under broken floors and
- // depressed chambers; separate geometry provides a truthful depth cue.
+ // Dark cavity only at the real local opening; never a flat mask over an entire platform.
  for(const obj of room.furniture){
-  const kind=cat.furniture[obj.type]?.surface?.type;
-  if(kind!=='sunken'&&kind!=='collapsed')continue;
-  const b=bounds(obj),inset=kind==='collapsed'?.18:.12;
-  const x0=b.left+inset,x1=b.right-inset,y0=b.top+inset,y1=b.bottom-inset;
-  polygon([pt(x0,y0),pt(x1,y0),pt(x1,y1),pt(x0,y1)],
-          kind==='collapsed'?'#101011':'#17191b');
-  if(kind==='sunken'){
-   polygon([pt(x0,y1),pt(x1,y1),pt(x1,y1,-.55),pt(x0,y1,-.55)],
-           '#25282c','#111517',.7);
-   polygon([pt(x1,y0),pt(x1,y1),pt(x1,y1,-.55),pt(x1,y0,-.55)],
-           '#222326','#161616',.7);
-  }
+  const spec=cat.furniture[obj.type],kind=spec?.surface?.type;if(kind!=='sunken'&&kind!=='collapsed')continue;
+  const w=spec.footprint.w,h=spec.footprint.h,rx=w*(kind==='collapsed'?.23:.41),y0=-h*(kind==='collapsed'?.30:.42),y1=h*(kind==='collapsed'?.30:.20);
+  const world=(x,y,z=0)=>{const p=oriented(obj,x,y);return pt(p.x,p.y,z);};
+  polygon([world(-rx,y0),world(rx,y0),world(rx,y1),world(-rx,y1)],'#141416');
  }
  const layers=[];
+ const active=room.furniture.filter(o=>!playing||!playHP.has(o.id)||playHP.get(o.id)>0);
+ const lightPoints=active.flatMap(o=>environment.lightPoints(o,cat.furniture[o.type]));
+ const now=performance.now()/1000;
  for(const w of room.walls)if(!isNearWall(w))layers.push({depth:wallDepth(w),draw:()=>drawWall(w)});
  // Floor clutter always sits on stone UNDER the Guardian and furniture,
  // regardless of a nonblocking patch extending slightly in front of the feet.
@@ -513,7 +514,7 @@ function draw(){
  }
  const reference=shape.has(room,Math.floor(room.width/2),Math.floor(room.height/2))?{x:room.width/2,y:room.height/2}:(()=>{const c=shape.cells(room)[0];return{x:c.x+.5,y:c.y+.5};})();
  if(playing||showGuardian)layers.push({
-  depth:pt(playing?hero.x:reference.x,playing?hero.y:reference.y).y+.01,
+  depth:Math.max(pt(playing?hero.x:reference.x,playing?hero.y:reference.y).y+.01,playing&&hero.z>.05&&architecture.surfaceAt(room,cat,hero.x,hero.y,placement).obj?pt(architecture.surfaceAt(room,cat,hero.x,hero.y,placement).obj.x,architecture.surfaceAt(room,cat,hero.x,hero.y,placement).obj.y).y+.1:-Infinity),
   draw:()=>window.MindRoomArt.drawGuardian(ctx,{
    point:pt(playing?hero.x:reference.x,playing?hero.y:reference.y,
             playing?(hero.z||0):0),
@@ -523,6 +524,9 @@ function draw(){
  });
  layers.sort((a,b)=>a.depth-b.depth);
  for(const layer of layers)layer.draw();
+ environment.drawGlow(ctx,lightPoints,pt,now,zoom);
+ for(const l of lightPoints)environment.drawFlame(ctx,pt(l.x,l.y,l.z),l.size,l.phase,now,zoom);
+ for(const o of active)if(cat.furniture[o.type].ambient){let path=ambientRoutes.get(o.id);if(!path){path=environment.route(room,cat,shape,placement,o);ambientRoutes.set(o.id,path);}environment.insects(room,cat,shape,placement,o,now,ctx,pt,zoom,path);}
  if(!playing){
   if(['portal','wall','erase'].includes(tool))for(const w of room.walls){if(isNearWall(w)&&cat.walls[w.style]?.solid){const [a,b]=wallEnds(w);line([pt(...a),pt(...b)],'#aeb0ba',3);}}
   for(const p of room.portals||[]){if(p.offset+p.width>portals.span(room,p.side))continue;const [a,b]=portals.segment(room,p);line([pt(...a),pt(...b)],portals.inspect(room,p,cat,placement).ok?'#67d5b5':'#e97980',5);}
@@ -554,7 +558,7 @@ function getPointer(e){
 }
 function makeInstance(type,x,y,rot=0,id){
  const cfg=cat.furniture[type];
- if(cfg.category==='wall-architecture')
+ if((cfg.wallMounted||cfg.category==='wall-architecture'))
   return architecture.attach(type,room,cat,x,y,id);
  const initial={id:id||type+'-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1000),
   type,x:quant(x),y:quant(y),rot,destroyable:cfg.destroyable,vaultable:cfg.vaultable,
@@ -571,7 +575,7 @@ function chooseTool(next){
    shapeAdd:'N · Bodenfelder malen · Linksklick ziehen, auch am äußeren Rand',
    shapeRemove:'M · Bodenfelder entfernen · Linksklick ziehen',
   wall:'W · Wandkante anklicken · Gitter und Türen platzieren',
-  place:cat.furniture[chosenFurniture]?.category==='wall-architecture'?
+  place:(cat.furniture[chosenFurniture]?.wallMounted||cat.furniture[chosenFurniture]?.category==='wall-architecture')?
    'F · Wandverzierung nur auf vorhandener massiver Wand platzieren':
    'F · Möbel / Bauplattform auf Boden platzieren',
   portal:'C · freie Außenkante anklicken · erneut anklicken = entfernen',
@@ -729,11 +733,11 @@ c.addEventListener('pointerdown',e=>{
   select(hit?.id||null);
   if(hit)dragging={type:'move',id:hit.id,deltaX:hit.x-uv.x,deltaY:hit.y-uv.y,previous:JSON.stringify(room)};
  }else if(tool==='place'){
-  const wallOnly=cat.furniture[chosenFurniture]?.category==='wall-architecture';
+  const wallOnly=(cat.furniture[chosenFurniture]?.wallMounted||cat.furniture[chosenFurniture]?.category==='wall-architecture');
   const target=wallOnly?architecturalTarget(pos,uv):uv;
   const obj=target?makeInstance(chosenFurniture,target.x,target.y):null;
   if(fits(obj)){room.furniture.push(obj);selected=obj.id;checkpoint()}
-  else $('editorStatus').textContent=cat.furniture[chosenFurniture]?.category==='wall-architecture'?
+  else $('editorStatus').textContent=(cat.furniture[chosenFurniture]?.wallMounted||cat.furniture[chosenFurniture]?.category==='wall-architecture')?
    'Wandverzierungen können NUR an einer vorhandenen massiven Wand angebracht werden.':
    'Hier kollidiert das Objekt mit Wand oder Einrichtung.';
  }else if(tool==='floor'){
@@ -788,7 +792,7 @@ c.addEventListener('pointermove',e=>{
   const obj=room.furniture.find(f=>f.id===dragging.id);
   if(obj){const prior={...obj};
    const wallTarget=architecturalTarget(pos,uv);
-   const next=cat.furniture[obj.type].category==='wall-architecture'?
+   const next=(cat.furniture[obj.type].wallMounted||cat.furniture[obj.type].category==='wall-architecture')?
     (wallTarget?architecture.attach(obj.type,room,cat,wallTarget.x,wallTarget.y,obj.id):null):
     placement.snap({...obj,x:quant(uv.x+dragging.deltaX),
       y:quant(uv.y+dragging.deltaY)},room,cat,prior);
@@ -798,7 +802,7 @@ c.addEventListener('pointermove',e=>{
   }
  }
  const currentTile=cursorTile(uv.x,uv.y);
- const target=tool==='place'&&cat.furniture[chosenFurniture]?.category==='wall-architecture'?
+ const target=tool==='place'&&(cat.furniture[chosenFurniture]?.wallMounted||cat.furniture[chosenFurniture]?.category==='wall-architecture')?
   architecturalTarget(pos,uv):uv;
  const portalTarget=tool==='portal'?portals.nearest(room,uv.x,uv.y,Number($('portalWidth').value)):null;
  const brushUV=toWorld(pos.x,pos.y);
@@ -823,7 +827,7 @@ c.addEventListener('wheel',e=>{
 },{passive:false});
 function rotate(delta){
  const obj=item();if(!obj)return;
- if(cat.furniture[obj.type].category==='wall-architecture'){
+ if((cat.furniture[obj.type].wallMounted||cat.furniture[obj.type].category==='wall-architecture')){
   $('editorStatus').textContent='Wandverzierungen drehen sich automatisch zur befestigten Wand.';return;
  }
  const previous={...obj};obj.rot=(obj.rot+delta+360)%360;
@@ -835,7 +839,7 @@ function rotate(delta){
 function changeSelected(key,value){
  const obj=item();if(!obj)return;
  const prior={...obj};
- if(cat.furniture[obj.type].category==='wall-architecture'&&
+ if((cat.furniture[obj.type].wallMounted||cat.furniture[obj.type].category==='wall-architecture')&&
   ['x','y','rot'].includes(key)){
   $('editorStatus').textContent='Wandverzierung direkt an eine andere Wand ziehen.';refreshInspector();return;
  }
@@ -871,7 +875,7 @@ function refreshInspector(){
  $('selectedType').textContent=cat.furniture[obj.type].label;
  $('selectedId').value=obj.id;
  $('propX').value=obj.x;$('propY').value=obj.y;$('propRotation').value=obj.rot;
- const mounted=cat.furniture[obj.type].category==='wall-architecture';
+ const mounted=(cat.furniture[obj.type].wallMounted||cat.furniture[obj.type].category==='wall-architecture');
  $('propX').disabled=mounted;$('propY').disabled=mounted;
  $('propRotation').disabled=mounted;$('rotLeft').disabled=mounted;$('rotRight').disabled=mounted;
  $('propDestroyable').checked=obj.destroyable;$('propVaultable').checked=obj.vaultable;
@@ -974,7 +978,9 @@ const thumbnailObserver=('IntersectionObserver' in window)?
    thumbnailObserver.unobserve(img);
   }
  },{root:document.querySelector('.sidebar.left'),rootMargin:'32px'}):null;
-for(const [type,entry] of Object.entries(cat.furniture)){
+const categoryRank=e=>e.category==='lighting'?3:e.category==='ambient-life'?4:e.category==='floor-clutter'?2:e.category==='architectural-floor'?5:e.category==='wall-architecture'?1:0;
+ for(const [type,entry] of Object.entries(cat.furniture).sort((a,b)=>categoryRank(a[1])-categoryRank(b[1]))){
+  if(['lighting','ambient-life'].includes(entry.category)&&!document.querySelector('.'+entry.category+'-heading')){const heading=document.createElement('div');heading.className='catalog-section-label '+entry.category+'-heading';heading.textContent=entry.category==='lighting'?'BELEUCHTUNGSQUELLEN · animiertes Feuer':'AMBIENT-LEBEN · bewegte Insekten';$('furnitureCatalog').appendChild(heading);}
  if(entry.category==='wall-architecture'&&!document.querySelector('.wall-architecture-heading')){
   const heading=document.createElement('div');
   heading.className='catalog-section-label wall-architecture-heading';
@@ -997,16 +1003,16 @@ for(const [type,entry] of Object.entries(cat.furniture)){
  const icon=document.createElement('span');icon.className='catalog-icon';
  const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
  thumb.loading='lazy';thumb.decoding='async';thumb.dataset.src=spriteUrl(type,0);
- if(thumbnailObserver)thumbnailObserver.observe(thumb);else thumb.src=thumb.dataset.src;
+ if(!entry.ambient){if(thumbnailObserver)thumbnailObserver.observe(thumb);else thumb.src=thumb.dataset.src;}
  thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.kind==='rack'?'⚔':entry.kind==='shelf'?'▥':entry.kind==='cage'?'▦':entry.kind==='brazier'?'♨':entry.kind==='wheel'?'◎':entry.kind==='wall-prop'?'⛓':entry.kind==='cabinet'?'▯':entry.kind==='stocks'?'▣':entry.kind==='basin'?'◡':entry.kind==='bench'?'▰':entry.interaction==='brew'?'♨':'▤'};
- icon.appendChild(thumb);
+ if(entry.ambient)icon.textContent=entry.ambient==='roach'?'♣':'✳';else icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
   entry.footprint.w+' × '+entry.footprint.h+' Felder · '+
-  (entry.category==='wall-architecture'?'nur an Wand':
+  ((entry.wallMounted||entry.category==='wall-architecture')?'nur an Wand':entry.ambient?'animierte Umgebung':
    entry.surface?'Höhe '+entry.surface.elevation+' m · '+entry.surface.access:
    entry.blocksMovement?(entry.vaultable?'überspringbar':'blockiert Bewegung'):'begehbar')+'</small>';
  b.append(icon,contents);b.onclick=()=>{
-  chosenFurniture=type;requestSprite(type,0);
+  chosenFurniture=type;if(!entry.ambient)requestSprite(type,0);
   document.querySelectorAll('[data-furniture]').forEach(el=>el.classList.toggle('selected',el===b));
   chooseTool('place');
  };$('furnitureCatalog').appendChild(b);
@@ -1134,6 +1140,7 @@ let last=performance.now();
 function loop(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
  if(playing){playStep(dt);dirty=true}
+ if(!document.hidden&&now-lastAmbientFrame>=1000/24&&room.furniture.some(o=>cat.furniture[o.type]?.lights||cat.furniture[o.type]?.ambient)){lastAmbientFrame=now;dirty=true;}
  if(dirty)draw();
  requestAnimationFrame(loop);
 }
