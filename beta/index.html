@@ -868,16 +868,19 @@ function receiveLoot(item){
 // Award items at the frame when the hand reaches the ground, not on E.
 function startGroundPickup(orb){
  if(!orb)return;
- if(!alley||!guardian?.atlas?.clips?.pickup||!guardian.atlas.interactions?.pickup){
-  claimSoul(orb);return;
+ if(!alley)return claimSoul(orb);
+ // Do not silently skip the animation while the 3D guardian is loading.
+ if(!guardian?.atlas?.clips?.pickup||!guardian.atlas.interactions?.pickup){
+  tell('Wächter-Animation lädt · gleich erneut aufheben');return;
  }
- if(alleyPickup||alleyChest||alleyHit||alleySwing||alleyRoute||vault||
+ if(alleyPickup||alleyChest||alleyHit||alleySwing||vault||
     isConsuming()||heldAttack||player.attack>0||player.dash>0||
-    alleyVertical?.state.stairRide||alleyVertical?.state.transition||
-    (orb.id&&coopTransferBusy))return;
+    alleyVertical?.state.pending||alleyVertical?.state.stairRide||
+    alleyVertical?.state.transition||(orb.id&&coopTransferBusy))return;
  if(Math.hypot(orb.x-player.x,orb.y-player.y)>58||
     !alley.clearLine(player.x,player.y,orb.x,orb.y))return;
- alleyMove=alleyMarker=null;player.moving=false;
+ // An explicit E press overrides a pending right-click/chest route.
+ alleyRoute=alleyMove=alleyMarker=null;player.moving=false;
  player.dir=Math.atan2(orb.y-player.y,orb.x-player.x);
  alleyPickup={...guardian.atlas.interactions.pickup,orb,elapsed:0,triggered:false,
   clip:alleySneaking?'pickup-crouched':'pickup'};
@@ -2717,12 +2720,13 @@ function useLevelSite(site){
 }
 function interact(){if(bossIntro()||modalType||paused||vault||alleyPickup||isConsuming()||heroFallProgress()>=0||mdNavigatingToNewCharacter)return;
 if(alley){
+ // Ground loot wins over co-located chests/altars and stair prompts.
+ if(near?.kind==='soul'&&!alleyHit&&!alleyChest){startGroundPickup(near.orb);return;}
  if(near?.kind==='level-site'){useLevelSite(near.site);return;}
  if(descendAtLanding())return;
  const passage=rockyPrison?.link(player,window.AlleyGenerator);
  if(passage){goRockyFloor(passage.target,passage.entry,passage.storey);return;}
  if(generationMode&&near?.kind!=='soul'){approachAlleyVertical();return;}
- if(near?.kind==='soul'&&!alleyHit&&!alleyChest){startGroundPickup(near.orb);return;}
  if(near?.kind==='iso-archive'){
   const question=selectQuestion(0)||questions[0];
   if(question)quiz(0,'iso-archive',null,question);
@@ -3432,7 +3436,9 @@ if(alley){
   if(s.kind==='door')return s.vertical?dx<68&&dy<s.half*48:dy<68&&dx<s.half*48;
   return Math.hypot(dx,dy)<72&&(s.kind==='chest'||s.kind==='altar'||alley.clearLine(player.x,player.y,s.x,s.y));
  });
- near=site?{kind:'level-site',site}:orb&&(alleyVertical?.state.z??0)<20?{kind:'soul',orb}:null;updateGameHud();return;}
+ // Enemy loot is often next to a level chest; select the orb first.
+ near=orb&&(alleyVertical?.state.z??0)<20?{kind:'soul',orb}:
+  site?{kind:'level-site',site}:null;updateGameHud();return;}
  near=alleyHit||alleyChest||alleyPickup?null:orb?{kind:'soul',orb}:
   !alley.archiveUnlocked()&&alley.nearKnowledge(player)?{kind:'iso-archive'}:
   alley.nearLab(player)?{kind:'iso-lab'}:
