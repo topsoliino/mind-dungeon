@@ -638,7 +638,11 @@ for(const [type,entry] of Object.entries(cat.walls)){
 for(const [type,entry] of Object.entries(cat.furniture)){
  const b=document.createElement('button');b.className='catalog-item';
  b.dataset.furniture=type;
- const icon=document.createElement('span');icon.className='catalog-icon';icon.textContent=entry.kind==='chair'?'♧':entry.interaction==='brew'?'♨':'▤';
+ const icon=document.createElement('span');icon.className='catalog-icon';
+ const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
+ thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=alchemy-20261124';
+ thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.interaction==='brew'?'♨':'▤'};
+ icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
   entry.footprint.w+' × '+entry.footprint.h+' Felder · '+(entry.vaultable?'überspringbar':'massiv')+'</small>';
  b.append(icon,contents);b.onclick=()=>{
