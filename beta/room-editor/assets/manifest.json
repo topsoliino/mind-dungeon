@@ -3,7 +3,7 @@
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
   "generatorSha256": "7d812cb11ea75e7f29a5a3f297b04c3e0d34c8400fb1425ce4b64dcf1a96c63a",
-  "alchemyGeneratorSha256": "a2b932a0ef062dfbd82837766f48b76b2c6065cc1198aa9d80f07322e964d0a5",
+  "alchemyGeneratorSha256": "f29b2543d17030560e661da74fbcabcddf7b66bf653a85f75cbe54db61826540",
   "blend": "assets/source/room-kit.blend",
   "dimensions": {
     "width": 512,
