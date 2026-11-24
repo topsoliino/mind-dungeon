@@ -4,7 +4,8 @@
 const kit=window.MindRoomKit,cat=kit.catalog,P=cat.projection,TAU=Math.PI*2;
 const placement=window.MindRoomPlacement,architecture=window.MindRoomArchitecture,portals=window.MindRoomPortals;
 if(!placement||!architecture||!portals)throw Error('Room Atelier: placement, architecture or portal module missing');
-const environment=window.MindRoomEnvironment;
+const environment=window.MindRoomEnvironment,levelDesign=window.MindRoomLevelDesign;
+ if(!levelDesign)throw Error('Room Atelier: level design module missing');levelDesign.install(cat);
  const shape=window.MindRoomShape;
  if(!shape)throw Error('Room Atelier: floor shape module missing');
  const $=id=>document.getElementById(id);
@@ -18,7 +19,8 @@ let room=clone(kit.preset),selected=null,tool='select',chosenFurniture='prison-t
 let showGuardian=true,showGrid=false,playing=false,dragging=null,hover=null,dirty=true,frame=0;
 let width=0,height=0,zoom=1,ox=0,oy=0;
 let hero={x:3.5,y:2.6,z:0,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
-let playHP=new Map(),ambientRoutes=new Map(),lastAmbientFrame=0;
+let playHP=new Map(),ambientRoutes=new Map(),lastAmbientFrame=0,designState=levelDesign.createState(room,cat),audioPreview=false;
+ const designKind=o=>cat.furniture[o.type]?.designKind;
 // Demand-load only views actually needed by the current scene.
  // Images are served as immutable, cacheable static files from GitHub Pages;
  // GitHub raw/API requests would add latency and rate limits.
@@ -85,7 +87,7 @@ function loadSprite(entry,retry=false){
  img.src=url;
 }
 function requestSprite(type,rot){
- if(!cat.furniture[type]||cat.furniture[type].ambient)return null;
+ if(!cat.furniture[type]||cat.furniture[type].ambient||cat.furniture[type].designKind)return null;
  const name=spriteName(type,rot);
  if(assets.has(name))return assets.get(name);
  const entry={type,rot,img:null,ready:false,failed:false,loading:false,attempt:0,ticket:0,url:''};
@@ -166,6 +168,7 @@ function sanitize(raw){
    vaultable:typeof item.vaultable==='boolean'?item.vaultable:w.vaultable,
    blocksMovement:typeof item.blocksMovement==='boolean'?item.blocksMovement:w.blocksMovement};
   if(w.lights?.length)saved.lit=item.lit!==false;
+  if(w.designKind){saved.design=levelDesign.normalize(w,item.design||{});saved.blocksMovement=w.blocksMovement;saved.destroyable=w.destroyable;saved.vaultable=false;}
   if((w.wallMounted||w.category==='wall-architecture')){
    // Preserve a genuine segment reference. Invalid/orphaned wall decor may
    // not float in space after deletion, import or room resize.
@@ -177,10 +180,12 @@ function sanitize(raw){
   next.furniture.push(saved);
  }
  next.portals=Array.isArray(raw.portals)?portals.normalize(raw.portals):[];
+ if(next.furniture.some(o=>cat.furniture[o.type]?.designKind))next.progression=levelDesign.rules(next,cat);
  return next;
 }
 function saveLocal(){
  ambientRoutes.clear();
+ if(room.furniture.some(o=>designKind(o)))room.progression=levelDesign.rules(room,cat);else delete room.progression;
  try{localStorage.setItem('mind-dungeon-room-atelier-v1',JSON.stringify(room))}catch{}
  $('editorStatus').textContent='Lokal gesichert · '+room.furniture.length+' Möbel · '+room.walls.length+' Wandsegmente';
  dirty=true;
@@ -325,6 +330,9 @@ function fits(obj,ignoreId=null){
     placement.crossesWall(obj,room,cat))return false;
  for(const other of room.furniture){
   if(other.id===(ignoreId||obj.id))continue;
+  const os=cat.furniture[obj.type],ts=cat.furniture[other.type];
+  const reserved=s=>s.category==='gameplay'||['hatch','portcullis','lever'].includes(s.designKind);
+  if((reserved(os)&&(reserved(ts)||other.blocksMovement||ts.surface))||(reserved(ts)&&(obj.blocksMovement||os.surface))){const b=bounds(other);if(a.left<b.right-.01&&a.right>b.left+.01&&a.top<b.bottom-.01&&a.bottom>b.top+.01)return false;}
   if(cat.furniture[obj.type].surface&&cat.furniture[other.type]?.surface){const b=bounds(other);if(a.left<b.right-.01&&a.right>b.left+.01&&a.top<b.bottom-.01&&a.bottom>b.top+.01)return false;}
   if(!other.blocksMovement||!obj.blocksMovement)continue;
   const b=bounds(other);
@@ -394,6 +402,7 @@ function shadeFurniture(type,obj,paint,outline,highlight){
 function drawFurniture(obj){
  if(playing&&playHP.has(obj.id)&&playHP.get(obj.id)<=0)return;
  const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),floor=spec.category==='architectural-floor',legacy=obj.type==='prison-table'||obj.type==='prison-chair',exact=floor||spec.category==='lighting'||obj.type.startsWith('deco-'),ortho=exact?3.5:3.35,size=(exact||legacy?42*Math.SQRT2*ortho:184*(spec.editorSpriteScale||1))*zoom;
+ if(spec.designKind){levelDesign.draw(ctx,obj,spec,pt,zoom,performance.now()/1000,playing,designState,selected===obj.id||obj.id==='ghost',hero);return;}
  if(spec.ambient){if(!playing&&(selected===obj.id||obj.id==='ghost')){const p=pt(obj.x,obj.y);ctx.strokeStyle='#c6b49b';ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,7*zoom,0,TAU);ctx.stroke();}return;}
  // Low-profile dungeon floor clutter is baked with its own Cycles ambient
  // occlusion. The generic furniture contact oval would hide wet puddles/rugs.
@@ -475,6 +484,9 @@ function hitFurniture(x,y){
  const px=x,py=y;
  return room.furniture.slice().sort((a,b)=>pt(b.x,b.y).y-pt(a.x,a.y).y).find(item=>{
   const p=pt(item.x,item.y),spec=cat.furniture[item.type];
+  if(playing&&spec.designKind&&!['hatch','lever','portcullis'].includes(spec.designKind))return false;
+  if(spec.category==='ceiling'){const a=pt(item.x,item.y,item.design?.z||2.2);return !playing&&Math.hypot(px-a.x,py-a.y)<Math.max(18,spec.footprint.w*P.stepX*.6)*zoom;}
+  if(spec.category==='gameplay'){const a=pt(item.x,item.y,.55);return !playing&&(Math.hypot(px-a.x,py-a.y)<18*zoom||Math.hypot(px-p.x,py-p.y)<13*zoom);}
   const dx=(px-p.x)/zoom,dy=(py-p.y)/zoom;
   // Hit testing follows the SHRUNKEN model/footprint; no invisible 117px
   // click box remains around a half-size chair or compact brewing table.
@@ -547,8 +559,9 @@ function draw(){
  // regardless of a nonblocking patch extending slightly in front of the feet.
  // Sort clutter within its ground plane before depth-sorted solid objects.
  for(const obj of room.furniture){
-  const floorProp=cat.furniture[obj.type]?.category==='floor-clutter';
-  layers.push({depth:floorProp?-100000+pt(obj.x,obj.y).y:pt(obj.x,obj.y).y,
+  const spec=cat.furniture[obj.type],floorProp=spec?.category==='floor-clutter'||spec?.category==='liquid'&&spec.designKind!=='well'||spec?.designKind==='hatch';
+  const overhead=spec?.category==='ceiling'||spec?.category==='atmosphere'&&spec.designKind!=='mist'||spec?.category==='sound'||spec?.category==='gameplay';
+  layers.push({depth:floorProp?-100000+pt(obj.x,obj.y).y:overhead?100000+pt(obj.x,obj.y).y:spec?.designKind==='mist'?-40000:pt(obj.x,obj.y).y,
    draw:()=>drawFurniture(obj)});
  }
  const reference=shape.has(room,Math.floor(room.width/2),Math.floor(room.height/2))?{x:room.width/2,y:room.height/2}:(()=>{const c=shape.cells(room)[0];return{x:c.x+.5,y:c.y+.5};})();
@@ -617,7 +630,7 @@ function makeInstance(type,x,y,rot=0,id){
  }
  const initial={id:id||type+'-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1000),
   type,x:quant(x),y:quant(y),rot,destroyable:cfg.destroyable,vaultable:cfg.vaultable,
-  blocksMovement:cfg.blocksMovement,...(cfg.lights?.length?{lit:true}:{})};
+  blocksMovement:cfg.blocksMovement,...(cfg.lights?.length?{lit:true}:{}),...(cfg.designKind?{design:levelDesign.normalize(cfg)}:{})};
  return placement.snap(initial,room,cat);
 }
 function chooseTool(next){
@@ -651,6 +664,7 @@ function item(){return room.furniture.find(f=>f.id===selected)||null}
 function togglePlay(active){
  playing=active;keys.clear();dragging=null;hero.target=null;hero.vault=0;hero.moving=false;hero.clock=0;
  playHP=new Map(active?room.furniture.map(obj=>[obj.id,cat.furniture[obj.type].maxHP]):[]);
+ designState=levelDesign.createState(room,cat);if(active&&audioPreview)levelDesign.enableAudio();else levelDesign.stopAudio();
  if(active){
   let found=null;
   for(let y=.5;y<room.height&&!found;y+=.5)for(let x=.5;x<room.width&&!found;x+=.5)
@@ -672,10 +686,12 @@ function canOccupy(x,y,allowVault=false){
  if(x<r||y<r||x>room.width-r||y>room.height-r)return false;
  if(room.floorCells&&!shape.contains(room,{left:x-r,right:x+r,top:y-r,bottom:y+r}))return false;
  for(const obj of room.furniture)if(obj.blocksMovement&&
-  (!playing||!playHP.has(obj.id)||playHP.get(obj.id)>0)){
+  (!playing||!playHP.has(obj.id)||playHP.get(obj.id)>0)&&
+  (!playing||cat.furniture[obj.type]?.designKind!=='portcullis'||designState.gates.has(obj.id))){
   const b=bounds(obj);
   if(x+r>b.left&&x-r<b.right&&y+r>b.top&&y-r<b.bottom)return false;
  }
+ if(playing&&room.furniture.some(o=>cat.furniture[o.type]?.designKind==='hatch'&&designState.hatches.get(o.id)?.hp<=0&&Math.abs(x-o.x)<.40+r&&Math.abs(y-o.y)<.40+r))return false;
  const surface=architecture.surfaceAt(room,cat,x,y,placement);
  if(surface.blocked)return false;
  if(playing&&!allowVault&&!architecture.transition(room,cat,placement,
@@ -765,7 +781,8 @@ c.addEventListener('pointerdown',e=>{
    // Editor-only combat collision probe. A non-destroyable prop survives,
    // destroyed props disappear from the preview without changing room JSON.
    const target=hitFurniture(pos.x,pos.y);
-   if(target&&Math.hypot(target.x-hero.x,target.y-hero.y)<=1.6&&target.destroyable){
+   if(target&&Math.hypot(target.x-hero.x,target.y-hero.y)<=1.6&&designKind(target)&&['hatch','portcullis'].includes(designKind(target))){$('editorStatus').textContent=levelDesign.hit(designState,target,cat.furniture[target.type]);}
+   else if(target&&Math.hypot(target.x-hero.x,target.y-hero.y)<=1.6&&target.destroyable){
     const hp=(playHP.get(target.id)??cat.furniture[target.type].maxHP)-25;
     playHP.set(target.id,hp);
     $('editorStatus').textContent=hp<=0?
@@ -922,6 +939,14 @@ function download(){
  a.href=url;a.download=(room.id||'mind-room').replace(/[^a-z0-9-_]/gi,'-')+'.json';a.click();URL.revokeObjectURL(url);
  $('editorStatus').textContent=invalid.length||!clean.portals.length?'JSON als Entwurf gespeichert · Verbindungspunkte prüfen.':'JSON gespeichert · Verbindungspunkte enthalten.';
 }
+function refreshDesignInspector(obj,spec){
+ const panel=$('designProperties'),kind=spec.designKind,c=spec.category,d=levelDesign.normalize(spec,obj.design||{});panel.hidden=!kind;
+ const values={enemyType:d.enemyType,elite:d.elite,lootMode:d.lootMode,item:d.item,rarity:d.rarity,lock:d.lock,z:d.z,depth:d.depth,radius:d.radius,intensity:d.intensity,interval:d.interval,note:d.note};
+ const show={enemyType:kind==='enemy',elite:kind==='enemy',lootMode:kind==='soul',item:kind==='soul'&&d.lootMode==='fixed',rarity:kind==='soul'&&d.lootMode==='fixed',lock:kind==='hatch',z:c==='ceiling',depth:c==='liquid',radius:c==='atmosphere'||c==='sound',intensity:c==='atmosphere'||c==='sound',interval:c==='sound',note:c==='gameplay'};
+ for(const [field,visible] of Object.entries(show)){const input=$('design-'+field);$('row-'+field).hidden=!visible;if(input.type==='checkbox')input.checked=!!values[field];else input.value=values[field]??'';}
+ $('designExplanation').textContent=kind==='lever'?'Ebenenregel: Der nächste Treppenraum ist durch ein nicht zerstörbares Fallgitter gesperrt. Ein erreichbarer Hebel auf derselben Dungeon-Ebene öffnet es.':kind==='portcullis'?'Optionaler lokaler Test des Ebenen-Fallgitters. Der Generator muss den tatsächlichen Treppenraum sichern.':kind==='hatch'?'Versperrt die Leiter ins darunterliegende Stockwerk. Versiegelt: erst entsiegeln, dann aufschlagen.':'';
+ for(const id of ['propBlocks','propDestroyable','propVaultable'])$(id).disabled=!!kind;
+}
 function refreshInspector(){
  const obj=item();$('inspector').hidden=!obj;$('noSelection').hidden=Boolean(obj);
  if(!obj){
@@ -940,6 +965,7 @@ function refreshInspector(){
  $('propLit').checked=obj.lit!==false;
  const footprint=cat.furniture[obj.type].footprint;
  const spec=cat.furniture[obj.type];
+ refreshDesignInspector(obj,spec);
  $('footprintLabel').textContent=(mounted?'WANDGEBUNDEN · '+obj.wallRef+' · ':
   spec.category==='architectural-floor'?'HÖHENOBERFLÄCHE · ':'Kollision ')+
   footprint.w+' × '+footprint.h+' m · '+(spec.surface?
@@ -1036,8 +1062,10 @@ const thumbnailObserver=('IntersectionObserver' in window)?
    thumbnailObserver.unobserve(img);
   }
  },{root:document.querySelector('.sidebar.left'),rootMargin:'32px'}):null;
-const categoryRank=e=>e.category==='lighting'?3:e.category==='ambient-life'?4:e.category==='floor-clutter'?2:e.category==='architectural-floor'?5:e.category==='wall-architecture'?1:0;
+const designCategories={gameplay:'GAMEPLAY · Fokus- und Spawnpunkte',mechanisms:'MECHANISMEN · Fortschrittszugänge',ceiling:'DECKENARCHITEKTUR',liquid:'WASSER & FLÜSSIGKEITEN',atmosphere:'ATMOSPHÄRISCHE EFFEKTE',sound:'SOUNDQUELLEN'};
+ const categoryRank=e=>e.designKind?6+Object.keys(designCategories).indexOf(e.category):e.category==='lighting'?3:e.category==='ambient-life'?4:e.category==='floor-clutter'?2:e.category==='architectural-floor'?5:e.category==='wall-architecture'?1:0;
  for(const [type,entry] of Object.entries(cat.furniture).sort((a,b)=>categoryRank(a[1])-categoryRank(b[1]))){
+  if(entry.designKind&&!document.querySelector('.'+entry.category+'-heading')){const heading=document.createElement('div');heading.className='catalog-section-label '+entry.category+'-heading';heading.textContent=designCategories[entry.category];$('furnitureCatalog').appendChild(heading);}
   if(['lighting','ambient-life'].includes(entry.category)&&!document.querySelector('.'+entry.category+'-heading')){const heading=document.createElement('div');heading.className='catalog-section-label '+entry.category+'-heading';heading.textContent=entry.category==='lighting'?'BELEUCHTUNGSQUELLEN · animiertes Feuer':'AMBIENT-LEBEN · bewegte Insekten';$('furnitureCatalog').appendChild(heading);}
  if(entry.category==='wall-architecture'&&!document.querySelector('.wall-architecture-heading')){
   const heading=document.createElement('div');
@@ -1060,23 +1088,31 @@ const categoryRank=e=>e.category==='lighting'?3:e.category==='ambient-life'?4:e.
  b.dataset.furniture=type;
  const icon=document.createElement('span');icon.className='catalog-icon';
  const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
- thumb.loading='lazy';thumb.decoding='async';thumb.dataset.assetType=type;thumb.dataset.src=spriteUrl(type,0);
- if(!entry.ambient){if(thumbnailObserver)thumbnailObserver.observe(thumb);else thumb.src=thumb.dataset.src;}
+ thumb.loading='lazy';thumb.decoding='async';thumb.dataset.assetType=type;thumb.dataset.src=entry.designKind?'':spriteUrl(type,0);
+ if(!entry.ambient&&!entry.designKind){if(thumbnailObserver)thumbnailObserver.observe(thumb);else thumb.src=thumb.dataset.src;}
  thumb.onerror=()=>{thumb.dataset.failed='true';thumb.title='Sprite konnte nicht geladen werden: '+thumb.dataset.src;};
  thumb.onload=()=>{thumb.dataset.failed='false';thumb.title='';};
- if(entry.ambient)icon.textContent=entry.ambient==='roach'?'♣':'✳';else icon.appendChild(thumb);
+ if(entry.designKind)icon.textContent=entry.icon;else if(entry.ambient)icon.textContent=entry.ambient==='roach'?'♣':'✳';else icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
   entry.footprint.w+' × '+entry.footprint.h+' Felder · '+
   ((entry.wallMounted||entry.category==='wall-architecture')?'nur an Wand':entry.ambient?'animierte Umgebung':
    entry.surface?'Höhe '+entry.surface.elevation+' m · '+entry.surface.access:
    entry.blocksMovement?(entry.vaultable?'überspringbar':'blockiert Bewegung'):'begehbar')+'</small>';
  b.append(icon,contents);b.onclick=()=>{
-  chosenFurniture=type;if(!entry.ambient)requestSprite(type,0);
+  chosenFurniture=type;if(!entry.ambient&&!entry.designKind)requestSprite(type,0);
   document.querySelectorAll('[data-furniture]').forEach(el=>el.classList.toggle('selected',el===b));
   chooseTool('place');
  };$('furnitureCatalog').appendChild(b);
 }
 document.querySelector('[data-furniture]').classList.add('selected');
+for(const [i,label] of levelDesign.ENEMIES.entries()){const o=document.createElement('option');o.value=String(i);o.textContent=label;$('design-enemyType').appendChild(o);}
+for(const [id,label] of levelDesign.ITEM_OPTIONS){const o=document.createElement('option');o.value=id;o.label=label;$('design-item-options').appendChild(o);}
+for(const field of ['enemyType','elite','lootMode','item','rarity','lock','z','depth','radius','intensity','interval','note'])$('design-'+field).onchange=e=>{
+ const o=item(),s=o&&cat.furniture[o.type];if(!s?.designKind)return;
+ const input=e.target,v=input.type==='checkbox'?input.checked:input.type==='number'||field==='enemyType'?Number(input.value):input.value;
+ o.design=levelDesign.normalize(s,{...o.design,[field]:v});checkpoint();
+};
+$('previewAudioBtn').onclick=()=>{audioPreview=!audioPreview;if(audioPreview&&playing)levelDesign.enableAudio();else levelDesign.stopAudio();$('previewAudioBtn').textContent=audioPreview?'Tonvorschau: an':'Tonvorschau: aus';};
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>chooseTool(b.dataset.tool));
 $('roomName').addEventListener('change',e=>changeRoom(()=>room.name=e.target.value.trim().slice(0,80)||'Raum'));
 for(const [id,field] of [['roomW','width'],['roomH','height']])$(id).addEventListener('change',e=>{
@@ -1182,6 +1218,7 @@ window.addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();keys.add(k);
  if(playing){
   if(k==='p'){togglePlay(false)}
+  if(k==='e'&&!e.repeat){const candidates=room.furniture.filter(o=>designKind(o)&&['lever','portcullis','hatch','next-level'].includes(designKind(o))&&Math.hypot(o.x-hero.x,o.y-hero.y)<=1.6).sort((a,b)=>Math.hypot(a.x-hero.x,a.y-hero.y)-Math.hypot(b.x-hero.x,b.y-hero.y));if(candidates.length){const o=candidates[0];$('editorStatus').textContent=levelDesign.interact(designState,o,cat.furniture[o.type]);schedule();}else $('editorStatus').textContent='Kein Mechanismus in Reichweite.';}
   if(k===' '){e.preventDefault();vault()}
   if(['arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
   return;
@@ -1198,8 +1235,8 @@ window.addEventListener('blur',()=>keys.clear());
 let last=performance.now();
 function loop(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
- if(playing){playStep(dt);dirty=true}
- if(!document.hidden&&now-lastAmbientFrame>=1000/24&&room.furniture.some(o=>cat.furniture[o.type]?.lights||cat.furniture[o.type]?.ambient)){lastAmbientFrame=now;dirty=true;}
+ if(playing){playStep(dt);if(audioPreview)levelDesign.soundTick(room,cat,hero,now/1000);dirty=true}
+ if(!document.hidden&&now-lastAmbientFrame>=1000/24&&room.furniture.some(o=>cat.furniture[o.type]?.lights||cat.furniture[o.type]?.ambient||['liquid','atmosphere'].includes(cat.furniture[o.type]?.category))){lastAmbientFrame=now;dirty=true;}
  if(dirty)draw();
  requestAnimationFrame(loop);
 }
