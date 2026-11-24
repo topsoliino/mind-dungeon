@@ -2,8 +2,8 @@
 (function(){
 'use strict';
 const kit=window.MindRoomKit,cat=kit.catalog,P=cat.projection,TAU=Math.PI*2;
-const placement=window.MindRoomPlacement;
-if(!placement)throw Error('Room Atelier: precision placement module missing');
+const placement=window.MindRoomPlacement,architecture=window.MindRoomArchitecture;
+if(!placement||!architecture)throw Error('Room Atelier: placement and architecture modules missing');
 const $=id=>document.getElementById(id);
 const c=$('editorCanvas'),ctx=c.getContext('2d',{alpha:false});
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -14,7 +14,7 @@ const precise=x=>Math.round(x*1000)/1000;
 let room=clone(kit.preset),selected=null,tool='select',chosenFurniture='prison-table';
 let showGuardian=true,showGrid=false,playing=false,dragging=null,hover=null,dirty=true,frame=0;
 let width=0,height=0,zoom=1,ox=0,oy=0;
-let hero={x:3.5,y:2.6,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
+let hero={x:3.5,y:2.6,z:0,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
 let playHP=new Map();
 // Demand-load only views actually needed by the current scene.
  // Images are served as immutable, cacheable static files from GitHub Pages;
@@ -123,11 +123,20 @@ function sanitize(raw){
  for(const item of raw.furniture||[]){
   if(!cat.furniture[item.type]||!Number.isFinite(item.x)||!Number.isFinite(item.y))continue;
   const w=cat.furniture[item.type],rot=((Math.round(Number(item.rot)||0)/90%4)+4)%4*90;
-  next.furniture.push({id:String(item.id||'furn-'+(next.furniture.length+1)).slice(0,64),
+  let saved={id:String(item.id||'furn-'+(next.furniture.length+1)).slice(0,64),
    type:item.type,x:precise(item.x),y:precise(item.y),rot,
    destroyable:typeof item.destroyable==='boolean'?item.destroyable:w.destroyable,
    vaultable:typeof item.vaultable==='boolean'?item.vaultable:w.vaultable,
-   blocksMovement:typeof item.blocksMovement==='boolean'?item.blocksMovement:w.blocksMovement});
+   blocksMovement:typeof item.blocksMovement==='boolean'?item.blocksMovement:w.blocksMovement};
+  if(w.category==='wall-architecture'){
+   // Preserve a genuine segment reference. Invalid/orphaned wall decor may
+   // not float in space after deletion, import or room resize.
+   saved.wallRef=String(item.wallRef||'');
+   saved.wallOffset=Number.isFinite(item.wallOffset)?item.wallOffset:.5;
+   saved=architecture.refreshMount(saved,next,cat);
+   if(!saved)continue;
+  }
+  next.furniture.push(saved);
  }
  return next;
 }
@@ -261,6 +270,8 @@ function bounds(obj){
   top:Math.min(...corners.map(c=>c.y)),bottom:Math.max(...corners.map(c=>c.y))};
 }
 function fits(obj,ignoreId=null){
+ if(!obj)return false;
+ if(!architecture.validMount(obj,room,cat))return false;
  const a=bounds(obj);
  // The old .1m inset plus quarter-metre snapping caused visible wall gaps.
  // Keep just the physically tiny safety inset, irrespective of obstruction.
@@ -268,7 +279,8 @@ function fits(obj,ignoreId=null){
  if(a.left<eps||a.top<eps||a.right>room.width-eps||a.bottom>room.height-eps)return false;
  // Nonblocking decorations are walk-through but must still respect stone
  // wall planes, otherwise rugs and puddles can appear in the next room.
- if(placement.crossesWall(obj,room,cat))return false;
+ if(cat.furniture[obj.type].category!=='wall-architecture'&&
+    placement.crossesWall(obj,room,cat))return false;
  for(const other of room.furniture){
   if(other.id===(ignoreId||obj.id)||!other.blocksMovement||!obj.blocksMovement)continue;
   const b=bounds(other);
@@ -433,9 +445,10 @@ function draw(){
   const [a,b]=wallEnds(hover);
   line([pt(...a),pt(...b)],tool==='erase'?'#e97980':'#f3d196',4.3);
  }
- if(tool==='place'&&hover?.kind==='world'&&!playing){
-  const item=makeInstance(chosenFurniture,hover.x,hover.y,0,'ghost');
-  drawGhost(item);
+ if(tool==='place'&&!playing){
+  const item=hover?.kind==='world'?
+   makeInstance(chosenFurniture,hover.x,hover.y,0,'ghost'):null;
+  if(item)drawGhost(item);
  }
 
 }
@@ -454,6 +467,8 @@ function getPointer(e){
 }
 function makeInstance(type,x,y,rot=0,id){
  const cfg=cat.furniture[type];
+ if(cfg.category==='wall-architecture')
+  return architecture.attach(type,room,cat,x,y,id);
  const initial={id:id||type+'-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1000),
   type,x:quant(x),y:quant(y),rot,destroyable:cfg.destroyable,vaultable:cfg.vaultable,
   blocksMovement:cfg.blocksMovement};
@@ -467,7 +482,9 @@ function chooseTool(next){
   select:'V · Möbel anklicken und ziehen · R = 90° drehen',
   floor:'B · ausgewählten Originalboden auf den ganzen Raum anwenden',
   wall:'W · Wandkante anklicken · Gitter und Türen platzieren',
-  place:'F · Möbel auf einem freien Bodenbereich platzieren',
+  place:cat.furniture[chosenFurniture]?.category==='wall-architecture'?
+   'F · Wandverzierung nur auf vorhandener massiver Wand platzieren':
+   'F · Möbel / Bauplattform auf Boden platzieren',
   erase:'E · Möbel entfernen oder Wandkante aufheben'}[next];
  schedule();
 }
@@ -583,7 +600,9 @@ c.addEventListener('pointerdown',e=>{
  }else if(tool==='place'){
   const obj=makeInstance(chosenFurniture,uv.x,uv.y);
   if(fits(obj)){room.furniture.push(obj);selected=obj.id;checkpoint()}
-  else $('editorStatus').textContent='Hier kollidiert das Möbel mit Wand oder Einrichtungsgegenständen.';
+  else $('editorStatus').textContent=cat.furniture[chosenFurniture]?.category==='wall-architecture'?
+   'Wandverzierungen können NUR an einer vorhandenen massiven Wand angebracht werden.':
+   'Hier kollidiert das Objekt mit Wand oder Einrichtung.';
  }else if(tool==='floor'){
   // Full-surface PHOTO selection, never painted squares or dirt splashes.
   if(cursorTile(uv.x,uv.y)){
@@ -595,6 +614,8 @@ c.addEventListener('pointerdown',e=>{
   const at=nearestWall(uv.x,uv.y);
   if(at){const old=room.walls.find(w=>keyWall(w)===at.id);
    if(old)old.style=at.style;else room.walls.push({x:at.x,y:at.y,edge:at.edge,style:at.style});
+   if(!cat.walls[at.style]?.solid)
+    room.furniture=room.furniture.filter(o=>o.wallRef!==at.id);
    checkpoint();}
  }else if(tool==='erase'){
   if(hit){room.furniture=room.furniture.filter(f=>f.id!==hit.id);selected=null;checkpoint();}
@@ -603,7 +624,9 @@ c.addEventListener('pointerdown',e=>{
    const nearEdge=Math.min(Math.abs(uv.x-Math.round(uv.x)),
     Math.abs(uv.y-Math.round(uv.y)))<.23;
    if(wall&&nearEdge&&room.walls.some(w=>keyWall(w)===wall.id)){
-    room.walls=room.walls.filter(w=>keyWall(w)!==wall.id);checkpoint();
+    room.walls=room.walls.filter(w=>keyWall(w)!==wall.id);
+    room.furniture=room.furniture.filter(o=>o.wallRef!==wall.id);
+    checkpoint();
    }else{
     const cell=cursorTile(uv.x,uv.y);
     if(cell){room.tiles=room.tiles.filter(t=>t.x!==cell.x||t.y!==cell.y);checkpoint()}
@@ -618,11 +641,13 @@ c.addEventListener('pointermove',e=>{
   ox=dragging.ox+e.clientX-dragging.x;oy=dragging.oy+e.clientY-dragging.y;
  }else if(dragging?.type==='move'){
   const obj=room.furniture.find(f=>f.id===dragging.id);
-  if(obj){const prior={x:obj.x,y:obj.y};
-   const next=placement.snap({...obj,
-    x:quant(uv.x+dragging.deltaX),y:quant(uv.y+dragging.deltaY)},room,cat,prior);
-   obj.x=next.x;obj.y=next.y;
-   if(!fits(obj,obj.id)){obj.x=prior.x;obj.y=prior.y}
+  if(obj){const prior={...obj};
+   const next=cat.furniture[obj.type].category==='wall-architecture'?
+    architecture.attach(obj.type,room,cat,uv.x,uv.y,obj.id):
+    placement.snap({...obj,x:quant(uv.x+dragging.deltaX),
+      y:quant(uv.y+dragging.deltaY)},room,cat,prior);
+   if(next)Object.assign(obj,next);
+   if(!fits(obj,obj.id))Object.assign(obj,prior);
    refreshInspector();
   }
  }
@@ -648,6 +673,9 @@ c.addEventListener('wheel',e=>{
 },{passive:false});
 function rotate(delta){
  const obj=item();if(!obj)return;
+ if(cat.furniture[obj.type].category==='wall-architecture'){
+  $('editorStatus').textContent='Wandverzierungen drehen sich automatisch zur befestigten Wand.';return;
+ }
  const previous={...obj};obj.rot=(obj.rot+delta+360)%360;
  const snapped=placement.snap(obj,room,cat);
  obj.x=snapped.x;obj.y=snapped.y;
@@ -656,7 +684,12 @@ function rotate(delta){
 }
 function changeSelected(key,value){
  const obj=item();if(!obj)return;
- const prior={...obj};obj[key]=value;
+ const prior={...obj};
+ if(cat.furniture[obj.type].category==='wall-architecture'&&
+  ['x','y','rot'].includes(key)){
+  $('editorStatus').textContent='Wandverzierung direkt an eine andere Wand ziehen.';refreshInspector();return;
+ }
+ obj[key]=value;
  if(key==='x'||key==='y'||key==='rot'){
   const next=placement.snap(obj,room,cat,prior);
   obj.x=next.x;obj.y=next.y;
@@ -679,15 +712,25 @@ function download(){
 }
 function refreshInspector(){
  const obj=item();$('inspector').hidden=!obj;$('noSelection').hidden=Boolean(obj);
- if(!obj)return;
+ if(!obj){
+  for(const id of ['propX','propY','propRotation','rotLeft','rotRight'])$(id).disabled=false;
+  return;
+ }
  $('selectedType').textContent=cat.furniture[obj.type].label;
  $('selectedId').value=obj.id;
  $('propX').value=obj.x;$('propY').value=obj.y;$('propRotation').value=obj.rot;
+ const mounted=cat.furniture[obj.type].category==='wall-architecture';
+ $('propX').disabled=mounted;$('propY').disabled=mounted;
+ $('propRotation').disabled=mounted;$('rotLeft').disabled=mounted;$('rotRight').disabled=mounted;
  $('propDestroyable').checked=obj.destroyable;$('propVaultable').checked=obj.vaultable;
  $('propBlocks').checked=obj.blocksMovement;
  const footprint=cat.furniture[obj.type].footprint;
- $('footprintLabel').textContent='Kollision '+footprint.w+' × '+footprint.h+
-  ' Felder · Höhe '+cat.furniture[obj.type].height+' · '+(obj.vaultable?'Vault erlaubt':'Vault gesperrt');
+ const spec=cat.furniture[obj.type];
+ $('footprintLabel').textContent=(mounted?'WANDGEBUNDEN · '+obj.wallRef+' · ':
+  spec.category==='architectural-floor'?'HÖHENOBERFLÄCHE · ':'Kollision ')+
+  footprint.w+' × '+footprint.h+' m · '+(spec.surface?
+   'begehbare Höhe '+spec.surface.elevation+' m · '+spec.surface.access:
+   'Höhe '+spec.height+' m')+' · '+(obj.vaultable?'Vault erlaubt':'Vault gesperrt');
 }
 function refreshUI(){
  $('roomName').value=room.name;$('roomW').value=room.width;$('roomH').value=room.height;
