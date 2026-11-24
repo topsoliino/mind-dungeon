@@ -54,6 +54,50 @@ kameraseitigen südlichen/östlichen Außenwände bleiben wie bisher ausgeblende
 Regressionstest: `node beta/room-editor/tests/prison-bars.test.cjs`.
 Keine Live-Spiel-Datei wurde für diese Erweiterung bearbeitet.
 
+## Gothic wall architecture and elevated dungeon floors
+
+**14 new editable Blender meshes** are built in `blender/dungeon-architecture.py`
+and rendered under the same Cycles warm-key/cool-fill conditions as the
+Guardian and the existing prison furniture. Each has four actual 90° views
+(0°, 90°, 180°, 270°), stored under `assets/furniture/` as transparent
+512px PNGs. Architecture models are full-size metre-scale geometry rather
+than shrunk furniture; the architecture camera uses `ortho_scale=3.5`.
+Source geometry is saved with the other models in `assets/source/room-kit.blend`.
+
+**Wandverzierungen** are a dedicated palette category with STRICT wall-only
+placement (not ordinary loose furniture): projecting stone pilaster,
+freestanding-looking masonry column, timber pillar, wooden wall ledge,
+carved cornice, knight statue, gargoyle and broken masonry arch. A decoration
+must be attached to an existing **solid** wall segment, referenced by
+`wallRef: "h:x:y"` / `"v:x:y"` and `wallOffset`; orientation follows the
+wall. It cannot float elsewhere or be freely rotated. On moving a decoration
+near another wall it reattaches to that wall. Erasing the supporting wall
+also erases its decorations. Invalid wall references are discarded on JSON
+import, ensuring old rooms continue to load correctly.
+
+**Bodenarchitektur** is a separate palette category with genuine height
+metadata and playtest collisions:
+stone dais (+.55 m, front steps), sunken floor (-.55 m, front steps),
+raised wooden gangway (+.74 m, front steps), wooden stage (+.55 m, steps),
+broken slab (low walkable ramp up to +.22 m), collapsed intermediate floor
+(with a blocked central hole and traversable surviving edges). A timber
+wall ledge also has an elevated surface at +1.33 m and can be vaulted onto
+and off using Space when in range.
+
+The wall-only and height system lives in **`architecture.js`** and is
+composed with `placement.js` in the editor. The Guardian's screen position
+uses animated height `hero.z`. The playtest prevents walking straight
+through vertical platform sidewalls or across collapsed floor holes; the
+user must approach visible stairs to reach elevated or sunken floors. The
+continuous photographic floor is visually cut out below the sunken and
+collapsed regions to show depth, with the Blender masonry rims/joists above.
+Saved rooms retain architecture types, wall references, orientations and
+height metadata through the catalogue without altering the live game Beta.
+
+Regression: `node beta/room-editor/tests/dungeon-architecture.test.cjs`.
+After packing, there are **43 furniture/architecture types and 172
+isometric sprite views** (29 existing +14 new, 116 +56 rotations).
+
 ## Wall-flush placement and on-demand loading
 
 Room Atelier places **all furniture and floor clutter down to 0.01 world metres
