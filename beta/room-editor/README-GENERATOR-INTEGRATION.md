@@ -284,3 +284,23 @@ Neue Katalogkategorien `lighting` und `ambient-life`; Wandmontage ist über `wal
 Für die Live-Integration: Schaben (`ambient-roaches`) in den Boden-Renderpass zwischen flacher Boden-Deko und allen aufstehenden Objekten/Spieler einordnen. Nicht als Overlay nach dem Depth-Sort zeichnen. Fliegen behalten ihren Luftpass.
 
 Lichtobjekte (auch der Eichentisch mit Kerzen) können optional `lit:false` enthalten. Fehlendes `lit` bedeutet eingeschaltet. Der Basis-Sprite ist unabhängig von `lit` sichtbar; Flame/Glow nur im eingeschalteten Zustand. Träger müssen zuerst erfolgreich geladen sein. Sprite-IDs bleiben unverändert.
+
+### 15. Level-Design-Marker, Mechanismen und Umgebung (Editorvertrag)
+
+`level-design.js` ergänzt den Editor-Katalog um 34 editorlokale Typen. Die bestehende Spielintegration lädt dieses Modul noch nicht. Vor Verwendung neuer JSONs den Adapter explizit um diese Typen erweitern; sie dürfen nicht als normale fehlende Möbel-PNGs behandelt werden. Instanzen bleiben in `furniture` (Position, Rotation, ID wie bisher) mit zusätzlichem `design`-Objekt. `progression` wird aus den Instanzen abgeleitet; bei Instanziierung auf Ebene/Stockwerk neu aggregieren, niemals lokale IDs als globale IDs verwenden.
+
+| Typ | Semantik |
+|---|---|
+| focus-merchant / focus-altar / focus-chest / focus-brew | Exakt an dieser Stelle Händler / Wissensaltar / Truhe / Brautisch instanziieren. Gegen bestehende Ebenenbudgets anrechnen, nicht zusätzlich doppelt spawnen. |
+| focus-soul | `design.lootMode: random` oder `fixed`; fixed verlangt `design.item` (z.B. `weapon:hammer`) und `rarity`. Autoritativ gegen tatsächlichen Itemkatalog prüfen; unbekannte IDs als Fehler melden, nicht ersetzen. |
+| focus-enemy | `design.enemyType` numerische ID 0–20 aus `beta/dungeon-enemies.js`, `elite` bool. Echte Gegner-Instanz auf korrektem Stockwerk, in Gegnerbudget einrechnen. |
+| focus-next-level | Optional expliziter Ort der Treppe zur nächsten Dungeon-Ebene (nicht Stockwerk). |
+| mechanism-lever | `design.target: next-level-exit`. Ebenenweit wirksam, auch über mehrere Räume/Stockwerke. |
+| mechanism-portcullis | Optional lokales Vorschau-/Eingangsgitter, kein Ersatz für das echte Ebenengitter. |
+| mechanism-hatch | Falltür über Leiter abwärts ins nächste **Stockwerk**; `design.lock: random / sealed / breakable`. |
+
+**Verbindliche Progressionsregeln:** Wenn auf einer Dungeon-Ebene mindestens ein Hebel platziert ist, wird der Raum mit dem Zugang zur nächsten Dungeon-Ebene durch ein nicht zerstörbares Fallgitter gesperrt. Alle Zugänge zu diesem Treppenraum müssen vor Freigabe gesperrt sein, ohne authored Wände zu löschen. Ein erreichbarer Hebel derselben Dungeon-Ebene öffnet alle zugehörigen Gitter dauerhaft für diesen Run. Mehrere Hebel: OR-Regel (jeder genügt), keine zusätzlichen Rätsel angenommen. Kein Hebel: keine automatische Hebel-Sperre. Generator muss vor Freigabe einen physischen Pfad vom Spawn zu mindestens einem Hebel ohne Durchqueren der gesperrten Zone nachweisen und danach einen Pfad zur Treppe. Unlösbare Layouts verwerfen/regenerieren; keinen Bypass über Stockwerke zulassen. Kein echtes Fallgitter oder Hebel im Hauptspiel durch diesen Editor-Commit implementiert.
+
+Falltür über tatsächlichem Leiterzugang nach unten platzieren; Gegenstück auf darunterliegendem Stockwerk reservieren und prüfen. `random` deterministisch pro Seed/Instanz als sealed oder breakable auflösen (vorläufig 50/50), Zustand persistieren. `sealed`: bestehende Siegeltor-Entsiegelungsmechanik anwenden, danach zerstören; `breakable`: nur zerstören. Vor Freigabe Leiter-Interaktion in beide Richtungen entsprechend Sperre verhindern. Keine Leiter unter einer nicht vorhandenen unteren Etage. Offene Öffnung als Loch mit Leiterinteraktion, kein unsichtbarer begehbarer Boden. Lokaler E-Test simuliert die Freigabe ohne Quiz und ohne Stockwerkwechsel.
+
+`ceiling-*`: Höhe `design.z`, transparent bei Spielerüberdeckung. `water-*`: `design.depth`, zunächst visuelle Fläche; echte Tiefe/Schaden erst nach Integration. `fx-*`: radius/intensity. `sound-*`: radius/intensity/interval, räumliche Lautstärke und Panning; echte Hauptspiel-SFX statt Vorschau-Synthese verwenden. Keine zusätzlichen statischen Bilder für diese Typen erwarten. Canvas-Vorschauen sind bewusst nicht mit finalen PBR-Modellen gleichzusetzen.
