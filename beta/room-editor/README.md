@@ -54,6 +54,30 @@ kameraseitigen südlichen/östlichen Außenwände bleiben wie bisher ausgeblende
 Regressionstest: `node beta/room-editor/tests/prison-bars.test.cjs`.
 Keine Live-Spiel-Datei wurde für diese Erweiterung bearbeitet.
 
+## Dark Dungeon art-direction revision — physically weathered architecture
+
+The fourteen Gothic architecture models now receive a second **editable
+Blender geometry** pass, instead of only changing the exported PNG brightness.
+This deliberately breaks the previous clean, cuboid, toy-like silhouettes:
+cold charcoal limestone; genuinely chipped/warped vertices; broad damp soot,
+wet mineral deposits and layered roughness in the Cycles material graph; torn
+oak fibres, broken ashlar pieces, embedded cracks, exposed iron oxidation,
+shattered planks and deep undercuts. The knight and gargoyle have been
+resculpted as faceted, organic stone forms, and the gargoyle's former
+rectangular wings are replaced with **uneven Gothic wing membranes**.
+
+`blender/dungeon-architecture.py` owns the base materials and sculpt shapes;
+`blender/architecture-weathering.py` sculpts **14 asset-specific** damage
+profiles and attaches every piece to the original model pivot, preserving
+0°/90°/180°/270° views, room JSON positions and wall-mounted placement.
+`blender/build-room-kit.py` gives *only* these 14 assets a tighter key light
+and less ambient fill for physical depth; existing props and the prison-bar
+renderer retain their previous lighting settings.
+
+All new visuals are still four transparent, pre-rendered Blender/Cycles PNGs
+per model; no extra browser-side 3D or runtime draw cost is added.
+`tests/dungeon-architecture.test.cjs` guards the sculpt/patina setup.
+
 ## Gothic wall architecture and elevated dungeon floors
 
 **14 new editable Blender meshes** are built in `blender/dungeon-architecture.py`
