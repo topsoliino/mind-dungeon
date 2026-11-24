@@ -7,21 +7,52 @@ This file only adds models to ALCHEMY_MODELS; it never modifies the game.
 """
 import math as _math
 
-_fwood = material('Alchemy | dark weathered oak', '533629', .88, secondary='986747', grain=29)
-_fedge = material('Alchemy | worn polished edges', '956846', .69, secondary='be8c5b', grain=25)
-_fdark = material('Alchemy | deep oak crevices', '2c221d', .91, secondary='59402e', grain=29)
+_fwood = material('Alchemy | dark weathered oak', '34251e', .88, secondary='75503a', grain=29)
+_fedge = material('Alchemy | worn polished edges', '65432d', .74, secondary='966b48', grain=25)
+_fdark = material('Alchemy | deep oak crevices', '211914', .91, secondary='463125', grain=29)
 _firon = material('Alchemy | scratched black iron', '3a3431', .69, .77, secondary='786a60', grain=29)
 _fcopper = material('Alchemy | hammered copper', '8f492a', .37, .80, secondary='c87b49', grain=40)
 _fbrass = material('Alchemy | tarnished brass', '89704b', .44, .74, secondary='c8a26b', grain=31)
 _fglass = material('Alchemy | smoked glass', '352d2b', .17, .32, secondary='75553c', grain=9)
 _fgreen = material('Alchemy | dried herbs', '484c2e', .91, secondary='8e8150', grain=22)
 _fpurple = material('Alchemy | dried lavender', '574057', .91, secondary='936f85', grain=24)
-_fcloth = material('Alchemy | battered linen', '877561', .94, secondary='ac9472', grain=42)
+_fcloth = material('Alchemy | battered linen', '6f6457', .94, secondary='a28a71', grain=42)
 _fstripe = material('Alchemy | faded oxblood stripe', '743e3d', .94, secondary='a15d51', grain=35)
 _fleather = material('Alchemy | cracked brown leather', '4a2b21', .86, secondary='78503a', grain=33)
 _fwax = material('Alchemy | ivory wax', 'e6c28c', .54)
 _flight = material('Alchemy | warm embers', 'f8ac47', .45)
 _fstone = material('Alchemy | mortar granite', '585657', .93, secondary='8b8580', grain=25)
+
+# Actual anisotropic procedural PBR microstructure (not a painted 2-D filter).
+# Long oak fibres follow the plank axes; scratched steel and woven cloth have
+# different roughness/bump patterns. Material nodes survive in the .blend file.
+def _microtexture(mat, axis=(1,1,1), frequency=3.0, strength=.12, distance=.045):
+    nt=mat.node_tree
+    nodes=nt.nodes
+    links=nt.links
+    bsdf=nodes.get('Principled BSDF')
+    coord=nodes.new('ShaderNodeTexCoord')
+    stretch=nodes.new('ShaderNodeVectorMath')
+    stretch.operation='MULTIPLY'
+    stretch.inputs[1].default_value=axis
+    links.new(coord.outputs['Generated'],stretch.inputs[0])
+    noise=nodes.new('ShaderNodeTexNoise')
+    noise.inputs['Scale'].default_value=frequency
+    noise.inputs['Detail'].default_value=5
+    noise.inputs['Roughness'].default_value=.68
+    links.new(stretch.outputs['Vector'],noise.inputs['Vector'])
+    bump=nodes.new('ShaderNodeBump')
+    bump.inputs['Strength'].default_value=strength
+    bump.inputs['Distance'].default_value=distance
+    links.new(noise.outputs['Fac'],bump.inputs['Height'])
+    links.new(bump.outputs['Normal'],bsdf.inputs['Normal'])
+
+for _wood in (_fwood,_fedge,_fdark,_fleather):
+    _microtexture(_wood,(.38,8,2.4),2.9,.26,.075)
+for _metal in (_firon,_fcopper,_fbrass):
+    _microtexture(_metal,(1.2,1.2,1.2),25,.23,.021)
+for _textile in (_fcloth,_fstripe):
+    _microtexture(_textile,(7,7,1),11,.19,.035)
 
 def _part(label, xyz, dimensions, mat=_fwood, radius=.009):
     return cube(label, xyz, dimensions, mat, radius)
@@ -171,6 +202,10 @@ def _chair_base(arm=False):
         _part('Chair longitudinal stretcher',(x,0,.29),(.072,.70,.076),_fdark,.010)
     for y in (-depth,depth):
         _part('Chair transverse stretcher',(0,y,.33),(2*w,.07,.071),_fdark,.010)
+    for x in (-w,w):
+        _part('Hand-forged chair leg side shield',(x,-depth,.67),(.135,.029,.15),_firon,.01)
+        _pin('Chair shield rivet',(x,-depth-.023,.67),.018,_fbrass)
+    # Mechanical wear is modeled on individual parts, not drawn over PNGs.
     # Solid backboard and two forged rails, with matching visible wood grain.
     for j in range(3):
         xx=-w+.11+j*(w-.11)
@@ -180,6 +215,16 @@ def _chair_base(arm=False):
     for xx in (-w*.65,0,w*.65):
         _pin('Brass crest rivet',(xx,depth-.054,back_height-.15),.021,_fbrass)
     _part('Chair linen cushion',(0,-.015,.79),(seat_w-.09,.63,.065),_fcloth,.023)
+    # Physical brass-inlaid alchemical signet on the outward backrest face.
+    # Four slim bars compose the circle's cardinal etching and tiny center boss.
+    bpy.ops.mesh.primitive_torus_add(major_radius=.105,minor_radius=.010,
+            location=(0,depth+.067,1.17),major_segments=30,minor_segments=8)
+    mark=bpy.context.object;mark.name='Embossed alchemist ring sigil'
+    mark.rotation_euler.x=_math.pi/2
+    mark.data.materials.append(_fbrass)
+    _part('Sigil horizontal stroke',(0,depth+.080,1.17),(.19,.014,.010),_fbrass,.003)
+    _part('Sigil vertical stroke',(0,depth+.080,1.17),(.014,.014,.19),_fbrass,.003)
+    _part('Sigil center stud',(0,depth+.096,1.17),(.035,.017,.035),_fcopper,.005)
     for x in (-.12,-.07):
         _part('Chair faded stripe',(x,-.012,.828),(.025,.59,.007),_fstripe,.004)
     if arm:
