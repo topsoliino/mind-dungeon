@@ -45,9 +45,10 @@ Vollständige Minimalvorlage (illustrativ; Freigaben separat):
 |---|---|
 | schema | Exakt mind-dungeon-room/v1. Unbekannte Version melden statt blind interpretieren. |
 | id, name | Stabile Vorlagen-ID und Anzeigename. Jede platzierte Instanz erhält zusätzlich eine eindeutige Instanz-ID. |
-| width, height | Ganze Rasterfelder, aktuell jeweils 2–30. Die Grundfläche ist ein vollständiges Rechteck. |
+| width, height | Ganze Rasterfelder, aktuell jeweils 2–30. Ohne floorCells vollständiges Rechteck, sonst Begrenzung der expliziten Zellmaske (Kapitel 13). |
 | floorStyle | Standardmaterial des Bodens, Schlüssel aus catalog.floors. |
 | wallStyle | Im Editor ausgewählter Standard-Wandtyp, NICHT eine implizite Umrandung. |
+| floorCells | Optional: explizite begehbare Grundrisszellen {x,y}, siehe Kapitel 13. |
 | tiles | Optionale Bodenmaterial-Overrides mit x, y, style; leeres Array bedeutet Standardboden, keine fehlenden Bodenzellen. |
 | walls | Explizite, je ein Rasterfeld lange horizontale/vertikale Wandsegmente, einschließlich innerer Wände. |
 | furniture | Objektinstanzen; Position, Rotation, Kollisions-/Interaktionsflags, ggf. Wandbindung. |
@@ -259,3 +260,10 @@ Zusätzlich in der tatsächlich spielbaren Beta mit dem originalen Wächter test
 > Lies beta/room-editor/README-GENERATOR-INTEGRATION.md und AGENTS.md sowie die aktuellen Beta-Quellen. Integriere ausschließlich die von mir freigegebenen Room-JSON-Dateien mit exakt vereinbarten Stückzahlen je vereinbartem Level/Storey-Scope in den echten Beta-Generator. Bewahre authored Geometrie, Materialien, Möbel und Portale vollständig. Verwende die dokumentierte segmentweise Nachbarschaftsprüfung, reale Erreichbarkeit einschließlich Progression und deterministisches Backtracking. Verändere keine anderen Gameplay-Systeme. Teste die Integration automatisiert und in der spielbaren Beta; dokumentiere Commit, Test-Seeds, Quoten und verbleibende Grenzen. Falls die Vorgaben nicht erfüllbar sind, melde den konkreten Konflikt statt Wände oder Quoten zu verändern.
 
 **Aktueller Status:** Dieses Dokument definiert den zukünftigen Vertrag. Kein Generatorcode wurde für diese README geändert. Quotenmanifest, Template-Adapter, vollständige Navigation und Integration in die Beta stehen noch aus.
+
+
+### 13. Erweiterung: frei gezeichnete Grundrisse (Floor Brush)
+
+**Aktuelle Schema-Erweiterung (abwärtskompatibel):** `floorCells` ist optional und enthält explizite `{ "x": 0, "y": 0 }`-Bodenfelder. Ohne Feld gilt wie zuvor das vollständige Rechteck. Mit Feld gilt ausschließlich die aufgezählte, nichtleere, orthogonal zusammenhängende Zellmenge. `width`/`height` begrenzen das Raster (2–30), sind aber nicht die begehbare Fläche. `tiles` bleibt Material-Metadaten, nicht Occupancy. Nutze [shape.js](shape.js) als Referenz. L-/U-Formen und Aussparungen dürfen nicht durch automatische Rechteckfüllung geschlossen werden. Render-/Collision-/Fog-/Pathfinding- und Treppenprüfung auf tatsächlicher Zellmenge durchführen. Bei Rotation jede Zelle aus ihren transformierten Ecken rekonstruieren. Wände müssen an mindestens ein Bodenfeld grenzen; niemals automatisch abbauen.
+
+Portale können nun zusätzlich `line` enthalten: feste Koordinate der Kante (bei north/south Y, bei west/east X). Fehlt `line`, gelten die bisherigen Außenlinien 0 bzw. width/height. Beispiel `{"side":"south","line":2,"offset":3,"width":1}` beschreibt (3,2)→(4,2), mit Boden nördlich der Kante und ohne Boden südlich. Für jedes Teilsegment des Portals muss auf der inneren Seite eine belegte Zelle und auf der äußeren Seite keine belegte Zelle liegen. `side` ist die Außen-Normale, nicht zwingend die Seite des Begrenzungsrechtecks. Portale an Einbuchtungen sind zulässig. Bei Brush-Erweiterung bleiben bestehende Portalpositionen durch explizite `line` erhalten; werden sie zu Innenkanten, sind sie ungültig und müssen vom Nutzer angepasst werden. Vollständige Integration in den Beta-Generator bleibt ein separater Auftrag.
