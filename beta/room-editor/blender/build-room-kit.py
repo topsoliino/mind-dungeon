@@ -254,7 +254,13 @@ for name,rig in all_furniture:
         for ob in (other,*other.children):
             ob.hide_render=not show
     if name not in ('table','chair'):
-        scene.cycles.samples=min(scene.cycles.samples,36)
+        # Render the half-size in-world meshes with twice the pixel density.
+        # The editor draws these 512px images at half the old sprite size,
+        # preserving REAL scale against the original in-game Guardian.
+        camera.data.ortho_scale=3.35*.5
+        camera.location.z=5.72-.72*(1-.5)
+        scene.view_settings.exposure=-.42
+        scene.cycles.samples=min(scene.cycles.samples,40)
     for rot in (0,90,180,270):
         rig.rotation_euler.z=math.radians(90-rot)
         scene.render.filepath=str(RAW/('%s-%s.png'%(name,rot)))
