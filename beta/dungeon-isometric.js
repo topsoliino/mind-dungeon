@@ -201,14 +201,36 @@
    return [...floors,...incoming,...buildings,...upperWalls,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),
     ...verticalObjects,...atmosphere];
   }
+  // Mobile GPUs cannot safely re-upload hundreds of dungeon canvas textures
+  // after each asynchronous material load. Defer uploads for offscreen panels.
+  const dirtyCanvasTextures=new Set();
   function addLayers(scene,player){
    const textures=new Map();
-   const images=layers(player,false).map(({canvas,x,y,depth},index)=>{
+   const initial=layers(player,false);
+   const images=initial.map(({canvas,x,y,depth},index)=>{
     let key=textures.get(canvas);
     if(!key){key='alley-layer-'+index;scene.textures.addCanvas(key,canvas);textures.set(canvas,key);}
     return scene.add.image(x,y,key).setOrigin(0).setDepth(depth);
    });
-   art.onArtReady(()=>images.forEach(image=>image.texture.refresh()));
+   art.onArtReady(changed=>{
+    if(!Array.isArray(changed)){
+     // Legacy listeners: perform the normal update only if a caller cannot
+     // report changed canvases. Current art callbacks always report them.
+     for(const image of images)image.texture.refresh();
+     return;
+    }
+    for(const canvas of changed)if(textures.has(canvas))
+     dirtyCanvasTextures.add(canvas);
+    // Upload only the already visible panels. Hidden room walls are uploaded
+    // on first entering the viewport, not all at once on the iPhone.
+    if(lastLayerRefresh?.images===images)images.forEach((image,index)=>{
+     const canvas=initial[index].canvas;
+     if(image.visible&&dirtyCanvasTextures.has(canvas)){
+      image.texture.refresh();
+      dirtyCanvasTextures.delete(canvas);
+     }
+    });
+   });
    return images;
   }
   // Layer canvases and structural depths never change once the seed is baked.
@@ -244,6 +266,10 @@
     if(image.depth!==depth)image.setDepth(depth);
     if(image.alpha!==alpha)image.setAlpha(alpha);
     if(image.visible!==drawn)image.setVisible(drawn);
+    if(drawn&&dirtyCanvasTextures.has(canvas)){
+     image.texture.refresh();
+     dirtyCanvasTextures.delete(canvas);
+    }
    });
   }
   let canvasLayers=null;
