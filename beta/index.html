@@ -1642,6 +1642,10 @@ function selectAltarQuestion(siteId){
 const sealTarget=()=>Math.min(2,questions.length);
 let pending=null,brewQuestion=null,queuedAltar=null;
 function emptyCup(source){return {kind:'cup',id:'cup',rarity:'rare',source};}
+// Give existing isometric playtest saves one vessel without duplicating cups.
+if(generationMode&&Array.isArray(save.inventory)&&!save.inventory.some(it=>it.kind==='cup')){
+ save.inventory.push(emptyCup('Brau-Playtest'));
+}
 function brewEffectLabel(entry){
  const effect=brewing.effects[entry.id];
  return effect.label+' — '+effect.description+(entry.rank==='mythic'?' · +15 % eingehender Schaden':'');
@@ -2332,7 +2336,7 @@ function applyStrike(attack,swing){
   const hp=sitePlan.strike(site,attack.amount*(charged?1.5:1));
   (save.rockySites??={})[site.id]={hp};persist();
   breakImpact({...site,x:hp?x:site.x,y:hp?y:site.y,span:extent*2},hp,ang);
-  tell(hp?'Siegeltor · '+Math.ceil(hp)+' LP':'Siegeltor zerstört');
+  if(!hp)tell('Siegeltor zerstört');
  }
  const obstruction=world.weaponImpact(swing.x,swing.y,ang,swing.reach);
  const props=world.meleeFurniture(swing.x,swing.y,ang,swing.reach,profile,contact,obstruction);
@@ -5494,6 +5498,12 @@ function drawAlleyHudEffects(dot,bar){
   const p=iso.toView(e.x,e.y,foeDisplaySize(e)*.71);
   bar(p.x,p.y,e.hp/e.max);
  }
+ // Damaged, unsealed gates share the existing world-space healthbar renderer.
+ for(const site of window.AlleyGenerator?.levelSites?.active()??[]){
+  if(site.kind!=='door'||site.open||!site.unsealed||site.hp==null||site.hp>=320)continue;
+  const p=iso.toView(site.x,site.y,70);
+  bar(p.x,p.y,Math.max(0,Math.min(1,site.hp/320)),54);
+ }
 }
 function drawAlleyCanvas(){
  const actor=alleyActor(),alpha=heroAlpha(),lift=alleyVertical?.state.z??vault?.lift??0;
@@ -5520,9 +5530,9 @@ function drawAlleyCanvas(){
  if(soulVessels.length)ghostFog?.draw(s,soulVessels,regionVisibleAt,vesselView,combatClock,false);
  drawAlleyHudEffects((x,y,r,color,opacity)=>{
   s.globalAlpha=opacity;s.fillStyle=color;s.beginPath();s.arc(x,y,r,0,TAU);s.fill();s.globalAlpha=1;
- },(x,y,health)=>{
-  s.fillStyle='#211517';s.fillRect(x-15,y,30,4);
-  s.fillStyle='#ca846a';s.fillRect(x-15,y,30*Math.max(0,health),4);
+ },(x,y,health,width=30)=>{
+  s.fillStyle='#211517';s.fillRect(x-width/2,y,width,5);
+  s.fillStyle='#ca846a';s.fillRect(x-width/2,y,width*Math.max(0,health),5);
  });
 }
 function drawCanvasHero(){
@@ -5806,9 +5816,9 @@ class DungeonScene extends Phaser.Scene{
    this.alleyEffects.clear();
    drawAlleyHudEffects((x,y,r,hex,alpha)=>{
     this.alleyEffects.fillStyle(color(hex),alpha).fillCircle(x,y,r);
-   },(x,y,health)=>{
-    this.alleyEffects.fillStyle(0x211517).fillRect(x-15,y,30,4);
-    this.alleyEffects.fillStyle(0xca846a).fillRect(x-15,y,30*Math.max(0,health),4);
+   },(x,y,health,width=30)=>{
+    this.alleyEffects.fillStyle(0x211517).fillRect(x-width/2,y,width,5);
+    this.alleyEffects.fillStyle(0xca846a).fillRect(x-width/2,y,width*Math.max(0,health),5);
    });
    __mark('hudEffects');
    this.renderGhostVisuals(true);
@@ -6379,7 +6389,7 @@ for(const id of ['md-color','md-skin','md-hair','md-gender'])document.getElement
 updatePreview();
 mdButton('md-back',mdTitle);mdButton('md-begin',()=>{const name=document.getElementById('md-name').value.trim();if(!name){alert('Bitte gib einen Namen ein.');return}if(!confirm('Neuen Charakter beginnen? Der aktuelle lokale Spielstand wird ersetzt.'))return;
 const c=classes[selected],attrs=classAttributes(c),armor=items.startingArmor(c.id);
-const newSave={ingredients:[],hp:32+(attrs.vigor||10)*3,x:5.5*TILE,y:6.5*TILE,xp:0,gold:0,kills:0,solved:{},packs:save.packs||[],opened:[],floor:1,gates:{},gateProgress:{},gateQuestions:{},level:1,attributes:attrs,inventory:[{kind:'weapon',id:c.weapon_id},...(c.starting_item_id?[{kind:'ring',id:c.starting_item_id}]:[]),...Object.values(armor).map(id=>({kind:'armor',id}))],equipment:{weapon:c.weapon_id,rings:[c.starting_item_id||null,null],armor},pendingLevels:0,enemyTier:1,playtime:0,character:{name,classId:c.id,className:c.name_de,gender:$('#md-gender').value,color:document.getElementById('md-color').value,skin:document.getElementById('md-skin').value,hair:document.getElementById('md-hair').value}};
+const newSave={ingredients:[],hp:32+(attrs.vigor||10)*3,x:5.5*TILE,y:6.5*TILE,xp:0,gold:0,kills:0,solved:{},packs:save.packs||[],opened:[],floor:1,gates:{},gateProgress:{},gateQuestions:{},level:1,attributes:attrs,inventory:[{kind:'weapon',id:c.weapon_id},...(c.starting_item_id?[{kind:'ring',id:c.starting_item_id}]:[]),...Object.values(armor).map(id=>({kind:'armor',id})),emptyCup('Startausrüstung')],equipment:{weapon:c.weapon_id,rings:[c.starting_item_id||null,null],armor},pendingLevels:0,enemyTier:1,playtime:0,character:{name,classId:c.id,className:c.name_de,gender:$('#md-gender').value,color:document.getElementById('md-color').value,skin:document.getElementById('md-skin').value,hair:document.getElementById('md-hair').value}};
 writeAndReload({...newSave,...run.freshRun(run.freshSeed()),activePack:save.activePack,trophies:save.trophies},true)})}
 function mdSaves(){
 show('<div class="md-kicker">Chroniken der Wanderer</div><h2 class="md-title">Spielstände</h2><p class="md-status">Lokal wird immer der aktuelle Charakter gesichert. Cloud-Slots sind an dein Konto gebunden.</p><div class="md-slot"><div><b>Lokaler Spielstand</b><br><small>'+mdEscape(save.character?.name||'Wanderer')+' · '+mdDuration(save.playtime)+'</small></div><button id="md-local">Fortsetzen</button></div><div id="md-cloud-slots"><p>Cloud-Spielstände werden geladen …</p></div><div class="md-actions"><button id="md-account">Konto</button><button id="md-back">Zurück</button></div>','saves');
