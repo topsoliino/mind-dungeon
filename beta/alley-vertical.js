@@ -472,6 +472,7 @@ function createLayers({project,polygon,line,cacheObject,cacheStair=cacheObject,p
    return [{x:x-.38,y:y-.38},{x:x+.38,y:y-.38},{x:x+.38,y:y+.38},{x:x-.38,y:y+.38}];
   })();
   const image=cacheStair(boundsFor(hatch),8,ctx=>{
+   if(link.kind==='stairs')return;
    const openings=link.kind==='stairs'?steps.map(step=>step.corners):[hatch];
    for(const points of openings)polygon(ctx,points.map(p=>project(p.x,p.y,0)),'#252b38','#535b66');
    ctx.save();ctx.beginPath();

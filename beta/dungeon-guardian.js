@@ -14,7 +14,7 @@
   if(!response.ok)throw new Error('Wächter-Animationen konnten nicht geladen werden.');
   const atlas=await response.json();
   if(settings?.ok)light=await settings.json();
-  const {loadRig}=await import('./dungeon-guardian-rig.js?v=9');
+  const {loadRig}=await import('./dungeon-guardian-rig.js?v=hammer1');
   const rig=await loadRig(root+'guardian-rig.glb.gz?v=3',atlas.clips);
   return {atlas,rig};
  }

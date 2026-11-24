@@ -154,6 +154,39 @@
     return {canvas,x:x-size/2,y:y-size*.71,depth:y,complete:kind==='chest'?completed:null};
    });
   });
+  const stairWindows=new Map();
+  function stairWindow(link,lower,drawActors,time){
+   const points=link.mouth.flatMap(step=>step.corners.map(p=>project(p.x,p.y)));
+   if(!points.length)return null;
+   const key=lower+'-'+link.id;
+   let windowImage=stairWindows.get(key);
+   if(!windowImage){
+    const x=Math.floor(Math.min(...points.map(p=>p[0]))),y=Math.floor(Math.min(...points.map(p=>p[1])));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.ceil(Math.max(...points.map(p=>p[0])))-x+1;
+    canvas.height=Math.ceil(Math.max(...points.map(p=>p[1])))-y+1;
+    windowImage={image:canvas,x,y,width:canvas.width,height:canvas.height,originX:0,originY:0,key:'shaft-'+key,depth:1,last:-Infinity};
+    stairWindows.set(key,windowImage);
+   }
+   const w=windowImage;w.live=time-w.last>=.085;
+   if(!w.live)return w;
+   w.last=time;
+   const ctx=w.image.getContext('2d'),h=vertical.height;
+   ctx.clearRect(0,0,w.width,w.height);ctx.save();ctx.translate(-w.x,-w.y);ctx.beginPath();
+   for(const step of link.mouth){
+    step.corners.forEach((p,i)=>ctx[i?'lineTo':'moveTo'](...project(p.x,p.y)));ctx.closePath();
+   }
+   ctx.clip();ctx.translate(0,h);
+   function paint(part){
+    if(part.x+part.canvas.width<w.x||part.x>w.x+w.width||part.y+h+part.canvas.height<w.y||part.y+h>w.y+w.height)return;
+    ctx.drawImage(part.canvas,part.x,part.y);
+   }
+   for(const part of ground)if(!part.street)paint(part);
+   const walls=art.structures(...project(link.top.x,link.top.y)).filter(p=>!p.street);
+   const parts=upperArchitecture.filter(p=>p.flight===link.flight&&p.kind.startsWith('stair-'));
+   for(const part of [...walls,...parts].sort((a,b)=>a.depth-b.depth))paint(part.image);
+   drawActors(ctx);ctx.restore();return w;
+  }
   function layers(player,opened){
    const {x,y}=toView(player.x,player.y);
    const street=!prison?.enabled||prison.hasEntrance&&prison.storey===1;
@@ -191,7 +224,7 @@
    });
    const stacked=prison?.enabled&&!prison.last;
    const h=vertical?.height??0;
-   const t=stacked?Math.max(0,Math.min(1,((vertical.state.z/h)-.62)/.38)):0;
+   const t=stacked?Math.max(0,Math.min(1,((vertical.state.z/h)-.32)/.68)):0;
    const blend=t*t*(3-2*t);
    const floors=ground.map(p=>({...p,visible:!p.street||street}));
    const incoming=prison?.enabled?ground.filter(p=>!p.street).map(p=>({...p,y:p.y-h,depth:3999,alpha:blend,visible:blend>0})):[];
@@ -266,7 +299,8 @@
     if(image.depth!==depth)image.setDepth(depth);
     if(image.alpha!==alpha)image.setAlpha(alpha);
     if(image.visible!==drawn)image.setVisible(drawn);
-    if(drawn&&dirtyCanvasTextures.has(canvas)){
+    const approaching=stair&&progress>.08&&inView&&depth>=3999&&!drawn;
+    if((drawn||approaching)&&dirtyCanvasTextures.has(canvas)){
      image.texture.refresh();
      dirtyCanvasTextures.delete(canvas);
     }
@@ -324,7 +358,7 @@
   const lab=map.stations.lab?unit(map.stations.lab.at):spawn;
   const nearStation=(actor,target)=>Math.hypot(actor.x-target.x,actor.y-target.y)<82&&
    pointBetween(actor,target,(x,y)=>walkable(x,y,0,false));
-  return {spawn,chest,archer,knowledge,lab,walkable,walkableOnFloor,groundWalkable,
+  return {stairWindow,spawn,chest,archer,knowledge,lab,walkable,walkableOnFloor,groundWalkable,
    clearLine,clearLineOnFloor,canInteract,routeTo,routeToFloor,cameraOrigin,addLayers,refreshLayers,drawLayers,
    vertical,
    enemies:{archive:(map.encounter.archive??[]).map(unit),lab:(map.encounter.lab??[]).map(unit)},

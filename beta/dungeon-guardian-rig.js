@@ -21,7 +21,7 @@ function light(scene,color,intensity,x,y,z){
 
 function visibleParts(clip,progress,armed){
  const visible=new Set();
- if(armed)visible.add('sword');
+ if(armed)visible.add(armed==='hammer'?'hammer':'sword');
  if(clip.startsWith('eat')){
   if(progress>=.1&&progress<.86)visible.add('face');
   if(progress>=.24&&progress<.80)visible.add(progress<.53?'bread':'bite');
@@ -85,6 +85,18 @@ export async function loadRig(url,clips={}){
   const attachments=[];
   pivot.traverse(node=>{if(node.userData.guardian_part)attachments.push(node);});
 
+  let hammerRequest;
+  function prepareHammer(){
+   if(!hammerRequest)hammerRequest=new GLTFLoader().loadAsync(new URL('art/player-study/guardian-hammer.glb',import.meta.url).href).then(asset=>{
+    const grip=gltf.scene.getObjectByName('HammerR'),source=asset.scene.getObjectByName('HammerR');
+    if(!grip||!source)throw Error('Hammergriff fehlt');
+    for(const mesh of [...source.children]){
+     mesh.visible=false;mesh.userData.guardian_part='hammer';grip.add(mesh);attachments.push(mesh);
+    }
+    previousPose='';
+   }).catch(error=>{hammerRequest=null;console.warn(error);});
+   return hammerRequest;
+  }
   const book=new Group(),pages=new MeshStandardMaterial({color:0xf1dfaa,roughness:.9}),
    leather=new MeshStandardMaterial({color:0x673b27,roughness:.77}),
    ink=new MeshStandardMaterial({color:0x68533b,roughness:1});
@@ -151,7 +163,7 @@ export async function loadRig(url,clips={}){
  let yaw=null,previousTime=null,previousPose='',previousClip=null,transition=null;
  let lastDrawTime=-Infinity,lastArmed=null;
   return {
-   canvas,displaySize,ground,
+   canvas,displaySize,ground,prepareHammer,
    get backend(){return renderer.isWebGLRenderer?'WebGL':'Canvas 2D';},
    render(clip,[start,count],progress,viewAngle,armed,time){
     const angle=Math.atan2(Math.cos(viewAngle),Math.sin(viewAngle)/Math.sin(elevation));
