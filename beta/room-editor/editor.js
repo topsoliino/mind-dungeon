@@ -19,7 +19,7 @@ for(const type of Object.keys(cat.furniture))for(const rot of [0,90,180,270]){
  const img=new Image();const name=spriteName(type,rot);assets.set(name,{img,ready:false});
  img.onload=()=>{assets.get(name).ready=true;dirty=true;updateAssetInfo()};
  img.onerror=()=>updateAssetInfo();
- img.src=name+'?v=alchemy-20261124';
+ img.src=name+'?v=alchemy-sculpt-v2';
 }
 function updateAssetInfo(){
  const furniture=[...assets.values()].filter(v=>v.ready).length;
@@ -640,7 +640,7 @@ for(const [type,entry] of Object.entries(cat.furniture)){
  b.dataset.furniture=type;
  const icon=document.createElement('span');icon.className='catalog-icon';
  const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
- thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=alchemy-20261124';
+ thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=alchemy-sculpt-v2';
  thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.interaction==='brew'?'♨':'▤'};
  icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
