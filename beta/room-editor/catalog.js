@@ -229,7 +229,7 @@ const catalog={
    footprint:{w:0.78,h:0.47},height:0.48,
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
    maxHP:120,material:'damp granite + oak bucket + iron rings',render:'blender-ortho-4'
-  ,
+  },
   'floor-rubble':{
    label:'Broken Stone Rubble',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-rubble',extension:'png',editorSpriteScale:.5,
    footprint:{w:0.75,h:0.51},height:0.15,
