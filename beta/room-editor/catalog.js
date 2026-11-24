@@ -113,7 +113,9 @@ const catalog={
   },
   // Keep the original bars ID for existing saved rooms and presets.
   bars:{label:'Geschmiedetes Zellen-Gitter · klassisch',height:2.05,solid:true,
-   render:'metal-bars',asset:'walls/bars'},
+   render:'blender-bars',variant:'full',
+   asset:'assets/walls/prison-grille-full-front.png',
+   cameraOrthoScale:2.5,worldWidth:1,material:'pitted forged black iron + rust'},
   'bars-full':{
    label:'Gefängnisgitter · volle Wandhöhe (2 m)',height:2,solid:true,
    render:'blender-bars',variant:'full',asset:'assets/walls/prison-grille-full-front.png',
