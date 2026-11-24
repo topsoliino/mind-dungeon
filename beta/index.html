@@ -905,7 +905,7 @@ function startGroundPickup(orb){
     alleyVertical?.state.transition||(orb.id&&coopTransferBusy))return;
  const distance=Math.hypot(orb.x-player.x,orb.y-player.y);
  if(distance>82)return;
- if(distance>24){
+ if(distance>30){
   // Walk to arm's reach before performing the existing Guardian pickup.
   // The route solver checks walls, props and the hero's collision radius.
   const angle=Math.atan2(player.y-orb.y,player.x-orb.x);
