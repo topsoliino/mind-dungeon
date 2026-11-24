@@ -247,13 +247,15 @@ except:pass
 
 exec(compile((Path(__file__).parent/'alchemy-furniture.py').read_text(),
              str(Path(__file__).parent/'alchemy-furniture.py'),'exec'),globals())
-all_furniture=[('table',table),('chair',chair),*ALCHEMY_MODELS]
+_environment_source=Path(__file__).parent/'crypt-environment.py'
+exec(compile(_environment_source.read_text(),str(_environment_source),'exec'),globals())
+all_furniture=[('table',table),('chair',chair),*ALCHEMY_MODELS,*ENV_MODELS]
 for name,rig in all_furniture:
     for other in (model for _,model in all_furniture):
         show=other==rig
         for ob in (other,*other.children):
             ob.hide_render=not show
-    if name.startswith(('wall-','arch-')):
+    if name.startswith(('wall-','arch-','light-','deco-')):
         # Architecture is physically larger (real metre-scale masonry) and
         # deliberately lit like a damp crypt, not a clean product turntable.
         # Do not change lighting for older furniture or the prison grilles.
@@ -263,7 +265,7 @@ for name,rig in all_furniture:
         background.inputs['Strength'].default_value=.38
         bpy.data.objects['Guardian warm key'].data.size=2.65
         bpy.data.objects['Guardian blue fill'].data.energy=285
-        scene.cycles.samples=min(scene.cycles.samples,48)
+        scene.cycles.samples=min(opt.samples,28 if name.startswith(('light-','deco-')) else 36)
     elif name not in ('table','chair'):
         background.inputs['Strength'].default_value=.58
         bpy.data.objects['Guardian warm key'].data.size=4.2
@@ -273,7 +275,7 @@ for name,rig in all_furniture:
         scene.view_settings.exposure=-.42
         scene.cycles.samples=min(scene.cycles.samples,40)
     for rot in (0,90,180,270):
-        rig.rotation_euler.z=math.radians(90-rot)
+        rig.rotation_euler.z=math.radians(-90-rot if name.startswith('arch-') else 90-rot)
         scene.render.filepath=str(RAW/('%s-%s.png'%(name,rot)))
         bpy.ops.render.render(write_still=True)
         print('RENDERED',name,rot,scene.render.filepath,flush=True)
