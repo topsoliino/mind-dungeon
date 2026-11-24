@@ -877,8 +877,35 @@ function startGroundPickup(orb){
     isConsuming()||heldAttack||player.attack>0||player.dash>0||
     alleyVertical?.state.pending||alleyVertical?.state.stairRide||
     alleyVertical?.state.transition||(orb.id&&coopTransferBusy))return;
- if(Math.hypot(orb.x-player.x,orb.y-player.y)>58||
-    !alley.clearLine(player.x,player.y,orb.x,orb.y))return;
+ const distance=Math.hypot(orb.x-player.x,orb.y-player.y);
+ if(distance>82)return;
+ if(distance>24){
+  // Walk to arm's reach before performing the existing Guardian pickup.
+  // The route solver checks walls, props and the hero's collision radius.
+  const angle=Math.atan2(player.y-orb.y,player.x-orb.x);
+  const offsets=[0,-Math.PI/4,Math.PI/4,-Math.PI/2,Math.PI/2,Math.PI];
+  let route=null,goal=null;
+  for(const radius of [19,24,29]){
+   for(const offset of offsets){
+    const direction=angle+offset;
+    const candidate={x:orb.x+Math.cos(direction)*radius,
+                     y:orb.y+Math.sin(direction)*radius};
+    if(!alley.clearLine(candidate.x,candidate.y,orb.x,orb.y))continue;
+    const path=alley.routeTo(player,candidate);
+    if(path&&Math.hypot(path.goal.x-candidate.x,path.goal.y-candidate.y)<2){
+     route=path;goal=candidate;break;
+    }
+   }
+   if(route)break;
+  }
+  if(!route){tell('Der Gegenstand ist derzeit nicht erreichbar.');return;}
+  alleyMove=alleyMarker=null;
+  alleyRoute=route.steps.length?route.steps.slice():[goal];
+  alleyRoute.pickupOrb=orb;
+  finishAlleyApproach();
+  return;
+ }
+ if(!alley.clearLine(player.x,player.y,orb.x,orb.y))return;
  // An explicit E press overrides a pending right-click/chest route.
  alleyRoute=alleyMove=alleyMarker=null;player.moving=false;
  player.dir=Math.atan2(orb.y-player.y,orb.x-player.x);
@@ -2486,12 +2513,18 @@ function approachAlleyChest(){
 }
 function finishAlleyApproach(){
  if(!alleyRoute)return;
- const site=alleyRoute.chestSite;
+ const site=alleyRoute.chestSite,pickupOrb=alleyRoute.pickupOrb;
  const goal=alleyRoute[0];
  if(Math.hypot(goal.x-player.x,goal.y-player.y)>.05)return;
  alleyRoute.shift();
  if(alleyRoute.length)return;
  alleyRoute=null;aimMode='keyboard';
+ if(pickupOrb){
+  // Loot claimed or removed during travel must not reappear.
+  if(pickupOrb.id?coopRemoteLoot.some(o=>o.id===pickupOrb.id):
+     save.souls.includes(pickupOrb))startGroundPickup(pickupOrb);
+  return;
+ }
  if(alleyVertical?.state.pending){
   const task=alleyVertical.state.pending;
   alleyVertical.state.pending=null;
@@ -3428,7 +3461,7 @@ function update(dt){
  }
 updateTransientEffects(dt);
 if(alley){
- const orb=save.souls.find(item=>Math.hypot(item.x-player.x,item.y-player.y)<56&&alley.clearLine(player.x,player.y,item.x,item.y));
+ const orb=save.souls.find(item=>Math.hypot(item.x-player.x,item.y-player.y)<82&&alley.clearLine(player.x,player.y,item.x,item.y));
  if(generationMode){
  const site=window.AlleyGenerator.levelSites?.active().find(s=>{
   if(s.open||s.unsealed||s.kind==='chest'&&save.rockySites?.[s.id])return false;
@@ -3547,7 +3580,7 @@ const placeName=lowerPassage?(lowerPassage.style==='bridge'?'Brückenunterführu
 $('#zone').textContent='Tiefe '+save.floor+'/'+LAST_DEPTH+' · '+([1,2].includes(layer)?layerNames[layer]+' · ':'')+placeName;$('#progress').textContent=`${questions.filter(q=>save.solved[q.id]>0).length}/${questions.length} Fragen · ${sanctuary&&inRest(player.x,player.y)?'Im Schutz des Leuchtfeuers':(authorityMode?authorityRemaining:enemies.length)+' Gegner auf dieser Ebene'}${player.webSlow>0||onWeb()?' · Verlangsamt':''}${player.poison?' · Vergiftet':''}${world.outsideAt(player.x,player.y)?.light?' · '+({day:'Tag',evening:'Abend',night:'Nacht'}[world.outsideAt(player.x,player.y).light]):''}${world.hailAt(player.x,player.y)?' · Hagel (Frost +35 %)':world.waterAt(player.x,player.y)?' · Wasser (Blitz +35 %)':inRain(player.x,player.y)?' · Regen (Feuer −45 %)':''}${save.activeBrew?' · Trank '+Math.ceil(save.activeBrew.remaining)+' s':''}${items.madnessBonus(save,save.equipment.rings)>1?' · Wahn '+Math.ceil(save.madnessUntil-save.playtime)+' s':''}`;
 }
 if(performance.now()>noticeUntil)$('#notice').style.opacity=0;
-const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=alleyRoute?(alleyVertical?.state.pending?.connector.kind==='ladder'?'Zur Leiter …':alleyVertical?.state.pending?'Zur Treppe …':'Zur Truhe …'):interactionHint(near);
+const prompt=$('#dungeonPrompt');updateSoulPreview();const hint=alleyRoute?(alleyRoute.pickupOrb?'Zum Gegenstand …':alleyVertical?.state.pending?.connector.kind==='ladder'?'Zur Leiter …':alleyVertical?.state.pending?'Zur Treppe …':'Zur Truhe …'):interactionHint(near);
 prompt.hidden=!hint||Boolean(modalType);$('#mobileInteract').hidden=alley?Boolean(modalType):!hint||Boolean(modalType)||Boolean(alleyRoute);if(hint){
  const text=alleyRoute?hint:(controllerInUse?'[ A ] ':matchMedia('(pointer:coarse)').matches?'':'[ E ] ')+hint;
  if(prompt.textContent!==text)prompt.textContent=text;
