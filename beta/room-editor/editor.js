@@ -522,11 +522,25 @@ function draw(){
    moving:playing&&hero.moving,vault:playing?hero.vault:0,zoom
   })
  });
+ // Ground-bound roaches render after floor clutter, but before every wall,
+ // furniture mesh and the Guardian. Flying insects keep their previous pass.
+ const drawAmbient=kind=>{
+  for(const o of active)if(cat.furniture[o.type].ambient===kind){
+   let path=ambientRoutes.get(o.id);
+   if(!path){path=environment.route(room,cat,shape,placement,o);ambientRoutes.set(o.id,path);}
+   environment.insects(room,cat,shape,placement,o,now,ctx,pt,zoom,path);
+  }
+ };
  layers.sort((a,b)=>a.depth-b.depth);
- for(const layer of layers)layer.draw();
+ let groundPass=false;
+ for(const layer of layers){
+  if(!groundPass&&layer.depth>=-50000){drawAmbient('roach');groundPass=true;}
+  layer.draw();
+ }
+ if(!groundPass)drawAmbient('roach');
  environment.drawGlow(ctx,lightPoints,pt,now,zoom);
  for(const l of lightPoints)environment.drawFlame(ctx,pt(l.x,l.y,l.z),l.size,l.phase,now,zoom);
- for(const o of active)if(cat.furniture[o.type].ambient){let path=ambientRoutes.get(o.id);if(!path){path=environment.route(room,cat,shape,placement,o);ambientRoutes.set(o.id,path);}environment.insects(room,cat,shape,placement,o,now,ctx,pt,zoom,path);}
+ drawAmbient('fly');
  if(!playing){
   if(['portal','wall','erase'].includes(tool))for(const w of room.walls){if(isNearWall(w)&&cat.walls[w.style]?.solid){const [a,b]=wallEnds(w);line([pt(...a),pt(...b)],'#aeb0ba',3);}}
   for(const p of room.portals||[]){if(p.offset+p.width>portals.span(room,p.side))continue;const [a,b]=portals.segment(room,p);line([pt(...a),pt(...b)],portals.inspect(room,p,cat,placement).ok?'#67d5b5':'#e97980',5);}
