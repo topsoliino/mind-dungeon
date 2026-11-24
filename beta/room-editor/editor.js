@@ -23,7 +23,9 @@ let playHP=new Map(),ambientRoutes=new Map(),lastAmbientFrame=0;
  // Images are served as immutable, cacheable static files from GitHub Pages;
  // GitHub raw/API requests would add latency and rate limits.
 const assets=new Map();
-const spriteVersion='gothic-ruins-architecture-pbr-v2-crypt-v3';
+const spriteVersion='gothic-ruins-architecture-pbr-v2-crypt-v4';
+let artRevision='',manifestState='prüfe Artwork-Manifest';
+const retryDelays=[900,3500,12000];
 function spriteName(type,rot){const spec=cat.furniture[type];return spec.asset+'-'+rot+'.'+(spec.extension||'webp')}
 // The bars are genuine Cycles renders, not CSS gradients or flat line art.
  // Each small, front-orthographic PBR texture is projected onto a geometrically
@@ -61,22 +63,53 @@ function spriteName(type,rot){const spec=cat.furniture[type];return spec.asset+'
   return true;
  }
  
-function spriteUrl(type,rot){return spriteName(type,rot)+'?v='+spriteVersion}
+function spriteUrl(type,rot){return spriteName(type,rot)+'?v='+spriteVersion+(artRevision?'-'+artRevision:'')}
+function loadSprite(entry,retry=false){
+ const ticket=++entry.ticket;
+ const img=new Image();entry.img=img;entry.ready=false;entry.failed=false;entry.loading=true;
+ const url=spriteUrl(entry.type,entry.rot)+(retry?'&retry='+Date.now()+'-'+ticket:'');
+ entry.url=url;
+ img.onload=()=>{
+  if(ticket!==entry.ticket)return;
+  if(!img.naturalWidth||!img.naturalHeight){img.onerror();return;}
+  entry.ready=true;entry.failed=false;entry.loading=false;entry.attempt=0;dirty=true;updateAssetInfo();
+ };
+ img.onerror=()=>{
+  if(ticket!==entry.ticket)return;
+  entry.failed=true;entry.loading=false;dirty=true;updateAssetInfo();
+  if(entry.attempt<retryDelays.length){
+   const delay=retryDelays[entry.attempt++];
+   setTimeout(()=>{if(ticket===entry.ticket&&entry.failed)loadSprite(entry,true);},delay);
+  }
+ };
+ img.src=url;
+}
 function requestSprite(type,rot){
- if(!cat.furniture[type])return null;
+ if(!cat.furniture[type]||cat.furniture[type].ambient)return null;
  const name=spriteName(type,rot);
  if(assets.has(name))return assets.get(name);
- const img=new Image(),entry={img,ready:false,failed:false};
- assets.set(name,entry);
- img.onload=()=>{entry.ready=true;entry.failed=false;dirty=true;updateAssetInfo()};
- img.onerror=()=>{entry.failed=true;dirty=true;updateAssetInfo()};
- img.src=spriteUrl(type,rot);
- updateAssetInfo();
- return entry;
+ const entry={type,rot,img:null,ready:false,failed:false,loading:false,attempt:0,ticket:0,url:''};
+ assets.set(name,entry);loadSprite(entry);updateAssetInfo();return entry;
+}
+async function refreshArtManifest(force=false){
+ try{
+  const res=await fetch('assets/manifest.json?v='+Date.now(),{cache:'no-store'});
+  if(!res.ok)throw Error('HTTP '+res.status);
+  const m=await res.json();
+  const revision=[m.generatorSha256,m.environmentGeneratorSha256,m.architectureGeneratorSha256].filter(Boolean).map(v=>v.slice(0,12)).join('-');
+  manifestState=m.environmentGeneratorSha256?'Crypt-Modelle im Manifest: '+Object.keys(m.items||{}).length:'Crypt-Modelle fehlen im veröffentlichten Manifest';
+  const changed=revision!==artRevision;artRevision=revision;
+  for(const entry of assets.values())if(changed||force||entry.failed){entry.attempt=0;loadSprite(entry,force);}
+  for(const thumb of document.querySelectorAll('img.catalog-thumb[data-asset-type]')){
+   thumb.dataset.src=spriteUrl(thumb.dataset.assetType,0);
+   if((changed||force)&&(thumb.getAttribute('src')||thumb.dataset.failed==='true')){thumb.dataset.failed='false';thumb.hidden=false;thumb.src=thumb.dataset.src+(force?'&retry='+Date.now():'');}
+  }
+ }catch(error){manifestState='Artwork-Manifest nicht erreichbar: '+error.message;if(force)for(const entry of assets.values())if(entry.failed){entry.attempt=0;loadSprite(entry,true);}}
+ updateAssetInfo();schedule();
 }
 function updateAssetInfo(){
  const furniture=[...assets.values()].filter(v=>v.ready).length;
- const failedSprites=[...assets.values()].filter(v=>v.failed).length;
+ const failedEntries=[...assets.values()].filter(v=>v.failed),failedSprites=failedEntries.length;
  const art=window.MindRoomArt?.status?.();
  $('assetStatus').textContent=(art?art.tiles+' · '+art.wallPhotos:'Materialien laden')+
   ' · Möbelansichten '+furniture+'/'+assets.size+' benötigt'+
@@ -91,7 +124,8 @@ function updateAssetInfo(){
    fallback+' Materialien werden bis zum Abschluss des GitHub-Asset-Builds direkt als Poly-Haven-Diffuse-Maps angezeigt. ':
    art?.assetWarning?art.assetWarning+'. ':'' )+
   'Nur sichtbare Boden-, Wand- und Möbelansichten werden bei Bedarf geladen. '+
-  ' Maßstab und Texturrichtung sind an die Weltachsen gebunden.';
+  ' Maßstab und Texturrichtung sind an die Weltachsen gebunden. '+manifestState+
+  (failedSprites?' · Fehlende Ansichten: '+failedEntries.map(v=>spriteName(v.type,v.rot)).join(', '):'');
 }
 const keyWall=w=>w.edge==='north'||w.edge==='south'?'h:'+w.x+':'+w.y:'v:'+w.x+':'+w.y;
 const isWall=w=>Number.isInteger(w.x)&&Number.isInteger(w.y)&&
@@ -131,6 +165,7 @@ function sanitize(raw){
    destroyable:typeof item.destroyable==='boolean'?item.destroyable:w.destroyable,
    vaultable:typeof item.vaultable==='boolean'?item.vaultable:w.vaultable,
    blocksMovement:typeof item.blocksMovement==='boolean'?item.blocksMovement:w.blocksMovement};
+  if(w.lights?.length)saved.lit=item.lit!==false;
   if((w.wallMounted||w.category==='wall-architecture')){
    // Preserve a genuine segment reference. Invalid/orphaned wall decor may
    // not float in space after deletion, import or room resize.
@@ -379,6 +414,7 @@ function drawFurniture(obj){
   ctx.scale(scale,scale);
   ctx.translate(-p.x,-p.y);
   shadeFurniture(obj.type,obj,'#4a322b','#171316','#74523d');ctx.restore();
+  if(exact&&(!sprite?.ready)){ctx.save();ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillStyle='#e1c394';ctx.fillText(sprite?.failed?'Asset fehlt':'Asset lädt…',p.x,p.y+13*zoom);ctx.restore();}
  }
  if(selected===obj.id){
   polygon(footprint(obj).map(({x,y})=>pt(x,y)), '#ffc97618',
@@ -501,7 +537,10 @@ function draw(){
  }
  const layers=[];
  const active=room.furniture.filter(o=>!playing||!playHP.has(o.id)||playHP.get(o.id)>0);
- const lightPoints=active.flatMap(o=>environment.lightPoints(o,cat.furniture[o.type]));
+ const lightPoints=active.flatMap(o=>{const spec=cat.furniture[o.type];if(!spec.lights?.length||o.lit===false)return [];
+  // Never present detached fire as a successfully loaded light fixture.
+  return requestSprite(o.type,o.rot)?.ready?environment.lightPoints(o,spec):[];
+ });
  const now=performance.now()/1000;
  for(const w of room.walls)if(!isNearWall(w))layers.push({depth:wallDepth(w),draw:()=>drawWall(w)});
  // Floor clutter always sits on stone UNDER the Guardian and furniture,
@@ -572,11 +611,13 @@ function getPointer(e){
 }
 function makeInstance(type,x,y,rot=0,id){
  const cfg=cat.furniture[type];
- if((cfg.wallMounted||cfg.category==='wall-architecture'))
-  return architecture.attach(type,room,cat,x,y,id);
+ if((cfg.wallMounted||cfg.category==='wall-architecture')){
+  const mounted=architecture.attach(type,room,cat,x,y,id);
+  return mounted&&cfg.lights?.length?{...mounted,lit:true}:mounted;
+ }
  const initial={id:id||type+'-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1000),
   type,x:quant(x),y:quant(y),rot,destroyable:cfg.destroyable,vaultable:cfg.vaultable,
-  blocksMovement:cfg.blocksMovement};
+  blocksMovement:cfg.blocksMovement,...(cfg.lights?.length?{lit:true}:{})};
  return placement.snap(initial,room,cat);
 }
 function chooseTool(next){
@@ -895,6 +936,8 @@ function refreshInspector(){
  $('propRotation').disabled=mounted;$('rotLeft').disabled=mounted;$('rotRight').disabled=mounted;
  $('propDestroyable').checked=obj.destroyable;$('propVaultable').checked=obj.vaultable;
  $('propBlocks').checked=obj.blocksMovement;
+ $('lightStateRow').hidden=!cat.furniture[obj.type].lights?.length;
+ $('propLit').checked=obj.lit!==false;
  const footprint=cat.furniture[obj.type].footprint;
  const spec=cat.furniture[obj.type];
  $('footprintLabel').textContent=(mounted?'WANDGEBUNDEN · '+obj.wallRef+' · ':
@@ -1017,9 +1060,10 @@ const categoryRank=e=>e.category==='lighting'?3:e.category==='ambient-life'?4:e.
  b.dataset.furniture=type;
  const icon=document.createElement('span');icon.className='catalog-icon';
  const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
- thumb.loading='lazy';thumb.decoding='async';thumb.dataset.src=spriteUrl(type,0);
+ thumb.loading='lazy';thumb.decoding='async';thumb.dataset.assetType=type;thumb.dataset.src=spriteUrl(type,0);
  if(!entry.ambient){if(thumbnailObserver)thumbnailObserver.observe(thumb);else thumb.src=thumb.dataset.src;}
- thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.kind==='rack'?'⚔':entry.kind==='shelf'?'▥':entry.kind==='cage'?'▦':entry.kind==='brazier'?'♨':entry.kind==='wheel'?'◎':entry.kind==='wall-prop'?'⛓':entry.kind==='cabinet'?'▯':entry.kind==='stocks'?'▣':entry.kind==='basin'?'◡':entry.kind==='bench'?'▰':entry.interaction==='brew'?'♨':'▤'};
+ thumb.onerror=()=>{thumb.dataset.failed='true';thumb.title='Sprite konnte nicht geladen werden: '+thumb.dataset.src;};
+ thumb.onload=()=>{thumb.dataset.failed='false';thumb.title='';};
  if(entry.ambient)icon.textContent=entry.ambient==='roach'?'♣':'✳';else icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
   entry.footprint.w+' × '+entry.footprint.h+' Felder · '+
@@ -1081,7 +1125,7 @@ $('selectedId').onchange=e=>{const value=e.target.value.trim();
  if(!value||room.furniture.some(f=>f.id===value&&f.id!==selected)){refreshInspector();return}
  changeSelected('id',value);selected=value;refreshUI();};
 for(const [id,key] of [['propX','x'],['propY','y']])$(id).onchange=e=>changeSelected(key,Math.round(Number(e.target.value)*1000)/1000);
-for(const [id,key] of [['propDestroyable','destroyable'],['propVaultable','vaultable'],['propBlocks','blocksMovement']])
+for(const [id,key] of [['propDestroyable','destroyable'],['propVaultable','vaultable'],['propBlocks','blocksMovement'],['propLit','lit']])
  $(id).onchange=e=>changeSelected(key,e.target.checked);
 $('deleteBtn').onclick=deleteSelected;
 $('duplicateBtn').onclick=()=>{
@@ -1161,6 +1205,9 @@ function loop(now){
 }
 requestAnimationFrame(loop);
 refreshUI();updateAssetInfo();
+$('reloadArtBtn').onclick=()=>refreshArtManifest(true);
+refreshArtManifest();
+window.addEventListener('focus',()=>{if([...assets.values()].some(v=>v.failed))refreshArtManifest();});
 window.MindRoomEditor={
  get room(){return clone(room)},get selected(){return selected},
  exportJSON:()=>JSON.stringify(sanitize(room),null,2),
