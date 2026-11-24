@@ -51,6 +51,7 @@
    <span class="toolbar-break"></span>
    <button id="guardianBtn" class="tool active" title="Originalen Wächter aus dem Hauptspiel als Stil- und Größenreferenz ein-/ausblenden">◆ Spiel-Wächter lädt …</button>
    <button id="playBtn" class="tool play" title="Kollision testen (P)">▶ Spieltest</button>
+   <button id="previewAudioBtn" class="tool" title="Synthetische räumliche Soundvorschau im Spieltest">Tonvorschau: aus</button>
    <button id="gridBtn" class="tool active subtle" title="Raster ein-/ausblenden (G)"># Raster</button>
    <button id="fitBtn" title="Raum in Ansicht einpassen">⤢</button>
   </nav>
@@ -59,7 +60,7 @@
    <div class="canvas-label" id="sceneLabel">GEFÄNGNISZELLE · ENTWURF 01</div>
    <div class="canvas-status" id="sceneStatus">V · Auswahl · Ziehen zum Verschieben</div>
    <div class="zoom-controls"><button id="zoomOutBtn" aria-label="Herauszoomen">−</button><output id="zoomValue">100%</output><button id="zoomInBtn" aria-label="Hineinzoomen">+</button></div>
-   <div class="play-hint" id="playHint" hidden>SPIELTEST: WASD bewegen · Rechtsklick = Bewegungsziel · Linksklick = Möbel angreifen · Leertaste = Vault · P beendet</div>
+   <div class="play-hint" id="playHint" hidden>SPIELTEST: WASD bewegen · Rechtsklick = Bewegungsziel · Linksklick = Möbel angreifen · E = Mechanismus · Leertaste = Vault · P beendet</div>
   </div>
   <footer class="statusline"><span id="editorStatus">Bereit · Raumdaten bleiben lokal im Browser.</span><span>Isometrie 42 × 24,25 px · <span id="assetStatus">Blender-Assets werden geprüft</span></span></footer>
  </main>
@@ -77,6 +78,18 @@
    <label class="check"><input id="propVaultable" type="checkbox"><span><strong>Überspringbar</strong><small>Wächter kann per Vault darüber gelangen.</small></span></label>
    <label id="lightStateRow" class="check" hidden><input id="propLit" type="checkbox" checked><span><strong>Angezündet</strong><small>Flamme und Lichtschein ein-/ausschalten; der Träger bleibt sichtbar.</small></span></label>
    <label class="check"><input id="propBlocks" type="checkbox"><span><strong>Blockiert Bewegung</strong><small>Physischer Kollisionskörper am Möbel-Fußabdruck.</small></span></label>
+   <div id="designProperties" hidden><hr><strong>Level-Design</strong><div id="row-enemyType" hidden><label for="design-enemyType">Gegner</label><select id="design-enemyType"></select></div>
+<div id="row-elite" hidden><label for="design-elite">Elite</label><input id="design-elite" type="checkbox"></div>
+<div id="row-lootMode" hidden><label for="design-lootMode">Loot</label><select id="design-lootMode"><option value="random">Zufälliges Item</option><option value="fixed">Bestimmtes Item</option></select></div>
+<div id="row-item" hidden><label for="design-item">Item-ID (Typ:ID)</label><input id="design-item" list="design-item-options" placeholder="weapon:hammer"><datalist id="design-item-options"></datalist></div>
+<div id="row-rarity" hidden><label for="design-rarity">Seltenheit</label><select id="design-rarity"><option value="common">Gewöhnlich</option><option value="rare">Selten</option><option value="epic">Episch</option><option value="legendary">Legendär</option><option value="mythic">Mythisch</option></select></div>
+<div id="row-lock" hidden><label for="design-lock">Falltür-Sicherung</label><select id="design-lock"><option value="random">Zufällig (Siegel oder aufschlagen)</option><option value="sealed">Magisches Siegel + aufschlagen</option><option value="breakable">Nur aufschlagen</option></select></div>
+<div id="row-z" hidden><label for="design-z">Höhe (m)</label><input type="number" id="design-z" min="1.4" max="4" step=".1"></div>
+<div id="row-depth" hidden><label for="design-depth">Flüssigkeitstiefe (m)</label><input type="number" id="design-depth" min=".01" max=".5" step=".01"></div>
+<div id="row-radius" hidden><label for="design-radius">Radius (m)</label><input type="number" id="design-radius" min=".3" max="8" step=".1"></div>
+<div id="row-intensity" hidden><label for="design-intensity">Intensität / Lautstärke</label><input type="number" id="design-intensity" min=".05" max="1" step=".05"></div>
+<div id="row-interval" hidden><label for="design-interval">Intervall (s)</label><input type="number" id="design-interval" min=".5" max="30" step=".5"></div>
+<div id="row-note" hidden><label for="design-note">Fokuspunkt-Notiz</label><textarea id="design-note" maxlength="200" rows="2"></textarea></div><p id="designExplanation" class="small quiet"></p></div>
    <div class="metrics" id="footprintLabel"></div>
    <hr>
    <div class="action-stack"><button id="duplicateBtn">Duplizieren (Strg+D)</button><button id="deleteBtn" class="danger">Objekt entfernen (Entf)</button></div>
@@ -97,5 +110,6 @@
 <script src="./architecture.js?v=5"></script>
 <script src="./portals.js?v=2"></script>
 <script src="./environment.js?v=3"></script>
-<script src="./editor.js?v=48"></script>
+<script src="./level-design.js?v=1"></script>
+<script src="./editor.js?v=49"></script>
 </body></html>
