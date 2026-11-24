@@ -300,6 +300,26 @@ function shadeFurniture(type,obj,paint,outline,highlight){
   polygon(footprint(obj).map(({x,y})=>pt(x,y)), '#4a454180','#8b8271',1);
   return;
  }
+ if(cat.furniture[type].category==='wall-architecture'){
+  // A neutral physical outline while its *real* Blender sprite is pending;
+  // never substitute a medieval chair for a wall-mounted stone statue.
+  const top=footprint(obj).map(({x,y})=>pt(x,y,Math.max(.4,cat.furniture[type].height)));
+  const ground=footprint(obj).map(({x,y})=>pt(x,y));
+  polygon([top[1],top[2],ground[2],ground[1]],'#47403a','#a39383',1);
+  polygon([top[2],top[3],ground[3],ground[2]],'#342e2a','#8b8077',1);
+  polygon(top,'#615951','#aaa095',1.1);
+  return;
+ }
+ if(cat.furniture[type].category==='architectural-floor'){
+  const surface=cat.furniture[type].surface;
+  const height=surface.elevation;
+  const ground=footprint(obj).map(({x,y})=>pt(x,y));
+  const elevated=footprint(obj).map(({x,y})=>pt(x,y,height));
+  polygon([elevated[1],elevated[2],ground[2],ground[1]],'#292928','#68665f',1);
+  polygon([elevated[2],elevated[3],ground[3],ground[2]],'#34322f','#716c62',1);
+  polygon(elevated,'#6b6257','#c4aa87',1.2);
+  return;
+ }
  if(cat.furniture[type].kind==='table'){
   for(const x of [-.76,.76])for(const y of [-.37,.37])
    cuboid(x-.06,y-.06,x+.06,y+.06,.04,.82,'#52403a','#342724','#40312e');
@@ -331,7 +351,7 @@ function drawFurniture(obj){
  const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=184*zoom*(spec.editorSpriteScale||1);
  // Low-profile dungeon floor clutter is baked with its own Cycles ambient
  // occlusion. The generic furniture contact oval would hide wet puddles/rugs.
- if(spec.category!=='floor-clutter'){
+ if(spec.category!=='floor-clutter'&&spec.category!=='wall-architecture'){
   ctx.save();ctx.globalAlpha=.4;ctx.fillStyle='#000';
   ctx.beginPath();ctx.ellipse(p.x,p.y+5*zoom,spec.footprint.w*P.stepX*zoom*.75,
    spec.footprint.h*P.stepY*zoom*.8,0,0,TAU);ctx.fill();ctx.restore();
