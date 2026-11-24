@@ -2,11 +2,12 @@
   "schema": "mind-dungeon-room-art/v1",
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
-  "generatorSha256": "b6aa345aea772c719426a5f6d5b958974d549329c682fd0abd84884fcbd14369",
-  "alchemyGeneratorSha256": "019eba788853ee401404873702a8ef7c4c4d2e4dd56bac0e752253020ae9d63b",
+  "generatorSha256": "24be59e90497b0e44eeadf6ac7b18a4db6d8085c3bd07449b57d71b329469ab7",
+  "alchemyGeneratorSha256": "c9acc0d74ca0e9848e8d0a17d3f8bd4f3e081711cc81e5074d9f6f6188bcf953",
   "tortureGeneratorSha256": "7d7ccea899d6407f851600ff073470cad75a278766633262eb5b4581573db71f",
   "floorGeneratorSha256": "415d9d15cd650d552c4491c1980a988552536bafe8b314fddf75574c25713b2f",
   "prisonBarsGeneratorSha256": "cb628cadc067b21d12c6b2a7448238c869d68054646d4ca49feee82b5763582d",
+  "architectureGeneratorSha256": "f8355db21dee31f7156a280071d400595acb78df5dd997625326890dc0b1b5b2",
   "wallViews": {
     "bars-full": {
       "file": "prison-grille-full-front.png",
@@ -670,6 +671,328 @@
         180,
         270
       ]
+    },
+    "wall-stone-pilaster": {
+      "catalogId": "wall-stone-pilaster",
+      "footprint": [
+        0.98,
+        0.6
+      ],
+      "height": 2,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "blocksProjectiles": true,
+      "maxHP": 180,
+      "extension": "png",
+      "category": "wall-architecture",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "wall-freestanding-column": {
+      "catalogId": "wall-freestanding-column",
+      "footprint": [
+        0.66,
+        0.66
+      ],
+      "height": 2,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "blocksProjectiles": true,
+      "maxHP": 180,
+      "extension": "png",
+      "category": "wall-architecture",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "wall-wood-pillar": {
+      "catalogId": "wall-wood-pillar",
+      "footprint": [
+        0.69,
+        0.56
+      ],
+      "height": 2,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "blocksProjectiles": true,
+      "maxHP": 110,
+      "extension": "png",
+      "category": "wall-architecture",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "wall-wood-ledge": {
+      "catalogId": "wall-wood-ledge",
+      "footprint": [
+        1.1,
+        0.91
+      ],
+      "height": 1.4,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 85,
+      "extension": "png",
+      "category": "wall-architecture",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "wall-stone-cornice": {
+      "catalogId": "wall-stone-cornice",
+      "footprint": [
+        1.2,
+        0.49
+      ],
+      "height": 2,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 120,
+      "extension": "png",
+      "category": "wall-architecture",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "wall-statue-knight": {
+      "catalogId": "wall-statue-knight",
+      "footprint": [
+        0.94,
+        0.65
+      ],
+      "height": 1.95,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "blocksProjectiles": true,
+      "maxHP": 135,
+      "extension": "png",
+      "category": "wall-architecture",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "wall-statue-gargoyle": {
+      "catalogId": "wall-statue-gargoyle",
+      "footprint": [
+        0.98,
+        0.8
+      ],
+      "height": 1.98,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": true,
+      "blocksProjectiles": true,
+      "maxHP": 145,
+      "extension": "png",
+      "category": "wall-architecture",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "wall-broken-masonry": {
+      "catalogId": "wall-broken-masonry",
+      "footprint": [
+        1.18,
+        0.46
+      ],
+      "height": 2,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 140,
+      "extension": "png",
+      "category": "wall-architecture",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "arch-stone-dais": {
+      "catalogId": "arch-stone-dais",
+      "footprint": [
+        1.8,
+        1.85
+      ],
+      "height": 0.55,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 170,
+      "extension": "png",
+      "category": "architectural-floor",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "arch-sunken-floor": {
+      "catalogId": "arch-sunken-floor",
+      "footprint": [
+        1.84,
+        1.72
+      ],
+      "height": -0.55,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 190,
+      "extension": "png",
+      "category": "architectural-floor",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "arch-raised-walkway": {
+      "catalogId": "arch-raised-walkway",
+      "footprint": [
+        2.16,
+        1.5
+      ],
+      "height": 0.74,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 105,
+      "extension": "png",
+      "category": "architectural-floor",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "arch-wood-stage": {
+      "catalogId": "arch-wood-stage",
+      "footprint": [
+        1.76,
+        1.72
+      ],
+      "height": 0.55,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 95,
+      "extension": "png",
+      "category": "architectural-floor",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "arch-broken-stone-slab": {
+      "catalogId": "arch-broken-stone-slab",
+      "footprint": [
+        1.73,
+        1.45
+      ],
+      "height": 0.32,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 140,
+      "extension": "png",
+      "category": "architectural-floor",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "arch-collapsed-floor": {
+      "catalogId": "arch-collapsed-floor",
+      "footprint": [
+        1.75,
+        1.55
+      ],
+      "height": -0.5,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 100,
+      "extension": "png",
+      "category": "architectural-floor",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
     }
   },
   "files": {
@@ -846,6 +1169,90 @@
       "90": "assets/furniture/floor-cloth-90.png",
       "180": "assets/furniture/floor-cloth-180.png",
       "270": "assets/furniture/floor-cloth-270.png"
+    },
+    "wall-stone-pilaster": {
+      "0": "assets/furniture/wall-stone-pilaster-0.png",
+      "90": "assets/furniture/wall-stone-pilaster-90.png",
+      "180": "assets/furniture/wall-stone-pilaster-180.png",
+      "270": "assets/furniture/wall-stone-pilaster-270.png"
+    },
+    "wall-freestanding-column": {
+      "0": "assets/furniture/wall-freestanding-column-0.png",
+      "90": "assets/furniture/wall-freestanding-column-90.png",
+      "180": "assets/furniture/wall-freestanding-column-180.png",
+      "270": "assets/furniture/wall-freestanding-column-270.png"
+    },
+    "wall-wood-pillar": {
+      "0": "assets/furniture/wall-wood-pillar-0.png",
+      "90": "assets/furniture/wall-wood-pillar-90.png",
+      "180": "assets/furniture/wall-wood-pillar-180.png",
+      "270": "assets/furniture/wall-wood-pillar-270.png"
+    },
+    "wall-wood-ledge": {
+      "0": "assets/furniture/wall-wood-ledge-0.png",
+      "90": "assets/furniture/wall-wood-ledge-90.png",
+      "180": "assets/furniture/wall-wood-ledge-180.png",
+      "270": "assets/furniture/wall-wood-ledge-270.png"
+    },
+    "wall-stone-cornice": {
+      "0": "assets/furniture/wall-stone-cornice-0.png",
+      "90": "assets/furniture/wall-stone-cornice-90.png",
+      "180": "assets/furniture/wall-stone-cornice-180.png",
+      "270": "assets/furniture/wall-stone-cornice-270.png"
+    },
+    "wall-statue-knight": {
+      "0": "assets/furniture/wall-statue-knight-0.png",
+      "90": "assets/furniture/wall-statue-knight-90.png",
+      "180": "assets/furniture/wall-statue-knight-180.png",
+      "270": "assets/furniture/wall-statue-knight-270.png"
+    },
+    "wall-statue-gargoyle": {
+      "0": "assets/furniture/wall-statue-gargoyle-0.png",
+      "90": "assets/furniture/wall-statue-gargoyle-90.png",
+      "180": "assets/furniture/wall-statue-gargoyle-180.png",
+      "270": "assets/furniture/wall-statue-gargoyle-270.png"
+    },
+    "wall-broken-masonry": {
+      "0": "assets/furniture/wall-broken-masonry-0.png",
+      "90": "assets/furniture/wall-broken-masonry-90.png",
+      "180": "assets/furniture/wall-broken-masonry-180.png",
+      "270": "assets/furniture/wall-broken-masonry-270.png"
+    },
+    "arch-stone-dais": {
+      "0": "assets/furniture/arch-stone-dais-0.png",
+      "90": "assets/furniture/arch-stone-dais-90.png",
+      "180": "assets/furniture/arch-stone-dais-180.png",
+      "270": "assets/furniture/arch-stone-dais-270.png"
+    },
+    "arch-sunken-floor": {
+      "0": "assets/furniture/arch-sunken-floor-0.png",
+      "90": "assets/furniture/arch-sunken-floor-90.png",
+      "180": "assets/furniture/arch-sunken-floor-180.png",
+      "270": "assets/furniture/arch-sunken-floor-270.png"
+    },
+    "arch-raised-walkway": {
+      "0": "assets/furniture/arch-raised-walkway-0.png",
+      "90": "assets/furniture/arch-raised-walkway-90.png",
+      "180": "assets/furniture/arch-raised-walkway-180.png",
+      "270": "assets/furniture/arch-raised-walkway-270.png"
+    },
+    "arch-wood-stage": {
+      "0": "assets/furniture/arch-wood-stage-0.png",
+      "90": "assets/furniture/arch-wood-stage-90.png",
+      "180": "assets/furniture/arch-wood-stage-180.png",
+      "270": "assets/furniture/arch-wood-stage-270.png"
+    },
+    "arch-broken-stone-slab": {
+      "0": "assets/furniture/arch-broken-stone-slab-0.png",
+      "90": "assets/furniture/arch-broken-stone-slab-90.png",
+      "180": "assets/furniture/arch-broken-stone-slab-180.png",
+      "270": "assets/furniture/arch-broken-stone-slab-270.png"
+    },
+    "arch-collapsed-floor": {
+      "0": "assets/furniture/arch-collapsed-floor-0.png",
+      "90": "assets/furniture/arch-collapsed-floor-90.png",
+      "180": "assets/furniture/arch-collapsed-floor-180.png",
+      "270": "assets/furniture/arch-collapsed-floor-270.png"
     }
   }
 }
