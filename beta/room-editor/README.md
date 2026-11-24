@@ -4,6 +4,37 @@
 
 **Wichtig für ChatGPT Work:** Dies ist ein vollständig isolierter Raumeditor. Der aktuelle Dungeon, alle bestehenden Greyboxen, der Random-Generator, der Wächter, die Gegner und deren Rendering-Pipeline sind *unverändert*. Bitte bei späterer Integration **kein vorhandenes `beta/index.html`, `beta/alley-generator.js` oder `beta/dungeon-isometric.js` überschreiben**. Stattdessen JSON-Vorlagen als optionale Raum-Templates importieren.
 
+## Abandoned dungeon: 10 Blender floor clutter props (2026-11-24)
+
+Ten **physically modeled**, dark PBR environmental groups in
+`blender/abandoned-floor-clutter.py`, loaded into the same orthographic,
+Guardian-scaled Blender/Cycles pipeline as the room furniture:
+
+- `floor-rubble`: angular fractured stone, mortar chips — **blocks walking**
+- `floor-bones`: skulls, curved ribs and yellowed loose bones — walk-through
+- `floor-rug`: tattered oxblood carpet with fringe, ragged mesh holes — walk-through
+- `floor-chains`: real toroidal iron links, shackles and cuffs — walk-through
+- `floor-wood`: heavy rotting beams and splinters — **blocks walking**
+- `floor-moss`: physical moss patches, creeping roots and fungus caps — walk-through
+- `floor-scrolls`: discarded scrolls, manuscript pages, ancient books — walk-through
+- `floor-puddles`: irregular shallow glossy water meshes, damp stone margins — walk-through
+- `floor-pottery`: broken stoneware jug, shards and green glass — walk-through
+- `floor-cloth`: lumpy burlap sacks and draped ripped linen — walk-through
+
+Every asset has its own floor-centred root, `modelScale=.45`,
+`editorSpriteScale=.5`, measured footprint, and four **true Blender**
+0°/90°/180°/270° renders as transparent 512×512 PNG files. They are
+grouped under *Bodendekoration* in the editor palette; no dark generic
+furniture shadow is stamped over puddles or carpets. Existing room layouts
+and saved JSON remain compatible. A room can mix small nonblocking debris
+with large blocking furniture in the same area. Room Atelier exports keep
+each prop's placement, rotation and `blocksMovement` state.
+
+The collection increases from 19 to **29 unique props / 116 rendered
+directions**, retaining the eight original legacy WebP directions.
+The source is saved along with all other modeled props to
+`assets/source/room-kit.blend`. The main dungeon remains untouched.
+
 ## Torture chamber expansion: 10 original Blender props
 
 Ten independent dark medieval prop meshes are constructed in
