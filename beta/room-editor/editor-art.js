@@ -61,11 +61,24 @@ window.MindRoomArt=(()=>{
   ['stone-castle-slates','wall-albedo-08.jpg','wall-atlas-08.jpg','castle_wall_slates',true],
   ['stone-castle-aged','wall-albedo-09.jpg','wall-atlas-09.jpg','castle_wall_varriation',true]
  ];
- for(const [key] of PHOTOS)images.set(key,{img:null,ready:false,failed:false,src:''});
+ for(const [key] of PHOTOS)images.set(key,{img:null,ready:false,requested:false,failed:false,src:''});
  // Load each material independently. A malformed variant record must NEVER
  // blank all floors and all walls again (regression: wall keys were emitted
  // inside floorVariants in the first v6 asset manifest).
- let atlasWarning='';
+ let atlasWarning='',materialManifestReady=false;
+ const materialSources=new Map(),materialDemand=new Set();
+ // Material PNG/JPG atlases are huge. Only request the current room floor
+ // and stone-wall styles actually present in the scene; keep the full
+ // manifest validation and original Poly Haven fallback on first demand.
+ function ensureMaterial(style){
+  const resource=images.get(style);
+  if(!resource||resource.requested)return;
+  materialDemand.add(style);
+  if(!materialManifestReady)return;
+  const source=materialSources.get(style);
+  if(!source)return;
+  preload(style,source.src,source.fallback,source.worldWidth).requested=true;
+ }
  async function loadPhotographicMaterials(){
   let manifest=null;
   try{
@@ -105,10 +118,16 @@ window.MindRoomArt=(()=>{
    // The known v6 atlas filenames are unique to the corrected Diffuse pipeline.
    // Even during a stale Pages deployment, try these exact editor-local assets.
    const version=valid?atlas.sha256:'eight-floors-v7';
-   preload(style,ROOT+'tiles/'+atlasFile+'?v='+version,
-     'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/'+assetId+
-     '/'+assetId+'_diff_2k.jpg',cat?.worldWidth);
+   materialSources.set(style,{
+    src:ROOT+'tiles/'+atlasFile+'?v='+version,
+    fallback:'https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/'+assetId+
+     '/'+assetId+'_diff_2k.jpg',
+    worldWidth:cat?.worldWidth
+   });
   }
+  materialManifestReady=true;
+  for(const style of materialDemand)ensureMaterial(style);
+  emit();
  }
  void loadPhotographicMaterials();
  // In the game the Guardian's pre-rendered atlas is the verified fallback
@@ -119,22 +138,10 @@ window.MindRoomArt=(()=>{
    const response=await fetch(ROOT_GUARDIAN+'guardian-frames.json?v=18',{cache:'no-cache'});
    if(!response.ok)throw Error('guardian frame manifest unavailable');
    guardianAtlas=await response.json();
-   const load=(name)=>{
-    return new Promise((resolve,reject)=>{
-     const img=new Image();
-     img.onload=()=>resolve(img);
-     img.onerror=()=>reject(Error('Missing Guardian atlas '+name));
-     img.src=ROOT_GUARDIAN+name+'?v=17';
-    });
-   };
-   // Armature poses are already baked in two body pages + weapon atlas.
-   // All pages are loaded without any runtime WebGL dependency.
-   const pages=await Promise.all([
-    ...guardianAtlas.sheets.body.map(load),
-    ...guardianAtlas.sheets.weapon.map(load)
-   ]);
-   guardianBody=pages.slice(0,guardianAtlas.sheets.body.length);
-   guardianWeapon=pages.slice(guardianAtlas.sheets.body.length);
+   guardianBody=new Array(guardianAtlas.sheets.body.length).fill(null);
+   guardianWeapon=new Array(guardianAtlas.sheets.weapon.length).fill(null);
+   // Only the animation pages currently required by the visible character
+   // are fetched. Walking/vault frames load when the playtest needs them.
    guardianStatus='ready';
   }catch(error){
    guardianStatus='error';
@@ -143,6 +150,19 @@ window.MindRoomArt=(()=>{
   emit();
  }
  void loadGuardian();
+ function guardianPage(sheet,index){
+  if(!guardianAtlas||!Number.isInteger(index)||index<0||
+     index>=guardianAtlas.sheets[sheet].length)return null;
+  const pages=sheet==='body'?guardianBody:guardianWeapon;
+  if(!pages[index]){
+   const img=new Image(),entry={img,ready:false,failed:false};
+   pages[index]=entry;
+   img.onload=()=>{entry.ready=true;emit()};
+   img.onerror=()=>{entry.failed=true;console.warn('Missing Guardian sheet',sheet,index);emit()};
+   img.src=ROOT_GUARDIAN+guardianAtlas.sheets[sheet][index]+'?v=17';
+  }
+  return pages[index].ready?pages[index].img:null;
+ }
  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
  function viewFacing(worldAngle){
   // Identical view transform to AlleyStudy's 42 × 24.249 isometric camera.
@@ -167,17 +187,17 @@ window.MindRoomArt=(()=>{
   // physics preview and the original Guardian's 19-frame animation.
   const t=vault>0?clamp(1-vault,0,.999):moving?(time*1.5)%1:(time*.6)%1;
   const pose=Math.min(count-1,Math.floor(t*count)),index=(start+pose)*8+viewFacing(angle);
-  const drawLayer=(data,pages)=>{
+  const drawLayer=(data,sheet)=>{
    if(!data)return;
-   const [sx,sy,w,h,dx,dy,page]=data,img=pages[page];
+   const [sx,sy,w,h,dx,dy,page]=data,img=guardianPage(sheet,page);
    if(img)ctx.drawImage(img,sx,sy,w,h,
     p.x-55*zoom+dx*scale,p.y-.77597*110*zoom+dy*scale,
     w*scale,h*scale);
   };
   ctx.save();
   ctx.imageSmoothingEnabled=true;
-  drawLayer(guardianAtlas.body[index],guardianBody);
-  drawLayer(guardianAtlas.weapon[index],guardianWeapon);
+  drawLayer(guardianAtlas.body[index],'body');
+  drawLayer(guardianAtlas.weapon[index],'weapon');
   ctx.restore();
   return true;
  }
@@ -185,6 +205,7 @@ window.MindRoomArt=(()=>{
  // No per-tile texture restarting at all. The source JPEGs remain separately
  // available for material thumbnails and provenance.
  function getPhoto(style){
+  ensureMaterial(style);
   const data=images.get(style);
   return data?.ready?data.img:null;
  }
@@ -263,13 +284,16 @@ window.MindRoomArt=(()=>{
   return true;
  }
  function status(){
-  const floors=PHOTOS.filter(p=>!p[4]&&getPhoto(p[0])).length;
-  const walls=PHOTOS.filter(p=>p[4]&&getPhoto(p[0])).length;
+  // Reporting must never trigger downloading every material.
+  const floors=PHOTOS.filter(p=>!p[4]&&images.get(p[0])?.ready).length;
+  const walls=PHOTOS.filter(p=>p[4]&&images.get(p[0])?.ready).length;
+  const requestedFloors=PHOTOS.filter(p=>!p[4]&&images.get(p[0])?.requested).length;
+  const requestedWalls=PHOTOS.filter(p=>p[4]&&images.get(p[0])?.requested).length;
   return {
-   tiles:floors+'/8 Poly-Haven-Böden',
-   wallPhotos:walls+'/9 Poly-Haven-Mauern',
-   guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready',
-   tileReady:floors>0,wallsReady:walls===9,
+   tiles:floors+'/'+requestedFloors+' benötigte Böden',
+   wallPhotos:walls+'/'+requestedWalls+' benötigte Mauern',
+   guardian:guardianStatus,guardianAuthentic:guardianStatus==='ready'&&guardianBody.some(p=>p?.ready),
+   tileReady:floors>0,wallsReady:walls===requestedWalls,
    assetWarning:atlasWarning,
    failedTextures:PHOTOS.filter(p=>images.get(p[0])?.failed).map(p=>p[0]),
    fallbackTextures:PHOTOS.filter(p=>images.get(p[0])?.ready&&images.get(p[0])?.kind==='diffuse').map(p=>p[0])
