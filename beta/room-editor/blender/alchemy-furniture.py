@@ -753,3 +753,12 @@ ALCHEMY_MODELS=[
     ('weapon-rack',weaponrack),('bookshelf',bookshelf),
     ('torture-bench',torturebench)
 ]
+
+# Import the independent chamber pack into this same collection of Blender
+# pivots, preserving all existing materials and Guardian-relative proportions.
+# Each imported mesh is physically modeled and rendered four times in the
+# existing build-room-kit.py loop; no browser-side 3D or image impostors.
+_torture_source=Path(__file__).parent/'torture-chamber-furniture.py'
+exec(compile(_torture_source.read_text(),str(_torture_source),'exec'),globals())
+ALCHEMY_MODELS.extend(TORTURE_MODELS)
+
