@@ -394,6 +394,34 @@ function nearestWall(x,y){
  const wall={x:u,y:v,edge:horizontal?'north':'west',style:$('wallType').value};
  return {...wall,kind:'wall',id:keyWall(wall)};
 }
+// Click directly on the *vertical face* of a wall. Converting screen
+// coordinates as floor Z=0 alone misses upper masonry by nearly a metre.
+function wallFaceTarget(screen){
+ let nearest=null,score=Infinity;
+ for(const wall of room.walls){
+  const spec=cat.walls[wall.style];
+  if(!spec?.solid||isNearWall(wall))continue;
+  const [a,b]=wallEnds(wall);
+  for(let z=0;z<=Math.min(spec.height,2.05)+.01;z+=.25){
+   const start=pt(a[0],a[1],z),end=pt(b[0],b[1],z);
+   const dx=end.x-start.x,dy=end.y-start.y;
+   const lengthSq=dx*dx+dy*dy||1;
+   const t=clamp(((screen.x-start.x)*dx+(screen.y-start.y)*dy)/lengthSq,0,1);
+   const hx=start.x+dx*t,hy=start.y+dy*t;
+   const dist=Math.hypot(screen.x-hx,screen.y-hy);
+   if(dist<score&&dist<19*zoom){
+    score=dist;
+    nearest={x:a[0]+(b[0]-a[0])*t,
+             y:a[1]+(b[1]-a[1])*t};
+   }
+  }
+ }
+ return nearest;
+}
+function architecturalTarget(screen,uv){
+ return wallFaceTarget(screen)||
+  (architecture.wallCandidate(room,cat,uv.x,uv.y)?uv:null);
+}
 function hitFurniture(x,y){
  const px=x,py=y;
  return room.furniture.slice().sort((a,b)=>pt(b.x,b.y).y-pt(a.x,a.y).y).find(item=>{
@@ -660,7 +688,9 @@ c.addEventListener('pointerdown',e=>{
   select(hit?.id||null);
   if(hit)dragging={type:'move',id:hit.id,deltaX:hit.x-uv.x,deltaY:hit.y-uv.y,previous:JSON.stringify(room)};
  }else if(tool==='place'){
-  const obj=makeInstance(chosenFurniture,uv.x,uv.y);
+  const wallOnly=cat.furniture[chosenFurniture]?.category==='wall-architecture';
+  const target=wallOnly?architecturalTarget(pos,uv):uv;
+  const obj=target?makeInstance(chosenFurniture,target.x,target.y):null;
   if(fits(obj)){room.furniture.push(obj);selected=obj.id;checkpoint()}
   else $('editorStatus').textContent=cat.furniture[chosenFurniture]?.category==='wall-architecture'?
    'Wandverzierungen können NUR an einer vorhandenen massiven Wand angebracht werden.':
@@ -704,8 +734,9 @@ c.addEventListener('pointermove',e=>{
  }else if(dragging?.type==='move'){
   const obj=room.furniture.find(f=>f.id===dragging.id);
   if(obj){const prior={...obj};
+   const wallTarget=architecturalTarget(pos,uv);
    const next=cat.furniture[obj.type].category==='wall-architecture'?
-    architecture.attach(obj.type,room,cat,uv.x,uv.y,obj.id):
+    (wallTarget?architecture.attach(obj.type,room,cat,wallTarget.x,wallTarget.y,obj.id):null):
     placement.snap({...obj,x:quant(uv.x+dragging.deltaX),
       y:quant(uv.y+dragging.deltaY)},room,cat,prior);
    if(next)Object.assign(obj,next);
@@ -714,9 +745,11 @@ c.addEventListener('pointermove',e=>{
   }
  }
  const currentTile=cursorTile(uv.x,uv.y);
+ const target=tool==='place'&&cat.furniture[chosenFurniture]?.category==='wall-architecture'?
+  architecturalTarget(pos,uv):uv;
  hover=tool==='wall'||tool==='erase'?nearestWall(uv.x,uv.y):
   tool==='floor'?(currentTile?{...currentTile,kind:'tile'}:null):
-  {x:quant(uv.x),y:quant(uv.y),kind:'world'};
+  target?{x:precise(target.x),y:precise(target.y),kind:'world'}:null;
  $('sceneStatus').textContent=(playing?'Spieltest · ':'')+'Raster '+uv.x.toFixed(2)+' × '+uv.y.toFixed(2)+' · '+(tool==='select'?'Möbel verschieben':tool);
  schedule();
 });
