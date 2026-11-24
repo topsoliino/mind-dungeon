@@ -506,3 +506,11 @@ ARCH_MODELS=[]
 for _slug,_fn in (*ARCH_WALL_MODELS,*ARCH_FLOOR_MODELS):
     _root=make_model('Dungeon architecture | '+_slug,_fn)
     ARCH_MODELS.append((_slug,_root))
+
+# A separate physically modelled grim weathering pass adds stone fractures,
+# soot, carved detail, damp stains and real ruined wood splinters to each root.
+# Crucially every additional mesh is parented to its original pivot so all
+# 0/90/180/270 rotations and JSON placement remain exactly compatible.
+_weather_source=Path(__file__).parent/'architecture-weathering.py'
+exec(compile(_weather_source.read_text(),str(_weather_source),'exec'),globals())
+
