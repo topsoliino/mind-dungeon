@@ -306,13 +306,19 @@
   const [u,v,r,b]=gate.area,[a,c]=gate.opening;
   const solids=[[u,v,r,a],[u,c,r,b]];
   const routePainter={project,polygon,line,block};
+  const overlapsDungeon=home=>generatorMode&&route?.rooms?.slice(1).some(room=>
+   room.cells.some(([u,v])=>u<home.area[2]&&u+1>home.area[0]&&
+                           v<home.area[3]&&v+1>home.area[1]));
+  const entranceU=window.AlleyGenerator?.outdoorEntrance?.x;
+  const fitsStreet=home=>!(entranceU!=null&&home.area[2]>entranceU)&&!overlapsDungeon(home);
+  const skyline=backdrop.map((building,index)=>({building,index})).filter(({building})=>fitsStreet(building));
   const drawUnderlay=(ctx,interior=false)=>{
    const gradient=ctx.createLinearGradient(0,45,0,height);
    gradient.addColorStop(0,'#272637');gradient.addColorStop(.85,'#151622');
    ctx.fillStyle=gradient;ctx.fillRect(0,0,width,height);
    ctx.save();
    ctx.globalAlpha=.62;
-   for(const [index,building] of (interior?[]:backdrop).entries())facadeArt.skyline(ctx,{...building,roof:18+index*5},index);
+   for(const {index,building} of (interior?[]:skyline))facadeArt.skyline(ctx,{...building,roof:18+index*5},index);
    ctx.restore();
    for(const area of interior?walkable.slice(map.logic.streetAreaCount):walkable){
     const [u,v,r,b]=area;
@@ -336,10 +342,7 @@
   // generated dungeon. The L1 entrance house at [10.05,6.85,12.3,8.6]
   // overlaps the first corridor (x=12..), so it looks half-buried.
   // Check actual occupied room cells rather than special-casing one seed.
-  const overlapsDungeon=home=>generatorMode&&route?.rooms?.slice(1).some(room=>
-   room.cells.some(([u,v])=>u<home.area[2]&&u+1>home.area[0]&&
-                           v<home.area[3]&&v+1>home.area[1]));
-  const homes=standing.filter(home=>!overlapsDungeon(home)).map(home=>
+  const homes=standing.filter(fitsStreet).map(home=>
    ({...home,image:cacheObject(home.area,home.height+home.roof,
      ctx=>facadeArt.building(ctx,home))}));
   const gateway=cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
@@ -578,7 +581,7 @@
   ];
   const street=combinedGround&&window.RockyCoastPrison.hasEntrance?
    cacheObject([-3,-3,15,13],150,ctx=>{
-    for(const [i,building] of backdrop.entries())facadeArt.skyline(ctx,{...building,roof:18+i*5},i);
+    for(const {index:i,building} of skyline)facadeArt.skyline(ctx,{...building,roof:18+i*5},i);
     for(const surface of ground.slice(0,map.art.streetSurfaceCount))paving(ctx,surface,random);
     drawDetails(ctx,groundDetails);drawGroundLight(ctx,0);
    }):null;
