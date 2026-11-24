@@ -26,7 +26,7 @@ const floors=[
 ];
 assert.equal(wallTypes.length,8);
 assert.equal(floors.length,6);
-assert.equal(Object.keys(cat.furniture).length,43);
+assert.equal(Object.keys(cat.furniture).length,59);
 for(const type of wallTypes){
  const spec=cat.furniture[type];
  assert.equal(spec.category,'wall-architecture');
@@ -88,7 +88,8 @@ for(const type of ['arch-stone-dais','arch-raised-walkway','arch-wood-stage','ar
  assert.equal(arch.transition(room,cat,placement,start,into).allowed,true,'Visible front steps allow access');
  const fromSide={x:4+cat.furniture[type].footprint.w/2+.06,y:4,z:0};
  const toSide={x:4+cat.furniture[type].footprint.w/2-.03,y:4};
- assert.equal(arch.transition(room,cat,placement,fromSide,toSide).allowed,false,'Sheer side must block walk');
+ if(type!=='arch-sunken-floor')assert.equal(arch.transition(room,cat,placement,fromSide,toSide).allowed,false,'Sheer side must block walk');
+ else assert.equal(arch.surfaceAt(room,cat,toSide.x,toSide.y,placement).height,0,'Retaining rim is level ground');
 }
 room.furniture=[makeFloor('arch-broken-stone-slab')];
 assert.equal(arch.transition(room,cat,placement,
