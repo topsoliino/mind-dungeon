@@ -3,7 +3,7 @@
 'use strict';
 const kit=window.MindRoomKit,cat=kit.catalog,P=cat.projection,TAU=Math.PI*2;
 const placement=window.MindRoomPlacement,architecture=window.MindRoomArchitecture,portals=window.MindRoomPortals;
-if(!placement||!architecture||!portals)throw Error('Room Atelier: placement and architecture modules missing');
+if(!placement||!architecture||!portals)throw Error('Room Atelier: placement, architecture or portal module missing');
 const $=id=>document.getElementById(id);
 const c=$('editorCanvas'),ctx=c.getContext('2d',{alpha:false});
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
