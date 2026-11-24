@@ -4,6 +4,32 @@
 
 **Wichtig für ChatGPT Work:** Dies ist ein vollständig isolierter Raumeditor. Der aktuelle Dungeon, alle bestehenden Greyboxen, der Random-Generator, der Wächter, die Gegner und deren Rendering-Pipeline sind *unverändert*. Bitte bei späterer Integration **kein vorhandenes `beta/index.html`, `beta/alley-generator.js` oder `beta/dungeon-isometric.js` überschreiben**. Stattdessen JSON-Vorlagen als optionale Raum-Templates importieren.
 
+## Torture chamber expansion: 10 original Blender props
+
+Ten independent dark medieval prop meshes are constructed in
+`blender/torture-chamber-furniture.py`, instantiated by the existing
+`alchemy-furniture.py` entrypoint and rendered with the shared orthodox
+35.26-degree Cycles camera. The set includes:
+
+1. Hanging **iron cage** with iron bars, chain suspension and gallows support
+2. **Interrogation chair** with distinct tall iron-bound back and empty cuffs
+3. **Tool table** with physical hanging medieval implements and leather mat
+4. Modular standing **chain wall** (movable furniture prop, not actual room wall)
+5. Closed Gothic **iron maiden** cabinet with external iron bands
+6. **Ember brazier** with actual charcoal geometry and warm ember material
+7. Empty wooden **pillory** with iron-banded stocks
+8. Free-standing upright **wheel** with real spokes and wheel bearings
+9. Compact rectangular **prison transport cage**, distinct from hanging cage
+10. Dungeon **stone washbasin** with wooden bucket and drainage channel
+
+These are unoccupied environmental props, not character animation or gore.
+The furniture catalogue now includes **19 objects** (2 old, 17 newer), each
+with a corresponding collision footprint and four transparent 512 x 512
+pre-rendered isometric PNG views at 0, 90, 180 and 270 degrees: **76
+views in total**. New models use Guardian-relative `modelScale=.45`, with
+the usual double-density camera and `editorSpriteScale=.5`. No main game
+files are edited and existing room JSON remains compatible.
+
 ## Dungeon furniture pack: armoury, library, torture chamber (2026-11-24)
 
 In the standalone Room Atelier, the previously generated compact brew table is now
