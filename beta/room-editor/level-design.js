@@ -24,6 +24,7 @@ const defs=[
  ['ceiling-collapse','Gebrochene Deckenbalken','ceiling','collapse','╱',1.7,1.2,2.2],
  ['water-pool','Flache Wasserfläche','liquid','pool','≈',1.6,1.6,.02],
  ['water-channel','Wasserrinne','liquid','channel','≈',2,.55,.02],
+ ['water-cell','Wasser-Brush · Rasterfeld','liquid','water-cell','≈',.99,.99,.02],
  ['water-flood','Überfluteter Bodenbereich','liquid','flood','≈',2.5,2.5,.02],
  ['water-blood','Blutlache','liquid','blood','●',.9,.72,.01],
  ['water-poison','Giftige Flüssigkeit','liquid','poison','≈',1.4,1.4,.02],
@@ -71,14 +72,14 @@ function createState(room,cat){
   if(k==='portcullis')gates.add(o.id);
   if(k==='hatch'){const d=normalize(s,o.design);hatches.set(o.id,{sealed:d.lock==='sealed'||d.lock==='random'&&hash(o.id)>.5,hp:100});}
  }
- return {gates,hatches,levers,unlocked:false};
+ return {gates,hatches,levers,unlocked:false,requiresLever:(room.furniture||[]).some(o=>cat.furniture[o.type]?.designKind==='lever')};
 }
 function interact(state,o,s){
  const k=s.designKind;
  if(k==='lever'){state.levers.add(o.id);state.unlocked=true;state.gates.clear();return 'Hebel aktiviert · Ebenen-Fallgitter geöffnet (lokale Simulation).';}
  if(k==='portcullis')return state.gates.has(o.id)?'Fallgitter verschlossen · Hebel suchen.':'Fallgitter offen.';
  if(k==='hatch'){const h=state.hatches.get(o.id);if(!h)return '';if(h.sealed){h.sealed=false;return 'Magisches Siegel gelöst (Testsimulation) · Falltür jetzt aufschlagen.';}return h.hp>0?'Falltür mit Angriffen aufschlagen.':'Leiter nach unten frei · Ebenenwechsel im Hauptspiel.';}
- if(k==='next-level')return !state.unlocked&&state.gates.size?'Treppenzugang gesperrt · Hebel suchen.':'Treppenzugang · echter Ebenenwechsel im Hauptspiel.';
+ if(k==='next-level')return !state.unlocked&&(state.gates.size||state.requiresLever)?'Treppenzugang gesperrt · Hebel suchen.':'Treppenzugang · echter Ebenenwechsel im Hauptspiel.';
  return s.category==='gameplay'?s.label+' · reservierter Fokuspunkt (keine Spielinstanz)':'';
 }
 function hit(state,o,s){
@@ -116,7 +117,7 @@ function draw(ctx,o,s,project,zoom,t,playing,state,selected,hero){
  }else if(c==='liquid'){
   const col=k==='blood'?'#571d20b5':k==='poison'?'#4c6333b5':'#344b51bc',edge=k==='blood'?'#8f3a3b':k==='poison'?'#819256':'#728b8b';
   if(k==='well'){box(.50,.50,0,.54,'#6d6558','#3c3a34');poly(rect(.35,.35,.55),col,'#202c2c');}
-  else {const ps=[];for(let i=0;i<16;i++){const a=i*TAU/16,rr=k==='channel'||k==='flood'?1/Math.max(Math.abs(Math.cos(a)),Math.abs(Math.sin(a))):.88+.10*Math.sin(i*2.1);ps.push(q(Math.cos(a)*w*.5*rr,Math.sin(a)*h*.5*rr,.015));}poly(ps,col,edge);}
+  else {const ps=[];for(let i=0;i<16;i++){const a=i*TAU/16,rr=k==='channel'||k==='flood'||k==='water-cell'?1/Math.max(Math.abs(Math.cos(a)),Math.abs(Math.sin(a))):.88+.10*Math.sin(i*2.1);ps.push(q(Math.cos(a)*w*.5*rr,Math.sin(a)*h*.5*rr,.015));}poly(ps,col,k==='water-cell'?null:edge);}
   const zz=k==='well'?.56:.026;
   for(let i=0;i<4;i++){const y=(i-1.5)*h*.15,a=q(-w*.27,y,zz),b=q(w*.27,y+.018*Math.sin(t*2+i),zz);line([a,b],edge+'55',.9);}
  }else if(c==='atmosphere'){
