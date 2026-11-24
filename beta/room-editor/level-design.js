@@ -46,6 +46,7 @@ function install(cat){
 }
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x)),num=(x,d,a,b)=>Number.isFinite(x)?clamp(x,a,b):d;
 function normalize(spec,raw={}){
+ raw=raw&&typeof raw==='object'?raw:{};
  const k=spec.designKind,c=spec.category,d={};
  if(k==='enemy'){d.enemyType=Number.isInteger(raw.enemyType)&&raw.enemyType>=0&&raw.enemyType<ENEMIES.length?raw.enemyType:3;d.elite=raw.elite===true;}
  if(k==='soul'){d.lootMode=raw.lootMode==='fixed'?'fixed':'random';if(d.lootMode==='fixed'){const id=typeof raw.item==='string'?raw.item.trim():'';d.item=/^(weapon|ring|armor|food|cup|potion):[a-z0-9-]{1,70}$/.test(id)?id:'weapon:hammer';d.rarity=['common','rare','epic','legendary','mythic'].includes(raw.rarity)?raw.rarity:'common';}}
@@ -77,7 +78,7 @@ function interact(state,o,s){
  if(k==='lever'){state.levers.add(o.id);state.unlocked=true;state.gates.clear();return 'Hebel aktiviert · Ebenen-Fallgitter geöffnet (lokale Simulation).';}
  if(k==='portcullis')return state.gates.has(o.id)?'Fallgitter verschlossen · Hebel suchen.':'Fallgitter offen.';
  if(k==='hatch'){const h=state.hatches.get(o.id);if(!h)return '';if(h.sealed){h.sealed=false;return 'Magisches Siegel gelöst (Testsimulation) · Falltür jetzt aufschlagen.';}return h.hp>0?'Falltür mit Angriffen aufschlagen.':'Leiter nach unten frei · Ebenenwechsel im Hauptspiel.';}
- if(k==='next-level')return state.levers.size===0&&!state.unlocked?'Treppenzugang · bei Ebenenhebel erst Freigabe erforderlich.':'Treppenzugang frei · Hauptspiel-Ebenenwechsel.';
+ if(k==='next-level')return !state.unlocked&&state.gates.size?'Treppenzugang gesperrt · Hebel suchen.':'Treppenzugang · echter Ebenenwechsel im Hauptspiel.';
  return s.category==='gameplay'?s.label+' · reservierter Fokuspunkt (keine Spielinstanz)':'';
 }
 function hit(state,o,s){
