@@ -156,27 +156,37 @@
   });
   const stairWindows=new Map();
   function stairWindow(link,lower,drawActors,time){
-   const points=link.mouth.flatMap(step=>step.corners.map(p=>project(p.x,p.y)));
-   if(!points.length)return null;
    const key=lower+'-'+link.id;
    let windowImage=stairWindows.get(key);
    if(!windowImage){
-    const x=Math.floor(Math.min(...points.map(p=>p[0]))),y=Math.floor(Math.min(...points.map(p=>p[1])));
+    const steps=link.visibleSteps||link.mouth;
+    const faces=steps.map(step=>step.corners.map(p=>project(p.x,p.y)));
+    const points=faces.flat();
+    if(!points.length)return null;
     const canvas=document.createElement('canvas');
-    canvas.width=Math.ceil(Math.max(...points.map(p=>p[0])))-x+1;
-    canvas.height=Math.ceil(Math.max(...points.map(p=>p[1])))-y+1;
-    windowImage={image:canvas,x,y,width:canvas.width,height:canvas.height,originX:0,originY:0,key:'shaft-'+key,depth:1,last:-Infinity};
+    // Leave room above the floor plane for the two stone newels at the head.
+    const x=Math.floor(Math.min(...points.map(p=>p[0])))-12;
+    const y=Math.floor(Math.min(...points.map(p=>p[1])))-32;
+    canvas.width=Math.ceil(Math.max(...points.map(p=>p[0])))-x+13;
+    canvas.height=Math.ceil(Math.max(...points.map(p=>p[1])))-y+12;
+    const outline=new Path2D();
+    for(const face of faces){
+     outline.moveTo(...face[0]);
+     for(const pt of face.slice(1))outline.lineTo(...pt);
+     outline.closePath();
+    }
+    windowImage={image:canvas,x,y,width:canvas.width,height:canvas.height,originX:0,originY:0,
+     key:'shaft-'+key,depth:1,last:-Infinity,outline,steps,head:steps.at(-1).end};
     stairWindows.set(key,windowImage);
    }
    const w=windowImage;w.live=time-w.last>=.085;
    if(!w.live)return w;
    w.last=time;
    const ctx=w.image.getContext('2d'),h=vertical.height;
-   ctx.clearRect(0,0,w.width,w.height);ctx.save();ctx.translate(-w.x,-w.y);ctx.beginPath();
-   for(const step of link.mouth){
-    step.corners.forEach((p,i)=>ctx[i?'lineTo':'moveTo'](...project(p.x,p.y)));ctx.closePath();
-   }
-   ctx.clip();ctx.translate(0,h);
+   ctx.clearRect(0,0,w.width,w.height);ctx.save();ctx.translate(-w.x,-w.y);
+   ctx.save();ctx.clip(w.outline);
+   ctx.fillStyle='#191921';ctx.fill(w.outline);
+   ctx.translate(0,h);
    function paint(part){
     if(part.x+part.canvas.width<w.x||part.x>w.x+w.width||part.y+h+part.canvas.height<w.y||part.y+h>w.y+w.height)return;
     ctx.drawImage(part.canvas,part.x,part.y);
@@ -185,7 +195,37 @@
    const walls=art.structures(...project(link.top.x,link.top.y)).filter(p=>!p.street);
    const parts=upperArchitecture.filter(p=>p.flight===link.flight&&p.kind.startsWith('stair-'));
    for(const part of [...walls,...parts].sort((a,b)=>a.depth-b.depth))paint(part.image);
-   drawActors(ctx);ctx.restore();return w;
+   // Light from the landing falls off down the shaft. Follow the actual
+   // tread planes so the diminishing light also describes a turning flight.
+   for(const step of w.steps){
+    const z=step.z;
+    ctx.beginPath();
+    step.corners.forEach((p,i)=>ctx[i?'lineTo':'moveTo'](...project(p.x,p.y,z)));
+    ctx.closePath();
+    ctx.fillStyle='rgba(15,16,23,'+Math.min(.62,(1-z/h)*1.15)+')';
+    ctx.fill();
+   }
+   drawActors(ctx);ctx.restore();
+   // Stone shoulders flank the true top tread. Leave the approach between
+   // them open and mark the descending edge with a worn stone nosing.
+   const [a,b]=w.head.map(p=>project(p.x,p.y));
+   ctx.lineWidth=3;ctx.strokeStyle='#aba495';ctx.beginPath();
+   ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();
+   function stoneFace(points,fill,edge){
+    ctx.beginPath();ctx.moveTo(...points[0]);
+    for(const pt of points.slice(1))ctx.lineTo(...pt);
+    ctx.closePath();ctx.fillStyle=fill;ctx.fill();
+    ctx.strokeStyle=edge;ctx.lineWidth=1;ctx.stroke();
+   }
+   for(const p of w.head){
+    const r=.13;
+    const corners=[[p.x-r,p.y-r],[p.x+r,p.y-r],[p.x+r,p.y+r],[p.x-r,p.y+r]];
+    const foot=corners.map(q=>project(...q)),cap=corners.map(q=>project(...q,23));
+    stoneFace([foot[1],foot[2],cap[2],cap[1]],'#68645f','#484441');
+    stoneFace([foot[2],foot[3],cap[3],cap[2]],'#494846','#373639');
+    stoneFace(cap,'#aaa391','#69645c');
+   }
+   ctx.restore();return w;
   }
   function layers(player,opened){
    const {x,y}=toView(player.x,player.y);
@@ -219,7 +259,13 @@
     const alpha=part.level===1?reveal:1;
     // The staircase is rigid. Reordering individual treads as the
     // actor changes height reverses overlapping stone faces mid-stride.
-    const depth=part.depth;
+    let depth=part.depth;
+    if(part.spindleTop&&vertical?.plan?.kind.startsWith('spiral')){
+     const plan=vertical.plan;
+     const nearFoot=Math.hypot(player.x/48-plan.bottom.x,player.y/48-plan.bottom.y)<=plan.width+.35;
+     if(stair||nearFoot||vertical.state.floor===1||crossing)
+      depth+=7000;
+    }
     return {...part.image,depth,alpha,visible};
    });
    const stacked=prison?.enabled&&!prison.last;
@@ -374,4 +420,5 @@
  }
  window.DungeonIsometric={create,toView,toWorld,viewAngle,width,height};
 })();
+
 
