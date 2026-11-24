@@ -2,7 +2,7 @@
 <html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Mind Dungeon | Room Atelier</title>
-<link rel="stylesheet" href="./editor.css?v=4">
+<link rel="stylesheet" href="./editor.css?v=5">
 </head><body>
 <div class="app">
  <header class="topbar">
@@ -44,6 +44,8 @@
    <button data-tool="floor" class="tool" title="Originalboden für den ganzen Raum auswählen (B)"><span>▰</span> Boden</button>
    <button data-tool="shapeAdd" class="tool" title="Bodenfelder hinzufügen (N)"><span>▧+</span> Boden +</button>
    <button data-tool="shapeRemove" class="tool" title="Bodenfelder entfernen (M)"><span>▧−</span> Boden −</button>
+   <button data-tool="waterAdd" class="tool" title="Wasserfelder malen (U)"><span>≈+</span> Wasser +</button>
+   <button data-tool="waterRemove" class="tool" title="Wasserfelder entfernen (I)"><span>≈−</span> Wasser −</button>
    <button data-tool="wall" class="tool" title="Wände / Gitter setzen (W)"><span>▥</span> Wand</button>
    <button data-tool="place" class="tool" title="Möbel platzieren (F)"><span>▣</span> Möbel</button>
    <button data-tool="erase" class="tool" title="Objekt oder Wand entfernen (E)"><span>⌫</span> Löschen</button>
@@ -100,7 +102,7 @@
   <p class="small quiet">C drücken und freie Außenkante anklicken. Grün = gültig, Rot = blockiert. Kameraseitige Wände erscheinen in den Kantenwerkzeugen als graue Linien.</p>
   <label for="portalWidth">Durchgangsbreite</label><select id="portalWidth"><option value="1">1 m / Feld</option><option value="2">2 m / Felder</option><option value="3">3 m / Felder</option></select>
   <div class="action-stack"><button id="portalSuggest">Freie Kanten vorschlagen</button></div><p id="portalStatus" class="small quiet" aria-live="polite"></p><div id="portalList" class="object-list"></div>
-  <div class="help"><strong>Tastatur</strong><p>V Auswahl · B Material · N Boden + · M Boden − · W Wand · C Verbindung · F Möbel/Architektur · E Radierer · R drehen · Entf löschen · Strg+Z rückgängig · Mausrad zoomen · mittlere Maustaste verschieben.</p></div>
+  <div class="help"><strong>Tastatur</strong><p>V Auswahl · B Material · N Boden + · M Boden − · U Wasser + · I Wasser − · W Wand · C Verbindung · F Möbel/Architektur · E Radierer · R drehen · Entf löschen · Strg+Z rückgängig · Mausrad zoomen · mittlere Maustaste verschieben.</p></div>
  </aside>
 </div>
 <script src="./catalog.js?v=21"></script>
@@ -110,6 +112,6 @@
 <script src="./architecture.js?v=5"></script>
 <script src="./portals.js?v=2"></script>
 <script src="./environment.js?v=3"></script>
-<script src="./level-design.js?v=1"></script>
-<script src="./editor.js?v=49"></script>
+<script src="./level-design.js?v=2"></script>
+<script src="./editor.js?v=50"></script>
 </body></html>
