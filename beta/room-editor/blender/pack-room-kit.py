@@ -194,6 +194,7 @@ manifest={
  'floorGeneratorSha256':hashlib.sha256((HERE/'abandoned-floor-clutter.py').read_bytes()).hexdigest(),
  'prisonBarsGeneratorSha256':hashlib.sha256((HERE/'dungeon-prison-bars.py').read_bytes()).hexdigest(),
  'architectureGeneratorSha256':hashlib.sha256((HERE/'dungeon-architecture.py').read_bytes()).hexdigest(),
+ 'architectureWeatheringSha256':hashlib.sha256((HERE/'architecture-weathering.py').read_bytes()).hexdigest(),
  'wallViews':{name:{**spec,'asset':'assets/walls/'+spec['file'],'projection':'front-orthographic-to-wall-plane'}
   for name,spec in wall_views.items()},
  'pixelDensity':{'legacyOrthoScale':3.35,'newFurnitureOrthoScale':1.675,'editorSpriteScale':.5},
