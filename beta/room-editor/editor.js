@@ -646,28 +646,30 @@ function refreshUI(){
  refreshInspector();schedule();
 }
 function previewBackground(entry){
- // First use the local real Diffuse scan. Missing files fall back to an
- // authentic 1K Poly Haven Diffuse JPG, not a tilted promotional picture.
- const local='url("'+entry.asset+'?v=uv-8floors-9walls")';
- const slug=entry.polyhaven;
- if(!slug)return local;
- const remote='https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/'+
-  slug+'/'+slug+'_diff_1k.jpg';
- const preview='https://cdn.polyhaven.com/asset_img/primary/'+
-  slug+'.png?height=256&quality=80';
- // The 1K JPG matches the flat actual material. The small CDN preview is
- // only a last-resort thumbnail if the browser cannot fetch that JPG.
- return local+',url("'+remote+'"),url("'+preview+'")';
+ // Preview is optional: never eagerly download 17 huge material scans.
+ // Also avoid CSS background *layers*, which caused both Poly Haven
+ // fallbacks to download even when the local image had loaded.
+ return 'url("'+entry.asset+'?v=uv-8floors-9walls")';
+}
+function requestSwatchPreview(button,entry){
+ if(button.dataset.previewLoaded)return;
+ button.dataset.previewLoaded='1';
+ button.style.backgroundImage=previewBackground(entry);
+}
+function wireSwatchPreview(button,entry){
+ button.addEventListener('pointerenter',()=>requestSwatchPreview(button,entry),{once:true});
+ button.addEventListener('focus',()=>requestSwatchPreview(button,entry),{once:true});
 }
 for(const [type,entry] of Object.entries(cat.floors)){
  const option=document.createElement('option');option.value=type;option.textContent=entry.label;$('floorType').appendChild(option);
  const b=document.createElement('button');b.className='swatch';
  b.style.background='linear-gradient(150deg,'+entry.accent+','+entry.base+','+entry.grout+')';
- // Thumbnail is the exact source image, with no darkening overlay.
- b.style.backgroundImage=previewBackground(entry);
+ // Keep a fast CSS color swatch until the material is actually inspected.
+ wireSwatchPreview(b,entry);
  b.style.backgroundSize='cover';
  b.setAttribute('aria-label','Boden wählen: '+entry.label);
  b.dataset.floor=type;b.title=entry.label;b.onclick=()=>{
+  requestSwatchPreview(b,entry);
   $('floorType').value=type;room.floorStyle=type;room.tiles=[];checkpoint();};
  $('floorSwatches').appendChild(b);
 }
@@ -677,13 +679,14 @@ for(const [type,entry] of Object.entries(cat.walls)){
   const button=document.createElement('button');
   button.className='swatch';
   button.style.background='#4e4b47';
-  button.style.backgroundImage=previewBackground(entry);
+  wireSwatchPreview(button,entry);
   button.style.backgroundSize='cover';
   button.style.backgroundPosition='center';
   button.dataset.wall=type;
   button.setAttribute('aria-label','Steinmauer auswählen: '+entry.label);
   button.title=entry.label+' · '+entry.worldWidth+' m Texturbreite';
-  button.onclick=()=>{$('wallType').value=type;room.wallStyle=type;checkpoint()};
+  button.onclick=()=>{requestSwatchPreview(button,entry);
+   $('wallType').value=type;room.wallStyle=type;checkpoint()};
   $('wallSwatches').appendChild(button);
  }
 }
@@ -763,7 +766,7 @@ $('propRotation').onchange=e=>changeSelected('rot',Number(e.target.value));
 $('selectedId').onchange=e=>{const value=e.target.value.trim();
  if(!value||room.furniture.some(f=>f.id===value&&f.id!==selected)){refreshInspector();return}
  changeSelected('id',value);selected=value;refreshUI();};
-for(const [id,key] of [['propX','x'],['propY','y']])$(id).onchange=e=>changeSelected(key,quant(Number(e.target.value)));
+for(const [id,key] of [['propX','x'],['propY','y']])$(id).onchange=e=>changeSelected(key,Math.round(Number(e.target.value)*1000)/1000);
 for(const [id,key] of [['propDestroyable','destroyable'],['propVaultable','vaultable'],['propBlocks','blocksMovement']])
  $(id).onchange=e=>changeSelected(key,e.target.checked);
 $('deleteBtn').onclick=deleteSelected;
