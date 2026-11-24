@@ -335,7 +335,14 @@ function draw(){
  }
  const layers=[];
  for(const w of room.walls)if(!isNearWall(w))layers.push({depth:wallDepth(w),draw:()=>drawWall(w)});
- for(const obj of room.furniture)layers.push({depth:pt(obj.x,obj.y).y,draw:()=>drawFurniture(obj)});
+ // Floor clutter always sits on stone UNDER the Guardian and furniture,
+ // regardless of a nonblocking patch extending slightly in front of the feet.
+ // Sort clutter within its ground plane before depth-sorted solid objects.
+ for(const obj of room.furniture){
+  const floorProp=cat.furniture[obj.type]?.category==='floor-clutter';
+  layers.push({depth:floorProp?-100000+pt(obj.x,obj.y).y:pt(obj.x,obj.y).y,
+   draw:()=>drawFurniture(obj)});
+ }
  if(playing||showGuardian)layers.push({
   depth:pt(playing?hero.x:room.width/2,playing?hero.y:room.height/2).y+.01,
   draw:()=>window.MindRoomArt.drawGuardian(ctx,{
