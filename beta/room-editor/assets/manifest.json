@@ -5,7 +5,7 @@
   "generatorSha256": "7b1eabae8e8270ce648378e956b4cec341e7890abe8d3619eb0fb22d4ddb648b",
   "alchemyGeneratorSha256": "019eba788853ee401404873702a8ef7c4c4d2e4dd56bac0e752253020ae9d63b",
   "tortureGeneratorSha256": "7d7ccea899d6407f851600ff073470cad75a278766633262eb5b4581573db71f",
-  "floorGeneratorSha256": "7ce11e453f5909a483ed6afa5a8eb15ab3a11c9c0f65054e8342d77c4da2249e",
+  "floorGeneratorSha256": "415d9d15cd650d552c4491c1980a988552536bafe8b314fddf75574c25713b2f",
   "pixelDensity": {
     "legacyOrthoScale": 3.35,
     "newFurnitureOrthoScale": 1.675,
