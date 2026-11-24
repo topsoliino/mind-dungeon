@@ -129,26 +129,26 @@ const catalog={
    maxHP:35,material:'aged oak + wrought iron',render:'blender-ortho-4'
   },
   'alchemy-work-table':{
-   label:'Alchemisten-Werktisch',kind:'table',asset:artRoot+'furniture/work-table',extension:'png',
-   footprint:{w:1.85,h:1.05},height:1.80,
+   label:'Alchemisten-Werktisch · 55 % kleiner',kind:'table',asset:artRoot+'furniture/work-table',extension:'png',editorSpriteScale:.5,
+   footprint:{w:.83,h:.47},height:.83,
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
    maxHP:115,material:'weathered oak + wrought iron',render:'blender-ortho-4'
   },
   'alchemy-brew-table':{
-   label:'Brautisch · kompakt (80 %)',kind:'table',asset:artRoot+'furniture/brew-table-small',extension:'png',
-   footprint:{w:1.48,h:.84},height:1.56,
+   label:'Brautisch · 55 % kleiner',kind:'table',asset:artRoot+'furniture/brew-table-small',extension:'png',editorSpriteScale:.5,
+   footprint:{w:.67,h:.38},height:.77,
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
    maxHP:120,material:'oak + hammered copper + glass',render:'blender-ortho-4',interaction:'brew'
   },
   'alchemy-highback-chair':{
-   label:'Hochlehnstuhl · Alchemie',kind:'chair',asset:artRoot+'furniture/chair-highback',extension:'png',
-   footprint:{w:.80,h:.80},height:1.80,
+   label:'Hochlehnstuhl · Alchemie',kind:'chair',asset:artRoot+'furniture/chair-highback',extension:'png',editorSpriteScale:.5,
+   footprint:{w:.36,h:.36},height:.81,
    destroyable:true,vaultable:true,blocksMovement:true,blocksProjectiles:false,
    maxHP:45,material:'aged oak + linen + iron',render:'blender-ortho-4'
   },
   'alchemy-armchair':{
-   label:'Armstuhl · Alchemie',kind:'chair',asset:artRoot+'furniture/chair-arm',extension:'png',
-   footprint:{w:.92,h:.88},height:1.68,
+   label:'Armstuhl · Alchemie',kind:'chair',asset:artRoot+'furniture/chair-arm',extension:'png',editorSpriteScale:.5,
+   footprint:{w:.41,h:.40},height:.76,
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:false,
    maxHP:55,material:'aged oak + brass + linen',render:'blender-ortho-4'
   }
