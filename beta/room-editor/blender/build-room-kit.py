@@ -253,10 +253,16 @@ for name,rig in all_furniture:
         show=other==rig
         for ob in (other,*other.children):
             ob.hide_render=not show
-    if name not in ('table','chair'):
-        # Render the half-size in-world meshes with twice the pixel density.
-        # The editor draws these 512px images at half the old sprite size,
-        # preserving REAL scale against the original in-game Guardian.
+    if name.startswith(('wall-','arch-')):
+        # Architecture uses real world-metre dimensions (2m columns and
+        # 2m-wide stages), not the scaled 45%-Guardian furniture pipeline.
+        # A wider orthographic framing prevents clipping in any 90° view.
+        camera.data.ortho_scale=3.50
+        camera.location.z=5.72
+        scene.view_settings.exposure=-.42
+        scene.cycles.samples=min(scene.cycles.samples,40)
+    elif name not in ('table','chair'):
+        # Existing furniture uses the established high-density half-scale view.
         camera.data.ortho_scale=3.35*.5
         camera.location.z=5.72-.72*(1-.5)
         scene.view_settings.exposure=-.42
