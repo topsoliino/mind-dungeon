@@ -29,4 +29,7 @@ for(const [id,spec] of Object.entries(cat.furniture).filter(([id,s])=>s.category
 }
 const o={id:'roach',type:'ambient-roaches',x:1.5,y:1.5,rot:0},r={...room,furniture:[o,{id:'table',type:'prison-table',x:3.5,y:2.5,rot:0,blocksMovement:true}],walls:[...room.walls,{x:2,y:1,edge:'west',style:'stone'}]};
 const route=env.route(r,cat,shape,placement,o);assert.ok(route.length>2);assert.ok(route.every(p=>env.free(r,cat,shape,placement,p.x,p.y)));
+const editor=fs.readFileSync(path.join(root,'editor.js'),'utf8');
+const groundPass=editor.indexOf("drawAmbient('roach')"),layerDraw=editor.indexOf('layer.draw();',groundPass),flyPass=editor.indexOf("drawAmbient('fly')",layerDraw);
+assert.ok(groundPass>=0&&layerDraw>groundPass&&flyPass>layerDraw,'Roaches before upright layers; flies after');
 console.log('Crypt environment: wall lights, 4-way floor geometry and ambient routes OK');
