@@ -109,6 +109,56 @@ def _a_box(n,p,s,mat=_a_stone,bevel=.013):
 def _a_beam(n,start,end,r=.028,mat=_a_metal):
     return _rod(n,start,end,r,mat)
 
+def _a_organic_stone(name,rings,mat=_a_stone,sides=11):
+    """Closed uneven faceted stone sculpt: real tapered anatomy / drapery.
+    Rings are (centerX,centerY,z,halfWidth,halfDepth) cross-sections. Unlike
+    stacking rectangular cubes, this sculpts a continuous eroded silhouette.
+    """
+    verts=[]
+    for ri,(cx,cy,z,rx,ry) in enumerate(rings):
+        for i in range(sides):
+            a=2*_a_math.pi*i/sides
+            irregular=1+.055*_a_math.sin((ri+1)*1.9+i*3.1)
+            verts.append((cx+rx*_a_math.cos(a)*irregular,
+                          cy+ry*_a_math.sin(a)*(1+.045*_a_math.cos(i*2.13)),
+                          z+.009*_a_math.sin(ri*2.7+i*1.4)))
+    faces=[tuple(range(sides-1,-1,-1))]
+    for k in range(len(rings)-1):
+        for i in range(sides):
+            n=(i+1)%sides
+            faces.append((k*sides+i,k*sides+n,(k+1)*sides+n,(k+1)*sides+i))
+    faces.append(tuple((len(rings)-1)*sides+i for i in range(sides)))
+    mesh=bpy.data.meshes.new(name+' | weathered sculpted limestone')
+    mesh.from_pydata(verts,[],faces)
+    mesh.update()
+    ob=bpy.data.objects.new(name,mesh)
+    bpy.context.collection.objects.link(ob)
+    ob.data.materials.append(mat)
+    return ob
+
+def _a_bat_wing(name,side):
+    """Anatomically connected, broken gothic wing (not rectangular paddles)."""
+    s=side
+    points=[
+        (s*.24,.37,1.50), (s*.46,.38,1.79), (s*.87,.49,2.03),
+        (s*1.04,.51,2.01), (s*.93,.49,1.77),
+        (s*1.10,.49,1.59), (s*.88,.48,1.44),
+        (s*.94,.46,1.23), (s*.67,.45,1.34),
+        (s*.53,.40,1.16), (s*.33,.38,1.34)]
+    faces=[(0,1,2),(0,2,3),(0,3,4),(0,4,5),(0,5,6),
+           (0,6,7),(0,7,8),(0,8,9),(0,9,10)]
+    mesh=bpy.data.meshes.new(name+' | actual jagged wing membrane')
+    mesh.from_pydata(points,[],faces);mesh.update()
+    ob=bpy.data.objects.new(name,mesh)
+    bpy.context.collection.objects.link(ob)
+    ob.data.materials.append(_a_darkstone)
+    solid=ob.modifiers.new('Chipped carved feather stone thickness','SOLIDIFY')
+    solid.thickness=.055
+    for tip in (2,5,7,9):
+        _a_beam('Cracked gothic wing carved strut '+name,
+                (s*.24,.34,1.50),points[tip],.019,_a_stoneedge)
+    return ob
+
 def _a_column(n,x,y,h,r=.19,mat=_a_stone):
     _a_box(n+' | carved octagonal foundation',(x,y,.115),(r*2.75,r*2.75,.23),_a_darkstone,.019)
     _a_box(n+' | worn socle',(x,y,.29),(r*2.48,r*2.48,.16),_a_stoneedge,.022)
@@ -211,12 +261,18 @@ def _a_statue_knight():
            (1.0,.25,.15),_a_darkstone)
     _a_box('Knight statuette stone base plinth',(0,.18,.37),
            (.78,.59,.23),_a_stoneedge,.032)
-    _a_box('Gothic robed knight heavy sculpted torso',(0,.20,.93),
-           (.40,.34,.84),_a_stone,.09)
-    _a_box('Angular stone cuirass breastplate',(0,-.026,1.24),
-           (.52,.13,.36),_a_stoneedge,.07)
-    _a_box('Knight statue stone helm and visor',(0,.18,1.65),
-           (.26,.28,.36),_a_stoneedge,.045)
+    _a_organic_stone('Gothic knight worn tapered chainmail and heavy robe',
+          [(0,.16,.51,.28,.24),(0,.16,.73,.26,.22),
+           (0,.16,1.0,.19,.18),(0,.16,1.30,.23,.19),
+           (0,.16,1.48,.18,.17)],_a_stone)
+    _a_organic_stone('Sculpted gothic cuirass over breastplate',
+          [(0,-.016,1.05,.19,.16),(0,-.04,1.22,.245,.14),
+           (0,-.028,1.43,.20,.135)],_a_stoneedge)
+    _a_organic_stone('Heavily eroded narrow bascinet medieval helm',
+          [(0,.13,1.47,.13,.13),(0,.13,1.58,.152,.14),
+           (0,.13,1.75,.11,.12),(0,.13,1.82,.028,.030)],_a_stoneedge)
+    _a_box('Gothic knight cracked nose ridge',(0,-.037,1.62),
+           (.041,.076,.175),_a_darkstone,.009)
     _a_box('Stone embossed knight visor slit',(0,-.01,1.65),
            (.17,.026,.032),_a_darkstone,.009)
     for x in (-.23,.23):
@@ -231,10 +287,13 @@ def _a_statue_knight():
 def _a_statue_gargoyle():
     _a_box('Gargoyle Gothic thick stone niche base',(0,.14,.62),
            (.87,.61,.23),_a_darkstone)
-    _a_box('Gargoyle crouched stone torso',(0,.29,1.23),
-           (.50,.57,.55),_a_stone,.16)
-    _a_box('Gargoyle beak-like demon face',(0,-.068,1.48),
-           (.35,.38,.34),_a_stoneedge,.055)
+    _a_organic_stone('Gargoyle hunched weathered sternum and hunched abdomen',
+          [(0,.24,.98,.19,.22),(0,.27,1.16,.29,.31),
+           (0,.28,1.35,.30,.26),(0,.24,1.57,.20,.17)],_a_stone)
+    _a_organic_stone('Gargoyle warped elongated skeletal jaw',
+          [(0,-.12,1.38,.14,.16),(0,-.12,1.48,.175,.20),
+           (0,-.13,1.62,.145,.145),(0,-.11,1.68,.08,.08)],
+           _a_stoneedge)
     _a_beam('Gargoyle elongated carved nose',(0,-.22,1.52),
             (0,-.42,1.41),.072,_a_stoneedge)
     for x in (-.14,.14):
@@ -243,13 +302,11 @@ def _a_statue_gargoyle():
         _a_beam('Broken stone antler horn',(x,-.01,1.63),
                 (x*1.8,-.02,1.92),.061,_a_stone)
     for sgn in (-1,1):
-        ob=_a_box('Gargoyle jagged spread masonry wing',
-                  (sgn*.52,.42,1.41),(.65,.17,.72),_a_darkstone,.035)
-        ob.rotation_euler.y=sgn*.37
+        _a_bat_wing('Rain-ruined angular gargoyle membrane',sgn)
         for i in range(3):
-            _a_beam('Gothic carved feather ridge',
-                    (sgn*.30,.33,1.61-i*.11),
-                    (sgn*.76,.32,1.83-i*.22),.022,_a_stoneedge)
+            _a_beam('Gothic carved wing ossified finger',
+                    (sgn*.31,.37,1.54),
+                    (sgn*(.68+.07*i),.49,1.92-i*.25),.020,_a_stoneedge)
         _a_beam('Gargoyle claw hooked back leg',
                 (sgn*.23,.09,1.05),
                 (sgn*.34,-.08,.73),.070,_a_stone)
