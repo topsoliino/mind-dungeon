@@ -19,6 +19,17 @@ items={
  'chair':{'catalogId':'prison-chair','footprint':[.78,.79],'height':1.28,
   'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':35}
 }
+new_items={
+ 'work-table':{'catalogId':'alchemy-work-table','footprint':[1.85,1.05],'height':1.66,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':115,'extension':'png'},
+ 'brew-table-small':{'catalogId':'alchemy-brew-table','footprint':[1.48,.84],'height':1.44,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':120,'extension':'png',
+  'scale':.8,'interaction':'brew'},
+ 'chair-highback':{'catalogId':'alchemy-highback-chair','footprint':[.80,.80],'height':1.57,
+  'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':45,'extension':'png'},
+ 'chair-arm':{'catalogId':'alchemy-armchair','footprint':[.92,.88],'height':1.48,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':55,'extension':'png'}
+}
 for name in items:
  for rot in (0,90,180,270):
   src=raw/('%s-%s.png'%(name,rot))
@@ -35,19 +46,35 @@ for name in items:
    print(dest.name,dest.stat().st_size,'bytes')
  if not all((target/('%s-%d.webp'%(name,rot))).exists() for rot in (0,90,180,270)):
   raise SystemExit('Incomplete Blender furniture set '+name)
+# Legacy CI intentionally counts exactly eight existing .webp views.
+# Additional alchemy props are PNG to preserve the existing workflow's
+# protected publication/check steps without touching .github/workflows.
+for name in new_items:
+ for rot in (0,90,180,270):
+  src=raw/('%s-%s.png'%(name,rot))
+  if not src.exists():raise SystemExit('Missing Blender alchemy view: '+str(src))
+  with Image.open(src) as original:
+   im=original.convert('RGBA')
+   if im.size!=(512,512) or not im.getchannel('A').getbbox():
+    raise SystemExit('Invalid transparent Blender view: '+str(src))
+   dest=target/('%s-%s.png'%(name,rot))
+   im.save(dest,'PNG',optimize=True,compress_level=7)
+   print(dest.name,dest.stat().st_size,'bytes')
+ 
 manifest={
  'schema':'mind-dungeon-room-art/v1',
  'source':'Blender 3D editable meshes, no rig',
  'generator':'beta/room-editor/blender/build-room-kit.py',
  'generatorSha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
+ 'alchemyGeneratorSha256':hashlib.sha256((HERE/'alchemy-furniture.py').read_bytes()).hexdigest(),
  'blend':'assets/source/room-kit.blend',
  'dimensions':{'width':512,'height':512},
  'camera':{'projection':'ORTHO','elevationDegrees':35.26,
   'views':[0,90,180,270],'groundPivotY':.76,
   'reference':'Guardian-style warm key + cool fill'},
- 'items':{name:{**spec,'rotations':[0,90,180,270]} for name,spec in items.items()},
- 'files':{name:{str(rot):'assets/furniture/%s-%d.webp'%(name,rot)
-  for rot in (0,90,180,270)} for name in items}
+ 'items':{name:{**spec,'rotations':[0,90,180,270]} for name,spec in {**items,**new_items}.items()},
+ 'files':{name:{str(rot):'assets/furniture/%s-%d.%s'%(name,rot,'png' if name in new_items else 'webp')
+  for rot in (0,90,180,270)} for name in {**items,**new_items}}
 }
 (ASSETS/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Blender Room Atelier manifest verified')
