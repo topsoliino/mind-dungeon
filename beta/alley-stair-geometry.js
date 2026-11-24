@@ -216,7 +216,7 @@ function select(generator,placeLadder,reserved=null,previousKind=null){
  const viable=[];
  for(const style of order){
   const template=buildTemplate(style),{w,h}=template.cfg;
-  for(const room of generator.rooms.filter(r=>r.kind==='raum')){
+  for(const room of generator.rooms.filter(r=>r.kind==='raum'&&!r.authored)){
    const occupied=new Set(room.cells.map(([x,y])=>K(x,y))),
     cells=room.cells,rx=cells.map(c=>c[0]),ry=cells.map(c=>c[1]);
    const minX=Math.min(...rx),maxX=Math.max(...rx),minY=Math.min(...ry),maxY=Math.max(...ry);
@@ -342,4 +342,5 @@ function withUpperDeck(chosen){
 }
 window.AlleyStairGeometry={height:H,styles,templates:ref,make:buildTemplate,select};
 })();
+
 

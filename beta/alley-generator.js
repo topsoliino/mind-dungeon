@@ -52,6 +52,7 @@ function makeShape(rnd,kind,dx){
  }
  return connected(mask)?{mask,kind,style,w,h}:null;
 }
+const pack=dungeonLevel===1?window.AlleyRoomPack:null;
 function generate(n){
  const rnd=rgen(n),occ=new Map();
  const start={id:0,kind:'start',style:'Gasse',cells:[[11,3],[11,4],[11,5],[11,6]],exits:[],level:0};
@@ -64,7 +65,7 @@ function generate(n){
  const door={from:0,to:1,edges:[[[11,4],[12,4]]],side:'east'};
  if(width===3)door.edges.push([[11,5],[12,5]]);
  doors.push(door);start.exits.push(door);passage.exits.push(door);
- for(let id=2;rooms.filter(r=>r.kind==='raum').length<15;id++){
+ for(let id=2;rooms.filter(r=>r.kind==='raum').length<(pack?8:15);id++){
   let accepted=false;
   for(let trial=0;trial<1600&&!accepted;trial++){
    const parents=rooms.slice(1).filter(p=>p.exits.length<(p.kind==='gang'?3:4));
@@ -131,7 +132,8 @@ function generate(n){
 
   });
  }
- return {rooms,doors,occ:expandedOccupancy};
+ const layout={rooms,doors,occ:expandedOccupancy};
+ return pack?pack.attach(layout,rnd,prison.count):layout;
 }
 let result=null,actualSeed=seed;
 for(let i=0;i<15&&!result;i++){actualSeed=(seed+i*7919)>>>0;result=generate(actualSeed);}
@@ -188,7 +190,7 @@ for(const segment of segments){
 }
 const th=.075;
 const rect=g=>g.axis==='u'?[g.p-th,g.start,g.p+th,g.end]:[g.start,g.p-th,g.end,g.p+th];
-const walls=groups.map(g=>({...g,area:rect(g)}));
+const walls=groups.map(g=>({...g,templateFloor:rooms[g.room].authored?.floor,area:rect(g)}));
 const wallBlocks=segments.map(rect);
 // Spatial hash: testing a nearby wall costs O(local wall segments), not O(all walls).
 // The key covers the wall footprint and neighbouring cells for hero-radius checks.
@@ -207,7 +209,7 @@ const materials={
 };
 let stairs=null;
 for(const room of rooms.slice(2).reverse()){
- if(room.kind!=='raum'||room.cells.length<14)continue;
+ if(room.authored||room.kind!=='raum'||room.cells.length<14)continue;
  for(const [x,y] of room.cells){
   const patch=[];
   for(let dx=0;dx<2;dx++)for(let dy=0;dy<3;dy++)patch.push([x+dx,y+dy]);
@@ -235,7 +237,7 @@ if(!stairs){
 // Interior partitions are real structural walls, not randomly placed obstacles.
 // Each spans between two external boundaries; a one-cell doorway is cut into it.
 const innerWalls=[];
-for(const room of rooms.filter(p=>p.kind==='raum').sort((a,b)=>b.cells.length-a.cells.length)){
+for(const room of rooms.filter(p=>p.kind==='raum'&&!p.authored).sort((a,b)=>b.cells.length-a.cells.length)){
  if(innerWalls.length>=4)break; // Two split chambers, two wall wings each.
  const xs=room.cells.map(p=>p[0]),ys=room.cells.map(p=>p[1]);
  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
@@ -306,6 +308,10 @@ function extend(map){
  map.art.routeWalls=walls;
 }
 function blocked(u,v,r=0){
+ if(pack){
+  const id=occ.get(key(Math.floor(u),Math.floor(v))),a=rooms[id]?.authored;
+  if(a&&a.floor===prison.storey-1&&a.t.blocked(u-a.x,v-a.y,r,false,a.removed))return true;
+ }
  return (wallIndex.get(key(Math.floor(u),Math.floor(v)))||[]).some(([a,b,c,d])=>
   u+r>a&&u-r<c&&v+r>b&&v-r<d);
 }
@@ -324,6 +330,7 @@ function areaAt(u,v){
 }
 function renderFloor(ctx,{project,polygon,line}){
  for(const room of rooms.slice(1)){
+  if(room.authored)continue;
   const [u,v]=room.cells.reduce((a,b)=>[a[0]+b[0],a[1]+b[1]],[0,0]).map(t=>t/room.cells.length);
   const [x,y]=project(u+.5,v+.5);
   ctx.save();ctx.font='bold 16px system-ui';ctx.textAlign='center';
@@ -477,3 +484,4 @@ const generator={
 generator.extend(window.AlleyStudyMap);
 window.AlleyGenerator=generator;
 })();
+

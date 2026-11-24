@@ -230,8 +230,8 @@
   function layers(player,opened){
    const {x,y}=toView(player.x,player.y);
    const street=!prison?.enabled||prison.hasEntrance&&prison.storey===1;
-   const buildings=art.structures(x,y-footOffset).map(({image,depth,alpha,street:outside})=>
-    ({...image,depth:depth+footOffset,alpha,street:outside,visible:!outside||street}));
+   const buildings=art.structures(x,y-footOffset).map(({image,depth,alpha,street:outside,templateFloor})=>
+    ({...image,depth:depth+footOffset,alpha,street:outside,templateFloor,visible:(!outside||street)&&(templateFloor==null||templateFloor!==prison.storey-1)}));
    // A level is a VISIBILITY GROUP, not a mostly transparent overlay.
    // Upper floors and upper-only fixtures are entirely hidden below. They
    // fade in near the last top-out frames (never before the landing).
@@ -275,7 +275,7 @@
    const floors=ground.map(p=>({...p,visible:!p.street||street}));
    const incoming=prison?.enabled?ground.filter(p=>!p.street).map(p=>({...p,y:p.y-h,depth:3999,alpha:blend,visible:blend>0})):[];
    const upperWalls=prison?.enabled?buildings.filter(p=>!p.street).map(p=>({...p,
-    y:p.y-h,depth:4001+(p.depth-y),alpha:p.alpha*blend,visible:blend>0&&p.visible})):[];
+    y:p.y-h,depth:4001+(p.depth-y),alpha:p.alpha*blend,visible:blend>0&&(p.templateFloor==null||p.templateFloor!==prison.storey)})):[];
    if(blend>0)for(const p of verticalObjects)if(p.depth===4000)p.alpha*=1-blend;
    return [...floors,...incoming,...buildings,...upperWalls,...scenery.map(prop=>({...prop,visible:prop.complete===null||prop.complete===opened})),
     ...verticalObjects,...atmosphere];
@@ -420,5 +420,6 @@
  }
  window.DungeonIsometric={create,toView,toWorld,viewAngle,width,height};
 })();
+
 
 

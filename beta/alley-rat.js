@@ -103,7 +103,7 @@ window.AlleyRat=(()=>{
   const rooms=(generator.rooms||[]).filter(r=>r.kind==='raum'&&r.id!==0&&r.cells?.length);
   const results=[];
   for(const room of rooms){
-   if(room.id%2===0)continue; // occasional small enemies, not a swarm in every room
+   if(!room.authored&&room.id%2===0)continue; // occasional small enemies, not a swarm in every room
    const cells=room.cells.slice().sort((a,b)=>{
     const center=room.cells.reduce((s,p)=>[s[0]+p[0]/room.cells.length,s[1]+p[1]/room.cells.length],[0,0]);
     return Math.hypot(a[0]-center[0],a[1]-center[1])-
@@ -124,4 +124,5 @@ window.AlleyRat=(()=>{
  }
  return {load,sprite,sprites,choose,encounters,clips:files};
 })();
+
 

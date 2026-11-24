@@ -24,13 +24,16 @@
   let best=null,score=-Infinity;
   for(const room of g.rooms){
    if(room.kind!=='raum'||floorRooms[floor].has(room.id))continue;
+   const authored=room.authored?.floor===floor?room.authored:null;
    for(const [a,b] of room.cells){
     const u=a+.5,w=b+.5;
+    if(authored&&(!authored.port.reachable.has((a-authored.x)+','+(b-authored.y))||
+      authored.t.blocked(u-authored.x,w-authored.y,kind==='brew'?.58:.65,true)))continue;
     if(![[-1,-1],[-1,1],[1,-1],[1,1]].every(([dx,dy])=>g.roomAt(u+dx,w+dy)===room.id)||
-      g.blocked(u,w,1.1)||doors.some(([x,y])=>Math.hypot(x+.5-u,y+.5-w)<3)||
+      p.atStorey(floor+1,()=>g.blocked(u,w,.68))||doors.some(([x,y])=>Math.hypot(x+.5-u,y+.5-w)<3)||
       exits.some(e=>Math.hypot(e.x-u,e.y-w)<4)||
       sites.some(s=>s.floor===floor&&Math.hypot(s.x/48-u,s.y/48-w)<3))continue;
-    const value=roll()-(roomCounts.get(room.id)||0);
+    const value=roll()+(authored?.t.id.startsWith('shrine_')&&kind==='altar'?1:0)-(roomCounts.get(room.id)||0);
     if(value>score){score=value;best={room:room.id,u,w};}
    }
   }
@@ -53,7 +56,8 @@
    !floorRooms[floor].has(d.from)&&!floorRooms[floor].has(d.to)&&
    !sites.some(s=>s.kind==='door'&&s.room===d.to)&&
    d.edges.every(pair=>pair.every(([u,w])=>exits.every(e=>Math.hypot(e.x-u,e.y-w)>4))));
-  candidates.sort((a,b)=>g.rooms[a.to].exits.length-g.rooms[b.to].exits.length);
+  candidates.sort((a,b)=>Number(g.rooms[b.to].authored?.floor===floor)-Number(g.rooms[a.to].authored?.floor===floor)||
+   g.rooms[a.to].exits.length-g.rooms[b.to].exits.length);
   const door=candidates[0];
   if(!door)throw Error('Kein freier Türdurchgang in '+prefix);
   const centers=door.edges.map(([a,b])=>[(a[0]+b[0]+1)/2,(a[1]+b[1]+1)/2]);
@@ -84,3 +88,4 @@
  function active(){return v.state.floor||v.state.transition||v.state.stairRide?[]:sites.filter(s=>s.floor===floor());}
  g.levelSites={sites,labels,active,unlock,strike,remove};
 })();
+

@@ -199,10 +199,14 @@ window.DungeonPropAtlas=(()=>{
  const ready=image.decode();
  function sprite(name,point,flip=false){
   if(!image.naturalWidth)return null;
+  // One-cell editor portals use the two-cell gate at half scale.
+  const narrow=name==='seal-1'||name==='spent-1';
+  if(narrow)name=name.replace('-1','-2');
   const [sx,sy,w,h,ox,oy,width,height]=frames[name];
   const unit=42*Math.SQRT2*(name.startsWith('chest-')?.82:name==='altar'?.8:1);
   return {image,key:'dungeon-prop-atlas',frame:name,sx,sy,w,h,x:point.x,y:point.y,
-   width:width*unit,height:height*unit,originX:flip?1-ox:ox,originY:oy,depth:point.y,flip};
+   width:width*unit*(narrow?.5:1),height:height*unit*(narrow?.5:1),originX:flip?1-ox:ox,originY:oy,depth:point.y,flip};
  }
  return {sprite,ready};
 })();
+

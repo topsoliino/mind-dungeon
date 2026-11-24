@@ -57,7 +57,7 @@ function placeLadder(plan){
  const openings=new Set(generator.doors.flatMap(d=>d.edges.flatMap(pair=>pair.map(p=>key(...p)))));
  for(const p of generator.outdoorExit?.edges||[])openings.add(key(...p[0]));
  const candidates=[];
- for(const chamber of generator.rooms.filter(r=>r.kind==='raum'&&r!==room)){
+ for(const chamber of generator.rooms.filter(r=>r.kind==='raum'&&!r.authored&&r!==room)){
   for(const [u,v] of chamber.cells)for(const dir of directions){
    if(prison&&(dir.id==='south'||dir.id==='east'))continue;
    const cell=key(u,v),wall=key(u+dir.dx,v+dir.dy);
@@ -581,5 +581,6 @@ const shared={
 };
 window.AlleyVertical=new Proxy(shared,{get:(self,key)=>key in self?self[key]:current()[key]});
 })();
+
 
 

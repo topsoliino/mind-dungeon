@@ -517,7 +517,7 @@
      result.push({image,depth,alpha,street:true});
     }
     for(const wall of wallPanels){
-     result.push({image:wall.image,depth:wall.renderDepth,
+     result.push({image:wall.image,depth:wall.renderDepth,templateFloor:wall.wall.templateFloor,
       alpha:(generatorMode&&!wall.wall.shared&&!wall.wall.interior||wall.wall.axis==='u'&&feet[0]>=wall.area[2]||
        wall.wall.axis==='v'&&feet[1]>=wall.area[3])?1:wallVisibility(wall,x,heroY)});
     }
@@ -645,3 +645,4 @@
  }
  window.AlleyStudy={create,shortestRoute,project,unproject,width,height,footOffset};
 })();
+
