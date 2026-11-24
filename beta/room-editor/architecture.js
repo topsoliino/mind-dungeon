@@ -34,7 +34,7 @@ function wallCandidate(room,cat,x,y,range=.48){
 }
 function attach(type,room,cat,x,y,id){
  const spec=cat.furniture[type];
- if(!spec||spec.category!=='wall-architecture')return null;
+ if(!spec||!spec.wallMounted&&spec.category!=='wall-architecture')return null;
  const found=wallCandidate(room,cat,x,y);
  if(!found)return null;
  const {wall:w,offset}=found;
@@ -52,7 +52,7 @@ function attach(type,room,cat,x,y,id){
 }
 function refreshMount(obj,room,cat){
  const spec=cat.furniture[obj.type];
- if(spec?.category!=='wall-architecture')return obj;
+ if(!spec?.wallMounted&&spec?.category!=='wall-architecture')return obj;
  const wall=wallByRef(room,cat,obj.wallRef);
  if(!wall)return null;
  const offset=clamp(Number(obj.wallOffset)||.5,.25,.75);
@@ -64,64 +64,44 @@ function refreshMount(obj,room,cat){
   y:h?wall.y+d:wall.y+offset};
 }
 function validMount(obj,room,cat){
- if(cat.furniture[obj.type]?.category!=='wall-architecture')return true;
+ if(!cat.furniture[obj.type]?.wallMounted&&cat.furniture[obj.type]?.category!=='wall-architecture')return true;
  const valid=refreshMount(obj,room,cat);
  return !!valid && Math.abs(obj.x-valid.x)<.011&&Math.abs(obj.y-valid.y)<.011&&
   obj.rot===valid.rot;
 }
 const within=(b,x,y)=>x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom;
+// Transform world coordinates into the same local axes as the floor sprite.
+function localPoint(obj,x,y){const a=(obj.rot||0)*Math.PI/180,c=Math.round(Math.cos(a)),s=Math.round(Math.sin(a));const dx=x-obj.x,dy=y-obj.y;return{x:dx*c+dy*s,y:-dx*s+dy*c};}
 function surfaceAt(room,cat,x,y,placement){
  let chosen={height:0,obj:null,blocked:false};
  for(const obj of room.furniture||[]){
-  const spec=cat.furniture[obj.type];
-  if(!spec?.surface||!['architectural-floor','wall-architecture'].includes(spec.category))continue;
-  const b=placement.bounds(obj,cat);
-  if(!b||!within(b,x,y))continue;
-  const surf=spec.surface;
-  // The collapsed intermediate floor has a genuine central void, not an
-  // invisible solid walkway over the rendered broken joists.
-  if(surf.type==='collapsed'){
-   const nx=(x-obj.x)/(b.right-b.left);
-   const ny=(y-obj.y)/(b.bottom-b.top);
-   const hole=Math.abs(nx)<.23&&Math.abs(ny)<.30;
-   if(hole)return {height:0,obj,blocked:true};
-   chosen={height:0,obj,blocked:false};
-   continue;
-  }
-  let z=surf.elevation;
-  if(surf.access==='ramp'){
-   const relative=(y-b.top)/(b.bottom-b.top);
-   z=surf.elevation*(1-clamp(relative,0,1));
-  }
-  chosen={height:z,obj,blocked:false};
+  const spec=cat.furniture[obj.type],surf=spec?.surface;if(!surf)continue;
+  const p=localPoint(obj,x,y),w=spec.footprint.w,h=spec.footprint.h,nx=p.x/w,ny=p.y/h;
+  if(Math.abs(nx)>.5||Math.abs(ny)>.5)continue;
+  if(surf.type==='collapsed'){if(Math.abs(nx)<.23&&Math.abs(ny)<.30)return {height:0,obj,blocked:true};continue;}
+  if(surf.access==='vault'){chosen={height:surf.elevation,obj,blocked:false};continue;}
+  if(surf.access==='ramp'){chosen={height:surf.elevation*(.5-ny),obj,blocked:false};continue;}
+  if(surf.type==='sunken'&&(Math.abs(nx)>=.41||ny<-.42))continue;
+  // Three physical front treads, at y=.2.. .5; the side flanks are level ground.
+  if(ny>=.2){if(Math.abs(nx)>.29)continue;const step=Math.min(2,Math.floor((ny-.2)/.1));chosen={height:surf.elevation*(2-step)/3,obj,blocked:false};}
+  else chosen={height:surf.elevation,obj,blocked:false};
  }
  return chosen;
 }
 function transition(room,cat,placement,from,to){
- const dest=surfaceAt(room,cat,to.x,to.y,placement);
- if(dest.blocked)return {allowed:false,height:from.z||0,reason:'hole'};
- const origin=surfaceAt(room,cat,from.x,from.y,placement);
- if(origin.blocked)return {allowed:false,height:from.z||0,reason:'hole'};
- const current=origin.height,next=dest.height;
- if(Math.abs(next-current)<=.29)return {allowed:true,height:next};
- // Heights are connected by the visible front stairs; direct clipping
- // through the back / side walls of a tall dais is not permitted.
- // Entering a sunken platform is a *descent*, so the accessible stairs
- // belong to the destination rather than the higher source floor. Likewise,
- // leaving a dais uses the stairs attached to the original surface.
- const bridge=[dest,origin].find(hit=>
-  hit.obj&&cat.furniture[hit.obj.type]?.surface?.access==='steps')||dest;
- const spec=bridge.obj?cat.furniture[bridge.obj.type]:null;
- if(spec?.surface.access==='steps'){
-  const b=placement.bounds(bridge.obj,cat);
-  const fromSouth=from.y>=b.bottom-.38||to.y>=b.bottom-.38;
-  const withinStairs=Math.abs(to.x-bridge.obj.x)<=Math.min(.58,(b.right-b.left)*.45);
-  if(fromSouth&&withinStairs)return {allowed:true,height:next,via:'steps'};
+ const dest=surfaceAt(room,cat,to.x,to.y,placement),origin=surfaceAt(room,cat,from.x,from.y,placement);
+ if(dest.blocked||origin.blocked)return {allowed:false,height:from.z||0,reason:'hole'};
+ const diff=Math.abs(dest.height-origin.height);
+ if(diff<=.27)return {allowed:true,height:dest.height};
+ const bridge=[dest,origin].find(hit=>hit.obj&&cat.furniture[hit.obj.type]?.surface?.access==='steps');
+ if(bridge){
+  const obj=bridge.obj,spec=cat.furniture[obj.type],a=localPoint(obj,from.x,from.y),b=localPoint(obj,to.x,to.y),h=spec.footprint.h,w=spec.footprint.w;
+  if(Math.min(a.y,b.y)>=h*.14&&Math.max(a.y,b.y)>=h*.2&&Math.abs(a.x)<=w*.29&&Math.abs(b.x)<=w*.29&&diff<=Math.abs(spec.surface.elevation)/3+.035)return {allowed:true,height:dest.height,via:'steps'};
  }
- return {allowed:false,height:current,reason:'height-edge'};
+ return {allowed:false,height:origin.height,reason:'height-edge'};
 }
 const api=Object.freeze({wallKey,wallByRef,wallCandidate,attach,refreshMount,
- validMount,surfaceAt,transition});
+ validMount,surfaceAt,transition,localPoint});
 root.MindRoomArchitecture=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:{});
