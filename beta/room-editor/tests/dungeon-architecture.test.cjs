@@ -84,6 +84,23 @@ room.furniture=[makeFloor('arch-collapsed-floor')];
 assert.equal(arch.surfaceAt(room,cat,4,4,placement).blocked,true,'No invisible floor over collapsed hole');
 assert.equal(arch.surfaceAt(room,cat,4.6,4.5,placement).blocked,false);
 const editor=fs.readFileSync(path.join(dir,'editor.js'),'utf8');
+// End-to-end room JSON sanitizer: wall attachments survive export/import,
+// but orphaned wall ornaments must not float in space after an import.
+const keyWall=w=>(w.edge==='north'||w.edge==='south'?'h:':'v:')+w.x+':'+w.y;
+const isWall=w=>Number.isInteger(w.x)&&Number.isInteger(w.y)&&
+ ['north','south','west','east'].includes(w.edge)&&Boolean(cat.walls[w.style]);
+const start=editor.indexOf('function sanitize(raw)'),end=editor.indexOf('function saveLocal()',start);
+assert.ok(start>=0&&end>start);
+const sanitize=new Function('cat','isWall','keyWall','precise','architecture',
+ editor.slice(start,end)+'return sanitize')(cat,isWall,keyWall,
+ x=>Math.round(x*1000)/1000,arch);
+const attached=arch.attach('wall-statue-knight',room,cat,1.5,.10);
+const saved=sanitize({...room,wallStyle:'stone',floorStyle:'dungeon-ashlar',
+ furniture:[attached,{...attached,id:'orphan',wallRef:'h:99:99'}]});
+assert.equal(saved.furniture.length,1);
+assert.equal(saved.furniture[0].wallRef,'h:1:0');
+assert.equal(saved.furniture[0].type,'wall-statue-knight');
+
 const kit=fs.readFileSync(path.join(dir,'blender/dungeon-architecture.py'),'utf8');
 const pack=fs.readFileSync(path.join(dir,'blender/pack-room-kit.py'),'utf8');
 const html=fs.readFileSync(path.join(dir,'index.html'),'utf8');
