@@ -358,7 +358,7 @@ function shadeFurniture(type,obj,paint,outline,highlight){
 }
 function drawFurniture(obj){
  if(playing&&playHP.has(obj.id)&&playHP.get(obj.id)<=0)return;
- const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),floor=spec.category==='architectural-floor',size=(floor||['lighting','ambient-life'].includes(spec.category)||obj.type.startsWith('deco-')?42*Math.SQRT2*3.5:184*(spec.editorSpriteScale||1))*zoom;
+ const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),floor=spec.category==='architectural-floor',legacy=obj.type==='prison-table'||obj.type==='prison-chair',exact=floor||spec.category==='lighting'||obj.type.startsWith('deco-'),ortho=exact?3.5:3.35,size=(exact||legacy?42*Math.SQRT2*ortho:184*(spec.editorSpriteScale||1))*zoom;
  if(spec.ambient){if(!playing&&(selected===obj.id||obj.id==='ghost')){const p=pt(obj.x,obj.y);ctx.strokeStyle='#c6b49b';ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,7*zoom,0,TAU);ctx.stroke();}return;}
  // Low-profile dungeon floor clutter is baked with its own Cycles ambient
  // occlusion. The generic furniture contact oval would hide wet puddles/rugs.
@@ -371,7 +371,7 @@ function drawFurniture(obj){
  if(sprite?.ready){
   // Blender ortho target .72m projects the ground pivot to 68.3% of the cut.
   ctx.save();ctx.imageSmoothingEnabled=true;
-  ctx.drawImage(sprite.img,p.x-size*.5,p.y-size*(floor||spec.category==='lighting'||obj.type.startsWith('deco-')?.5+.72*Math.sqrt(2/3)/3.5:.683),size,size);ctx.restore();
+  ctx.drawImage(sprite.img,p.x-size*.5,p.y-size*(exact||legacy?.5+.72*Math.sqrt(2/3)/ortho:.683),size,size);ctx.restore();
  }else{
   // Match the smaller published in-world scale during a pending Blender build.
   ctx.save();ctx.translate(p.x,p.y);
@@ -798,6 +798,7 @@ c.addEventListener('pointermove',e=>{
       y:quant(uv.y+dragging.deltaY)},room,cat,prior);
    if(next)Object.assign(obj,next);
    if(!fits(obj,obj.id))Object.assign(obj,prior);
+   ambientRoutes.clear();
    refreshInspector();
   }
  }
