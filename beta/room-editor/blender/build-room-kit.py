@@ -267,7 +267,41 @@ for name,rig in all_furniture:
         bpy.ops.render.render(write_still=True)
         print('RENDERED',name,rot,scene.render.filepath,flush=True)
     rig.rotation_euler.z=0
+# Additional *real* high-contrast dark iron prison grilles. They are not
+# furniture: render them straight-on once per height, then use a Canvas
+# isometric wall-face transform in the editor. No stretched furniture sprites,
+# no runtime 3D, and no need to re-fetch four directions for a flat wall.
+_bar_src=Path(__file__).parent/'dungeon-prison-bars.py'
+exec(compile(_bar_src.read_text(),str(_bar_src),'exec'),globals())
+for _,other in all_furniture:
+    for ob in (other,*other.children):
+        ob.hide_render=True
+for name,rig,h in PB_WALL_MODELS:
+    for _,other,_ in PB_WALL_MODELS:
+        for ob in (other,*other.children):
+            ob.hide_render=(other!=rig)
+    # The mesh dimensions are authored in WORLD metres. Center a perfectly
+    # frontal camera on the 1m wall tile and known 1m/2m vertical extent;
+    # this provides deterministic alpha crop coordinates in the browser.
+    camera.location=(0,-6,h*.5)
+    look=Vector((0,0,h*.5))
+    direction=look-camera.location
+    camera.rotation_euler=direction.to_track_quat('-Z','Y').to_euler()
+    camera.data.ortho_scale=2.5 if h==2.0 else 1.5
+    scene.view_settings.exposure=-.05
+    scene.cycles.samples=min(48,max(24,opt.samples))
+    scene.render.filepath=str(RAW/('%s-front.png'%name))
+    bpy.ops.render.render(write_still=True)
+    print('RENDERED PHYSICAL IRON GRILLE',name,h,scene.render.filepath,flush=True)
+# Editable source contains both real wall meshes and every previous prop.
 for _,other in all_furniture:
     for ob in (other,*other.children):ob.hide_render=False
+for _,other,_ in PB_WALL_MODELS:
+    for ob in (other,*other.children):ob.hide_render=False
+camera.location=(5.0,5.0,5.72)
+look=Vector((0,0,.72))
+camera.rotation_euler=(look-camera.location).to_track_quat('-Z','Y').to_euler()
+camera.data.ortho_scale=3.35
+scene.view_settings.exposure=.10
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'source'/'room-kit.blend'),check_existing=False)
 print('Saved editable source',OUT/'source'/'room-kit.blend',flush=True)
