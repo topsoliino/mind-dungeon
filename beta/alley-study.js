@@ -581,7 +581,7 @@
    dungeonMaterial.onReady(kind=>{
     // Only the affected cached layer is re-baked, once per loaded material.
     if(kind==='wall')for(const panel of roomWalls)
-     redrawImage(panel.image,ctx=>drawPanel(ctx,panel.wall));
+     redrawImage(panel.image,ctx=>drawPanel(ctx,panel));
     if(kind==='floor')for(const {canvas,draw,x,y} of chunkCache){
      const ctx=canvas.getContext('2d');
      ctx.resetTransform();ctx.clearRect(0,0,canvas.width,canvas.height);
