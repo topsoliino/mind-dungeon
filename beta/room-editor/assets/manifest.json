@@ -2,8 +2,13 @@
   "schema": "mind-dungeon-room-art/v1",
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
-  "generatorSha256": "9ce5030570e7295b2a8dd9b9c5953185d796ae1d40380b8be8626f510542924a",
-  "alchemyGeneratorSha256": "7f824401dedc785986aaee93dee03bdff0580770a7530bdee4a2198b2776b202",
+  "generatorSha256": "7b1eabae8e8270ce648378e956b4cec341e7890abe8d3619eb0fb22d4ddb648b",
+  "alchemyGeneratorSha256": "7ec98ccefc2b6f5148b5eaf26e61cd5021f6846de7f55dc01ffc6b26b91c2d74",
+  "pixelDensity": {
+    "legacyOrthoScale": 3.35,
+    "newFurnitureOrthoScale": 1.675,
+    "editorSpriteScale": 0.5
+  },
   "blend": "assets/source/room-kit.blend",
   "dimensions": {
     "width": 512,
@@ -61,10 +66,12 @@
     "work-table": {
       "catalogId": "alchemy-work-table",
       "footprint": [
-        1.85,
-        1.05
+        0.83,
+        0.47
       ],
-      "height": 1.8,
+      "height": 0.83,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
@@ -80,16 +87,18 @@
     "brew-table-small": {
       "catalogId": "alchemy-brew-table",
       "footprint": [
-        1.48,
-        0.84
+        0.67,
+        0.38
       ],
-      "height": 1.56,
+      "height": 0.77,
+      "spriteScale": 0.5,
+      "modelScale": 0.36,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
       "maxHP": 120,
       "extension": "png",
-      "scale": 0.8,
+      "scale": 0.36,
       "interaction": "brew",
       "rotations": [
         0,
@@ -101,10 +110,12 @@
     "chair-highback": {
       "catalogId": "alchemy-highback-chair",
       "footprint": [
-        0.8,
-        0.8
+        0.36,
+        0.36
       ],
-      "height": 1.8,
+      "height": 0.81,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
       "destroyable": true,
       "vaultable": true,
       "blocksMovement": true,
@@ -120,10 +131,12 @@
     "chair-arm": {
       "catalogId": "alchemy-armchair",
       "footprint": [
-        0.92,
-        0.88
+        0.41,
+        0.4
       ],
-      "height": 1.68,
+      "height": 0.76,
+      "spriteScale": 0.5,
+      "modelScale": 0.45,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
