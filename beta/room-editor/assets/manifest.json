@@ -2,13 +2,14 @@
   "schema": "mind-dungeon-room-art/v1",
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
-  "generatorSha256": "88c8d5556b4df63b4944cb7a87e38d16c2ce55385708d6eabe39ef7081bccab7",
+  "generatorSha256": "b8cd9a861ef0a4fed1737580888f0a8ad6fb7c59099e2b97fc26a7e0bf4b1b5b",
   "alchemyGeneratorSha256": "c9acc0d74ca0e9848e8d0a17d3f8bd4f3e081711cc81e5074d9f6f6188bcf953",
   "tortureGeneratorSha256": "7d7ccea899d6407f851600ff073470cad75a278766633262eb5b4581573db71f",
   "floorGeneratorSha256": "415d9d15cd650d552c4491c1980a988552536bafe8b314fddf75574c25713b2f",
   "prisonBarsGeneratorSha256": "cb628cadc067b21d12c6b2a7448238c869d68054646d4ca49feee82b5763582d",
-  "architectureGeneratorSha256": "9de84f03045bf9760605cb88efe1db5906bb541ab8747e560479f354e121442a",
-  "architectureWeatheringSha256": "1047b01e11801af7db7c4701ee8c4ca5e07bf626510b406e579deb4c00550e6f",
+  "architectureGeneratorSha256": "a552880b94aea34859ef45d2e46ca24ea09e465cb8933330dd14b992219fca38",
+  "environmentGeneratorSha256": "9aed2a874c69c0801bcafb4aec431f89d41163a8f33345f4584ac1ef6ccdbf82",
+  "architectureWeatheringSha256": "564c128a8ea08c67f41b7b6bae9f0a78da65c5ac91becbf242f585edf0c4d92b",
   "wallViews": {
     "bars-full": {
       "file": "prison-grille-full-front.png",
@@ -51,10 +52,11 @@
     "table": {
       "catalogId": "prison-table",
       "footprint": [
-        1.85,
-        1.05
+        1.41,
+        0.8
       ],
-      "height": 0.94,
+      "height": 0.95,
+      "modelScale": 0.76,
       "destroyable": true,
       "vaultable": false,
       "blocksMovement": true,
@@ -69,14 +71,340 @@
     "chair": {
       "catalogId": "prison-chair",
       "footprint": [
-        0.78,
-        0.79
+        0.56,
+        0.57
       ],
-      "height": 1.28,
+      "height": 0.97,
+      "modelScale": 0.72,
       "destroyable": true,
       "vaultable": true,
       "blocksMovement": true,
       "maxHP": 35,
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "light-torch-iron": {
+      "catalogId": "light-torch-iron",
+      "footprint": [
+        0.25,
+        0.34
+      ],
+      "height": 1.62,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "lighting",
+      "wallMounted": true,
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "light-torch-ring": {
+      "catalogId": "light-torch-ring",
+      "footprint": [
+        0.3,
+        0.36
+      ],
+      "height": 1.62,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "lighting",
+      "wallMounted": true,
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "light-torch-gothic": {
+      "catalogId": "light-torch-gothic",
+      "footprint": [
+        0.3,
+        0.38
+      ],
+      "height": 1.62,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "lighting",
+      "wallMounted": true,
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "light-candle-single": {
+      "catalogId": "light-candle-single",
+      "footprint": [
+        0.23,
+        0.23
+      ],
+      "height": 0.29,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "lighting",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "light-candle-cluster": {
+      "catalogId": "light-candle-cluster",
+      "footprint": [
+        0.34,
+        0.3
+      ],
+      "height": 0.34,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "lighting",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "light-candle-candelabra": {
+      "catalogId": "light-candle-candelabra",
+      "footprint": [
+        0.52,
+        0.28
+      ],
+      "height": 0.76,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "lighting",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "deco-fungi-grey": {
+      "catalogId": "deco-fungi-grey",
+      "footprint": [
+        0.6,
+        0.54
+      ],
+      "height": 0.16,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "deco-fungi-brown": {
+      "catalogId": "deco-fungi-brown",
+      "footprint": [
+        0.66,
+        0.6
+      ],
+      "height": 0.27,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "deco-fungi-white": {
+      "catalogId": "deco-fungi-white",
+      "footprint": [
+        0.6,
+        0.54
+      ],
+      "height": 0.16,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "deco-fungi-ochre": {
+      "catalogId": "deco-fungi-ochre",
+      "footprint": [
+        0.6,
+        0.54
+      ],
+      "height": 0.16,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "deco-moss-wet": {
+      "catalogId": "deco-moss-wet",
+      "footprint": [
+        0.72,
+        0.56
+      ],
+      "height": 0.06,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "deco-moss-thick": {
+      "catalogId": "deco-moss-thick",
+      "footprint": [
+        0.74,
+        0.58
+      ],
+      "height": 0.07,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "deco-moss-yellow": {
+      "catalogId": "deco-moss-yellow",
+      "footprint": [
+        0.74,
+        0.58
+      ],
+      "height": 0.2,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "floor-clutter",
+      "rotations": [
+        0,
+        90,
+        180,
+        270
+      ]
+    },
+    "deco-moss-white": {
+      "catalogId": "deco-moss-white",
+      "footprint": [
+        0.74,
+        0.58
+      ],
+      "height": 0.2,
+      "spriteScale": 1.0,
+      "modelScale": 1.0,
+      "destroyable": true,
+      "vaultable": false,
+      "blocksMovement": false,
+      "blocksProjectiles": false,
+      "maxHP": 30,
+      "extension": "png",
+      "category": "floor-clutter",
       "rotations": [
         0,
         90,
@@ -1008,6 +1336,90 @@
       "90": "assets/furniture/chair-90.webp",
       "180": "assets/furniture/chair-180.webp",
       "270": "assets/furniture/chair-270.webp"
+    },
+    "light-torch-iron": {
+      "0": "assets/furniture/light-torch-iron-0.png",
+      "90": "assets/furniture/light-torch-iron-90.png",
+      "180": "assets/furniture/light-torch-iron-180.png",
+      "270": "assets/furniture/light-torch-iron-270.png"
+    },
+    "light-torch-ring": {
+      "0": "assets/furniture/light-torch-ring-0.png",
+      "90": "assets/furniture/light-torch-ring-90.png",
+      "180": "assets/furniture/light-torch-ring-180.png",
+      "270": "assets/furniture/light-torch-ring-270.png"
+    },
+    "light-torch-gothic": {
+      "0": "assets/furniture/light-torch-gothic-0.png",
+      "90": "assets/furniture/light-torch-gothic-90.png",
+      "180": "assets/furniture/light-torch-gothic-180.png",
+      "270": "assets/furniture/light-torch-gothic-270.png"
+    },
+    "light-candle-single": {
+      "0": "assets/furniture/light-candle-single-0.png",
+      "90": "assets/furniture/light-candle-single-90.png",
+      "180": "assets/furniture/light-candle-single-180.png",
+      "270": "assets/furniture/light-candle-single-270.png"
+    },
+    "light-candle-cluster": {
+      "0": "assets/furniture/light-candle-cluster-0.png",
+      "90": "assets/furniture/light-candle-cluster-90.png",
+      "180": "assets/furniture/light-candle-cluster-180.png",
+      "270": "assets/furniture/light-candle-cluster-270.png"
+    },
+    "light-candle-candelabra": {
+      "0": "assets/furniture/light-candle-candelabra-0.png",
+      "90": "assets/furniture/light-candle-candelabra-90.png",
+      "180": "assets/furniture/light-candle-candelabra-180.png",
+      "270": "assets/furniture/light-candle-candelabra-270.png"
+    },
+    "deco-fungi-grey": {
+      "0": "assets/furniture/deco-fungi-grey-0.png",
+      "90": "assets/furniture/deco-fungi-grey-90.png",
+      "180": "assets/furniture/deco-fungi-grey-180.png",
+      "270": "assets/furniture/deco-fungi-grey-270.png"
+    },
+    "deco-fungi-brown": {
+      "0": "assets/furniture/deco-fungi-brown-0.png",
+      "90": "assets/furniture/deco-fungi-brown-90.png",
+      "180": "assets/furniture/deco-fungi-brown-180.png",
+      "270": "assets/furniture/deco-fungi-brown-270.png"
+    },
+    "deco-fungi-white": {
+      "0": "assets/furniture/deco-fungi-white-0.png",
+      "90": "assets/furniture/deco-fungi-white-90.png",
+      "180": "assets/furniture/deco-fungi-white-180.png",
+      "270": "assets/furniture/deco-fungi-white-270.png"
+    },
+    "deco-fungi-ochre": {
+      "0": "assets/furniture/deco-fungi-ochre-0.png",
+      "90": "assets/furniture/deco-fungi-ochre-90.png",
+      "180": "assets/furniture/deco-fungi-ochre-180.png",
+      "270": "assets/furniture/deco-fungi-ochre-270.png"
+    },
+    "deco-moss-wet": {
+      "0": "assets/furniture/deco-moss-wet-0.png",
+      "90": "assets/furniture/deco-moss-wet-90.png",
+      "180": "assets/furniture/deco-moss-wet-180.png",
+      "270": "assets/furniture/deco-moss-wet-270.png"
+    },
+    "deco-moss-thick": {
+      "0": "assets/furniture/deco-moss-thick-0.png",
+      "90": "assets/furniture/deco-moss-thick-90.png",
+      "180": "assets/furniture/deco-moss-thick-180.png",
+      "270": "assets/furniture/deco-moss-thick-270.png"
+    },
+    "deco-moss-yellow": {
+      "0": "assets/furniture/deco-moss-yellow-0.png",
+      "90": "assets/furniture/deco-moss-yellow-90.png",
+      "180": "assets/furniture/deco-moss-yellow-180.png",
+      "270": "assets/furniture/deco-moss-yellow-270.png"
+    },
+    "deco-moss-white": {
+      "0": "assets/furniture/deco-moss-white-0.png",
+      "90": "assets/furniture/deco-moss-white-90.png",
+      "180": "assets/furniture/deco-moss-white-180.png",
+      "270": "assets/furniture/deco-moss-white-270.png"
     },
     "work-table": {
       "0": "assets/furniture/work-table-0.png",
