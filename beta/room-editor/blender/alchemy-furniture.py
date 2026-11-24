@@ -769,3 +769,10 @@ _floor_source=Path(__file__).parent/'abandoned-floor-clutter.py'
 exec(compile(_floor_source.read_text(),str(_floor_source),'exec'),globals())
 ALCHEMY_MODELS.extend(FLOOR_MODELS)
 
+# Modular dungeon architecture is an independent editable collection. Keep
+# wall ornaments and height-aware floors in the original Cycles scene so
+# every PNG has identical warm key/cool fill and correct 90-degree rotations.
+_arch_source=Path(__file__).parent/'dungeon-architecture.py'
+exec(compile(_arch_source.read_text(),str(_arch_source),'exec'),globals())
+ALCHEMY_MODELS.extend(ARCH_MODELS)
+
