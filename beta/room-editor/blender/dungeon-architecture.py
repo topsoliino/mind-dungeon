@@ -339,149 +339,109 @@ def _a_broken_wall():
         _a_beam('Deep fracture trace at missing arch edge',
                 (x,.28,.71),(x*.78,.25,1.43),.018,_a_mortar)
 
-def _a_stone_dais():
-    _a_box('Massive square crypt raised podium foundation',(0,0,.21),
-           (1.79,1.30,.42),_a_darkstone,.034)
-    _a_box('Worn split-stone elevated platform top',(0,-.07,.48),
-           (1.76,1.18,.12),_a_stone,.020)
+# Floor architecture v3: exact shared dimensions and visible entry geometry.
+# Local positive Y is the front. The renderer uses Z=-90-rot for these six.
+def _floor_stairs(w,d,e,stone=True):
+    mat=_a_stone if stone else _a_rotten
+    edge=_a_stoneedge if stone else _a_woodedge
+    # Deck spans y=-d/2..d*.2; steps fill remaining .3*d.
+    top=e
+    for k in range(3):
+        y=d*(.25+k*.1)
+        h=e*(2-k)/3
+        if h>0:
+            _a_box('Real access stair riser',(0,y,h/2),(w*.58,d*.1+.006,h),mat,.012)
+            _a_box('Worn stair tread',(0,y,h-.008),(w*.58,d*.1+.008,.016),edge,.006)
+
+def _floor_masonry(w,d,e):
+    # Deep irregular ashlar courses, separate capstones, dark recessed joints.
+    depth=d*.7;cy=-d*.15
+    _a_box('Dark recessed crypt masonry core',(0,cy,e*.42),(w-.065,depth-.045,e*.84),_a_darkstone,.01)
+    for row in range(2):
+        z=(row+.5)*e*.43
+        for i in range(5):
+            x=-w*.4+i*w*.2
+            _a_box('Individually worn front ashlar',(x,d*.2-.045,z),(w*.193,.12,e*.41),_a_stone if (i+row)%3 else _a_darkstone,.017)
+        for side in (-1,1):
+            for i in range(4):
+                y=-d*.415+i*d*.17
+                _a_box('Side masonry course',(side*(w/2-.045),y,z),(.09,d*.163,e*.41),_a_stone,.015)
     for i in range(5):
-        x=-.72+i*.36
-        _a_box('Separate fitted old podium capstone',(x,-.07,.55),
-               (.34,1.06,.027),_a_stoneedge if i%3 else _a_stone,.007)
-    # Explicit walk-on steps at front (south, local positive Y).
-    for k,(y,h,d) in enumerate(((.77,.16,.34),(.60,.31,.30))):
-        _a_box('Stone steps for podium climb %d'%k,(0,y,h/2),
-               (1.10,d,h),_a_stoneedge,.018)
-    for x in (-.79,.79):
-        _a_box('Gothic stone dais vertical edge band',(x,0,.42),
-               (.09,1.29,.17),_a_stoneedge,.009)
+        for k in range(3):
+            x=-w*.4+i*w*.2;y=-d*.383+k*d*.233
+            _a_box('Uneven fitted dark flagstone cap',(x,y,e-.033),(w*.194,d*.226,.066),_a_stoneedge if (i+k)%4==0 else _a_stone,.014)
+    _floor_stairs(w,d,e,True)
+
+def _floor_timbers(w,d,e,stage=False):
+    depth=d*.7;cy=-d*.15
+    for x in (-w*.39,w*.39):
+        for y in (-d*.37,d*.085):
+            _a_box('Rotten load bearing oak post',(x,y,(e-.10)/2),(.12,.12,e-.10),_a_rotten,.013)
+            _a_box('Forged iron post shoe',(x,y,.04),(.15,.15,.08),_a_metal,.008)
+    for y in (-d*.44,d*.14):
+        _a_box('Deep exposed joist',(0,y,e-.14),(w-.04,.12,.15),_a_rotten,.012)
+    for i in range(8):
+        x=-w*.4375+i*w*.125
+        _a_box('Warped individually fitted oak deck plank',(x,cy,e-.041),(w*.12,depth-.012,.082),_a_rotten if i%3 else _a_woodedge,.008)
+        for y in (-d*.42,d*.12):
+            _pin('Dark iron plank nail',(x,y,e+.001),.010,_a_metal)
+    if stage:
+        for i in range(6):
+            x=-w*.4167+i*w/6
+            _a_box('Weathered stage skirt plank',(x,d*.185,e*.36),(w*.159,.055,e*.64),_a_rotten,.009)
+    _floor_stairs(w,d,e,False)
+
+def _a_stone_dais():
+    _floor_masonry(1.8,1.85,.55)
 
 def _a_sunken_area():
-    # Depression is physically modeled DOWN from the normal floor. The editor
-    # draws a cutout mask and uses -0.55m as its true walkable height.
-    _a_box('Lowered dungeon floor below normal zero',(0,0,-.55),
-           (1.73,1.40,.10),_a_stone,.018)
+    w,d,e=1.84,1.72,-.55
+    # Floor below the actual clipped hole, no floating black top mask.
     for i in range(5):
-        x=-.65+i*.33
-        _a_box('Sunken room cracked bottom stone tiling',(x,0,-.489),
-               (.31,1.28,.022),_a_darkstone if i%2 else _a_stone,.008)
-    for x in (-.86,.86):
-        _a_box('Sunken chamber enclosing rough cliff wall',(x,0,-.25),
-               (.105,1.50,.52),_a_darkstone,.019)
-        _a_box('Worn dungeon pit upper stone lip',(x,0,.020),
-               (.17,1.52,.075),_a_stoneedge)
-    _a_box('Far edge fractured sunken floor wall',(0,-.68,-.25),
-           (1.76,.10,.51),_a_darkstone,.012)
-    # Shallow sandstone exit staircase across near edge, -0.55 -> 0 m.
-    for i in range(4):
-        y=.50+i*.16
-        h=-.55+(i+1)*.132
-        _a_box('Short descending stone stair tread',
-               (0,y,h-.03),(.92,.166,.10),_a_stoneedge,.009)
-    _a_box('Chipped floor height zero leading frame',(0,.81,0),
-           (1.82,.13,.07),_a_stoneedge,.018)
+        for k in range(3):
+            _a_box('Damp cut flagstone below ground',(-w*.32+i*w*.16,-d*.34+k*d*.22,e-.035),(w*.154,d*.214,.07),_a_stone if (i+k)%3 else _a_darkstone,.009)
+    for side in (-1,1):
+        _a_box('Recess retaining masonry',(side*w*.455,0,e*.5),(w*.09,d,e*-1),_a_darkstone,.011)
+        _a_box('Chipped stone edge lip',(side*w*.455,0,-.025),(w*.09,d,.05),_a_stoneedge,.008)
+    _a_box('Recess rear retaining wall',(0,-d*.46,e*.5),(w,d*.08,-e),_a_darkstone,.012)
+    for k in range(3):
+        y=d*(.25+k*.1);z=e*(2-k)/3
+        _a_box('Visible descending tread',(0,y,z-.045),(w*.58,d*.1+.006,.09),_a_stoneedge,.009)
+    for side in (-1,1):
+        _a_box('Solid rim beside recess entry',(side*w*.395,d*.35,-.065),(w*.21,d*.3,.13),_a_darkstone,.01)
 
 def _a_walkway():
-    # Tall 0.65m boardwalk, joists, steps and guard rails.
-    for x in (-.88,.88):
-        for y in (-.36,.36):
-            _a_box('Timber raised dungeon walkway stout leg',(x,y,.33),
-                   (.16,.15,.66),_a_rotten,.021)
-            _a_box('Old iron support shoe',(x,y,.075),(.18,.18,.15),_a_metal)
-    for i in range(10):
-        x=-1.03+i*.229
-        _a_box('Individual walkable plank board of raised gangway',
-               (x,0,.69),(.222,.89,.103),_a_woodedge if i%3 else _a_rotten,.009)
-    for y in (-.40,.40):
-        _a_box('Underdeck wooden longitudinal joist',(0,y,.55),
-               (2.12,.13,.13),_a_rotten)
-    for x in (-.9,0,.9):
-        _a_box('Walkway iron bound crossbeam',(x,0,.54),
-               (.12,.89,.095),_a_metal)
-    for k,y in enumerate((.63,.84,1.04)):
-        h=(k+1)*.195
-        _a_box('Walkway short climb stair step',(0,y,h/2),
-               (.71,.25,h),_a_rotten,.012)
-        _a_box('Walking step worn timber tread',(0,y,h+.017),
-               (.76,.25,.037),_a_woodedge,.009)
-    for y in (-.48,):
-        for x in (-.94,.94):
-            _a_box('Low wood protective gangway railing post',(x,y,1.06),
-                   (.088,.09,.74),_a_rotten,.008)
-        _a_box('Gangway forged guardrail',(0,y,1.42),
-               (2.03,.08,.08),_a_metal)
+    _floor_timbers(2.16,1.5,.74)
 
 def _a_wood_stage():
-    for x in (-.72,.72):
-        for y in (-.46,.46):
-            _a_box('Old dungeon stage corner framing pillar',
-                   (x,y,.25),(.16,.16,.49),_a_rotten)
-            _a_box('Old stage iron footing',(x,y,.08),
-                   (.18,.18,.15),_a_metal)
-    for i in range(8):
-        y=-.54+i*.153
-        _a_box('Scraped theatrical timber stage top board',
-               (0,y,.49), (1.70,.150,.097),
-               _a_rotten if i%3 else _a_woodedge,.009)
-    for x in (-.77,.77):
-        _a_box('Exposed stage perimeter framing',(x,0,.36),
-               (.09,1.09,.17),_a_rotten)
-    _a_box('Raised old dungeon wooden stage front face',(0,.54,.29),
-           (1.64,.08,.41),_a_rotten,.014)
-    for k,y in enumerate((.84,.65)):
-        h=.14 if k==0 else .32
-        _a_box('Dungeon stage short accessible front step',
-               (0,y,h/2),(.90,.25,h),_a_woodedge,.014)
-    for i in range(8):
-        x=-.71+i*.20
-        _pin('Ancient stage nail',(x,.51,.547),.012,_a_metal)
+    _floor_timbers(1.76,1.72,.55,True)
 
 def _a_broken_plate():
-    # Walkable sloped slab with dangerous uneven corners, true bent slab
-    # silhouette and support rubble. The ramp height map is 0 -> 0.24m.
-    ob=_a_box('Tilted broken granite stone floor flag',
-              (0,0,.16),(1.65,1.39,.14),_a_stone,.037)
-    ob.rotation_euler.x=.19
-    ob.rotation_euler.y=-.11
-    for i in range(9):
-        a=i*_a_math.tau/9
-        x=.69*_a_math.cos(a);y=.52*_a_math.sin(a)
-        _a_box('Broken flagstone perimeter rubble chip',
-               (x,y,.06),(.12,.14,.11),_a_darkstone if i%3 else _a_stoneedge,.014)
-    for j in range(6):
-        a=j*.74
-        _a_beam('Surface damaged flagstone crack',(-.46+.17*j,-.33,.24),
-                (-.33+.15*j,.29,.16),.008,_a_darkstone)
+    # A real wedge: same slope as the walkable height map (back high).
+    w,d=1.73,1.45
+    verts=[(-w/2,-d/2,0),(w/2,-d/2,0),(w/2,d/2,0),(-w/2,d/2,0),
+           (-w/2,-d/2,.22),(w/2,-d/2,.22),(w/2,d/2,.008),(-w/2,d/2,.008)]
+    mesh=bpy.data.meshes.new('Broken flagstone exact slope')
+    mesh.from_pydata(verts,[],[(0,3,2,1),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7),(4,5,6,7)])
+    mesh.update();ob=bpy.data.objects.new('Fractured sloped stone slab',mesh);bpy.context.collection.objects.link(ob);ob.data.materials.append(_a_stone)
+    bevel=ob.modifiers.new('Chipped edge','BEVEL');bevel.width=.012;bevel.segments=2
+    for i in range(4):
+        x=-.55+i*.34
+        _a_beam('Deep irregular fracture across sloping stone',(x,-.61,.205),(x+.09,.53,.032),.007,_a_darkstone)
 
 def _a_collapsed_floor():
-    # Hole is not fake solid ground: a cutout + limited intact walkway strip.
-    # Existing ground under the sprite is visually darkened by editor cutout.
-    for x in (-.77,.77):
-        _a_box('Broken between-floor timber rim',(x,0,.10),
-               (.20,1.54,.19),_a_rotten,.029)
-    for y in (-.67,.67):
-        _a_box('Broken timber rim foot',(0,y,.09),
-               (1.66,.18,.18),_a_rotten,.018)
-    for k in range(4):
-        y=-.55+.31*k
-        if k==2:continue
-        ob=_a_box('Surviving floor joist across hole',
-                 (-.29,y,.125),(.95,.145,.13),_a_rotten,.013)
-        ob.rotation_euler.z=.08*(k-1)
-    for k in range(5):
-        x=-.72+k*.34
-        if k==2:continue
-        ob=_a_box('Partially collapsed angular planked section',
-                 (x,.46,.084),(.30,.50,.11),
-                 _a_rotten if k%2 else _a_woodedge,.013)
-        ob.rotation_euler.x=.12*(k-2)
-    for k in range(4):
-        a=(k+.5)*_a_math.pi/5
-        _a_beam('Broken diagonal splinter protruding over void',
-                (-.29,-.46+.23*k,.08),
-                (.22,.2+.11*k,-.24),.038,_a_woodedge)
-    _a_box('Deep dark underside of collapsed chamber',(0,0,-.36),
-           (1.22,1.05,.09),_a_darkstone,.013)
+    w,d=1.75,1.55
+    # Open hole |x|<.23*w and |y|<.30*d; solid walkable perimeter.
+    for side in (-1,1):
+        _a_box('Old exposed perimeter beam',(side*w*.365,0,-.045),(w*.27,d,.09),_a_rotten,.015)
+        _a_box('Surviving plank end',(0,side*d*.40,-.045),(w*.46,d*.20,.09),_a_woodedge,.008)
+    for i in range(6):
+        y=-d*.25+i*d*.10
+        for side in (-1,1):
+            _a_beam('Jagged broken joist tip',(side*w*.27,y,-.04),(side*w*.20,y+.025,-.12),.023,_a_rotten)
+    for side in (-1,1):
+        _a_box('Broken underfloor stone rim',(side*w*.46,0,-.23),(w*.07,d,.35),_a_darkstone,.012)
+    _a_box('Deep crypt cavity below destroyed floor',(0,0,-.49),(w*.48,d*.64,.04),_a_darkstone,.01)
 
 # Seven requested wall looks plus a second, freestanding-style stone column:
 ARCH_WALL_MODELS=[
