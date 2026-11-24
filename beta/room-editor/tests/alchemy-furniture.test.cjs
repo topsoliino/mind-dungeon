@@ -41,7 +41,7 @@ const expected={
  'floor-pottery': ['floor-pottery',.73,.46],
  'floor-cloth': ['floor-cloth',.71,.52],
 };
-assert.equal(Object.keys(catalog.furniture).length,29,'29 room props: 19 existing items and 10 new Blender floor groups');
+assert.equal(Object.keys(catalog.furniture).length,59,'57 Blender props and 2 procedural ambient emitters');
 assert.equal(catalog.furniture['prison-table'].asset,'assets/furniture/table');
 assert.equal(catalog.furniture['prison-chair'].asset,'assets/furniture/chair');
 const build=fs.readFileSync(path.join(root,'blender/build-room-kit.py'),'utf8');
@@ -109,7 +109,7 @@ if(fs.existsSync(manifestFile)){
 }
 assert.match(models,/TORTURE_MODELS/,'torture props must remain loaded into main Cycles pipeline');
 assert.match(models,/ALCHEMY_MODELS\.extend\(FLOOR_MODELS\)/,'floor clutter must render in the same editable Blender file');
-assert.match(editor,/spec\.category!=='floor-clutter'/,'floor patches should not receive giant furniture shadow');
+assert.match(editor,/\['floor-clutter','wall-architecture','architectural-floor','lighting','ambient-life'\]\.includes/,'floor patches should not receive giant furniture shadow');
 assert.match(editor,/BODENDEKORATION/,'group the new floor props in the editor palette');
 assert.equal(Object.keys(expected).length,27);
-console.log('Room Atelier: 29 props, 116 directional views; 10 floor clutter groups and nonblocking rules — OK');
+console.log('Room Atelier: original 29 props verified; 10 floor clutter groups and nonblocking rules — OK');
