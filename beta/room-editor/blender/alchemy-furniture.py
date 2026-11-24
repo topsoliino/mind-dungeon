@@ -10,9 +10,9 @@ import math as _math
 _fwood = material('Alchemy | dark weathered oak', '34251e', .88, secondary='75503a', grain=29)
 _fedge = material('Alchemy | worn polished edges', '65432d', .74, secondary='966b48', grain=25)
 _fdark = material('Alchemy | deep oak crevices', '211914', .91, secondary='463125', grain=29)
-_firon = material('Alchemy | scratched black iron', '3a3431', .69, .77, secondary='786a60', grain=29)
-_fcopper = material('Alchemy | hammered copper', '8f492a', .37, .80, secondary='c87b49', grain=40)
-_fbrass = material('Alchemy | tarnished brass', '89704b', .44, .74, secondary='c8a26b', grain=31)
+_firon = material('Alchemy | oxide-black hammered iron', '222323', .82, .70, secondary='64605b', grain=31)
+_fcopper = material('Alchemy | hammered, aged copper', '633b2d', .48, .78, secondary='a65e36', grain=38)
+_fbrass = material('Alchemy | dark antique brass', '6d5639', .57, .65, secondary='b08a54', grain=34)
 _fglass = material('Alchemy | smoked glass', '352d2b', .17, .32, secondary='75553c', grain=9)
 _fgreen = material('Alchemy | dried herbs', '484c2e', .91, secondary='8e8150', grain=22)
 _fpurple = material('Alchemy | dried lavender', '574057', .91, secondary='936f85', grain=24)
@@ -76,9 +76,9 @@ def _timber_fibres(mat, dark, light, scale=5.2):
     links.new(ramp.outputs['Color'],bsdf.inputs['Base Color'])
     bsdf.inputs['Roughness'].default_value=.85
 
-_timber_fibres(_fwood,'2b1d16','8b5738',4.4)
-_timber_fibres(_fedge,'483024','b27a4c',4.1)
-_timber_fibres(_fdark,'1a1310','5b3c2e',3.7)
+_timber_fibres(_fwood,'211912','65432f',5.7)
+_timber_fibres(_fedge,'32231b','855638',5.0)
+_timber_fibres(_fdark,'120f0e','413028',5.2)
 for _textile in (_fcloth,_fstripe):
     _microtexture(_textile,(7,7,1),11,.19,.035)
 
@@ -253,45 +253,75 @@ def _wooden_barrel(x,y,z=.27,scale=1):
               (.031*scale,.35*scale,.37*scale),_firon)
 
 def _alembic_v2():
-    # Large silhouette-critical copper retort, not a little generic jar.
-    # Almost half the bench is an iron stove, condenser and cooling coil.
-    x=.31;y=-.02
-    for xx in (.04,.54):
-        for yy in (-.22,.19):
-            _part('Blacksmith wrought forge stand',(xx,yy,1.105),
-                  (.055,.055,.19),_firon,.009)
-    _part('Blackened square copper furnace',(x,y,1.12),(.58,.46,.22),_firon,.024)
-    _part('Open arched hearth vent',(x,-.25,1.11),(.30,.019,.12),_fdark,.016)
-    for j in range(6):
-        xx=.13+j*.07
-        _part('Orange glowing hot embers',(xx,-.268,1.115),(.028,.012,.052),
-              _flight,.006)
-    _sphere('Large hammer-finished copper alembic belly',(x,y,1.39),
-            (.270,.245,.260),_fcopper,40)
-    cylinder('Copper still bottom ring',(x,y,1.24),.258,.050,_fcopper,32)
-    cylinder('Alembic pressed copper lid',(x,y,1.61),.168,.069,_fcopper,28)
-    cylinder('Bell-shaped alembic funnel neck',(x,y,1.695),.075,.12,_fcopper,24)
-    for side in (-.23,.23):
-        _band('Alembic bolted forged holding strap',(x+side,y,1.35),
-              (.031,.52,.23),_firon)
-        for yy in (-.14,.14):
-            _pin('Alembic retaining rivet',(x+side,yy,1.44),.013,_fbrass)
-    _pipe('Tall copper swan neck from the retort',[
-        (x,y,1.75),(.39,-.01,1.91),(.59,-.02,1.88),
-        (.76,-.08,1.72),(.76,-.08,1.63)],.029,_fcopper)
-    # Clearly recognisable spiral condenser, unlike the earlier tiny coil.
-    _rod('Coil dark forged stand',(.70,-.05,1.04),(.70,-.05,1.60),.028,_firon)
-    for i in range(6):
-        z=1.31+i*.064
-        bpy.ops.mesh.primitive_torus_add(major_radius=.118,
-                     minor_radius=.019,major_segments=30,minor_segments=10,
-                     location=(.70,-.05,z))
+    """Large foreground copper still: dominant cauldron + identifiable cooling spiral.
+
+    Geometry intentionally occupies ~45% of bench width. Its iron furnace,
+    hand-beaten kettle, tall domed lid, riveted straps and coils are all meshes.
+    """
+    x=.23
+    y=-.075
+    for xx in (-.075,.52):
+        for yy in (-.34,.22):
+            _part('Forge cast-iron supporting leg',(xx,yy,1.13),
+                  (.068,.064,.24),_firon,.013)
+    _part('Oversize sooty cast-iron furnace',(x,y,1.155),
+          (.76,.61,.27),_firon,.039)
+    _part('Inset arched furnace hatch',(x,-.393,1.145),
+          (.39,.019,.145),_fdark,.022)
+    for j in range(7):
+        xx=-.005+j*.076
+        _part('Raging iron hearth ember',(xx,-.405,1.148),
+              (.047,.017,.09),_flight,.013)
+    # Deep hammered copper is larger and more forward than the rack behind it.
+    _sphere('MAIN CAULDRON | peened bulging copper belly',(x,y,1.48),
+            (.357,.322,.332),_fcopper,48)
+    cylinder('CAULDRON | heavy circular bottom collar',(x,y,1.278),
+             .32,.085,_fcopper,36)
+    cylinder('CAULDRON | rolled upper shoulder lip',(x,y,1.715),
+             .285,.054,_fbrass,36)
+    _sphere('CAULDRON | broad domed copper pot lid',(x,y,1.755),
+            (.225,.216,.103),_fcopper,36)
+    cylinder('CAULDRON | forged central pressure neck',(x,y,1.857),
+             .074,.142,_fcopper,26)
+    _sphere('CAULDRON | brass lift knob',(x,y,1.955),
+            (.055,.055,.049),_fbrass,18)
+    for side in (-1,1):
+        sx=x+side*.295
+        _band('Belly side forged bracket',(sx,y,1.49),
+              (.040,.51,.31),_firon)
+        for front in (-.20,.19):
+            _pin('Bolted hammered copper clamp',(sx,y+front,1.58),.022,_fbrass)
+    # Two external horizontal hoops emphasise roundness under isometric lighting.
+    for height,radius in ((1.348,.305),(1.623,.296)):
+        bpy.ops.mesh.primitive_torus_add(major_radius=radius,minor_radius=.019,
+                     major_segments=40,minor_segments=10,location=(x,y,height))
+        ob=bpy.context.object
+        ob.name='CAULDRON | banded forged steel hoop'
+        ob.data.materials.append(_firon)
+    # Brown scorch on the front/lower metal rim, a designed separate surface.
+    for xx in (x-.23,x-.10,x+.1,x+.23):
+        _pin('Cauldron riveted front iron band',(xx,y-.310,1.39),.017,_fbrass)
+    # Pressure pipe arcs far above the domed boiler to the condenser.
+    _pipe('Rising arched copper distillation swan-neck',[
+        (x,y,1.945),(.28,-.07,2.09),(.54,-.04,2.08),
+        (.78,.12,1.93),(.80,.20,1.72)],.037,_fcopper)
+    # Rear right: substantial coil, made of thick separately modeled turns.
+    _rod('Free-standing black iron condenser support',(.78,.235,1.07),
+         (.78,.235,1.65),.038,_firon)
+    for i in range(7):
+        z=1.30+i*.067
+        bpy.ops.mesh.primitive_torus_add(major_radius=.125,
+                     minor_radius=.023,major_segments=32,minor_segments=12,
+                     location=(.77,.22,z))
         coil=bpy.context.object
-        coil.name='Copper condenser winding %d'%i
+        coil.name='SEVEN-TURN copper cooling condenser %d'%i
         coil.data.materials.append(_fcopper)
-    _pipe('Condenser return outlet',[(.70,-.05,1.30),(.70,-.17,1.25),
-                  (.66,-.22,1.19)],.019,_fcopper)
-    _bottle('Medicinal red tincture collection flask',(.67,-.24,1.015),.23)
+    _pipe('Copper condensate runoff into collection flask',[
+        (.77,.22,1.30),(.79,.095,1.22),(.73,-.26,1.18)],.022,_fcopper)
+    _bottle('Bloodred tincture collector',(.72,-.28,1.006),.21)
+    _part('Stone-and-iron heat shield between bench and furnace',
+          (.25,-.08,1.015),(.87,.70,.037),_fstone,.011)
+
 
 def _brew_station_v2():
     # Separately constructed station. Giant copper still on the RIGHT,
@@ -464,11 +494,17 @@ def _arm_chair_v2():
 
 work=make_model('Alchemy Work Table | raised medieval hutch and timber joinery',_workbench_v2)
 brew=make_model('Compact Brewing Table | copper alembic and herb apothecary',_brew_station_v2)
-# 20 percent smaller across ALL three dimensions, preserving perspective
-# and floor pivot alignment. Collision footprint is likewise 80 percent.
-brew.scale=(.8,.8,.8)
 highback=make_model('High-Back Gothic Chair | pointed cathedral back',_high_chair_v2)
 armchair=make_model('Alchemist Armchair | leather seat, brass finials and iron arms',_arm_chair_v2)
+
+# User-requested Guardian-relative scale: 55% smaller than the former preview
+# on each axis. The brewing table retains its additional pre-existing 0.8x
+# reduction: it is now .36x its Blender base and .45x its previous preview.
+# Blender geometry, hitboxes and editor display all use matching dimensions.
+GUARDIAN_RELATIVE_FURNITURE_SCALE=.45
+for prop in (work, highback, armchair):
+    prop.scale=(GUARDIAN_RELATIVE_FURNITURE_SCALE,)*3
+brew.scale=(GUARDIAN_RELATIVE_FURNITURE_SCALE*.8,)*3
 ALCHEMY_MODELS=[
     ('work-table',work),('brew-table-small',brew),
     ('chair-highback',highback),('chair-arm',armchair)
