@@ -28,10 +28,11 @@ function spriteName(type,rot){const spec=cat.furniture[type];return spec.asset+'
  const wallImages=new Map();
  function requestWallImage(style){
   const spec=cat.walls[style];if(spec?.render!=='blender-bars')return null;
-  let result=wallImages.get(style);
+  // Legacy prison bars and new full-height grilles share one cached PNG.
+  let result=wallImages.get(spec.asset);
   if(result)return result;
   result={img:new Image(),ready:false,failed:false};
-  wallImages.set(style,result);
+  wallImages.set(spec.asset,result);
   result.img.onload=()=>{result.ready=true;dirty=true;updateAssetInfo()};
   result.img.onerror=()=>{result.failed=true;dirty=true;updateAssetInfo()};
   result.img.src=spec.asset+'?v=forged-prison-bars-pbr-v1';
