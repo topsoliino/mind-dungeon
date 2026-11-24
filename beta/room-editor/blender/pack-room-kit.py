@@ -20,14 +20,14 @@ items={
   'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':35}
 }
 new_items={
- 'work-table':{'catalogId':'alchemy-work-table','footprint':[1.85,1.05],'height':1.80,
+ 'work-table':{'catalogId':'alchemy-work-table','footprint':[.83,.47],'height':.83, 'spriteScale':.5, 'modelScale':.45,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':115,'extension':'png'},
- 'brew-table-small':{'catalogId':'alchemy-brew-table','footprint':[1.48,.84],'height':1.56,
+ 'brew-table-small':{'catalogId':'alchemy-brew-table','footprint':[.67,.38],'height':.77, 'spriteScale':.5, 'modelScale':.36,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':120,'extension':'png',
-  'scale':.8,'interaction':'brew'},
- 'chair-highback':{'catalogId':'alchemy-highback-chair','footprint':[.80,.80],'height':1.80,
+  'scale':.36,'interaction':'brew'},
+ 'chair-highback':{'catalogId':'alchemy-highback-chair','footprint':[.36,.36],'height':.81, 'spriteScale':.5, 'modelScale':.45,
   'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':45,'extension':'png'},
- 'chair-arm':{'catalogId':'alchemy-armchair','footprint':[.92,.88],'height':1.68,
+ 'chair-arm':{'catalogId':'alchemy-armchair','footprint':[.41,.40],'height':.76, 'spriteScale':.5, 'modelScale':.45,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':55,'extension':'png'}
 }
 for name in items:
@@ -67,6 +67,7 @@ manifest={
  'generator':'beta/room-editor/blender/build-room-kit.py',
  'generatorSha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
  'alchemyGeneratorSha256':hashlib.sha256((HERE/'alchemy-furniture.py').read_bytes()).hexdigest(),
+ 'pixelDensity':{'legacyOrthoScale':3.35,'newFurnitureOrthoScale':1.675,'editorSpriteScale':.5},
  'blend':'assets/source/room-kit.blend',
  'dimensions':{'width':512,'height':512},
  'camera':{'projection':'ORTHO','elevationDegrees':35.26,
