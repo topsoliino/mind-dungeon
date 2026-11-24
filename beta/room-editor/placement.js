@@ -4,7 +4,7 @@
  */
 (function(root){
 'use strict';
-const EPS=.01, SNAP=.29;
+const EPS=.01, SNAP=.35;
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const halfSize=(obj,catalog)=>{
  const item=catalog.furniture[obj.type];
