@@ -51,6 +51,34 @@ for _wood in (_fwood,_fedge,_fdark,_fleather):
     _microtexture(_wood,(.38,8,2.4),2.9,.26,.075)
 for _metal in (_firon,_fcopper,_fbrass):
     _microtexture(_metal,(1.2,1.2,1.2),25,.23,.021)
+
+# Large-scale, fibre-aligned PBR grain gives each oak slab readable timber
+# rather than the flat primitive shading of the initial prototype.
+def _timber_fibres(mat, dark, light, scale=5.2):
+    nodes=mat.node_tree.nodes
+    links=mat.node_tree.links
+    bsdf=nodes.get('Principled BSDF')
+    coord=nodes.new('ShaderNodeTexCoord')
+    wave=nodes.new('ShaderNodeTexWave')
+    wave.wave_type='BANDS'
+    wave.bands_direction='Y'
+    wave.inputs['Scale'].default_value=scale
+    wave.inputs['Distortion'].default_value=5.8
+    wave.inputs['Detail'].default_value=4.0
+    wave.inputs['Detail Scale'].default_value=.8
+    links.new(coord.outputs['Generated'],wave.inputs['Vector'])
+    ramp=nodes.new('ShaderNodeValToRGB')
+    ramp.color_ramp.elements[0].position=.20
+    ramp.color_ramp.elements[0].color=(*hex_linear(dark),1)
+    ramp.color_ramp.elements[1].position=.86
+    ramp.color_ramp.elements[1].color=(*hex_linear(light),1)
+    links.new(wave.outputs['Color'],ramp.inputs['Fac'])
+    links.new(ramp.outputs['Color'],bsdf.inputs['Base Color'])
+    bsdf.inputs['Roughness'].default_value=.85
+
+_timber_fibres(_fwood,'2b1d16','8b5738',4.4)
+_timber_fibres(_fedge,'483024','b27a4c',4.1)
+_timber_fibres(_fdark,'1a1310','5b3c2e',3.7)
 for _textile in (_fcloth,_fstripe):
     _microtexture(_textile,(7,7,1),11,.19,.035)
 
