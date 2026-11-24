@@ -21,8 +21,8 @@ assert.equal(cat.walls['bars-full'].height,cat.walls.stone.height);
 assert.equal(cat.walls['bars-half'].height,cat.walls.stone.height/2);
 for(const name of ['bars','bars-full','bars-half','gate'])
  assert.equal(cat.walls[name].solid,true,name+' must block movement');
-for(const name of ['bars','gate'])assert.equal(cat.walls[name].render,'metal-bars');
-for(const name of ['bars-full','bars-half']){
+assert.equal(cat.walls.gate.render,'metal-bars');
+for(const name of ['bars','bars-full','bars-half']){
  assert.equal(cat.walls[name].render,'blender-bars');
  assert.match(cat.walls[name].asset,/assets\/walls\/prison-grille-(full|half)-front\.png/);
  assert.ok(cat.walls[name].cameraOrthoScale>1);
