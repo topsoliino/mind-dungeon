@@ -4,6 +4,33 @@
 
 **Wichtig für ChatGPT Work:** Dies ist ein vollständig isolierter Raumeditor. Der aktuelle Dungeon, alle bestehenden Greyboxen, der Random-Generator, der Wächter, die Gegner und deren Rendering-Pipeline sind *unverändert*. Bitte bei späterer Integration **kein vorhandenes `beta/index.html`, `beta/alley-generator.js` oder `beta/dungeon-isometric.js` überschreiben**. Stattdessen JSON-Vorlagen als optionale Raum-Templates importieren.
 
+## Neue mittelalterliche Alchemie-Möbel (Blender)
+
+Der Möbelkatalog enthält zusätzlich zum bestehenden Gefängnistisch und -stuhl vier
+**eigenständige Blender-3D-Modelle**: einen Werk-/Alchemietisch, einen um **20 %
+pro Achse** verkleinerten Brautisch mit Kupferdestille, einen Hochlehnstuhl und
+einen Armstuhl. Sämtliche Möbel sind in der isolierten Editor-Szene platzierbar,
+verschiebbar, in **0° / 90° / 180° / 270°** drehbar und mitsamt Kollisionsdaten
+als Raum-JSON exportierbar.
+
+- `blender/alchemy-furniture.py` modelliert das neue Set als editierbare Blender-Meshes
+  (Eichenbretter, Schmiedeeisen, Kupfer, Textilien, Glasgefäße, Kerzen usw.).
+- `blender/build-room-kit.py` rendert alle sechs Modelle aus derselben 35,26°-
+  Orthokamera mit Cycles, warmem Key und kühlem Fill. Die Quelle wird als
+  `assets/source/room-kit.blend` gespeichert.
+- `blender/pack-room-kit.py` liefert für die vier neuen Modelle je vier
+  **transparente 512×512 PNGs** und ergänzt `assets/manifest.json`. Die zwei
+  vorhandenen Möbel behalten ihre acht WebP-Dateien; das ist wichtig, weil der
+  unveränderte GitHub-Actions-Workflow exakt acht alte WebPs validiert.
+- Die neue Asset-Liste mit sechs Modellen hat insgesamt 24 Blickrichtungen.
+  Bis ein Render-Build veröffentlicht ist, zeichnet der Editor nur eine
+  geometrische Vorschau. Es werden **keine** Chat-Bilder als falsche
+  Blender-Assets ausgegeben.
+
+Der Brautisch trägt im Editor die Metadaten `interaction: 'brew'`; die
+Brauinteraktion im eigentlichen Spiel wird dadurch **noch nicht aktiviert**.
+Die Dateien des Hauptspiels bleiben absichtlich unverändert.
+
 ## Benutzung
 
 * **V**: Möbel selektieren/ziehen, rechts Eigenschaften ändern.
