@@ -4,6 +4,41 @@
 
 **Wichtig für ChatGPT Work:** Dies ist ein vollständig isolierter Raumeditor. Der aktuelle Dungeon, alle bestehenden Greyboxen, der Random-Generator, der Wächter, die Gegner und deren Rendering-Pipeline sind *unverändert*. Bitte bei späterer Integration **kein vorhandenes `beta/index.html`, `beta/alley-generator.js` oder `beta/dungeon-isometric.js` überschreiben**. Stattdessen JSON-Vorlagen als optionale Raum-Templates importieren.
 
+## Wall-flush placement and on-demand loading
+
+Room Atelier places **all furniture and floor clutter down to 0.01 world metres
+from wall planes**. The previous artificial 0.1m perimeter inset is removed.
+`placement.js` computes the 0/90/180/270-degree rotated footprints, clamps
+objects to the room border and snaps them to nearby north/west or internal
+solid-wall faces. A drag cannot jump through an internal wall; walk-through
+decorations still cannot be positioned across a solid wall. Only real blocking
+objects obstruct the Guardian in Playtest. Objects near the wall are snapped
+off the .25m grid exactly; the JSON sanitizer preserves their coordinates
+to .001m on save/reload. Property inputs allow .01m increments.
+
+Startup is **demand-driven**, not a 116-sprite preload:
+
+- `editor.js` requests only the currently drawn furniture *type + orientation*.
+  Further 90-degree views load on first rotation, and the four images stay in
+  the browser HTTP cache on subsequent use.
+- Palette thumbnails request only 0-degree assets near the scrolling viewport
+  via IntersectionObserver, with a native lazy-image fallback.
+- `editor-art.js` validates the material manifest but loads only the active
+  floor atlas and *wall styles actually visible* in the room.
+- Material swatches show a CSS colour until hovered, focused, or clicked;
+  this avoids downloading all 17 photograph previews and their remote
+  fallbacks on startup.
+- Guardian animation metadata loads once; the original body/weapon atlas
+  sheets are fetched only when a visible animation frame requires them.
+
+Images are served through **same-origin GitHub Pages static paths**, not
+through GitHub's rate-limited REST/raw endpoints. The user's existing room
+files and the main dungeon code remain unchanged.
+
+Regression cases are in `tests/placement-and-loading.test.cjs`, covering
+wall flush, interior wall collisions, 90-degree rotation, decoration
+collision and zero eager material/sprite downloads.
+
 ## Abandoned dungeon: 10 Blender floor clutter props (2026-11-24)
 
 Ten **physically modeled**, dark PBR environmental groups in
