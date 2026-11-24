@@ -27,7 +27,7 @@ void main(){float y=uv.y;float bend=(noise(vec2(y*4.,t*3.))-0.5)*.32*y;
 float x=abs(uv.x-.5-bend);float w=.29*pow(max(0.,1.-y),.72)*smoothstep(0.,.08,y);
 float flick=noise(vec2(uv.x*9.,y*7.-t*5.))*.10+noise(vec2(uv.x*22.,y*19.-t*8.))*.035;
 float a=smoothstep(0.,.052,w-x+flick-.065)*smoothstep(0.,.035,y)*(1.-smoothstep(.76,.99,y+flick));
-float core=smoothstep(.08,.0,x)* (1.-smoothstep(.32,.75,y));
+float core=(1.-smoothstep(0.,.08,x))* (1.-smoothstep(.32,.75,y));
 vec3 col=mix(vec3(.72,.085,.008),vec3(1.,.48,.045),clamp((w-x)*6.+.35,0.,1.));col=mix(col,vec3(1.,.91,.62),core);
 gl_FragColor=vec4(col,a);}`);
    const program=gl.createProgram();gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);
@@ -93,9 +93,11 @@ function insects(room,cat,shape,placement,o,t,ctx,project,zoom,path){
    const k=Math.min(total-1,Math.floor(d)),f=d-k,a=path[k],b=path[k+1];
    x=a.x+(b.x-a.x)*f;y=a.y+(b.y-a.y)*f;angle=Math.atan2(b.y-a.y,b.x-a.x)+(u>total?Math.PI:0);
   }else{
-   const a=t*(.6+i*.035)+i*2.399+phase*TAU,r=.35+.22*Math.sin(t*.65+i);
-   x=o.x+Math.cos(a)*r;y=o.y+Math.sin(a*1.17)*r;z=.34+.16*Math.sin(t*2+i);
-   if(edgeBlocked(room,cat,Math.floor(o.x),Math.floor(o.y),Math.floor(x),Math.floor(y)))continue;
+   const a=t*(.6+i*.035)+i*2.399+phase*TAU,r=.19+.12*Math.sin(t*.65+i);
+   let center=o;
+   if(path&&path.length>1){const n=path.length-1,u=fract(t*.22/(n*2)+phase+i*.035)*n*2,d=u<=n?u:2*n-u,k=Math.min(n-1,Math.floor(d)),f=d-k;center={x:path[k].x+(path[k+1].x-path[k].x)*f,y:path[k].y+(path[k+1].y-path[k].y)*f};}
+   x=center.x+Math.cos(a)*r;y=center.y+Math.sin(a*1.17)*r;z=.34+.16*Math.sin(t*2+i);
+   if(Math.abs(Math.floor(x)-Math.floor(center.x))+Math.abs(Math.floor(y)-Math.floor(center.y))>1||edgeBlocked(room,cat,Math.floor(center.x),Math.floor(center.y),Math.floor(x),Math.floor(y)))continue;
   }
   if(!free(room,cat,shape,placement,x,y,z))continue;
   const p=project(x,y,z),q=project(x+Math.cos(angle)*.1,y+Math.sin(angle)*.1,z),scale=Math.max(.65,zoom);
