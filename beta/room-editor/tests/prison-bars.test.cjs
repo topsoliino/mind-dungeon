@@ -40,10 +40,10 @@ function renderWall(style,edge='north'){
  const strokes=[],fills=[];
  const ctx={beginPath(){},arc(){},fill(){},fillStyle:''};
  const draw=new Function('cat','isNearWall','wallEnds','pt','line',
-   'polygon','ctx','hover','keyWall','TAU','window',
+   'polygon','ctx','hover','keyWall','TAU','window','zoom',
    extract('drawWall','oriented')+'return drawWall')(
    cat,()=>false,wallEnds,pt,(points,color,width)=>strokes.push({points,color,width}),
-   (points,fill)=>fills.push({points,fill}),ctx,null,()=>'',Math.PI*2,{});
+   (points,fill)=>fills.push({points,fill}),ctx,null,()=>'',Math.PI*2,{},1);
  draw({x:1,y:2,edge,style});
  return {strokes,fills};
 }
