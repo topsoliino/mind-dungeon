@@ -7,9 +7,12 @@
 ## Neue mittelalterliche Alchemie-Möbel (Blender)
 
 Der Möbelkatalog enthält zusätzlich zum bestehenden Gefängnistisch und -stuhl vier
-**eigenständige Blender-3D-Modelle**: einen Werk-/Alchemietisch, einen um **20 %
-pro Achse** verkleinerten Brautisch mit Kupferdestille, einen Hochlehnstuhl und
-einen Armstuhl. Sämtliche Möbel sind in der isolierten Editor-Szene platzierbar,
+**eigenständige Blender-3D-Modelle**: einen Werk-/Alchemietisch, einen
+kompakten Brautisch mit dominanter Kupferdestille, einen Hochlehnstuhl und einen
+Armstuhl. **Alle vier neuen Möbel sind 55 % kleiner als ihre bisherigen
+Editor-Render;** der Brautisch behält zusätzlich den ursprünglichen 0,8-Faktor.
+Die Kollisionen schrumpfen entsprechend. Die zwei älteren Gefängnismöbel
+werden unverändert beibehalten. Sämtliche Möbel sind in der isolierten Editor-Szene platzierbar,
 verschiebbar, in **0° / 90° / 180° / 270°** drehbar und mitsamt Kollisionsdaten
 als Raum-JSON exportierbar.
 
@@ -22,6 +25,12 @@ als Raum-JSON exportierbar.
   **transparente 512×512 PNGs** und ergänzt `assets/manifest.json`. Die zwei
   vorhandenen Möbel behalten ihre acht WebP-Dateien; das ist wichtig, weil der
   unveränderte GitHub-Actions-Workflow exakt acht alte WebPs validiert.
+- Die vier neuen Assets werden mit **halbiertem Blender-Kameraausschnitt**
+  gerendert und im Editor bei **50 % Sprite-Ausgabegröße** gezeichnet: hohe
+  Quellbilddetails bei korrektem kleineren Maßstab relativ zum Original-Wächter.
+  Der sichtbare Kessel ist größer modelliert, Holz und Metall sind dunkler
+  abgestimmt; die Backlog-/Asset-Daten bleiben für spätere Spielintegration
+  unabhängig von der Hauptspiel-Pipeline.
 - Die neue Asset-Liste mit sechs Modellen hat insgesamt 24 Blickrichtungen.
   Bis ein Render-Build veröffentlicht ist, zeichnet der Editor nur eine
   geometrische Vorschau. Es werden **keine** Chat-Bilder als falsche
