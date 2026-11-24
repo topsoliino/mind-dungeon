@@ -13,10 +13,10 @@ vm.runInNewContext(fs.readFileSync(path.join(root,'catalog.js'),'utf8'),
  {window,console},{filename:'catalog.js'});
 const catalog=window.MindRoomKit.catalog;
 const expected={
- 'alchemy-work-table': ['work-table',1.85,1.05],
- 'alchemy-brew-table': ['brew-table-small',1.48,.84],
- 'alchemy-highback-chair': ['chair-highback',.8,.8],
- 'alchemy-armchair': ['chair-arm',.92,.88],
+ 'alchemy-work-table': ['work-table',.83,.47],
+ 'alchemy-brew-table': ['brew-table-small',.67,.38],
+ 'alchemy-highback-chair': ['chair-highback',.36,.36],
+ 'alchemy-armchair': ['chair-arm',.41,.40],
 };
 assert.equal(Object.keys(catalog.furniture).length,6,'Keep both previous prison furnishings');
 assert.equal(catalog.furniture['prison-table'].asset,'assets/furniture/table');
@@ -28,7 +28,9 @@ const editor=fs.readFileSync(path.join(root,'editor.js'),'utf8');
 assert.match(build,/for rot in \(0,90,180,270\)/);
 assert.match(build,/all_furniture=\[/);
 assert.match(build,/room-kit\.blend/);
-assert.match(models,/brew\.scale=\(\.8,\.8,\.8\)/,'Brewing table must be 80% scale');
+assert.match(models,/GUARDIAN_RELATIVE_FURNITURE_SCALE=\.45/,'New assets must be 55% smaller than prior views');
+assert.match(models,/brew\.scale=\(GUARDIAN_RELATIVE_FURNITURE_SCALE\*\.8,\)\*3/,'Compact brew station keeps previous 80% factor');
+assert.match(build,/camera\.data\.ortho_scale=3\.35\*\.5/,'Half-scale assets must bake at double pixel density');
 assert.match(editor,/spec\.extension\|\|'webp'/);
 assert.match(editor,/furniture\+'\/'\+assets\.size/);
 assert.match(pack,/Legacy CI intentionally counts exactly eight existing \.webp views/);
@@ -38,6 +40,7 @@ for(const [id,[name,w,h]] of Object.entries(expected)){
  assert.equal(prop.asset,'assets/furniture/'+name);
  assert.equal(prop.extension,'png');
  assert.equal(prop.render,'blender-ortho-4');
+ assert.equal(prop.editorSpriteScale,.5,'Half-size viewport display required');
  assert.equal(prop.footprint.w,w);
  assert.equal(prop.footprint.h,h);
  assert.equal(prop.blocksMovement,true);
@@ -61,4 +64,4 @@ if(fs.existsSync(manifestFile)){
   }
  }
 }
-console.log('Room Atelier: six Blender furniture models, 24 directional views, 80% brewing table — OK');
+console.log('Room Atelier: dark PBR furniture, 24 views, Guardian-relative 55% shrink — OK');
