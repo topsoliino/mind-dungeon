@@ -13,12 +13,15 @@ vm.runInNewContext(fs.readFileSync(path.join(root,'catalog.js'),'utf8'),
  {window,console},{filename:'catalog.js'});
 const catalog=window.MindRoomKit.catalog;
 const expected={
- 'alchemy-work-table': ['work-table',.83,.47],
- 'alchemy-brew-table': ['brew-table-small',.67,.38],
+ 'alchemy-work-table': ['work-table',.913,.517],
+ 'alchemy-brew-table': ['brew-table-small',.871,.494],
  'alchemy-highback-chair': ['chair-highback',.36,.36],
  'alchemy-armchair': ['chair-arm',.41,.40],
+ 'dungeon-weapon-rack': ['weapon-rack',.82,.43],
+ 'dungeon-bookshelf': ['bookshelf',.75,.37],
+ 'dungeon-torture-bench': ['torture-bench',1.04,.58],
 };
-assert.equal(Object.keys(catalog.furniture).length,6,'Keep both previous prison furnishings');
+assert.equal(Object.keys(catalog.furniture).length,9,'Preserve both prison furniture models and all seven new dungeon models');
 assert.equal(catalog.furniture['prison-table'].asset,'assets/furniture/table');
 assert.equal(catalog.furniture['prison-chair'].asset,'assets/furniture/chair');
 const build=fs.readFileSync(path.join(root,'blender/build-room-kit.py'),'utf8');
@@ -29,7 +32,9 @@ assert.match(build,/for rot in \(0,90,180,270\)/);
 assert.match(build,/all_furniture=\[/);
 assert.match(build,/room-kit\.blend/);
 assert.match(models,/GUARDIAN_RELATIVE_FURNITURE_SCALE=\.45/,'New assets must be 55% smaller than prior views');
-assert.match(models,/brew\.scale=\(GUARDIAN_RELATIVE_FURNITURE_SCALE\*\.8,\)\*3/,'Compact brew station keeps previous 80% factor');
+assert.match(models,/brew\.scale=\(GUARDIAN_RELATIVE_FURNITURE_SCALE\*\.8\*1\.30,\)\*3/,'Brew table must gain precisely 30%');
+assert.match(models,/work\.scale=\(GUARDIAN_RELATIVE_FURNITURE_SCALE\*1\.10,\)\*3/,'Work table must gain precisely 10%');
+for(const name of ['_weapon_rack_v1','_bookshelf_v1','_torture_bench_v1'])assert.ok(models.includes(name),'Missing genuine Blender sculpture '+name);
 assert.match(build,/camera\.data\.ortho_scale=3\.35\*\.5/,'Half-scale assets must bake at double pixel density');
 assert.match(editor,/spec\.extension\|\|'webp'/);
 assert.match(editor,/furniture\+'\/'\+assets\.size/);
@@ -64,4 +69,4 @@ if(fs.existsSync(manifestFile)){
   }
  }
 }
-console.log('Room Atelier: dark PBR furniture, 24 views, Guardian-relative 55% shrink — OK');
+console.log('Room Atelier: nine Blender furniture models, 36 90-degree views, +30% brew, +10% writing desk — OK');
