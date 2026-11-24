@@ -103,5 +103,17 @@
       "blocksMovement": true
     }
   ],
-  "notes": "Kameraseitig offene Gefängniszelle. Nur nördliche und westliche Rückwand mit hochauflösenden Blender-Quadersteinen, Gitter/geschmiedete Zellentür hinten. Süd und Ost sind isometrischer Cutaway; der Wächter bleibt sichtbar. Unabhängig vom existierenden Greybox-Generator."
+  "notes": "Kameraseitig offene Gefängniszelle. Nur nördliche und westliche Rückwand mit hochauflösenden Blender-Quadersteinen, Gitter/geschmiedete Zellentür hinten. Süd und Ost sind isometrischer Cutaway; der Wächter bleibt sichtbar. Unabhängig vom existierenden Greybox-Generator.",
+  "portals": [
+    {
+      "side": "south",
+      "offset": 3,
+      "width": 1
+    },
+    {
+      "side": "east",
+      "offset": 2,
+      "width": 1
+    }
+  ]
 }
