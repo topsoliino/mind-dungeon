@@ -4,6 +4,34 @@
 
 **Wichtig für ChatGPT Work:** Dies ist ein vollständig isolierter Raumeditor. Der aktuelle Dungeon, alle bestehenden Greyboxen, der Random-Generator, der Wächter, die Gegner und deren Rendering-Pipeline sind *unverändert*. Bitte bei späterer Integration **kein vorhandenes `beta/index.html`, `beta/alley-generator.js` oder `beta/dungeon-isometric.js` überschreiben**. Stattdessen JSON-Vorlagen als optionale Raum-Templates importieren.
 
+## Realistisch gerenderte Dark-Dungeon-Gefängnisgitter (Blender / Cycles)
+
+Die beiden neuen Varianten `bars-full` und `bars-half` sind nicht länger
+schematische Canvas-Stäbe. Ihre Erscheinung stammt aus vollständig
+modelliertem, editierbarem **Blender-3D**:
+
+- 2 m hohe und 1 m hohe reale Einzelstäbe mit abgeflachten, durch
+  Handarbeit unregelmäßigen Profilen und angeschmiedeten Hülsen
+- rostiges, geschwärztes Eisen, kalte abgeriebene Kanten, PBR-Mikrostruktur
+  und Schlagschrauben; getrennte Ober-, Quer- und Sockelträger
+- Beleuchtung durch die bestehende warme Schlüssel- und kühle Fülllichtquelle
+  des Room Atelier, als 512px transparente Cycles-Renders
+
+Die neue Datei `blender/dungeon-prison-bars.py` beschreibt die beiden
+3D-Skulpturen. `blender/build-room-kit.py` rendert jede Gitterhöhe direkt
+frontal (front-orthografisch). `blender/pack-room-kit.py` veröffentlicht
+`assets/walls/prison-grille-full-front.png` und
+`assets/walls/prison-grille-half-front.png` sowie das `wallViews`-Manifest.
+Die 3D-Originale werden in `assets/source/room-kit.blend` gespeichert.
+
+Der Editor lädt **nur die jeweils verwendeten Gitter-PNGs** nach Bedarf
+und bildet den frontalen Render mit einer Canvas-Affintransformation direkt
+auf die 1 m lange, perspektivisch korrekte Wandfläche ab. Dadurch bleiben
+Gitter an Steinwand-Stößen bündig, ohne dass der Browser Blender ausführen
+muss. Für unvollständig bereitgestellte Assets bleiben die alten Linien
+als temporärer Fallback sichtbar. Die alten `bars`- und `gate`-Wall-IDs
+werden nicht verändert, ebenso wenig die Spielphysik oder Hauptspiel-Beta.
+
 ## Gefängnisgitter: volle Wandhöhe und halbe Wandhöhe
 
 Der Raumeditor unterstützt jetzt zwei neue, separat auswählbare Wandelemente:
