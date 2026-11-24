@@ -454,3 +454,6 @@ N / Boden + malt seitlich angrenzende Felder, M / Boden − entfernt Felder. Mit
 
 ### Schaben: Boden-Renderpass
 Schaben werden nach den Bodentexturen und flachen Boden-Dekorationen, aber vor sämtlichen Wänden, Möbeln, Höhenobjekten und dem Wächter gerendert. Fliegen behalten ihren separaten Luftpass. Die bestehende Pfadfindung und Kollision bleiben unverändert.
+
+### Artwork-Laden und Lichtzustand
+Der Sprite-Loader lädt die aktuelle Manifest-Revision, nutzt versionierte Sprite-URLs und wiederholt fehlgeschlagene Bildanfragen begrenzt. `Artwork neu laden` prüft das Manifest und lädt die benötigten Ansichten erneut. Fehlende Ansichten werden mit Dateinamen gemeldet; bei noch fehlendem Träger wird kein losgelöstes Feuer angezeigt. Die Eigenschaft `lit` (optional, Standard true) schaltet Flammen und Glow aus, nicht den Basis-Sprite. Sie bleibt beim Import, Export und Verschieben erhalten. Keine neuen Asset-IDs nötig.
