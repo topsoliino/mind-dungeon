@@ -4,6 +4,34 @@
 
 **Wichtig für ChatGPT Work:** Dies ist ein vollständig isolierter Raumeditor. Der aktuelle Dungeon, alle bestehenden Greyboxen, der Random-Generator, der Wächter, die Gegner und deren Rendering-Pipeline sind *unverändert*. Bitte bei späterer Integration **kein vorhandenes `beta/index.html`, `beta/alley-generator.js` oder `beta/dungeon-isometric.js` überschreiben**. Stattdessen JSON-Vorlagen als optionale Raum-Templates importieren.
 
+## Dungeon furniture pack: armoury, library, torture chamber (2026-11-24)
+
+In the standalone Room Atelier, the previously generated compact brew table is now
+**30% larger (Blender object .36 → .468)**, and the alchemist's writing/work table
+**10% larger (.45 → .495)**. The footprint, inspector height and real Blender mesh
+scale are adjusted together. Previously placed room instances keep their IDs and
+automatically receive updated dimensions.
+
+Three new fully modeled, editable Blender props join the shared dark-dungeon PBR set:
+
+- **Weapon rack** (\`dungeon-weapon-rack\` / \`weapon-rack\`): separate ash spear,
+  axes, long swords, oak armoury posts and iron mounts.
+- **Bookshelf** (\`dungeon-bookshelf\` / \`bookshelf\`): gothic oak library case
+  with physical shelves, grimoires, book spines, bindings and pointed crest.
+- **Torture bench** (\`dungeon-torture-bench\` / \`torture-bench\`): empty medieval
+  rack with two heavy winding drums, winch, iron strapping and restraints;
+  no occupants are depicted.
+
+All models are built in \`blender/alchemy-furniture.py\`, composed in
+\`blender/build-room-kit.py\`, stored in the editable source
+\`assets/source/room-kit.blend\`, and pre-rendered in Cycles as **4 actual camera
+angles, 0/90/180/270°**, each as transparent 512px PNG. The existing asset
+pipeline publishes the seven new furniture entries together with the two original
+prison props, for **9 catalog types / 36 views**. The render is cached and the
+browser only blits pre-rendered pixels, with no live Blender/WebGL cost. All room
+JSON stays compatible with existing saved rooms; new pieces have proper footprints,
+rotations and movement collisions. No main-game files are modified.
+
 ## Neue mittelalterliche Alchemie-Möbel (Blender)
 
 Der Möbelkatalog enthält zusätzlich zum bestehenden Gefängnistisch und -stuhl vier
