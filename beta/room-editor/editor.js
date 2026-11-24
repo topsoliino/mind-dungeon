@@ -2,6 +2,8 @@
 (function(){
 'use strict';
 const kit=window.MindRoomKit,cat=kit.catalog,P=cat.projection,TAU=Math.PI*2;
+const placement=window.MindRoomPlacement;
+if(!placement)throw Error('Room Atelier: precision placement module missing');
 const $=id=>document.getElementById(id);
 const c=$('editorCanvas'),ctx=c.getContext('2d',{alpha:false});
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -13,19 +15,33 @@ let showGuardian=true,showGrid=false,playing=false,dragging=null,hover=null,dirt
 let width=0,height=0,zoom=1,ox=0,oy=0;
 let hero={x:3.5,y:2.6,target:null,vault:0,face:0,clock:0,moving:false},keys=new Set(),history=[],historyPos=0;
 let playHP=new Map();
+// Demand-load only views actually needed by the current scene.
+ // Images are served as immutable, cacheable static files from GitHub Pages;
+ // GitHub raw/API requests would add latency and rate limits.
 const assets=new Map();
+const spriteVersion='abandoned-floor-clutter-29-v1';
 function spriteName(type,rot){const spec=cat.furniture[type];return spec.asset+'-'+rot+'.'+(spec.extension||'webp')}
-for(const type of Object.keys(cat.furniture))for(const rot of [0,90,180,270]){
- const img=new Image();const name=spriteName(type,rot);assets.set(name,{img,ready:false});
- img.onload=()=>{assets.get(name).ready=true;dirty=true;updateAssetInfo()};
- img.onerror=()=>updateAssetInfo();
- img.src=name+'?v=abandoned-floor-clutter-29-v1';
+function spriteUrl(type,rot){return spriteName(type,rot)+'?v='+spriteVersion}
+function requestSprite(type,rot){
+ if(!cat.furniture[type])return null;
+ const name=spriteName(type,rot);
+ if(assets.has(name))return assets.get(name);
+ const img=new Image(),entry={img,ready:false,failed:false};
+ assets.set(name,entry);
+ img.onload=()=>{entry.ready=true;entry.failed=false;dirty=true;updateAssetInfo()};
+ img.onerror=()=>{entry.failed=true;dirty=true;updateAssetInfo()};
+ img.src=spriteUrl(type,rot);
+ updateAssetInfo();
+ return entry;
 }
 function updateAssetInfo(){
  const furniture=[...assets.values()].filter(v=>v.ready).length;
+ const failedSprites=[...assets.values()].filter(v=>v.failed).length;
  const art=window.MindRoomArt?.status?.();
  $('assetStatus').textContent=(art?art.tiles+' · '+art.wallPhotos:'Materialien laden')+
-  ' · Möbel '+furniture+'/'+assets.size+' · Wächter '+(art?.guardianAuthentic?'Original':'lädt / nicht verfügbar');
+  ' · Möbelansichten '+furniture+'/'+assets.size+' benötigt'+
+  (failedSprites?' · '+failedSprites+' Fehler':'')+
+  ' · Wächter '+(art?.guardianAuthentic?'Original':'lädt / nicht verfügbar');
  const failed=art?.failedTextures?.length||0;
  const fallback=art?.fallbackTextures?.length||0;
  $('assetInfo').textContent=failed?
@@ -34,7 +50,7 @@ function updateAssetInfo(){
   (fallback?
    fallback+' Materialien werden bis zum Abschluss des GitHub-Asset-Builds direkt als Poly-Haven-Diffuse-Maps angezeigt. ':
    art?.assetWarning?art.assetWarning+'. ':'' )+
-  '8 Bodenmaterialien und 9 Steinmauern, maßstabsgetreu importiert. '+
+  'Nur sichtbare Boden-, Wand- und Möbelansichten werden bei Bedarf geladen. '+
   ' Maßstab und Texturrichtung sind an die Weltachsen gebunden.';
 }
 const keyWall=w=>w.edge==='north'||w.edge==='south'?'h:'+w.x+':'+w.y:'v:'+w.x+':'+w.y;
@@ -184,15 +200,13 @@ function bounds(obj){
 }
 function fits(obj,ignoreId=null){
  const a=bounds(obj);
- if(a.left<.1||a.top<.1||a.right>room.width-.1||a.bottom>room.height-.1)return false;
- if(obj.blocksMovement)for(const wall of room.walls){
-  if(isNearWall(wall)||!cat.walls[wall.style]?.solid)continue;
-  // A physical 3D furniture footprint cannot be placed through a prison
-  // wall or cell grille, not merely outside the rectangular room.
-  const h=wall.edge==='north'||wall.edge==='south';
-  if(h&&a.left<wall.x+1&&a.right>wall.x&&a.top<wall.y+.06&&a.bottom>wall.y-.06)return false;
-  if(!h&&a.top<wall.y+1&&a.bottom>wall.y&&a.left<wall.x+.06&&a.right>wall.x-.06)return false;
- }
+ // The old .1m inset plus quarter-metre snapping caused visible wall gaps.
+ // Keep just the physically tiny safety inset, irrespective of obstruction.
+ const eps=placement.epsilon*.5;
+ if(a.left<eps||a.top<eps||a.right>room.width-eps||a.bottom>room.height-eps)return false;
+ // Nonblocking decorations are walk-through but must still respect stone
+ // wall planes, otherwise rugs and puddles can appear in the next room.
+ if(placement.crossesWall(obj,room,cat))return false;
  for(const other of room.furniture){
   if(other.id===(ignoreId||obj.id)||!other.blocksMovement||!obj.blocksMovement)continue;
   const b=bounds(other);
@@ -248,7 +262,7 @@ function drawFurniture(obj){
   ctx.beginPath();ctx.ellipse(p.x,p.y+5*zoom,spec.footprint.w*P.stepX*zoom*.75,
    spec.footprint.h*P.stepY*zoom*.8,0,0,TAU);ctx.fill();ctx.restore();
  }
- const sprite=assets.get(spriteName(obj.type,obj.rot));
+ const sprite=requestSprite(obj.type,obj.rot);
  if(sprite?.ready){
   // Blender ortho target .72m projects the ground pivot to 68.3% of the cut.
   ctx.save();ctx.imageSmoothingEnabled=true;
@@ -377,9 +391,11 @@ function getPointer(e){
  const rect=c.getBoundingClientRect();return{x:e.clientX-rect.left,y:e.clientY-rect.top};
 }
 function makeInstance(type,x,y,rot=0,id){
- const cfg=cat.furniture[type];return {id:id||type+'-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1000),
+ const cfg=cat.furniture[type];
+ const initial={id:id||type+'-'+Date.now().toString(36)+'-'+Math.floor(Math.random()*1000),
   type,x:quant(x),y:quant(y),rot,destroyable:cfg.destroyable,vaultable:cfg.vaultable,
   blocksMovement:cfg.blocksMovement};
+ return placement.snap(initial,room,cat);
 }
 function chooseTool(next){
  if(playing&&next!=='select')togglePlay(false);
@@ -541,7 +557,9 @@ c.addEventListener('pointermove',e=>{
  }else if(dragging?.type==='move'){
   const obj=room.furniture.find(f=>f.id===dragging.id);
   if(obj){const prior={x:obj.x,y:obj.y};
-   obj.x=quant(uv.x+dragging.deltaX);obj.y=quant(uv.y+dragging.deltaY);
+   const next=placement.snap({...obj,
+    x:quant(uv.x+dragging.deltaX),y:quant(uv.y+dragging.deltaY)},room,cat,prior);
+   obj.x=next.x;obj.y=next.y;
    if(!fits(obj,obj.id)){obj.x=prior.x;obj.y=prior.y}
    refreshInspector();
   }
@@ -568,14 +586,23 @@ c.addEventListener('wheel',e=>{
 },{passive:false});
 function rotate(delta){
  const obj=item();if(!obj)return;
- const prev=obj.rot;obj.rot=(obj.rot+delta+360)%360;
- if(!fits(obj,obj.id)){obj.rot=prev;return}
+ const previous={...obj};obj.rot=(obj.rot+delta+360)%360;
+ const snapped=placement.snap(obj,room,cat);
+ obj.x=snapped.x;obj.y=snapped.y;
+ if(!fits(obj,obj.id)){Object.assign(obj,previous);return}
  checkpoint();refreshInspector();
 }
 function changeSelected(key,value){
  const obj=item();if(!obj)return;
- const prior=obj[key];obj[key]=value;
- if(!fits(obj,obj.id)){obj[key]=prior;$('editorStatus').textContent='Nicht möglich: Möbel würde kollidieren.'}
+ const prior={...obj};obj[key]=value;
+ if(key==='x'||key==='y'||key==='rot'){
+  const next=placement.snap(obj,room,cat,prior);
+  obj.x=next.x;obj.y=next.y;
+ }
+ if(!fits(obj,obj.id)){
+  Object.assign(obj,prior);
+  $('editorStatus').textContent='Nicht möglich: Möbel würde kollidieren.';
+ }
  checkpoint();refreshUI();
 }
 function deleteSelected(){
@@ -660,6 +687,15 @@ for(const [type,entry] of Object.entries(cat.walls)){
   $('wallSwatches').appendChild(button);
  }
 }
+// Thumbnail bytes are requested only for palette entries near the viewport.
+const thumbnailObserver=('IntersectionObserver' in window)?
+ new IntersectionObserver(entries=>{
+  for(const item of entries)if(item.isIntersecting){
+   const img=item.target;
+   img.src=img.dataset.src;
+   thumbnailObserver.unobserve(img);
+  }
+ },{root:document.querySelector('.sidebar.left'),rootMargin:'32px'}):null;
 for(const [type,entry] of Object.entries(cat.furniture)){
  if(entry.category==='floor-clutter'&&!document.querySelector('.floor-clutter-heading')){
   const heading=document.createElement('div');heading.className='catalog-section-label floor-clutter-heading';
@@ -670,14 +706,16 @@ for(const [type,entry] of Object.entries(cat.furniture)){
  b.dataset.furniture=type;
  const icon=document.createElement('span');icon.className='catalog-icon';
  const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
- thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=abandoned-floor-clutter-29-v1';
+ thumb.loading='lazy';thumb.decoding='async';thumb.dataset.src=spriteUrl(type,0);
+ if(thumbnailObserver)thumbnailObserver.observe(thumb);else thumb.src=thumb.dataset.src;
  thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.kind==='rack'?'⚔':entry.kind==='shelf'?'▥':entry.kind==='cage'?'▦':entry.kind==='brazier'?'♨':entry.kind==='wheel'?'◎':entry.kind==='wall-prop'?'⛓':entry.kind==='cabinet'?'▯':entry.kind==='stocks'?'▣':entry.kind==='basin'?'◡':entry.kind==='bench'?'▰':entry.interaction==='brew'?'♨':'▤'};
  icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
   entry.footprint.w+' × '+entry.footprint.h+' Felder · '+
   (entry.blocksMovement?(entry.vaultable?'überspringbar':'blockiert Bewegung'):'begehbar')+'</small>';
  b.append(icon,contents);b.onclick=()=>{
-  chosenFurniture=type;document.querySelectorAll('[data-furniture]').forEach(el=>el.classList.toggle('selected',el===b));
+  chosenFurniture=type;requestSprite(type,0);
+  document.querySelectorAll('[data-furniture]').forEach(el=>el.classList.toggle('selected',el===b));
   chooseTool('place');
  };$('furnitureCatalog').appendChild(b);
 }
@@ -712,8 +750,9 @@ for(const [id,field] of [['roomW','width'],['roomH','height']])$(id).addEventLis
     room.walls.push({x:room.width,y,edge:'west',style:'stone'});
   }
   room.furniture=room.furniture.filter(o=>{
-   const f=bounds(o);return f.left>=.1&&f.top>=.1&&
-    f.right<=room.width-.1&&f.bottom<=room.height-.1;
+   const f=bounds(o),eps=placement.epsilon*.5;
+   return f.left>=eps&&f.top>=eps&&
+    f.right<=room.width-eps&&f.bottom<=room.height-eps;
   });
  });fit();
 });
@@ -730,8 +769,8 @@ for(const [id,key] of [['propDestroyable','destroyable'],['propVaultable','vault
 $('deleteBtn').onclick=deleteSelected;
 $('duplicateBtn').onclick=()=>{
  const obj=item();if(!obj)return;
- const copy={...clone(obj),id:obj.type+'-'+Date.now().toString(36),
-  x:quant(obj.x+.75),y:quant(obj.y+.75)};
+ const copy=placement.snap({...clone(obj),id:obj.type+'-'+Date.now().toString(36),
+  x:quant(obj.x+.75),y:quant(obj.y+.75)},room,cat);
  if(!fits(copy)){ $('editorStatus').textContent='Kein Platz für ein Duplikat.';return }
  room.furniture.push(copy);selected=copy.id;checkpoint();
 };
