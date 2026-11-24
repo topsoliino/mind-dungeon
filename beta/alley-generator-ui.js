@@ -22,7 +22,10 @@ function mount({generator:g,player,iso}){
   '<div id="iso-gen-body"><canvas id="iso-gen-map" width="576" height="360" '+
   'aria-label="Isometrischer Grundriss und Spielerposition" style="width:100%;height:180px;'+
   'display:block;border:1px solid #75869c66;border-radius:6px;background:#111827"></canvas>'+
-  '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Held · Türkis: OG-Ziel · Violett: Kriechpassage (Strg) · L Leiter</div>'+
+  '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Held · Gold: Wissensaltar-Raumnummer · Türkis: OG-Ziel · L Leiter</div>'+
+  '<div style="margin-top:9px;padding:7px;border:1px solid #a9966b77;border-radius:5px;background:#151925">'+
+  '<strong>Wissensaltäre · Unterkategorien je Raum</strong>'+
+  '<div id="iso-gen-altar-rows" aria-label="Fragenunterkategorien nach Raum"></div></div>'+
   '<div style="margin-top:8px"><label for="iso-gen-stair-style">Treppentyp</label>'+
   '<select id="iso-gen-stair-style" style="width:100%;padding:6px;margin-top:3px;'+
   'background:#101725;color:#eee;border:1px solid #8190a1;border-radius:4px">'+
@@ -158,6 +161,16 @@ function mount({generator:g,player,iso}){
    ctx.strokeStyle='#30251f';ctx.lineWidth=3;
    ctx.strokeText(door.name,x,y-5);ctx.fillText(door.name,x,y-5);
   }
+  // Map markers match the per-room subcategory list.
+  for(const site of g.levelSites?.sites||[]){
+   if(site.kind!=='altar'||site.floor!==(prison?.enabled?prison.storey-1:0))continue;
+   const [x,y]=xy(site.x/48,site.y/48);
+   ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);
+   ctx.fillStyle='#e7b76d';ctx.fill();
+   ctx.strokeStyle='#4a3022';ctx.lineWidth=1.5;ctx.stroke();
+   ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillStyle='#241b18';
+   ctx.fillText(String(site.room),x,y+3.5);
+  }
   if(vertical?.enabled&&vertical.hasStairs()){
    for(const step of vertical.plan.steps)
     poly(step.corners.map(p=>xy(p.x,p.y)),
@@ -192,9 +205,32 @@ function mount({generator:g,player,iso}){
     prison?.enabled?'Stockwerk '+Math.min(prison.count,prison.storey+vertical.state.floor)+' / '+prison.count:'GREYBOX · '+(vertical.state.floor?'OBERGESCHOSS':'ERDGESCHOSS');
   }
  }
- let cachedFloor=null,lastX=null,lastY=null;
+ const altarRows=panel.querySelector('#iso-gen-altar-rows');
+ let cachedFloor=null,lastX=null,lastY=null,lastTopicSignature='';
+ function refreshAltarTopics(){
+  const floor=prison?.enabled?prison.storey-1:0;
+  const altars=(g.levelSites?.sites||[]).filter(site=>site.kind==='altar'&&site.floor===floor)
+   .sort((a,b)=>a.room-b.room);
+  const signature=floor+':'+altars.map(site=>site.id+':'+(site.topic?.title||'?')).join('|');
+  if(signature===lastTopicSignature)return;
+  lastTopicSignature=signature;cachedFloor=null;
+  altarRows.replaceChildren();
+  if(!altars.length){
+   const empty=document.createElement('div');
+   empty.textContent='Auf diesem Stockwerk befinden sich keine Wissensaltäre.';
+   altarRows.append(empty);return;
+  }
+  for(const site of altars){
+   const line=document.createElement('div');
+   line.style.cssText='font-size:11px;color:#e9dbc3;margin:5px 0 0;line-height:1.4';
+   line.textContent='Raum '+site.room+' · '+(site.topic?.title||'Fragenpaket lädt …');
+   line.title=site.topic?.categoryTitle||'Wissensaltar';
+   altarRows.append(line);
+  }
+ }
  function draw(){
   if(body.style.display==='none')return;
+  refreshAltarTopics();
   const floor=(prison?.storey??0)*2+(vertical?.state?.floor??0),hero=player();
   if(cachedFloor===floor&&hero.x===lastX&&hero.y===lastY)return;
   if(cachedFloor!==floor){drawBackground();cachedFloor=floor;}
