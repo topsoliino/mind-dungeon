@@ -451,3 +451,6 @@ N / Boden + malt seitlich angrenzende Felder, M / Boden − entfernt Felder. Mit
 - **Bodenarchitektur v3:** sechs neu modellierte Bodenobjekte mit maßhaltiger orthografischer Projektion und eigener Render-Rotationskonvention (`Z=-90-rot`); lokale Höhenprofile für Deck, Treppen, Rampe, abgesenkten Boden und tatsächliches Loch. Überlappende Höhenflächen werden bei der Platzierung verhindert. Keine alten frei schwebenden Dekor-Risse. Die neu gerenderten Assets und die Editor-Physik müssen gemeinsam visuell getestet werden.
 
 `environment.js` enthält die Runtime-Vorschau, `blender/crypt-environment.py` die editierbaren Modelle. JSON enthält wie bisher Typ/Position/Rotation; Licht- und Ambientparameter werden aus dem Katalog gelesen. Nur im Room Atelier implementiert; keine Hauptspiel-Änderung. Test: `node beta/room-editor/tests/crypt-environment.test.cjs`.
+
+### Schaben: Boden-Renderpass
+Schaben werden nach den Bodentexturen und flachen Boden-Dekorationen, aber vor sämtlichen Wänden, Möbeln, Höhenobjekten und dem Wächter gerendert. Fliegen behalten ihren separaten Luftpass. Die bestehende Pfadfindung und Kollision bleiben unverändert.
