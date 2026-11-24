@@ -116,7 +116,7 @@ def make_model(name, fn):
     before = set(bpy.context.scene.objects)
     fn()
     for ob in list(bpy.context.scene.objects):
-        if ob != root and ob not in before and ob.type == 'MESH':
+        if ob != root and ob not in before and ob.type in ('MESH','CURVE'):
             ob.parent = root
             ob.matrix_parent_inverse = root.matrix_world.inverted()
     return root
@@ -245,18 +245,23 @@ except Exception:
 try:scene.camera.data.lens=50
 except:pass
 
-for name,rig in [('table',table),('chair',chair)]:
-    for other in (table,chair):
+exec(compile((Path(__file__).parent/'alchemy-furniture.py').read_text(),
+             str(Path(__file__).parent/'alchemy-furniture.py'),'exec'),globals())
+all_furniture=[('table',table),('chair',chair),*ALCHEMY_MODELS]
+for name,rig in all_furniture:
+    for other in (model for _,model in all_furniture):
         show=other==rig
         for ob in (other,*other.children):
             ob.hide_render=not show
+    if name not in ('table','chair'):
+        scene.cycles.samples=min(scene.cycles.samples,22)
     for rot in (0,90,180,270):
         rig.rotation_euler.z=math.radians(90-rot)
         scene.render.filepath=str(RAW/('%s-%s.png'%(name,rot)))
         bpy.ops.render.render(write_still=True)
         print('RENDERED',name,rot,scene.render.filepath,flush=True)
     rig.rotation_euler.z=0
-for other in (table,chair):
+for _,other in all_furniture:
     for ob in (other,*other.children):ob.hide_render=False
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'source'/'room-kit.blend'),check_existing=False)
 print('Saved editable source',OUT/'source'/'room-kit.blend',flush=True)
