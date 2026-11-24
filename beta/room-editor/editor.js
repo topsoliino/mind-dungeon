@@ -19,7 +19,7 @@ for(const type of Object.keys(cat.furniture))for(const rot of [0,90,180,270]){
  const img=new Image();const name=spriteName(type,rot);assets.set(name,{img,ready:false});
  img.onload=()=>{assets.get(name).ready=true;dirty=true;updateAssetInfo()};
  img.onerror=()=>updateAssetInfo();
- img.src=name+'?v=alchemy-sculpt-v2';
+ img.src=name+'?v=alchemy-dark-small-v3';
 }
 function updateAssetInfo(){
  const furniture=[...assets.values()].filter(v=>v.ready).length;
@@ -236,7 +236,7 @@ function shadeFurniture(type,obj,paint,outline,highlight){
 }
 function drawFurniture(obj){
  if(playing&&playHP.has(obj.id)&&playHP.get(obj.id)<=0)return;
- const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=184*zoom;
+ const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=184*zoom*(spec.editorSpriteScale||1);
  ctx.save();
  ctx.globalAlpha=.4;ctx.fillStyle='#000';
  ctx.beginPath();ctx.ellipse(p.x,p.y+5*zoom,spec.footprint.w*P.stepX*zoom*.75,
@@ -246,7 +246,13 @@ function drawFurniture(obj){
   // Blender ortho target .72m projects the ground pivot to 68.3% of the cut.
   ctx.save();ctx.imageSmoothingEnabled=true;
   ctx.drawImage(sprite.img,p.x-size*.5,p.y-size*.683,size,size);ctx.restore();
- }else shadeFurniture(obj.type,obj,'#876c58','#302a2d','#ae866d');
+ }else{
+  // Match the smaller published in-world scale during a pending Blender build.
+  ctx.save();ctx.translate(p.x,p.y);
+  ctx.scale(spec.editorSpriteScale||1,spec.editorSpriteScale||1);
+  ctx.translate(-p.x,-p.y);
+  shadeFurniture(obj.type,obj,'#4a322b','#171316','#74523d');ctx.restore();
+ }
  if(selected===obj.id){
   polygon(footprint(obj).map(({x,y})=>pt(x,y)), '#ffc97618',
    fits(obj,obj.id)?'#f1be6b':'#e86c73',1.9);
@@ -276,9 +282,14 @@ function nearestWall(x,y){
 function hitFurniture(x,y){
  const px=x,py=y;
  return room.furniture.slice().sort((a,b)=>pt(b.x,b.y).y-pt(a.x,a.y).y).find(item=>{
-  const p=pt(item.x,item.y),w=cat.furniture[item.type].footprint.w;
+  const p=pt(item.x,item.y),spec=cat.furniture[item.type];
   const dx=(px-p.x)/zoom,dy=(py-p.y)/zoom;
-  return Math.abs(dx)<Math.max(34,w*29)&&dy>-117&&dy<28;
+  // Hit testing follows the SHRUNKEN model/footprint; no invisible 117px
+  // click box remains around a half-size chair or compact brewing table.
+  const reachX=Math.max(15,spec.footprint.w*P.stepX*.85);
+  const reachTop=spec.height*P.stepX*1.25+spec.footprint.h*P.stepY*.5;
+  const reachBottom=Math.max(12,spec.footprint.h*P.stepY*.75);
+  return Math.abs(dx)<reachX&&dy>-reachTop&&dy<reachBottom;
  })||null;
 }
 function draw(){
@@ -640,7 +651,7 @@ for(const [type,entry] of Object.entries(cat.furniture)){
  b.dataset.furniture=type;
  const icon=document.createElement('span');icon.className='catalog-icon';
  const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
- thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=alchemy-sculpt-v2';
+ thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=alchemy-dark-small-v3';
  thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.interaction==='brew'?'♨':'▤'};
  icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
