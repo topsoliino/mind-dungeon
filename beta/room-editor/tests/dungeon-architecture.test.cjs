@@ -118,4 +118,19 @@ for(const type of [...wallTypes,...floors]){
  assert.ok(kit.includes("'"+type+"'"),'Model absent '+type);
  assert.ok(pack.includes("'"+type+"'"),'Pack absent '+type);
 }
+// Art-direction regression: prevent the simplified cream-coloured blocky
+// statues and clean timber from accidentally returning in a later asset build.
+const patina=fs.readFileSync(path.join(dir,'blender/architecture-weathering.py'),'utf8');
+const builder=fs.readFileSync(path.join(dir,'blender/build-room-kit.py'),'utf8');
+assert.match(kit,/def _a_organic_stone\(/);
+assert.match(kit,/def _a_bat_wing\(/);
+assert.match(kit,/def _a_aged_surface\(/);
+assert.match(kit,/Deep split in rain-damaged timber/);
+assert.match(kit,/architecture-weathering\.py/);
+assert.match(pack,/architectureWeatheringSha256/);
+assert.match(builder,/background\.inputs\['Strength'\]\.default_value=\.38/);
+for(const asset of [...wallTypes,...floors]){
+ assert.ok(patina.includes("'"+asset+"'"),'Missing Gothic patina sculpt '+asset);
+}
+assert.match(editor,/gothic-ruins-architecture-pbr-v2/);
 console.log('Architecture OK: 8 strict wall ornaments, 6 walkable or dangerous floor constructions, 14 meshes.');
