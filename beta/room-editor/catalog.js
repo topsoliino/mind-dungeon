@@ -169,6 +169,66 @@ const catalog={
    footprint:{w:1.04,h:.58},height:.51,
    destroyable:true,vaultable:true,blocksMovement:true,blocksProjectiles:true,
    maxHP:150,material:'stained oak + leather restraints + iron winch',render:'blender-ortho-4'
+,
+  'torture-iron-cage':{
+   label:'Eiserner Hängekäfig',kind:'cage',asset:artRoot+'furniture/iron-cage',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.79,h:0.55},height:1.2,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:140,material:'rusty wrought iron + heavy medieval oak',render:'blender-ortho-4'
+  },
+  'torture-interrogation-chair':{
+   label:'Verhörstuhl',kind:'chair',asset:artRoot+'furniture/interrogation-chair',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.44,h:0.43},height:0.91,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:95,material:'heavy black oak + iron + leather',render:'blender-ortho-4'
+  },
+  'torture-tool-table':{
+   label:'Folterwerkzeug-Tisch',kind:'table',asset:artRoot+'furniture/tool-table',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.76,h:0.45},height:0.76,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:100,material:'aged oak + blacksmith forged implements',render:'blender-ortho-4'
+  },
+  'torture-chain-wall':{
+   label:'Kettenwand · modular',kind:'wall-prop',asset:artRoot+'furniture/chain-wall',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.78,h:0.28},height:1.05,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:160,material:'damp ashlar + forged chains',render:'blender-ortho-4'
+  },
+  'torture-iron-maiden':{
+   label:'Eiserne Jungfrau · geschlossen',kind:'cabinet',asset:artRoot+'furniture/iron-maiden',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.55,h:0.38},height:1.28,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:180,material:'oxidised iron + gothic cast metal',render:'blender-ortho-4'
+  },
+  'torture-ember-brazier':{
+   label:'Glutbecken · Kohle',kind:'brazier',asset:artRoot+'furniture/ember-brazier',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.48,h:0.48},height:0.62,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:75,material:'forged iron + charcoal embers',render:'blender-ortho-4'
+  },
+  'torture-pillory':{
+   label:'Pranger · Eiche',kind:'stocks',asset:artRoot+'furniture/pillory',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.82,h:0.43},height:0.95,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:90,material:'weathered oak + iron stocks',render:'blender-ortho-4'
+  },
+  'torture-wheel':{
+   label:'Folterrad · Holz',kind:'wheel',asset:artRoot+'furniture/torture-wheel',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.82,h:0.5},height:1.08,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:115,material:'antique spoked oak + iron rim',render:'blender-ortho-4'
+  },
+  'torture-prison-cage':{
+   label:'Gefangenenkäfig · Transport',kind:'cage',asset:artRoot+'furniture/prison-cage',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.65,h:0.57},height:0.65,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:110,material:'low rectangular iron cage + oak sled',render:'blender-ortho-4'
+  },
+  'torture-washbasin':{
+   label:'Kerker-Waschbecken',kind:'basin',asset:artRoot+'furniture/washbasin',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.78,h:0.47},height:0.48,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:120,material:'damp granite + oak bucket + iron rings',render:'blender-ortho-4'
   }
  }
 };
