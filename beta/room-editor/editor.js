@@ -2,8 +2,8 @@
 (function(){
 'use strict';
 const kit=window.MindRoomKit,cat=kit.catalog,P=cat.projection,TAU=Math.PI*2;
-const placement=window.MindRoomPlacement,architecture=window.MindRoomArchitecture;
-if(!placement||!architecture)throw Error('Room Atelier: placement and architecture modules missing');
+const placement=window.MindRoomPlacement,architecture=window.MindRoomArchitecture,portals=window.MindRoomPortals;
+if(!placement||!architecture||!portals)throw Error('Room Atelier: placement and architecture modules missing');
 const $=id=>document.getElementById(id);
 const c=$('editorCanvas'),ctx=c.getContext('2d',{alpha:false});
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -112,9 +112,8 @@ function sanitize(raw){
  for(const wall of raw.walls||[]){
   if(!isWall(wall))continue;
   const horizontal=wall.edge==='north'||wall.edge==='south';
-  // Our camera sees from +X/+Y. Never store a wall along the southern
-  // or eastern outer cutaway: it would hide the Guardian and furniture.
-  if(horizontal&&wall.y===next.height||!horizontal&&wall.x===next.width)continue;
+  // The camera may hide walls but never deletes them.
+  // Cutaway is visual only: retain authored south/east walls.
   if(wall.x<0||wall.y<0||wall.x>(horizontal?next.width-1:next.width)||
    wall.y>(horizontal?next.height:next.height-1))continue;
   const id=keyWall(wall);if(seen.has(id))continue;seen.add(id);
@@ -138,6 +137,7 @@ function sanitize(raw){
   }
   next.furniture.push(saved);
  }
+ next.portals=Array.isArray(raw.portals)?portals.normalize(raw.portals):[];
  return next;
 }
 function saveLocal(){
@@ -389,8 +389,8 @@ function nearestWall(x,y){
  const du=Math.abs(x-Math.round(x)),dv=Math.abs(y-Math.round(y));
  const horizontal=dv<=du;
  let u=horizontal?Math.floor(x):Math.round(x),v=horizontal?Math.round(y):Math.floor(y);
- if(horizontal){if(u<0||u>=room.width||v<0||v>=room.height)return null}
- else{if(u<0||u>=room.width||v<0||v>=room.height)return null}
+ if(horizontal){if(u<0||u>=room.width||v<0||v>room.height)return null}
+ else{if(u<0||u>room.width||v<0||v>=room.height)return null}
  const wall={x:u,y:v,edge:horizontal?'north':'west',style:$('wallType').value};
  return {...wall,kind:'wall',id:keyWall(wall)};
 }
@@ -510,6 +510,11 @@ function draw(){
  });
  layers.sort((a,b)=>a.depth-b.depth);
  for(const layer of layers)layer.draw();
+ if(!playing){
+  if(['portal','wall','erase'].includes(tool))for(const w of room.walls){if(isNearWall(w)&&cat.walls[w.style]?.solid){const [a,b]=wallEnds(w);line([pt(...a),pt(...b)],'#aeb0ba',3);}}
+  for(const p of room.portals||[]){if(p.offset+p.width>portals.span(room,p.side))continue;const [a,b]=portals.segment(room,p);line([pt(...a),pt(...b)],portals.inspect(room,p,cat,placement).ok?'#67d5b5':'#e97980',5);}
+  if(tool==='portal'&&hover?.kind==='portal'){const p=hover.portal,[a,b]=portals.segment(room,p);line([pt(...a),pt(...b)],portals.inspect(room,p,cat,placement).ok?'#c0ffe7':'#ff7777',7);}
+ }
  if(hover?.kind==='wall'&&(tool==='wall'||tool==='erase')){
   const [a,b]=wallEnds(hover);
   line([pt(...a),pt(...b)],tool==='erase'?'#e97980':'#f3d196',4.3);
@@ -554,7 +559,8 @@ function chooseTool(next){
   place:cat.furniture[chosenFurniture]?.category==='wall-architecture'?
    'F · Wandverzierung nur auf vorhandener massiver Wand platzieren':
    'F · Möbel / Bauplattform auf Boden platzieren',
-  erase:'E · Möbel entfernen oder Wandkante aufheben'}[next];
+  portal:'C · freie Außenkante anklicken · erneut anklicken = entfernen',
+   erase:'E · Möbel entfernen oder Wandkante aufheben'}[next];
  schedule();
 }
 function select(id){
@@ -706,6 +712,14 @@ c.addEventListener('pointerdown',e=>{
    room.tiles=[];
    checkpoint();
   }
+ }else if(tool==='portal'){
+  const clicked=portals.nearest(room,uv.x,uv.y,1),p=portals.nearest(room,uv.x,uv.y,Number($('portalWidth').value));
+  if(!clicked){$('editorStatus').textContent='Nur Außenkanten sind als Verbindungspunkte möglich.';return;}
+  room.portals=room.portals||[];
+  const old=room.portals.find(q=>q.side===clicked.side&&clicked.offset>=q.offset&&clicked.offset<q.offset+q.width);
+  if(old){room.portals=room.portals.filter(q=>portals.key(q)!==portals.key(old));checkpoint();}
+  else if(p){const status=portals.inspect(room,p,cat,placement);if(status.ok){room.portals.push(p);checkpoint();}else $('editorStatus').textContent=status.reason+' · Wand bleibt unverändert.';}
+  else $('editorStatus').textContent='Durchgang ist breiter als diese Raumseite.';
  }else if(tool==='wall'){
   const at=nearestWall(uv.x,uv.y);
   if(at){const old=room.walls.find(w=>keyWall(w)===at.id);
@@ -751,7 +765,8 @@ c.addEventListener('pointermove',e=>{
  const currentTile=cursorTile(uv.x,uv.y);
  const target=tool==='place'&&cat.furniture[chosenFurniture]?.category==='wall-architecture'?
   architecturalTarget(pos,uv):uv;
- hover=tool==='wall'||tool==='erase'?nearestWall(uv.x,uv.y):
+ const portalTarget=tool==='portal'?portals.nearest(room,uv.x,uv.y,Number($('portalWidth').value)):null;
+ hover=tool==='portal'?(portalTarget?{kind:'portal',portal:portalTarget}:null):tool==='wall'||tool==='erase'?nearestWall(uv.x,uv.y):
   tool==='floor'?(currentTile?{...currentTile,kind:'tile'}:null):
   target?{x:precise(target.x),y:precise(target.y),kind:'world'}:null;
  $('sceneStatus').textContent=(playing?'Spieltest · ':'')+'Raster '+uv.x.toFixed(2)+' × '+uv.y.toFixed(2)+' · '+(tool==='select'?'Möbel verschieben':tool);
@@ -804,10 +819,12 @@ function deleteSelected(){
  selected=null;checkpoint();
 }
 function download(){
- const data=JSON.stringify(sanitize(room),null,2);
+ const clean=sanitize(room),invalid=clean.portals.filter(p=>!portals.inspect(clean,p,cat,placement).ok);
+ if((invalid.length||!clean.portals.length)&&!confirm('Verbindungspunkte fehlen oder sind ungültig. Trotzdem als Entwurf exportieren?'))return;
+ const data=JSON.stringify(clean,null,2);
  const blob=new Blob([data+'\n'],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=(room.id||'mind-room').replace(/[^a-z0-9-_]/gi,'-')+'.json';a.click();URL.revokeObjectURL(url);
- $('editorStatus').textContent='JSON gespeichert · Import in den zukünftigen Dungeon-Generator möglich.';
+ $('editorStatus').textContent=invalid.length||!clean.portals.length?'JSON als Entwurf gespeichert · Verbindungspunkte prüfen.':'JSON gespeichert · Verbindungspunkte enthalten.';
 }
 function refreshInspector(){
  const obj=item();$('inspector').hidden=!obj;$('noSelection').hidden=Boolean(obj);
@@ -831,7 +848,13 @@ function refreshInspector(){
    'begehbare Höhe '+spec.surface.elevation+' m · '+spec.surface.access:
    'Höhe '+spec.height+' m')+' · '+(obj.vaultable?'Vault erlaubt':'Vault gesperrt');
 }
+function refreshPortals(){
+ const list=$('portalList');list.replaceChildren();let valid=0;
+ for(const p of room.portals||[]){const status=portals.inspect(room,p,cat,placement);if(status.ok)valid++;const b=document.createElement('button');const side={north:'Nord',east:'Ost',south:'Süd',west:'West'}[p.side];b.textContent=(status.ok?'✓ ':'! ')+side+' '+(p.offset+1)+' · '+p.width+' m · '+status.reason+' · ×';b.title='Markierung entfernen';b.onclick=()=>{room.portals=room.portals.filter(q=>portals.key(q)!==portals.key(p));checkpoint()};list.appendChild(b);}
+ $('portalStatus').textContent=valid+' gültig / '+(room.portals||[]).length+' markiert'+(valid?'':' · mindestens einen Zugang festlegen');
+}
 function refreshUI(){
+ refreshPortals();
  $('roomName').value=room.name;$('roomW').value=room.width;$('roomH').value=room.height;
  $('floorType').value=room.floorStyle;$('wallType').value=room.wallStyle;
  $('sceneLabel').textContent=room.name.toUpperCase()+' · '+room.width+' × '+room.height;
@@ -1007,7 +1030,9 @@ $('duplicateBtn').onclick=()=>{
  if(!fits(copy)){ $('editorStatus').textContent='Kein Platz für ein Duplikat.';return }
  room.furniture.push(copy);selected=copy.id;checkpoint();
 };
-$('exportBtn').onclick=download;
+$('portalSuggest').onclick=()=>{const found=portals.suggest(room,cat,placement);if(!found.length){$('editorStatus').textContent='Keine weiteren geeigneten freien Außenkanten gefunden.';return;}if(!confirm(found.length+' vorgeschlagene Verbindungspunkte übernehmen? Wände bleiben unverändert.'))return;room.portals=[...(room.portals||[]),...found];checkpoint();chooseTool('portal');};
+ $('portalWidth').onchange=()=>{hover=null;schedule()};
+ $('exportBtn').onclick=download;
 $('importBtn').onclick=()=>$('importFile').click();
 $('importFile').onchange=async e=>{
  const file=e.target.files?.[0];if(!file)return;
@@ -1056,7 +1081,7 @@ window.addEventListener('keydown',e=>{
   if(['arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
   return;
  }
- const shortcuts={v:'select',b:'floor',w:'wall',f:'place',e:'erase'};
+ const shortcuts={v:'select',b:'floor',w:'wall',f:'place',e:'erase',c:'portal'};
  if(shortcuts[k])chooseTool(shortcuts[k]);
  if(k==='r')rotate(90);
  if(k==='g'){$('gridBtn').click()}
