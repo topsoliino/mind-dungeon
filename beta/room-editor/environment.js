@@ -5,6 +5,7 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),TAU=Math.PI*2;
 const hash=s=>{let h=2166136261;for(const c of String(s)){h=Math.imul(h^c.charCodeAt(0),16777619);}return (h>>>0)/4294967296;};
 const fract=x=>x-Math.floor(x);
 function lightPoints(o,s){
+ if(o.lit===false)return [];
  const rad=o.rot*Math.PI/180,c=Math.cos(rad),n=Math.sin(rad);
  // Blender rig Z=90-rot, camera swaps Blender X/Y into editor Y/X.
  return (s.lights||[]).map(([x,y,z,size,radius])=>({x:o.x+x*c+y*n,y:o.y+x*n-y*c,z,size,radius,phase:hash(o.id+':'+x+':'+y)*TAU}));
