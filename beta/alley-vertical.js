@@ -373,7 +373,10 @@ function createLayers({project,polygon,line,cacheObject}){
    if(front(step.corners,3))polygon(ctx,[base(a),base(d),top(d),top(a)],'#485565','#343d4b');
    if(front(step.corners,1))polygon(ctx,[base(b),base(c),top(c),top(b)],'#647384','#3e4654');
    if(front(step.corners,0))polygon(ctx,[low(a),low(b),top(b),top(a)],'#555f70','#424a57');
-   if(front(step.corners,2)&&plan.cfg.open)polygon(ctx,[base(c),base(d),top(d),top(c)],'#485565','#343d4b');
+   // At the head of a solid straight flight there is no next tread
+   // to conceal the end wall. Its foundation reaches the ground.
+   const solidHead=plan.kind.startsWith('straight')&&index===plan.steps.length-1;
+   if(front(step.corners,2)&&(plan.cfg.open||solidHead))polygon(ctx,[base(c),base(d),top(d),top(c)],'#485565','#343d4b');
    polygon(ctx,[top(a),top(b),top(c),top(d)],
     index%2?'#98a3b0':'#939eaf','#d1c9ca');
    line(ctx,[top(a),top(b)],'#d9ced0',1.8);
