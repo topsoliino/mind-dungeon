@@ -19,7 +19,7 @@ for(const type of Object.keys(cat.furniture))for(const rot of [0,90,180,270]){
  const img=new Image();const name=spriteName(type,rot);assets.set(name,{img,ready:false});
  img.onload=()=>{assets.get(name).ready=true;dirty=true;updateAssetInfo()};
  img.onerror=()=>updateAssetInfo();
- img.src=name+'?v=torture-chamber-19-v1';
+ img.src=name+'?v=abandoned-floor-clutter-29-v1';
 }
 function updateAssetInfo(){
  const furniture=[...assets.values()].filter(v=>v.ready).length;
@@ -208,6 +208,10 @@ function shadeFurniture(type,obj,paint,outline,highlight){
   polygon([q1,q2,p2,p1],sideA,outline,.7);polygon([q2,q3,p3,p2],sideB,outline,.7);
   polygon([q0,q1,q2,q3],top,outline,.85);
  };
+ if(cat.furniture[type].kind==='clutter'){
+  polygon(footprint(obj).map(({x,y})=>pt(x,y)), '#4a454180','#8b8271',1);
+  return;
+ }
  if(cat.furniture[type].kind==='table'){
   for(const x of [-.76,.76])for(const y of [-.37,.37])
    cuboid(x-.06,y-.06,x+.06,y+.06,.04,.82,'#52403a','#342724','#40312e');
@@ -237,10 +241,13 @@ function shadeFurniture(type,obj,paint,outline,highlight){
 function drawFurniture(obj){
  if(playing&&playHP.has(obj.id)&&playHP.get(obj.id)<=0)return;
  const spec=cat.furniture[obj.type],p=pt(obj.x,obj.y),size=184*zoom*(spec.editorSpriteScale||1);
- ctx.save();
- ctx.globalAlpha=.4;ctx.fillStyle='#000';
- ctx.beginPath();ctx.ellipse(p.x,p.y+5*zoom,spec.footprint.w*P.stepX*zoom*.75,
-  spec.footprint.h*P.stepY*zoom*.8,0,0,TAU);ctx.fill();ctx.restore();
+ // Low-profile dungeon floor clutter is baked with its own Cycles ambient
+ // occlusion. The generic furniture contact oval would hide wet puddles/rugs.
+ if(spec.category!=='floor-clutter'){
+  ctx.save();ctx.globalAlpha=.4;ctx.fillStyle='#000';
+  ctx.beginPath();ctx.ellipse(p.x,p.y+5*zoom,spec.footprint.w*P.stepX*zoom*.75,
+   spec.footprint.h*P.stepY*zoom*.8,0,0,TAU);ctx.fill();ctx.restore();
+ }
  const sprite=assets.get(spriteName(obj.type,obj.rot));
  if(sprite?.ready){
   // Blender ortho target .72m projects the ground pivot to 68.3% of the cut.
@@ -647,15 +654,21 @@ for(const [type,entry] of Object.entries(cat.walls)){
  }
 }
 for(const [type,entry] of Object.entries(cat.furniture)){
+ if(entry.category==='floor-clutter'&&!document.querySelector('.floor-clutter-heading')){
+  const heading=document.createElement('div');heading.className='catalog-section-label floor-clutter-heading';
+  heading.textContent='BODENDEKORATION · begehbare Kleinteile und Geröll';
+  $('furnitureCatalog').appendChild(heading);
+ }
  const b=document.createElement('button');b.className='catalog-item';
  b.dataset.furniture=type;
  const icon=document.createElement('span');icon.className='catalog-icon';
  const thumb=document.createElement('img');thumb.className='catalog-thumb';thumb.alt=entry.label+' · 0°';
- thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=torture-chamber-19-v1';
+ thumb.loading='lazy';thumb.src=spriteName(type,0)+'?v=abandoned-floor-clutter-29-v1';
  thumb.onerror=()=>{thumb.remove();icon.textContent=entry.kind==='chair'?'♧':entry.kind==='rack'?'⚔':entry.kind==='shelf'?'▥':entry.kind==='cage'?'▦':entry.kind==='brazier'?'♨':entry.kind==='wheel'?'◎':entry.kind==='wall-prop'?'⛓':entry.kind==='cabinet'?'▯':entry.kind==='stocks'?'▣':entry.kind==='basin'?'◡':entry.kind==='bench'?'▰':entry.interaction==='brew'?'♨':'▤'};
  icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
-  entry.footprint.w+' × '+entry.footprint.h+' Felder · '+(entry.vaultable?'überspringbar':'massiv')+'</small>';
+  entry.footprint.w+' × '+entry.footprint.h+' Felder · '+
+  (entry.blocksMovement?(entry.vaultable?'überspringbar':'blockiert Bewegung'):'begehbar')+'</small>';
  b.append(icon,contents);b.onclick=()=>{
   chosenFurniture=type;document.querySelectorAll('[data-furniture]').forEach(el=>el.classList.toggle('selected',el===b));
   chooseTool('place');
