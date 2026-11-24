@@ -312,9 +312,35 @@ save.templeDepth??=run.templeDepth(save.templeRunSeed,Math.min(LAST_DEPTH,save.f
 if(save.activeBrew&&!save.activeBrew.duration)save.activeBrew.duration=Math.max(brewing.seconds,save.activeBrew.remaining);
 let brewBonus=brewing.bonuses(save.activeBrew);
 let questions=[],lessonRooms=[];
+// One stable, seed-dependent subcategory per (storey, altar room). Distinct
+// categories are exhausted before reuse, even across generated storeys.
+function assignAltarTopics(pack){
+ const altars=window.AlleyGenerator?.levelSites?.sites.filter(site=>site.kind==='altar')||[];
+ const eligible=new Set((pack?.questions||[]).map(q=>q.categoryId+'::'+q.subcategoryId));
+ const options=(pack?.categories||[]).flatMap(category=>
+  category.subcategories.filter(sub=>eligible.has(category.id+'::'+sub.id))
+   .map(sub=>({categoryId:category.id,subcategoryId:sub.id,
+    categoryTitle:category.title,title:sub.title})));
+ for(const site of altars)site.topic=null;
+ if(!options.length)return;
+ let seed=(window.AlleyGenerator?.seed??save.dungeonSeed??0)>>>0;
+ for(const ch of String(pack.packId||''))seed=(Math.imul(seed^ch.charCodeAt(0),16777619))>>>0;
+ const next=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+ for(let i=options.length-1;i>0;i--){
+  const j=Math.floor(next()*(i+1));
+  [options[i],options[j]]=[options[j],options[i]];
+ }
+ const byRoom=new Map();
+ for(const site of altars){
+  const key=site.floor+':'+site.room;
+  if(!byRoom.has(key))byRoom.set(key,options[byRoom.size%options.length]);
+  site.topic=byRoom.get(key);
+ }
+}
 function usePack(pack){
  questions=pack?.questions||[];
  lessonRooms=run.roomTopics(pack,save.floor,save.templeRunSeed??save.dungeonSeed);
+ assignAltarTopics(pack);
 }
 function roomTitle(index){
  return lessonRooms[index]?.map(group=>group.activeSubcategory.title).join(' / ')||'Kammer '+(index+1);
@@ -1601,6 +1627,15 @@ function selectQuestion(zone,gateId,altarIndex=null){
  const local=(lessonRooms[zone]||[]).flatMap(group=>group.questions);
  return run.nextQuestion(questions,local,exclusions,save,save.templeRunSeed??save.dungeonSeed)??null;
 }
+function selectAltarQuestion(siteId){
+ const site=window.AlleyGenerator?.levelSites?.sites.find(s=>s.id===siteId&&s.kind==='altar');
+ const topic=site?.topic;
+ if(!topic)return null;
+ const pool=questions.filter(q=>q.categoryId===topic.categoryId&&q.subcategoryId===topic.subcategoryId);
+ const used=save.rockySites?.[siteId]?.questions||[];
+ // Prevent the normal zone-0/global fallback from overriding this topic.
+ return run.nextQuestion(pool,pool,used,save,save.templeRunSeed??save.dungeonSeed)??null;
+}
 const sealTarget=()=>Math.min(2,questions.length);
 let pending=null,brewQuestion=null,queuedAltar=null;
 function emptyCup(source){return {kind:'cup',id:'cup',rarity:'rare',source};}
@@ -1762,7 +1797,8 @@ function quiz(z,reason,gateId=null,question=null){
  if(authorityMode&&reason==='study'){startAuthorityQuiz('study',question?.id);return;}
  if(reason==='shrine'&&(save.altarUses[z]||0)>=2)return;
  const topic=reason==='shrine'?shrines[z].topic:z;
- const source=question||selectQuestion(topic,gateId,reason==='shrine'?z:null);
+ const source=reason==='rocky-altar'?selectAltarQuestion(gateId):
+  question||selectQuestion(topic,gateId,reason==='shrine'?z:null);
  const q=reason==='server'?source:source&&run.presentQuestion(source,run.shuffleOptions(source));
  if(!q){tell('Aktuell keine fälligen Fragen – alle Lernkarten sind vorerst zurückgestellt.');return;}
  pending={q,z,reason,gateId,started:performance.now(),coopKey:coopRoom?coopAPI.token():null};
@@ -1866,7 +1902,11 @@ function answer(i){
  if(reason==='rocky-door'||reason==='rocky-altar'){
   const plan=window.AlleyGenerator.levelSites,site=plan.sites.find(s=>s.id===gateId);
   const state=save.rockySites??={};
-  if(reason==='rocky-altar')state[gateId]={uses:Math.min(2,(state[gateId]?.uses||0)+1)};
+  if(reason==='rocky-altar'){
+   const previous=state[gateId]||{};
+   state[gateId]={...previous,uses:Math.min(2,(previous.uses||0)+1),
+    questions:[...new Set([...(previous.questions||[]),q.id])]};
+  }
   if(ok&&reason==='rocky-door'){
    plan.unlock(site);state[gateId]={hp:site.hp};
   }
@@ -3598,7 +3638,9 @@ const interactionLabels={
 function interactionHint(selection){
  if(!selection)return '';
  switch(selection.kind){
-  case 'level-site':return window.AlleyGenerator.levelSites.labels[selection.site.kind];
+  case 'level-site':return selection.site.kind==='altar'?
+   'Wissensaltar · '+(selection.site.topic?.title||'Thema wird geladen'):
+   window.AlleyGenerator.levelSites.labels[selection.site.kind];
   case 'key-door':{
    const id=selection.site?.keyId;
    if(!id)return 'Verschlossen';
