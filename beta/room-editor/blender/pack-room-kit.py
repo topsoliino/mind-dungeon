@@ -14,12 +14,26 @@ raw=Path(sys.argv[1]) if len(sys.argv)>1 else Path('/tmp/md-room-raw')
 target=ASSETS/'furniture'
 target.mkdir(parents=True,exist_ok=True)
 items={
- 'table':{'catalogId':'prison-table','footprint':[1.85,1.05],'height':.94,
+ 'table':{'catalogId':'prison-table','footprint':[1.41,.80],'height':.95,'modelScale':.76,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':110},
- 'chair':{'catalogId':'prison-chair','footprint':[.78,.79],'height':1.28,
+ 'chair':{'catalogId':'prison-chair','footprint':[.56,.57],'height':.97,'modelScale':.72,
   'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':35}
 }
 new_items={
+ 'light-torch-iron':{'catalogId':'light-torch-iron','footprint':[0.25,0.34],'height':1.62,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'lighting','wallMounted':True},
+ 'light-torch-ring':{'catalogId':'light-torch-ring','footprint':[0.3,0.36],'height':1.62,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'lighting','wallMounted':True},
+ 'light-torch-gothic':{'catalogId':'light-torch-gothic','footprint':[0.3,0.38],'height':1.62,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'lighting','wallMounted':True},
+ 'light-candle-single':{'catalogId':'light-candle-single','footprint':[0.23,0.23],'height':0.29,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'lighting'},
+ 'light-candle-cluster':{'catalogId':'light-candle-cluster','footprint':[0.34,0.3],'height':0.34,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'lighting'},
+ 'light-candle-candelabra':{'catalogId':'light-candle-candelabra','footprint':[0.52,0.28],'height':0.76,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'lighting'},
+ 'deco-fungi-grey':{'catalogId':'deco-fungi-grey','footprint':[0.6,0.54],'height':0.16,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'floor-clutter'},
+ 'deco-fungi-brown':{'catalogId':'deco-fungi-brown','footprint':[0.66,0.6],'height':0.27,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'floor-clutter'},
+ 'deco-fungi-white':{'catalogId':'deco-fungi-white','footprint':[0.6,0.54],'height':0.16,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'floor-clutter'},
+ 'deco-fungi-ochre':{'catalogId':'deco-fungi-ochre','footprint':[0.6,0.54],'height':0.16,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'floor-clutter'},
+ 'deco-moss-wet':{'catalogId':'deco-moss-wet','footprint':[0.72,0.56],'height':0.06,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'floor-clutter'},
+ 'deco-moss-thick':{'catalogId':'deco-moss-thick','footprint':[0.74,0.58],'height':0.07,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'floor-clutter'},
+ 'deco-moss-yellow':{'catalogId':'deco-moss-yellow','footprint':[0.74,0.58],'height':0.2,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'floor-clutter'},
+ 'deco-moss-white':{'catalogId':'deco-moss-white','footprint':[0.74,0.58],'height':0.2,'spriteScale':1.0,'modelScale':1.0,'destroyable':True,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':30,'extension':'png','category':'floor-clutter'},
  'work-table':{'catalogId':'alchemy-work-table','footprint':[.913,.517],'height':.913, 'spriteScale':.5, 'modelScale':.495,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':115,'extension':'png'},
  'brew-table-small':{'catalogId':'alchemy-brew-table','footprint':[.871,.494],'height':1.001, 'spriteScale':.5, 'modelScale':.468,
@@ -194,6 +208,7 @@ manifest={
  'floorGeneratorSha256':hashlib.sha256((HERE/'abandoned-floor-clutter.py').read_bytes()).hexdigest(),
  'prisonBarsGeneratorSha256':hashlib.sha256((HERE/'dungeon-prison-bars.py').read_bytes()).hexdigest(),
  'architectureGeneratorSha256':hashlib.sha256((HERE/'dungeon-architecture.py').read_bytes()).hexdigest(),
+ 'environmentGeneratorSha256':hashlib.sha256((HERE/'crypt-environment.py').read_bytes()).hexdigest(),
  'architectureWeatheringSha256':hashlib.sha256((HERE/'architecture-weathering.py').read_bytes()).hexdigest(),
  'wallViews':{name:{**spec,'asset':'assets/walls/'+spec['file'],'projection':'front-orthographic-to-wall-plane'}
   for name,spec in wall_views.items()},
