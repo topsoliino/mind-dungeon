@@ -771,7 +771,9 @@ function refreshUI(){
   const b=document.createElement('button');
   b.className=obj.id===selected?'selected':'';
   const label=document.createElement('span');label.textContent=cat.furniture[obj.type].label;
-  const angle=document.createElement('small');angle.textContent=obj.rot+'°';
+  const angle=document.createElement('small');angle.textContent=obj.wallRef?
+   'Wand '+obj.wallRef:(cat.furniture[obj.type].surface?
+    cat.furniture[obj.type].surface.elevation+' m':obj.rot+'°');
   b.append(label,angle);b.onclick=()=>{select(obj.id);chooseTool('select')};list.appendChild(b);
  }
  refreshInspector();schedule();
@@ -841,6 +843,18 @@ const thumbnailObserver=('IntersectionObserver' in window)?
   }
  },{root:document.querySelector('.sidebar.left'),rootMargin:'32px'}):null;
 for(const [type,entry] of Object.entries(cat.furniture)){
+ if(entry.category==='wall-architecture'&&!document.querySelector('.wall-architecture-heading')){
+  const heading=document.createElement('div');
+  heading.className='catalog-section-label wall-architecture-heading';
+  heading.textContent='WANDVERZIERUNGEN · nur an vorhandenen Wänden';
+  $('furnitureCatalog').appendChild(heading);
+ }
+ if(entry.category==='architectural-floor'&&!document.querySelector('.architectural-floor-heading')){
+  const heading=document.createElement('div');
+  heading.className='catalog-section-label architectural-floor-heading';
+  heading.textContent='BODENARCHITEKTUR · echte Höhen und Übergänge';
+  $('furnitureCatalog').appendChild(heading);
+ }
  if(entry.category==='floor-clutter'&&!document.querySelector('.floor-clutter-heading')){
   const heading=document.createElement('div');heading.className='catalog-section-label floor-clutter-heading';
   heading.textContent='BODENDEKORATION · begehbare Kleinteile und Geröll';
@@ -856,7 +870,9 @@ for(const [type,entry] of Object.entries(cat.furniture)){
  icon.appendChild(thumb);
  const contents=document.createElement('span');contents.innerHTML='<strong>'+entry.label+'</strong><small>'+
   entry.footprint.w+' × '+entry.footprint.h+' Felder · '+
-  (entry.blocksMovement?(entry.vaultable?'überspringbar':'blockiert Bewegung'):'begehbar')+'</small>';
+  (entry.category==='wall-architecture'?'nur an Wand':
+   entry.surface?'Höhe '+entry.surface.elevation+' m · '+entry.surface.access:
+   entry.blocksMovement?(entry.vaultable?'überspringbar':'blockiert Bewegung'):'begehbar')+'</small>';
  b.append(icon,contents);b.onclick=()=>{
   chosenFurniture=type;requestSprite(type,0);
   document.querySelectorAll('[data-furniture]').forEach(el=>el.classList.toggle('selected',el===b));
