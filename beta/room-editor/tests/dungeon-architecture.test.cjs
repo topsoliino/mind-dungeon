@@ -36,13 +36,26 @@ for(const type of wallTypes){
  const wallObj=arch.attach(type,room,cat,1.5,.10);
  assert.ok(wallObj, 'Must attach to existing north wall');
  assert.equal(wallObj.wallRef,'h:1:0');
- assert.equal(wallObj.rot,0);
+ assert.equal(wallObj.rot,180);
  assert.ok(arch.validMount(wallObj,room,cat));
  const rotatedObj=arch.attach(type,room,cat,.10,1.5);
  assert.ok(rotatedObj);
  assert.equal(rotatedObj.wallRef,'v:0:1');
  assert.equal(rotatedObj.rot,90);
  assert.ok(arch.validMount(rotatedObj,room,cat));
+ // Derive the rendered front from Blender +Y and rig Z=90-rot,
+ // then convert the camera basis to editor world axes.
+ const front=rot=>{const rad=(90-rot)*Math.PI/180;return [Math.round(Math.cos(rad)),Math.round(-Math.sin(rad))]};
+ assert.deepEqual(front(wallObj.rot),[0,1],'North mount must face inward +Y');
+ assert.deepEqual(front(rotatedObj.rot),[1,0],'West mount must face inward +X');
+ const legacy={...wallObj,rot:0};
+ assert.deepEqual(arch.refreshMount(legacy,room,cat),wallObj,'Old north mounts migrate on load, without moving');
+ const rebound=arch.attach(type,room,cat,.10,1.5,wallObj.id);
+ assert.equal(rebound.id,wallObj.id);
+ assert.equal(rebound.rot,90);
+ assert.equal(arch.refreshMount(rebound,room,cat).rot,90);
+ assert.ok(Math.abs(placement.bounds(wallObj,cat).top-.015)<1e-8);
+ assert.ok(Math.abs(placement.bounds(rotatedObj,cat).left-.015)<1e-8);
  const tampered={...wallObj,x:3.5,y:3.5};
  assert.equal(arch.validMount(tampered,room,cat),false);
  const afterDeletion={...room,walls:room.walls.filter(w=>w.x!==1||w.y!==0)};
@@ -96,10 +109,11 @@ const sanitize=new Function('cat','isWall','keyWall','precise','architecture',
  x=>Math.round(x*1000)/1000,arch);
 const attached=arch.attach('wall-statue-knight',room,cat,1.5,.10);
 const saved=sanitize({...room,wallStyle:'stone',floorStyle:'dungeon-ashlar',
- furniture:[attached,{...attached,id:'orphan',wallRef:'h:99:99'}]});
+ furniture:[{...attached,rot:0},{...attached,id:'orphan',wallRef:'h:99:99'}]});
 assert.equal(saved.furniture.length,1);
 assert.equal(saved.furniture[0].wallRef,'h:1:0');
 assert.equal(saved.furniture[0].type,'wall-statue-knight');
+assert.equal(saved.furniture[0].rot,180,'Old JSON must normalize the north sprite');
 
 const kit=fs.readFileSync(path.join(dir,'blender/dungeon-architecture.py'),'utf8');
 const pack=fs.readFileSync(path.join(dir,'blender/pack-room-kit.py'),'utf8');
