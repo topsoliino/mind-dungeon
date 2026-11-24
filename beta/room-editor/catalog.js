@@ -116,11 +116,13 @@ const catalog={
    render:'metal-bars',asset:'walls/bars'},
   'bars-full':{
    label:'Gefängnisgitter · volle Wandhöhe (2 m)',height:2,solid:true,
-   render:'metal-bars',variant:'full',asset:'walls/bars-full'
+   render:'blender-bars',variant:'full',asset:'assets/walls/prison-grille-full-front.png',
+   cameraOrthoScale:2.5,worldWidth:1,material:'pitted forged black iron + rust'
   },
   'bars-half':{
    label:'Gefängnisgitter · halbe Wandhöhe (1 m)',height:1,solid:true,
-   render:'metal-bars',variant:'half',asset:'walls/bars-half'
+   render:'blender-bars',variant:'half',asset:'assets/walls/prison-grille-half-front.png',
+   cameraOrthoScale:1.5,worldWidth:1,material:'pitted forged black iron + rust'
   },
   gate:{label:'Zellentür · Eisen',height:2.05,solid:true,door:true,
    render:'metal-bars',asset:'walls/gate'},
