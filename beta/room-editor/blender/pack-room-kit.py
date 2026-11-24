@@ -20,15 +20,21 @@ items={
   'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':35}
 }
 new_items={
- 'work-table':{'catalogId':'alchemy-work-table','footprint':[.83,.47],'height':.83, 'spriteScale':.5, 'modelScale':.45,
+ 'work-table':{'catalogId':'alchemy-work-table','footprint':[.913,.517],'height':.913, 'spriteScale':.5, 'modelScale':.495,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':115,'extension':'png'},
- 'brew-table-small':{'catalogId':'alchemy-brew-table','footprint':[.67,.38],'height':.77, 'spriteScale':.5, 'modelScale':.36,
+ 'brew-table-small':{'catalogId':'alchemy-brew-table','footprint':[.871,.494],'height':1.001, 'spriteScale':.5, 'modelScale':.468,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':120,'extension':'png',
-  'scale':.36,'interaction':'brew'},
+  'scale':.468,'interaction':'brew'},
  'chair-highback':{'catalogId':'alchemy-highback-chair','footprint':[.36,.36],'height':.81, 'spriteScale':.5, 'modelScale':.45,
   'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':45,'extension':'png'},
  'chair-arm':{'catalogId':'alchemy-armchair','footprint':[.41,.40],'height':.76, 'spriteScale':.5, 'modelScale':.45,
-  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':55,'extension':'png'}
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':55,'extension':'png'},
+ 'weapon-rack':{'catalogId':'dungeon-weapon-rack','footprint':[.82,.43],'height':.98, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':95,'extension':'png'},
+ 'bookshelf':{'catalogId':'dungeon-bookshelf','footprint':[.75,.37],'height':1.18, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':110,'extension':'png'},
+ 'torture-bench':{'catalogId':'dungeon-torture-bench','footprint':[1.04,.58],'height':.51, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':150,'extension':'png'}
 }
 for name in items:
  for rot in (0,90,180,270):
