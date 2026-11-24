@@ -54,7 +54,27 @@ new_items={
  'prison-cage':{'catalogId':'torture-prison-cage','footprint':[.65,.57],'height':.65, 'spriteScale':.5, 'modelScale':.45,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':110,'extension':'png'},
  'washbasin':{'catalogId':'torture-washbasin','footprint':[.78,.47],'height':.48, 'spriteScale':.5, 'modelScale':.45,
-  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':120,'extension':'png'}
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':120,'extension':'png'},
+ 'floor-rubble':{'catalogId':'floor-rubble','footprint':[.75,.51],'height':.15,'spriteScale':.5,'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'blocksProjectiles':False,'maxHP':60,'extension':'png','category':'floor-clutter'},
+ 'floor-bones':{'catalogId':'floor-bones','footprint':[.76,.47],'height':.13,'spriteScale':.5,'modelScale':.45,
+  'destroyable':False,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':0,'extension':'png','category':'floor-clutter'},
+ 'floor-rug':{'catalogId':'floor-rug','footprint':[.82,.52],'height':.05,'spriteScale':.5,'modelScale':.45,
+  'destroyable':False,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':0,'extension':'png','category':'floor-clutter'},
+ 'floor-chains':{'catalogId':'floor-chains','footprint':[.82,.50],'height':.06,'spriteScale':.5,'modelScale':.45,
+  'destroyable':False,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':0,'extension':'png','category':'floor-clutter'},
+ 'floor-wood':{'catalogId':'floor-wood','footprint':[.86,.50],'height':.16,'spriteScale':.5,'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'blocksProjectiles':False,'maxHP':45,'extension':'png','category':'floor-clutter'},
+ 'floor-moss':{'catalogId':'floor-moss','footprint':[.70,.46],'height':.10,'spriteScale':.5,'modelScale':.45,
+  'destroyable':False,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':0,'extension':'png','category':'floor-clutter'},
+ 'floor-scrolls':{'catalogId':'floor-scrolls','footprint':[.67,.44],'height':.09,'spriteScale':.5,'modelScale':.45,
+  'destroyable':False,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':0,'extension':'png','category':'floor-clutter'},
+ 'floor-puddles':{'catalogId':'floor-puddles','footprint':[.77,.55],'height':.03,'spriteScale':.5,'modelScale':.45,
+  'destroyable':False,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':0,'extension':'png','category':'floor-clutter'},
+ 'floor-pottery':{'catalogId':'floor-pottery','footprint':[.73,.46],'height':.17,'spriteScale':.5,'modelScale':.45,
+  'destroyable':False,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':0,'extension':'png','category':'floor-clutter'},
+ 'floor-cloth':{'catalogId':'floor-cloth','footprint':[.71,.52],'height':.12,'spriteScale':.5,'modelScale':.45,
+  'destroyable':False,'vaultable':False,'blocksMovement':False,'blocksProjectiles':False,'maxHP':0,'extension':'png','category':'floor-clutter'}
 }
 for name in items:
  for rot in (0,90,180,270):
@@ -94,6 +114,7 @@ manifest={
  'generatorSha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
  'alchemyGeneratorSha256':hashlib.sha256((HERE/'alchemy-furniture.py').read_bytes()).hexdigest(),
  'tortureGeneratorSha256':hashlib.sha256((HERE/'torture-chamber-furniture.py').read_bytes()).hexdigest(),
+ 'floorGeneratorSha256':hashlib.sha256((HERE/'abandoned-floor-clutter.py').read_bytes()).hexdigest(),
  'pixelDensity':{'legacyOrthoScale':3.35,'newFurnitureOrthoScale':1.675,'editorSpriteScale':.5},
  'blend':'assets/source/room-kit.blend',
  'dimensions':{'width':512,'height':512},
