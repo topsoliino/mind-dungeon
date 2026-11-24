@@ -48,6 +48,15 @@ for(const type of wallTypes){
  const afterDeletion={...room,walls:room.walls.filter(w=>w.x!==1||w.y!==0)};
  assert.equal(arch.refreshMount(wallObj,afterDeletion,cat),null,'Orphaned wall object must be removed on save');
 }
+// The timber wall ledge is physically elevated and can be accessed via
+// Guardian Space-vault. Ordinary walking through its vertical side is blocked.
+const ledge=arch.attach('wall-wood-ledge',room,cat,1.5,.05);
+assert.ok(ledge);
+room.furniture=[ledge];
+assert.equal(arch.surfaceAt(room,cat,ledge.x,ledge.y,placement).height,1.33);
+assert.equal(arch.transition(room,cat,placement,
+ {x:ledge.x,y:ledge.y+.8,z:0},{x:ledge.x,y:ledge.y}).allowed,false);
+room.furniture=[];
 for(const type of floors){
  const spec=cat.furniture[type];
  assert.equal(spec.category,'architectural-floor');
