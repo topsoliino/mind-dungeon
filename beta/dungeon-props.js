@@ -1,6 +1,7 @@
 // Poly Haven Treasure Chest (CC0) and original seals, baked in the dungeon camera.
 window.DungeonPropAtlas=(()=>{
  const frames={
+ "brew":[0,1594,192,193,.501825,.780797,1.903473,1.917367],
  "chest-0": [
   0,
   0,
@@ -194,12 +195,12 @@ window.DungeonPropAtlas=(()=>{
 };
  if(!window.AlleyGenerator?.enabled)return null;
  const image=new Image();
- image.src='beta/art/props/dungeon-props.webp?v=2';
+ image.src='beta/art/props/dungeon-props.webp?v=3';
  const ready=image.decode();
  function sprite(name,point,flip=false){
   if(!image.naturalWidth)return null;
   const [sx,sy,w,h,ox,oy,width,height]=frames[name];
-  const unit=42*Math.SQRT2*(name.startsWith('chest-')?.82:1);
+  const unit=42*Math.SQRT2*(name.startsWith('chest-')?.82:name==='altar'?.8:1);
   return {image,key:'dungeon-prop-atlas',frame:name,sx,sy,w,h,x:point.x,y:point.y,
    width:width*unit,height:height*unit,originX:flip?1-ox:ox,originY:oy,depth:point.y,flip};
  }

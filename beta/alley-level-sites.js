@@ -69,7 +69,7 @@
   if(s.floor!==floor()||s.open)return false;
   const dx=Math.abs(u-s.x/48),dy=Math.abs(w-s.y/48);
   if(s.kind==='door')return dx<r+(s.vertical?.09:s.half)&&dy<r+(s.vertical?s.half:.09);
-  if(s.kind==='altar')return Math.hypot(dx,dy)<.48+r;
+  if(s.kind==='altar')return Math.hypot(dx,dy)<.48*.8+r;
   const across=s.turn%2===0;
   return Math.hypot(Math.max(0,dx-(across?.42:.28)),Math.max(0,dy-(across?.28:.42)))<=r;
  });

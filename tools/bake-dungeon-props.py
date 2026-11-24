@@ -120,3 +120,35 @@ for j in range(8):
  b.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=.044,location=(.323*cos(a),.323*sin(a),.58))
  b.context.object.data.materials.append(glow)
 render('altar',2.6)
+
+# Apothecary bench, copper alembic and stoppered medicine bottles.
+for o in list(scene.objects):
+ if o.type=='MESH':b.data.objects.remove(o,do_unlink=True)
+for x in [-.76,.76]:
+ for y in [-.32,.32]:
+  block(x,y,.39,.12,.12,.78,wood)
+  block(x,y,.09,.13,.13,.07,iron)
+ block(x,0,.23,.10,.73,.10,wood)
+block(0,0,.23,1.53,.10,.09,wood)
+for j in range(4):block(0,(j-1.5)*.22,.81,1.82,.212,.11,wood)
+copper=material('Hammered copper',(.19,.055,.021),(.76,.35,.13),.72,14,.31)
+jade=material('Glazed green stoneware',(.016,.08,.07),(.09,.39,.26),.36,9,.19)
+def vessel(x,y,profile,mat):
+ segments=40
+ verts=[(x+r*cos(i*2*pi/segments),y+r*sin(i*2*pi/segments),z) for z,r in profile for i in range(segments)]
+ faces=[(k*segments+i,k*segments+(i+1)%segments,(k+1)*segments+(i+1)%segments,(k+1)*segments+i)
+  for k in range(len(profile)-1) for i in range(segments)]
+ faces.append(tuple(range(len(verts)-segments,len(verts))))
+ mesh=b.data.meshes.new(mat.name);mesh.from_pydata(verts,[],faces);mesh.update()
+ o=b.data.objects.new(mat.name,mesh);scene.collection.objects.link(o);mesh.materials.append(mat)
+ for poly in mesh.polygons:poly.use_smooth=True
+vessel(-.42,0,[(.865,.16),(.91,.21),(1.04,.267),(1.16,.25),(1.21,.20),(1.23,.22),(1.26,.22),(1.28,.18),(1.39,.09),(1.44,.045)],copper)
+curve=b.data.curves.new('Swan neck','CURVE');curve.dimensions='3D';curve.bevel_depth=.029;curve.bevel_resolution=4
+spline=curve.splines.new('BEZIER');spline.bezier_points.add(3)
+for bp,co in zip(spline.bezier_points,[(-.42,0,1.42),(-.32,0,1.56),(-.04,0,1.40),(.12,0,1.18)]):
+ bp.co=co;bp.handle_left_type=bp.handle_right_type='AUTO'
+o=b.data.objects.new('Copper condenser',curve);scene.collection.objects.link(o);curve.materials.append(copper)
+for x,y,h,r,mat in [(.12,0,.33,.10,jade),(.56,.18,.45,.10,jade),(.70,-.02,.29,.077,copper),(.44,-.19,.26,.085,jade)]:
+ vessel(x,y,[(.866,r*.70),(.89,r),( .866+h*.52,r),(.866+h*.73,r*.44),(.866+h*.94,r*.42),(.866+h,r*.5)],mat)
+ if x!=.12:vessel(x,y,[(.866+h,r*.36),(.893+h,r*.40)],wood)
+render('brew',3.8)
