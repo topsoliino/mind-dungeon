@@ -437,3 +437,7 @@ Test: `node beta/room-editor/tests/portals.test.cjs`.
 ## Wandverzierungen: korrigierte Blickrichtung
 
 Die vorhandenen Blender-Modelle sind mit der Vorderseite in Blender +Y modelliert; die vier Render-Views verwenden Z = 90° − rot. Im Editor ist daher **Nordwand (horizontal, h:...) = 180°**, **Westwand (vertikal, v:...) = 90°**. `architecture.js` berechnet diese Zuordnung sowohl beim Anbringen/Verschieben als auch beim Laden und Export alter JSONs. Position, Wandreferenz und Kollisionsmaße bleiben unverändert. Die bisher sichtbaren Nord-/West-Innenseiten und entsprechend orientierten Innenwände werden unterstützt; keine neue Montage auf den kameraseitigen Außenwänden.
+
+## Freie Grundrisse: Boden-Brush
+
+N / Boden + malt seitlich angrenzende Felder, M / Boden − entfernt Felder. Mit gedrückter linker Maustaste ziehen; Undo/Redo pro Strich. Der Rand wächst bis 30×30 automatisch in alle vier Richtungen, bestehende Wände und Möbel bleiben an ihrer Weltposition. Entfernen ist nur bei zusammenhängender Restfläche und ohne verwaiste Wände/Möbel möglich. Das Materialwerkzeug B bleibt unverändert. JSON: optional `floorCells` als Zellliste; ohne Liste Rechteck. Portale an Einbuchtungen verwenden zusätzlich `line`; vorhandene Portale werden nicht verschoben oder gelöscht, sondern bei Konflikten als ungültig angezeigt. Siehe [Integrationsvertrag](README-GENERATOR-INTEGRATION.md#13-erweiterung-frei-gezeichnete-grundrisse-floor-brush).
