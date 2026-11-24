@@ -20,7 +20,7 @@ let playHP=new Map();
  // Images are served as immutable, cacheable static files from GitHub Pages;
  // GitHub raw/API requests would add latency and rate limits.
 const assets=new Map();
-const spriteVersion='dungeon-architecture-43-v1';
+const spriteVersion='gothic-ruins-architecture-pbr-v2';
 function spriteName(type,rot){const spec=cat.furniture[type];return spec.asset+'-'+rot+'.'+(spec.extension||'webp')}
 // The bars are genuine Cycles renders, not CSS gradients or flat line art.
  // Each small, front-orthographic PBR texture is projected onto a geometrically
