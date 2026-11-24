@@ -2,8 +2,8 @@
   "schema": "mind-dungeon-room-art/v1",
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
-  "generatorSha256": "7d812cb11ea75e7f29a5a3f297b04c3e0d34c8400fb1425ce4b64dcf1a96c63a",
-  "alchemyGeneratorSha256": "347c5151e64a1fc40cffd855931c7ccdcd0c36134d0f7b82c4c1e42acd6020ee",
+  "generatorSha256": "9ce5030570e7295b2a8dd9b9c5953185d796ae1d40380b8be8626f510542924a",
+  "alchemyGeneratorSha256": "7f824401dedc785986aaee93dee03bdff0580770a7530bdee4a2198b2776b202",
   "blend": "assets/source/room-kit.blend",
   "dimensions": {
     "width": 512,
