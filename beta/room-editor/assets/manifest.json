@@ -2,10 +2,27 @@
   "schema": "mind-dungeon-room-art/v1",
   "source": "Blender 3D editable meshes, no rig",
   "generator": "beta/room-editor/blender/build-room-kit.py",
-  "generatorSha256": "7b1eabae8e8270ce648378e956b4cec341e7890abe8d3619eb0fb22d4ddb648b",
+  "generatorSha256": "b6aa345aea772c719426a5f6d5b958974d549329c682fd0abd84884fcbd14369",
   "alchemyGeneratorSha256": "019eba788853ee401404873702a8ef7c4c4d2e4dd56bac0e752253020ae9d63b",
   "tortureGeneratorSha256": "7d7ccea899d6407f851600ff073470cad75a278766633262eb5b4581573db71f",
   "floorGeneratorSha256": "415d9d15cd650d552c4491c1980a988552536bafe8b314fddf75574c25713b2f",
+  "prisonBarsGeneratorSha256": "cb628cadc067b21d12c6b2a7448238c869d68054646d4ca49feee82b5763582d",
+  "wallViews": {
+    "bars-full": {
+      "file": "prison-grille-full-front.png",
+      "height": 2.0,
+      "orthoScale": 2.5,
+      "asset": "assets/walls/prison-grille-full-front.png",
+      "projection": "front-orthographic-to-wall-plane"
+    },
+    "bars-half": {
+      "file": "prison-grille-half-front.png",
+      "height": 1.0,
+      "orthoScale": 1.5,
+      "asset": "assets/walls/prison-grille-half-front.png",
+      "projection": "front-orthographic-to-wall-plane"
+    }
+  },
   "pixelDensity": {
     "legacyOrthoScale": 3.35,
     "newFurnitureOrthoScale": 1.675,
