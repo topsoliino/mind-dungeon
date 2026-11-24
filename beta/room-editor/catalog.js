@@ -129,14 +129,14 @@ const catalog={
    maxHP:35,material:'aged oak + wrought iron',render:'blender-ortho-4'
   },
   'alchemy-work-table':{
-   label:'Alchemisten-Werktisch · 55 % kleiner',kind:'table',asset:artRoot+'furniture/work-table',extension:'png',editorSpriteScale:.5,
-   footprint:{w:.83,h:.47},height:.83,
+   label:'Alchemisten-Werktisch',kind:'table',asset:artRoot+'furniture/work-table',extension:'png',editorSpriteScale:.5,
+   footprint:{w:.913,h:.517},height:.913,
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
    maxHP:115,material:'weathered oak + wrought iron',render:'blender-ortho-4'
   },
   'alchemy-brew-table':{
-   label:'Brautisch · 55 % kleiner',kind:'table',asset:artRoot+'furniture/brew-table-small',extension:'png',editorSpriteScale:.5,
-   footprint:{w:.67,h:.38},height:.77,
+   label:'Brautisch · großer Kessel',kind:'table',asset:artRoot+'furniture/brew-table-small',extension:'png',editorSpriteScale:.5,
+   footprint:{w:.871,h:.494},height:1.001,
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
    maxHP:120,material:'oak + hammered copper + glass',render:'blender-ortho-4',interaction:'brew'
   },
@@ -151,6 +151,24 @@ const catalog={
    footprint:{w:.41,h:.40},height:.76,
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:false,
    maxHP:55,material:'aged oak + brass + linen',render:'blender-ortho-4'
+  },
+  'dungeon-weapon-rack':{
+   label:'Waffenständer · Schmiedeeisen',kind:'rack',asset:artRoot+'furniture/weapon-rack',extension:'png',editorSpriteScale:.5,
+   footprint:{w:.82,h:.43},height:.98,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:95,material:'blackened oak + steel swords + forged iron',render:'blender-ortho-4'
+  },
+  'dungeon-bookshelf':{
+   label:'Bücherregal · Verbotene Bibliothek',kind:'shelf',asset:artRoot+'furniture/bookshelf',extension:'png',editorSpriteScale:.5,
+   footprint:{w:.75,h:.37},height:1.18,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
+   maxHP:110,material:'aged oak + leather books + iron bindings',render:'blender-ortho-4'
+  },
+  'dungeon-torture-bench':{
+   label:'Folterbank · Kerker',kind:'bench',asset:artRoot+'furniture/torture-bench',extension:'png',editorSpriteScale:.5,
+   footprint:{w:1.04,h:.58},height:.51,
+   destroyable:true,vaultable:true,blocksMovement:true,blocksProjectiles:true,
+   maxHP:150,material:'stained oak + leather restraints + iron winch',render:'blender-ortho-4'
   }
  }
 };
