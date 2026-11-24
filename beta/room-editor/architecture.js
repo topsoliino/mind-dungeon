@@ -7,6 +7,11 @@
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const wallKey=w=>(w.edge==='north'||w.edge==='south'?'h:':'v:')+w.x+':'+w.y;
 const horizontal=w=>w.edge==='north'||w.edge==='south';
+// Wall mesh front is Blender +Y; baked view rot uses rig Z = 90 - rot.
+// Camera +X/+Y maps Blender +X to editor +Y and Blender +Y to editor +X.
+// Thus 180 faces into the north wall's +Y interior, 90 into west's +X.
+// Use the same mapping during placement, dragging and saved JSON refresh.
+const mountRotation=w=>horizontal(w)?180:90;
 function wallByRef(room,cat,ref){
  return (room.walls||[]).find(w=>wallKey(w)===ref&&cat.walls[w.style]?.solid&&
   !(horizontal(w)&&w.y===room.height)&&
@@ -40,7 +45,7 @@ function attach(type,room,cat,x,y,id){
   type,wallRef:wallKey(w),wallOffset:offset,
   x:isHorizontal?w.x+offset:w.x+halfDepth+.015,
   y:isHorizontal?w.y+halfDepth+.015:w.y+offset,
-  rot:isHorizontal?0:90,
+  rot:mountRotation(w),
   destroyable:spec.destroyable,vaultable:spec.vaultable,
   blocksMovement:spec.blocksMovement
  };
@@ -52,7 +57,7 @@ function refreshMount(obj,room,cat){
  if(!wall)return null;
  const offset=clamp(Number(obj.wallOffset)||.5,.25,.75);
  const h=horizontal(wall),d=spec.footprint.h/2+.015;
- return {...obj,wallOffset:offset,rot:h?0:90,
+ return {...obj,wallOffset:offset,rot:mountRotation(wall),
   x:h?wall.x+offset:wall.x+d,
   y:h?wall.y+d:wall.y+offset};
 }
