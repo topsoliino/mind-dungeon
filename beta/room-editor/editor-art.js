@@ -215,9 +215,13 @@ window.MindRoomArt=(()=>{
                  project(room.width,room.height),project(0,room.height)];
   const origin=corners[0],ex=project(1,0),ey=project(0,1);
   ctx.save();
-  ctx.beginPath();ctx.moveTo(corners[0].x,corners[0].y);
-  for(let i=1;i<corners.length;i++)ctx.lineTo(corners[i].x,corners[i].y);
-  ctx.closePath();ctx.clip();
+  ctx.beginPath();
+  if(Array.isArray(room.floorCells)){
+   // Merge contiguous cells into row strips before clipping one continuous atlas.
+   const rows=new Map();for(const {x,y} of room.floorCells){const row=rows.get(y)||[];row.push(x);rows.set(y,row);}
+   for(const [y,xs] of rows){xs.sort((a,b)=>a-b);let start=xs[0],end=start;for(let i=1;i<=xs.length;i++){if(xs[i]===end+1){end=xs[i];continue;}const points=[project(start,y),project(end+1,y),project(end+1,y+1),project(start,y+1)];ctx.moveTo(points[0].x,points[0].y);for(let k=1;k<4;k++)ctx.lineTo(points[k].x,points[k].y);ctx.closePath();start=end=xs[i];}}
+  }else{ctx.moveTo(corners[0].x,corners[0].y);for(let i=1;i<corners.length;i++)ctx.lineTo(corners[i].x,corners[i].y);ctx.closePath();}
+  ctx.clip();
   ctx.transform(ex.x-origin.x,ex.y-origin.y,ey.x-origin.x,ey.y-origin.y,
                 origin.x,origin.y);
   if(image){
