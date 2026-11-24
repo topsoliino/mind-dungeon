@@ -335,7 +335,8 @@ const catalog={
    footprint:{w:1.1,h:0.91},height:1.4,
    destroyable:true,vaultable:false,blocksMovement:false,blocksProjectiles:false,
    maxHP:85,material:'oak beams + wrought brackets',render:'blender-ortho-4',
-   wallMounted:true
+   wallMounted:true,
+   surface:{elevation:1.33,access:'vault',type:'elevated',frontSteps:false}
   },
   'wall-stone-cornice':{
    label:'Steinernes Wandgesims',kind:'architectural-wall',category:'wall-architecture',
