@@ -332,7 +332,16 @@
   };
   const floor=generatorMode?null:bitmap(drawFloor);
   const detail=generatorMode?null:bitmap(ctx=>drawDetails(ctx,groundDetails));
-  const homes=standing.map(home=>({...home,image:cacheObject(home.area,home.height+home.roof,ctx=>facadeArt.building(ctx,home))}));
+  // Keep the original alley houses, but NEVER draw a test-scene house in a
+  // generated dungeon. The L1 entrance house at [10.05,6.85,12.3,8.6]
+  // overlaps the first corridor (x=12..), so it looks half-buried.
+  // Check actual occupied room cells rather than special-casing one seed.
+  const overlapsDungeon=home=>generatorMode&&route?.rooms?.slice(1).some(room=>
+   room.cells.some(([u,v])=>u<home.area[2]&&u+1>home.area[0]&&
+                           v<home.area[3]&&v+1>home.area[1]));
+  const homes=standing.filter(home=>!overlapsDungeon(home)).map(home=>
+   ({...home,image:cacheObject(home.area,home.height+home.roof,
+     ctx=>facadeArt.building(ctx,home))}));
   const gateway=cacheObject(gate.area,gate.height,ctx=>facadeArt.arch(ctx,gate));
   // A long wall spans many projected depth values. Split its RENDERING into
   // short immutable panels; physics still uses the unbroken structural wall.
