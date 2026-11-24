@@ -34,7 +34,27 @@ new_items={
  'bookshelf':{'catalogId':'dungeon-bookshelf','footprint':[.75,.37],'height':1.18, 'spriteScale':.5, 'modelScale':.45,
   'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':110,'extension':'png'},
  'torture-bench':{'catalogId':'dungeon-torture-bench','footprint':[1.04,.58],'height':.51, 'spriteScale':.5, 'modelScale':.45,
-  'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':150,'extension':'png'}
+  'destroyable':True,'vaultable':True,'blocksMovement':True,'maxHP':150,'extension':'png'},
+ 'iron-cage':{'catalogId':'torture-iron-cage','footprint':[.79,.55],'height':1.20, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':140,'extension':'png'},
+ 'interrogation-chair':{'catalogId':'torture-interrogation-chair','footprint':[.44,.43],'height':.91, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':95,'extension':'png'},
+ 'tool-table':{'catalogId':'torture-tool-table','footprint':[.76,.45],'height':.76, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':100,'extension':'png'},
+ 'chain-wall':{'catalogId':'torture-chain-wall','footprint':[.78,.28],'height':1.05, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':160,'extension':'png'},
+ 'iron-maiden':{'catalogId':'torture-iron-maiden','footprint':[.55,.38],'height':1.28, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':180,'extension':'png'},
+ 'ember-brazier':{'catalogId':'torture-ember-brazier','footprint':[.48,.48],'height':.62, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':75,'extension':'png'},
+ 'pillory':{'catalogId':'torture-pillory','footprint':[.82,.43],'height':.95, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':90,'extension':'png'},
+ 'torture-wheel':{'catalogId':'torture-wheel','footprint':[.82,.50],'height':1.08, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':115,'extension':'png'},
+ 'prison-cage':{'catalogId':'torture-prison-cage','footprint':[.65,.57],'height':.65, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':110,'extension':'png'},
+ 'washbasin':{'catalogId':'torture-washbasin','footprint':[.78,.47],'height':.48, 'spriteScale':.5, 'modelScale':.45,
+  'destroyable':True,'vaultable':False,'blocksMovement':True,'maxHP':120,'extension':'png'}
 }
 for name in items:
  for rot in (0,90,180,270):
@@ -73,6 +93,7 @@ manifest={
  'generator':'beta/room-editor/blender/build-room-kit.py',
  'generatorSha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
  'alchemyGeneratorSha256':hashlib.sha256((HERE/'alchemy-furniture.py').read_bytes()).hexdigest(),
+ 'tortureGeneratorSha256':hashlib.sha256((HERE/'torture-chamber-furniture.py').read_bytes()).hexdigest(),
  'pixelDensity':{'legacyOrthoScale':3.35,'newFurnitureOrthoScale':1.675,'editorSpriteScale':.5},
  'blend':'assets/source/room-kit.blend',
  'dimensions':{'width':512,'height':512},
