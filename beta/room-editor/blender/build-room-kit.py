@@ -254,7 +254,7 @@ for name,rig in all_furniture:
         for ob in (other,*other.children):
             ob.hide_render=not show
     if name not in ('table','chair'):
-        scene.cycles.samples=min(scene.cycles.samples,22)
+        scene.cycles.samples=min(scene.cycles.samples,36)
     for rot in (0,90,180,270):
         rig.rotation_euler.z=math.radians(90-rot)
         scene.render.filepath=str(RAW/('%s-%s.png'%(name,rot)))
