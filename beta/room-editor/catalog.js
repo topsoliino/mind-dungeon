@@ -229,7 +229,68 @@ const catalog={
    footprint:{w:0.78,h:0.47},height:0.48,
    destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:true,
    maxHP:120,material:'damp granite + oak bucket + iron rings',render:'blender-ortho-4'
+  ,
+  'floor-rubble':{
+   label:'Broken Stone Rubble',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-rubble',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.75,h:0.51},height:0.15,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:false,
+   maxHP:60,material:'fractured limestone, mortar rubble',render:'blender-ortho-4'
+  },
+  'floor-bones':{
+   label:'Discarded Bones & Skulls',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-bones',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.76,h:0.47},height:0.13,
+   destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:0,material:'ancient bone, weathered teeth',render:'blender-ortho-4'
+  },
+  'floor-rug':{
+   label:'Torn Carpets & Rugs',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-rug',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.82,h:0.52},height:0.05,
+   destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:0,material:'tattered woven burgundy wool',render:'blender-ortho-4'
+  },
+  'floor-chains':{
+   label:'Abandoned Chains & Shackles',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-chains',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.82,h:0.5},height:0.06,
+   destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:0,material:'rusted iron and hand-forged links',render:'blender-ortho-4'
+  },
+  'floor-wood':{
+   label:'Rotten Wooden Debris',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-wood',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.86,h:0.5},height:0.16,
+   destroyable:true,vaultable:false,blocksMovement:true,blocksProjectiles:false,
+   maxHP:45,material:'broken moldy dark oak boards',render:'blender-ortho-4'
+  },
+  'floor-moss':{
+   label:'Moss, Roots & Fungi',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-moss',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.7,h:0.46},height:0.1,
+   destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:0,material:'wet moss, tree roots, mushrooms',render:'blender-ortho-4'
+  },
+  'floor-scrolls':{
+   label:'Old Scrolls & Torn Books',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-scrolls',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.67,h:0.44},height:0.09,
+   destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:0,material:'aged parchment, leather books',render:'blender-ortho-4'
+  },
+  'floor-puddles':{
+   label:'Puddles & Damp Patches',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-puddles',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.77,h:0.55},height:0.03,
+   destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:0,material:'reflective dark damp stone',render:'blender-ortho-4'
+  },
+  'floor-pottery':{
+   label:'Broken Pottery & Bottles',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-pottery',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.73,h:0.46},height:0.17,
+   destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:0,material:'fired earthenware, fractured green glass',render:'blender-ortho-4'
+  },
+  'floor-cloth':{
+   label:'Dusty Cloth & Burlap Sacks',kind:'clutter',category:'floor-clutter',asset:artRoot+'furniture/floor-cloth',extension:'png',editorSpriteScale:.5,
+   footprint:{w:0.71,h:0.52},height:0.12,
+   destroyable:false,vaultable:false,blocksMovement:false,blocksProjectiles:false,
+   maxHP:0,material:'degraded linen, dusty burlap',render:'blender-ortho-4'
   }
+
  }
 };
 const preset={
