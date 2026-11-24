@@ -287,7 +287,7 @@ Lichtobjekte (auch der Eichentisch mit Kerzen) können optional `lit:false` enth
 
 ### 15. Level-Design-Marker, Mechanismen und Umgebung (Editorvertrag)
 
-`level-design.js` ergänzt den Editor-Katalog um 34 editorlokale Typen. Die bestehende Spielintegration lädt dieses Modul noch nicht. Vor Verwendung neuer JSONs den Adapter explizit um diese Typen erweitern; sie dürfen nicht als normale fehlende Möbel-PNGs behandelt werden. Instanzen bleiben in `furniture` (Position, Rotation, ID wie bisher) mit zusätzlichem `design`-Objekt. `progression` wird aus den Instanzen abgeleitet; bei Instanziierung auf Ebene/Stockwerk neu aggregieren, niemals lokale IDs als globale IDs verwenden.
+`level-design.js` ergänzt den Editor-Katalog um 35 editorlokale Typen. Die bestehende Spielintegration lädt dieses Modul noch nicht. Vor Verwendung neuer JSONs den Adapter explizit um diese Typen erweitern; sie dürfen nicht als normale fehlende Möbel-PNGs behandelt werden. Instanzen bleiben in `furniture` (Position, Rotation, ID wie bisher) mit zusätzlichem `design`-Objekt. `progression` wird aus den Instanzen abgeleitet; bei Instanziierung auf Ebene/Stockwerk neu aggregieren, niemals lokale IDs als globale IDs verwenden.
 
 | Typ | Semantik |
 |---|---|
@@ -304,3 +304,5 @@ Lichtobjekte (auch der Eichentisch mit Kerzen) können optional `lit:false` enth
 Falltür über tatsächlichem Leiterzugang nach unten platzieren; Gegenstück auf darunterliegendem Stockwerk reservieren und prüfen. `random` deterministisch pro Seed/Instanz als sealed oder breakable auflösen (vorläufig 50/50), Zustand persistieren. `sealed`: bestehende Siegeltor-Entsiegelungsmechanik anwenden, danach zerstören; `breakable`: nur zerstören. Vor Freigabe Leiter-Interaktion in beide Richtungen entsprechend Sperre verhindern. Keine Leiter unter einer nicht vorhandenen unteren Etage. Offene Öffnung als Loch mit Leiterinteraktion, kein unsichtbarer begehbarer Boden. Lokaler E-Test simuliert die Freigabe ohne Quiz und ohne Stockwerkwechsel.
 
 `ceiling-*`: Höhe `design.z`, transparent bei Spielerüberdeckung. `water-*`: `design.depth`, zunächst visuelle Fläche; echte Tiefe/Schaden erst nach Integration. `fx-*`: radius/intensity. `sound-*`: radius/intensity/interval, räumliche Lautstärke und Panning; echte Hauptspiel-SFX statt Vorschau-Synthese verwenden. Keine zusätzlichen statischen Bilder für diese Typen erwarten. Canvas-Vorschauen sind bewusst nicht mit finalen PBR-Modellen gleichzusetzen.
+
+`water-cell`: durchgehende Flüssigkeitsflächen aus 0.99 × 0.99 m Rasterfeldern; `design.depth` als Metadatum. Renderer darf angrenzende gleichartige Zellen zu einer Wasserfläche zusammenfassen. Grundrissmaske bleibt unverändert.
