@@ -1,10 +1,11 @@
 const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
-const scripts='rocky-coast-prison alley-study-map alley-generator alley-stair-geometry alley-stair-navigation alley-stair-controller alley-vertical alley-level-sites'.split(' ').map(n=>new vm.Script(fs.readFileSync(require('node:path').join(__dirname,'../beta',n+'.js'),'utf8'),{filename:n}));
+const scripts='rocky-coast-prison alley-study-map alley-generator alley-stair-geometry alley-stair-navigation alley-stair-controller alley-vertical alley-progression alley-level-sites'.split(' ').map(n=>new vm.Script(fs.readFileSync(require('node:path').join(__dirname,'../beta',n+'.js'),'utf8'),{filename:n}));
 for(let seed=4147;seed<4157;seed++)for(let level=1;level<=4;level++){
  const url=new URL('https://game/beta/?szene=gasse&modus=generator&region=rocky-coast&run='+seed+'&level='+level);
  const env={URL,URLSearchParams,location:url};env.window=env;vm.createContext(env);
  for(const s of scripts)s.runInContext(env);
  const g=env.AlleyGenerator,plan=g.levelSites,v=env.AlleyVertical,p=env.RockyCoastPrison;
+ assert.equal(plan.progression.ok,true);assert.equal(plan.progression.hasMechanisms,false);
  assert.equal(g.rooms.filter(r=>r.kind==='raum').length,15);
  for(const [kind,count] of Object.entries({altar:10,chest:5,door:2,brew:1,merchant:1}))assert.equal(plan.sites.filter(s=>s.kind===kind).length,count);
  for(const s of plan.sites){
