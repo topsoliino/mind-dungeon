@@ -23,14 +23,15 @@ const api=(function factory(){
   }
   if((r.portals||[]).some(q=>key(q)!==key(p)&&q.side===p.side&&geometry.line(r,q)===l&&overlap(p.offset,end,q.offset,q.offset+q.width)))return fail('Überlappt anderen Zugang');
   const d=.7,b=h?{left:p.offset,right:end,top:p.side==='north'?l:l-d,bottom:p.side==='north'?l+d:l}:{left:p.side==='west'?l:l-d,right:p.side==='west'?l+d:l,top:p.offset,bottom:end};
-  let destructible=false;
+  let destructible=false;const gates=[];
   for(const o of r.furniture||[]){
    const s=cat.furniture[o.type],f=placement.bounds(o,cat);
    if(!s||!f||!overlap(b.left,b.right,f.left,f.right)||!overlap(b.top,b.bottom,f.top,f.bottom))continue;
+   if(s.designKind==='portcullis'){gates.push(o.id);continue;}
    if(s.surface)return fail('Höhenfläche oder Abgrund am Zugang');
    if(o.blocksMovement??s.blocksMovement){if(!(o.destroyable??s.destroyable))return fail('Unzerstörbares Objekt am Zugang');destructible=true;}
   }
-  return {ok:true,reason:destructible?'Zerstörbares Hindernis':'Freier Zugang'};
+  return {ok:true,reason:gates.length?'Fallgitter · bedingter Durchgang':destructible?'Zerstörbares Hindernis':'Freier Zugang',conditional:gates.length>0,gates};
  }
  function nearest(r,x,y,width=1){
   if(r.floorCells){const edges=geometry.boundary(r),rank=edges.filter(e=>{const t=horizontal(e.side)?x:y,l=horizontal(e.side)?y:x;return Math.abs(l-e.line)<=.45&&t>=e.offset&&t<e.offset+1;}).sort((a,b)=>Math.abs((horizontal(a.side)?y:x)-a.line)-Math.abs((horizontal(b.side)?y:x)-b.line));for(const e of rank)for(let off=e.offset;off>=Math.max(0,e.offset-width+1);off--){if(Array.from({length:width},(_,i)=>off+i).every(n=>edges.some(q=>q.side===e.side&&q.line===e.line&&q.offset===n)))return {...e,offset:off,width};}return null;}
