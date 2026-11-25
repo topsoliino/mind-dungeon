@@ -30,7 +30,7 @@
   sites.push({id:prefix+'-'+sites.length,kind,floor,room,x:u*48,y:w*48,...details});
  }
  const labels={altar:'Karteikarte beantworten',chest:'Goldtruhe öffnen',door:'Türsiegel lösen',
-  brew:'Brautisch',merchant:'Fledermaushändler'};
+  brew:'Brautisch',merchant:'Fledermaushändler',lever:'Hebel betätigen',gate:'Fallgitter'};
  for(let i=0;i<17;i++){
   const floor=i%count,kind=i<10?'altar':i<15?'chest':i===15?'brew':'merchant';
   let best=null,score=-Infinity;
