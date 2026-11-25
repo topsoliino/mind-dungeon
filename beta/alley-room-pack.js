@@ -16,7 +16,7 @@ function geometry(data){
   const h=['north','south'].includes(o.edge);
   return [o.x-.045,o.y-.045,o.x+(h?1:0)+.045,o.y+(h?0:1)+.045];
  });
- const props=data.furniture.map(o=>{
+ const props=data.furniture.filter(o=>!cat.furniture[o.type]?.designKind).map(o=>{
   const b=placement.bounds(o,cat);
   return {id:o.id,solid:o.blocksMovement??cat.furniture[o.type].blocksMovement,box:[b.left,b.top,b.right,b.bottom]};
  });
@@ -40,13 +40,13 @@ function geometry(data){
  const portals=[];
  for(const p of data.portals){
   if(p.width!==1)continue;
-  if(!root.MindRoomPortals.inspect(data,p,cat,placement).ok)continue;
-  const [[a,b]]=root.MindRoomPortals.segment(data,p);
-  const x=a-Number(p.side==='east'),y=b-Number(p.side==='south');
-  const reachable=access(x,y);
-  if(reachable.size>1)portals.push({p,x,y,reachable});
+  const status=root.MindRoomPortals.inspect(data,p,cat,placement);if(!status.ok)continue;
+  const [[a,b]]=root.MindRoomPortals.segment(data,p),x=a-Number(p.side==='east'),y=b-Number(p.side==='south');
+  const reachable=access(x,y);if(reachable.size>1)portals.push({p,x,y,reachable,gated:status.conditional===true,gates:status.gates||[]});
  }
- return {cells,blocked,portals,walls};
+ const gateIds=data.furniture.filter(o=>cat.furniture[o.type]?.designKind==='portcullis').map(o=>o.id),attachedGateIds=new Set(portals.flatMap(p=>p.gates));
+ const orphanGates=gateIds.filter(id=>!attachedGateIds.has(id));
+ return {cells,blocked,portals,walls,orphanGates,gatedPorts:portals.filter(p=>p.gated)};
 }
 let templates;
 function attach(layout,random,count){
@@ -63,6 +63,7 @@ function attach(layout,random,count){
  }
  let index=0;
  for(const t of shuffled(templates,random)){
+  if(t.orphanGates?.length)return null;
   let placed=false;
   for(const host of shuffled(borders,random)){
    const [dx,dy]=normals[host.side],a=[host.x,host.y];
@@ -71,7 +72,8 @@ function attach(layout,random,count){
    const clear=p=>p[0]>=13&&!occ.has(key(...p))&&Object.values(normals).every(([i,j])=>!occ.has(key(p[0]+i,p[1]+j))||p[0]+i===a[0]&&p[1]+j===a[1]);
    if(!passage.every(clear))continue;
    const dest=[a[0]+4*dx,a[1]+4*dy];
-   for(const port of shuffled(t.portals,random).filter(q=>q.p.side===opposite[host.side])){
+   const allowedPorts=t.gatedPorts?.length?t.gatedPorts:t.portals;
+   for(const port of shuffled(allowedPorts,random).filter(q=>q.p.side===opposite[host.side])){
     const x=dest[0]-port.x,y=dest[1]-port.y,cells=t.cells.map(([u,v])=>[x+u,y+v]);
     if(!cells.every(clear))continue;
     const hall=append('gang','Verbindungsgang',passage,host.room,a,passage[0],host.side);
@@ -90,7 +92,8 @@ function image(path){
  const img=images.get(path);return img.complete&&img.naturalWidth?img:null;
 }
 function furniture(o,pt,depth){
- const spec=cat.furniture[o.type],path=spec.asset+'-'+(o.wallRef?.startsWith('h:')?180:o.wallRef?.startsWith('v:')?90:o.rot??0)+'.'+(spec.extension||'webp');
+ const spec=cat.furniture[o.type];if(!spec||spec.designKind)return null;
+ const path=spec.asset+'-'+(o.wallRef?.startsWith('h:')?180:o.wallRef?.startsWith('v:')?90:o.rot??0)+'.'+(spec.extension||'webp');
  const img=image(path),size=184*(spec.editorSpriteScale||1);
  return img&&{image:img,key:path,x:pt.x,y:pt.y,width:size,height:size,originX:.5,originY:.683,depth};
 }
