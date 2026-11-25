@@ -2,7 +2,8 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),window={};
 vm.runInNewContext(fs.readFileSync(path.join(root,'catalog.js'),'utf8'),{window});
-const cat=window.MindRoomKit.catalog,placement=require('../placement.js'),portals=require('../portals.js');
+const cat=window.MindRoomKit.catalog,placement=require('../placement.js'),portals=require('../portals.js'),design=require('../level-design.js');
+design.install(cat);
 const room=JSON.parse(fs.readFileSync(path.join(root,'presets/prison-cell-01.json'),'utf8'));
 for(const p of room.portals)assert.equal(portals.inspect(room,p,cat,placement).ok,true);
 assert.equal(portals.inspect(room,{side:'north',offset:3,width:1},cat,placement).ok,false);
@@ -16,6 +17,12 @@ const p={side:'south',offset:3,width:1},blocked={type:'prison-chair',x:3.5,y:4.7
 assert.equal(portals.inspect({...room,furniture:[blocked]},p,cat,placement).ok,false);
 assert.equal(portals.inspect({...room,furniture:[{...blocked,destroyable:true}]},p,cat,placement).ok,true);
 assert.equal(portals.inspect({...room,furniture:[{type:'arch-collapsed-floor',x:3.5,y:4.5,rot:0}]},p,cat,placement).ok,false);
+const gateRoom={width:3,height:3,walls:[],furniture:[{id:'gate-1',type:'mechanism-portcullis',x:2.5,y:1.5,rot:90,blocksMovement:true}],portals:[]};
+const gated=portals.inspect(gateRoom,{side:'east',offset:1,width:1},cat,placement);
+assert.equal(gated.ok,true);assert.equal(gated.conditional,true);assert.deepEqual(gated.gates,['gate-1']);
+assert.match(gated.reason,/Fallgitter/);
+const gateAndObstacle={...gateRoom,furniture:[...gateRoom.furniture,{id:'chair',type:'prison-chair',x:2.5,y:1.5,rot:0,blocksMovement:true,destroyable:false}]};
+assert.equal(portals.inspect(gateAndObstacle,{side:'east',offset:1,width:1},cat,placement).ok,false);
 const editor=fs.readFileSync(path.join(root,'editor.js'),'utf8'),start=editor.indexOf('function sanitize(raw)'),end=editor.indexOf('function saveLocal()',start);
 const isWall=w=>Number.isInteger(w.x)&&Number.isInteger(w.y)&&['north','south','east','west'].includes(w.edge)&&!!cat.walls[w.style];
 const keyWall=w=>(['north','south'].includes(w.edge)?'h:':'v:')+w.x+':'+w.y;
