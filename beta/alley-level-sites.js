@@ -4,6 +4,8 @@
  const g=window.AlleyGenerator,v=window.AlleyVertical,p=window.RockyCoastPrison;
  if(!g?.enabled||!v?.enabled)return;
  const count=p.enabled?p.count:1,sites=[];
+ const catalog=window.MindRoomKit?.catalog,design=window.MindRoomLevelDesign,progression=window.AlleyProgression;
+ const authoredLevers=[],authoredGates=[],reservedMarkers=[];
  const floorRooms=Array.from({length:count},(_,i)=>{
   const links=[...v.connectorsAt(i),...(i?v.connectorsAt(i-1):[])];
   return new Set(links.map(c=>c.roomId));
@@ -12,6 +14,16 @@
  const doors=g.doors.flatMap(d=>d.edges.flat());
  const exits=[g.outdoorEntrance,g.outdoorExit].filter(Boolean);
  const roomCounts=new Map();
+ for(const room of g.rooms){const a=room.authored;if(!a||!catalog||!design)continue;
+  for(const marker of a.t.data.furniture||[]){const spec=catalog.furniture[marker.type];if(!spec?.designKind)continue;
+   const x=a.x+marker.x,y=a.y+marker.y,floor=a.floor;
+   if(spec.designKind==='lever'){const cell=Math.floor(marker.x)+','+Math.floor(marker.y);
+    const localReachable=Boolean(a.port.reachable?.has(cell))&&!a.t.blocked(marker.x,marker.y,.28,true);
+    const rec={id:marker.id,floor,room:room.id,x,y,localReachable,note:marker.design?.note||''};authoredLevers.push(rec);reservedMarkers.push(rec);}
+   if(spec.designKind==='portcullis'&&a.port.gates?.includes(marker.id)){const rotated=Math.abs((marker.rot||0)%180)===90,w=spec.footprint.w,h=spec.footprint.h;
+    const rec={id:marker.id,floor,room:room.id,from:room.parent,to:room.id,x,y,halfX:(rotated?h:w)/2,halfY:(rotated?w:h)/2,rot:marker.rot||0,open:false};authoredGates.push(rec);reservedMarkers.push(rec);}
+  }
+ }
  let random=g.seed;
  function roll(){random=(Math.imul(random,1664525)+1013904223)>>>0;return random/4294967296;}
  function add(kind,floor,room,u,w,details={}){
@@ -29,6 +41,7 @@
     const u=a+.5,w=b+.5;
     if(authored&&(!authored.port.reachable.has((a-authored.x)+','+(b-authored.y))||
       authored.t.blocked(u-authored.x,w-authored.y,kind==='brew'?.58:.65,true)))continue;
+    if(reservedMarkers.some(m=>m.floor===floor&&Math.hypot(m.x-u,m.y-w)<1.1))continue;
     if(![[-1,-1],[-1,1],[1,-1],[1,1]].every(([dx,dy])=>g.roomAt(u+dx,w+dy)===room.id)||
       p.atStorey(floor+1,()=>g.blocked(u,w,.68))||doors.some(([x,y])=>Math.hypot(x+.5-u,y+.5-w)<3)||
       exits.some(e=>Math.hypot(e.x-u,e.y-w)<4)||
@@ -50,6 +63,17 @@
   }
   roomCounts.set(best.room,(roomCounts.get(best.room)||0)+1);
  }
+ const verticalLinks=[];
+ for(let floor=0;floor<count-1;floor++)for(const c of v.connectorsAt(floor)){
+  const from=g.roomAt?.(c.bottom?.x,c.bottom?.y)??c.roomId,to=g.roomAt?.(c.top?.x,c.top?.y)??c.roomId;
+  if(from!=null&&to!=null)verticalLinks.push({fromFloor:floor,fromRoom:from,toFloor:floor+1,toRoom:to,kind:c.kind});
+ }
+ const check=progression?.validate({rooms:g.rooms,doors:g.doors,verticalLinks,count,startFloor:0,startRoom:0,levers:authoredLevers,gates:authoredGates})||
+  {ok:authoredGates.length===0&&authoredLevers.length===0,reason:'Progressionsprüfung nicht verfügbar',unreachableLevers:[],gateCount:authoredGates.length,leverCount:authoredLevers.length};
+ for(const gate of authoredGates){gate.open=!check.ok;gate.invalid=!check.ok;add('gate',gate.floor,gate.room,gate.x,gate.y,{sourceId:gate.id,halfX:gate.halfX,halfY:gate.halfY,rot:gate.rot,open:gate.open,invalid:gate.invalid});}
+ for(const lever of authoredLevers)add('lever',lever.floor,lever.room,lever.x,lever.y,{sourceId:lever.id,localReachable:lever.localReachable,note:lever.note});
+ const progressionState={...check,hasMechanisms:authoredGates.length>0||authoredLevers.length>0,gates:authoredGates.map(s=>s.id),levers:authoredLevers.map(s=>s.id),verticalLinks};
+ if(!check.ok&&progressionState.hasMechanisms)console.warn('Mind Dungeon progression validation failed; all authored fallgates stay open:',check.reason,check.unreachableLevers);
  for(let i=0;i<2;i++){
   const floor=i%count;
   const candidates=g.doors.filter(d=>d.from>1&&g.rooms[d.to].kind==='raum'&&
@@ -67,17 +91,19 @@
   add('door',floor,door.to,u,w,{vertical,half,open:false});
  }
  const floor=()=>p.enabled?p.storey-1:0;
- const solids=sites.filter(s=>['door','chest','altar'].includes(s.kind));
+ const solids=sites.filter(s=>['door','chest','altar','gate'].includes(s.kind));
  const wallBlocked=g.blocked;
  g.blocked=(u,w,r=0)=>wallBlocked(u,w,r)||solids.some(s=>{
   if(s.floor!==floor()||s.open)return false;
   const dx=Math.abs(u-s.x/48),dy=Math.abs(w-s.y/48);
+  if(s.kind==='gate')return dx<r+s.halfX&&dy<r+s.halfY;
   if(s.kind==='door')return dx<r+(s.vertical?.09:s.half)&&dy<r+(s.vertical?s.half:.09);
   if(s.kind==='altar')return Math.hypot(dx,dy)<.48*.8+r;
   const across=s.turn%2===0;
   return Math.hypot(Math.max(0,dx-(across?.42:.28)),Math.max(0,dy-(across?.28:.42)))<=r;
  });
  function remove(s){s.open=true;g.clearNavigation();}
+ function activateLever(s){if(s?.kind!=='lever'||!progressionState.ok)return false;for(const gate of sites.filter(q=>q.kind==='gate'))remove(gate);return true;}
  function unlock(s){s.unsealed=true;s.hp??=320;}
  function strike(s,damage){
   if(!s.unsealed||s.open)return;
@@ -86,6 +112,6 @@
   return s.hp;
  }
  function active(){return v.state.floor||v.state.transition||v.state.stairRide?[]:sites.filter(s=>s.floor===floor());}
- g.levelSites={sites,labels,active,unlock,strike,remove};
+ g.levelSites={sites,labels,active,unlock,strike,remove,activateLever,progression:progressionState};
 })();
 
