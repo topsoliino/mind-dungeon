@@ -22,7 +22,8 @@ function mount({generator:g,player,iso}){
   '<div id="iso-gen-body"><canvas id="iso-gen-map" width="576" height="360" '+
   'aria-label="Isometrischer Grundriss und Spielerposition" style="width:100%;height:180px;'+
   'display:block;border:1px solid #75869c66;border-radius:6px;background:#111827"></canvas>'+
-  '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Held · Gold: Wissensaltar-Raumnummer · Türkis: OG-Ziel · L Leiter</div>'+
+  '<div style="font-size:10px;color:#b9c4d2;margin-top:5px">● Held · Gold: Wissensaltar · Violett: Hebel · Rot: Fallgitter · Türkis: OG-Ziel · L Leiter</div>'+
+  '<div id="iso-gen-progression" style="font-size:10px;margin-top:5px;padding:5px 7px;border:1px solid #75869c66;border-radius:4px"></div>'+
   '<div style="margin-top:9px;padding:7px;border:1px solid #a9966b77;border-radius:5px;background:#151925">'+
   '<strong>Wissensaltäre · Unterkategorien je Raum</strong>'+
   '<div id="iso-gen-altar-rows" aria-label="Fragenunterkategorien nach Raum"></div></div>'+
@@ -161,10 +162,14 @@ function mount({generator:g,player,iso}){
    ctx.strokeStyle='#30251f';ctx.lineWidth=3;
    ctx.strokeText(door.name,x,y-5);ctx.fillText(door.name,x,y-5);
   }
+  const progressionInfo=g.levelSites?.progression,progressionLine=panel.querySelector('#iso-gen-progression');
+  if(progressionLine){progressionLine.textContent=!progressionInfo?.hasMechanisms?'Keine Hebel-Fallgitter':progressionInfo.ok?'✓ Alle Hebel sind bei geschlossenen Fallgittern erreichbar · '+progressionInfo.leverCount+' Hebel':'⚠ '+progressionInfo.reason+' · Fallgitter bleiben offen';progressionLine.style.color=progressionInfo?.ok?'#9bd7b0':'#e5a28d';}
   // Map markers match the per-room subcategory list.
   for(const site of g.levelSites?.sites||[]){
-   if(site.kind!=='altar'||site.floor!==(prison?.enabled?prison.storey-1:0))continue;
+   if(site.floor!==(prison?.enabled?prison.storey-1:0))continue;
    const [x,y]=xy(site.x/48,site.y/48);
+   if(site.kind==='lever'||site.kind==='gate'){ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fillStyle=site.kind==='lever'?'#ad8be0':site.open?'#6fae8b':'#b55d58';ctx.fill();ctx.strokeStyle='#17191d';ctx.lineWidth=1.5;ctx.stroke();ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillStyle='#17191d';ctx.fillText(site.kind==='lever'?'H':site.open?'↗':'▥',x,y+3.5);continue;}
+   if(site.kind!=='altar')continue;
    ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);
    ctx.fillStyle='#e7b76d';ctx.fill();
    ctx.strokeStyle='#4a3022';ctx.lineWidth=1.5;ctx.stroke();
