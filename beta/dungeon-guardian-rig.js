@@ -160,38 +160,79 @@ export async function loadRig(url,clips={}){
   else{rotate('Hips',.12*lip);rotate('Thigh.L',-.1*lip);rotate('Thigh.R',-.1*lip);}
  };
 
- // Layer secondary motion on the recorded pose. Restore it before sampling
- // again so a held frame never accumulates rotation.
- const bones=['Hips','Chest','Head','Mantle'].map(name=>{
-  const node=gltf.scene.getObjectByName(name);
-  return node&&{node,base:node.quaternion.clone()};
- });
- let adjusted=false;
+ // Shape the exported weapon arcs around their recorded contact frame.
+ // Each beat travels from the pelvis to the shoulder and finally the wrist.
+ const joints=new Map(animatedNodes.map(node=>[node.name.replace(/[._-]/g,''),node]));
+ const original=new Map();
+ function saveJoint(node){
+  let pose=original.get(node);
+  if(!pose){pose={position:node.position.clone(),rotation:node.quaternion.clone(),dirty:false};original.set(node,pose);}
+  if(!pose.dirty){pose.position.copy(node.position);pose.rotation.copy(node.quaternion);pose.dirty=true;}
+ }
+ function restoreJoints(){
+  for(const [node,pose] of original)if(pose.dirty){
+   node.position.copy(pose.position);node.quaternion.copy(pose.rotation);pose.dirty=false;
+  }
+ }
+ function turn(name,x,y,z){
+  const node=joints.get(name);if(!node)return;
+  saveJoint(node);node.rotateX(x);node.rotateY(y);node.rotateZ(z);
+ }
+ function arch(time,start,peak,end){
+  if(time<=start||time>=end)return 0;
+  return time<peak?ease((time-start)/(peak-start)):1-ease((time-peak)/(end-peak));
+ }
  function attackPose(clip,t,hammer){
   const heavy=clip==='heavy-sword'||clip==='heavy-hammer';
   if(!heavy&&!lightClip(clip))return;
   const hit=heavy?(hammer?7/21:.28):(clip==='up'?.43:.51);
-  const pulse=x=>x<=0||x>=1?0:Math.sin(Math.PI*x)**2;
-  const wind=pulse(t/hit),settle=pulse((t-hit)/(1-hit));
-  const drag=pulse((t-hit-.07)/(1-hit-.07));
-  const side=clip==='up'?-1:1,gain=hammer?1:.68;
-  function turn(i,pitch,twist,lean){
-   const b=bones[i];if(!b)return;
-   b.base.copy(b.node.quaternion);
-   b.node.rotateX(pitch*gain);b.node.rotateY(twist*gain);b.node.rotateZ(lean*gain);
+  const side=clip==='up'?-1:1;
+  const coil=arch(t,0,hit*.49,hit);
+  const lift=arch(t,0,hit*.72,hit);
+  const wrist=arch(t,hit*.12,hit*.82,hit);
+  const follow=arch(t,hit,hit+(1-hit)*(hammer?.25:.14),1);
+  const trail=arch(t,hit,hit+(1-hit)*(hammer?.38:.25),1);
+  const recoil=arch(t,hit+(1-hit)*.42,hit+(1-hit)*.72,1);
+  const twist=heavy?(hammer?.19:.32):(hammer?.48:.38);
+  turn('Hips',-.08*coil+.09*follow,side*twist*(-coil+.64*follow),side*.06*(coil-follow));
+  turn('Chest',(heavy?-.28:-.11)*lift+(heavy?.31:.10)*follow,side*twist*(-lift+.85*follow),side*(heavy?.09:.18)*(lift-follow));
+  turn('Head',.12*lift-.16*follow,side*.12*(coil-follow),0);
+  turn('ArmR',(heavy?-.38:-.13)*lift+.15*follow,side*.14*(lift-follow),side*(heavy?.10:.27)*(lift-trail));
+  turn('ForearmR',-(hammer?.32:.20)*wrist+.12*trail,0,side*.11*(wrist-trail));
+  turn('GloveR',(hammer?.25:.14)*wrist-(hammer?.29:.18)*trail+.08*recoil,side*.09*(trail-wrist),0);
+  turn('ArmL',-.16*lift+.12*follow,-side*.13*coil,-.13*lift+.10*trail);
+  turn('Mantle',-.14*lift+.25*trail-.08*recoil,side*.13*trail,0);
+ }
+ // Sample just the leg tracks from the gait. The combat clip continues
+ // driving the weapon, hands and upper body even during a held charge.
+ const legTracks=[];
+ for(const track of gltf.animations[0].tracks){
+  const dot=track.name.lastIndexOf('.'),node=joints.get(track.name.slice(0,dot).replace(/[._-]/g,''));
+  const property=track.name.slice(dot+1);
+  if(node&&/^(Thigh|Shin|Boot)[LR]$/.test(node.name.replace(/[._-]/g,''))&&
+     (property==='position'||property==='quaternion')){
+   legTracks.push({node,property,sampler:track.createInterpolant()});
   }
-  turn(0,0,side*(-.10*wind+.055*settle),.035*side*wind);
-  turn(1,(heavy?-.16:-.06)*wind+(heavy?.22:.075)*settle,side*(-.11*wind+.12*drag),-.045*side*wind);
-  turn(2,.055*wind-.085*settle,-side*.06*drag,0);
-  turn(3,.14*drag,side*.09*drag,0);
-  adjusted=true;
+ }
+ function movingLegs(gait,facing){
+  const cycle=clips[gait.clip];if(!cycle)return;
+  const gaitYaw=Math.atan2(Math.cos(gait.angle),Math.sin(gait.angle)/Math.sin(elevation));
+  let delta=Math.atan2(Math.sin(gaitYaw-facing),Math.cos(gaitYaw-facing));
+  const backwards=Math.abs(delta)>Math.PI*.55;
+  if(backwards)delta-=Math.sign(delta)*Math.PI;
+  const time=(cycle[0]+(backwards?1-gait.phase:gait.phase)*(cycle[1]-1))/frameRate;
+  for(const {node,property,sampler} of legTracks){
+   saveJoint(node);node[property].fromArray(sampler.evaluate(time));
+  }
+  const steer=Math.max(-.64,Math.min(.64,delta));
+  turn('Hips',0,steer,0);turn('Chest',0,-steer,0);
  }
  let yaw=null,previousTime=null,previousPose='',previousClip=null,transition=null;
  let lastDrawTime=-Infinity,lastArmed=null;
   return {
    canvas,displaySize,ground,prepareHammer,
    get backend(){return renderer.isWebGLRenderer?'WebGL':'Canvas 2D';},
-   render(clip,[start,count],progress,viewAngle,armed,time){
+   render(clip,[start,count],progress,viewAngle,armed,time,gait=null){
     const angle=Math.atan2(Math.cos(viewAngle),Math.sin(viewAngle)/Math.sin(elevation));
     // The previous guardian renderer did GPU skinned animation + synchronized
     // GPU->CPU framebuffer readback + a Phaser texture upload on EVERY tick.
@@ -215,7 +256,7 @@ export async function loadRig(url,clips={}){
      }))};
     }
     previousClip=clip;
-    const pose=clip+'|'+progress+'|'+yaw+'|'+armed;
+    const pose=clip+'|'+progress+'|'+yaw+'|'+armed+'|'+(gait?gait.phase+'|'+gait.angle:'');
     if(pose===previousPose&&!transition)return false;
     previousPose=pose;
     pivot.rotation.y=yaw;
@@ -226,9 +267,10 @@ export async function loadRig(url,clips={}){
     const fallbackLadder=!bakedLadder&&(clip==='climb-up'||clip==='climb-down');
     const [playingStart,playingCount]=fallbackLadder?
      (clips.idle??[0,4]):[start,count];
-    if(adjusted){for(const b of bones)if(b)b.node.quaternion.copy(b.base);adjusted=false;}
+    restoreJoints();
     mixer.setTime((playingStart+clamp(progress)*(playingCount-1))/frameRate);
     attackPose(clip,clamp(progress),armed==='hammer');
+    if(gait&&(lightClip(clip)||clip.startsWith('heavy-')||clip.startsWith('charge-')))movingLegs(gait,yaw);
     if(fallbackLadder)climbingPose(clip,clamp(progress));
     if(transition){
      transition.elapsed+=dt;
