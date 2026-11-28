@@ -14,7 +14,7 @@
   if(!response.ok)throw new Error('Wächter-Animationen konnten nicht geladen werden.');
   const atlas=await response.json();
   if(settings?.ok)light=await settings.json();
-  const {loadRig}=await import('./dungeon-guardian-rig.js?v=hammer1');
+  const {loadRig}=await import('./dungeon-guardian-rig.js?v=strike2');
   const rig=await loadRig(root+'guardian-rig.glb.gz?v=3',atlas.clips);
   return {atlas,rig};
  }
@@ -26,6 +26,21 @@
   const t=clamp((progress-from)/(to-from));
   return a+(b-a)*t*t*(3-2*t);
  }
- window.DungeonGuardian={load,hitClip,hitDistance,heavyImpact,get light(){return light;}};
+ function attackProgress(clip,time){
+  const keys=light.retime?.[clip],t=clamp(time);
+  if(keys){
+   for(let i=1;i<keys.length;i++){
+    const [end,to]=keys[i];if(t>end)continue;
+    const [start,from]=keys[i-1];return from+(to-from)*(t-start)/(end-start);
+   }
+  }
+  if(clip==='heavy-sword'||clip==='heavy-hammer'){
+   const hit=clip==='heavy-hammer'?7/21:heavyImpact;
+   if(t<=hit){const u=t/hit;return hit*u*(.42+.58*u);}
+   const u=(t-hit)/(1-hit);return hit+(1-hit)*u*(1.45-.45*u);
+  }
+  return t;
+ }
+ window.DungeonGuardian={attackProgress,load,hitClip,hitDistance,heavyImpact,get light(){return light;}};
 })();
 
