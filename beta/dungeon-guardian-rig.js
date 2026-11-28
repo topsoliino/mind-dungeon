@@ -160,6 +160,32 @@ export async function loadRig(url,clips={}){
   else{rotate('Hips',.12*lip);rotate('Thigh.L',-.1*lip);rotate('Thigh.R',-.1*lip);}
  };
 
+ // Layer secondary motion on the recorded pose. Restore it before sampling
+ // again so a held frame never accumulates rotation.
+ const bones=['Hips','Chest','Head','Mantle'].map(name=>{
+  const node=gltf.scene.getObjectByName(name);
+  return node&&{node,base:node.quaternion.clone()};
+ });
+ let adjusted=false;
+ function attackPose(clip,t,hammer){
+  const heavy=clip==='heavy-sword'||clip==='heavy-hammer';
+  if(!heavy&&!lightClip(clip))return;
+  const hit=heavy?(hammer?7/21:.28):(clip==='up'?.43:.51);
+  const pulse=x=>x<=0||x>=1?0:Math.sin(Math.PI*x)**2;
+  const wind=pulse(t/hit),settle=pulse((t-hit)/(1-hit));
+  const drag=pulse((t-hit-.07)/(1-hit-.07));
+  const side=clip==='up'?-1:1,gain=hammer?1:.68;
+  function turn(i,pitch,twist,lean){
+   const b=bones[i];if(!b)return;
+   b.base.copy(b.node.quaternion);
+   b.node.rotateX(pitch*gain);b.node.rotateY(twist*gain);b.node.rotateZ(lean*gain);
+  }
+  turn(0,0,side*(-.10*wind+.055*settle),.035*side*wind);
+  turn(1,(heavy?-.16:-.06)*wind+(heavy?.22:.075)*settle,side*(-.11*wind+.12*drag),-.045*side*wind);
+  turn(2,.055*wind-.085*settle,-side*.06*drag,0);
+  turn(3,.14*drag,side*.09*drag,0);
+  adjusted=true;
+ }
  let yaw=null,previousTime=null,previousPose='',previousClip=null,transition=null;
  let lastDrawTime=-Infinity,lastArmed=null;
   return {
@@ -200,7 +226,9 @@ export async function loadRig(url,clips={}){
     const fallbackLadder=!bakedLadder&&(clip==='climb-up'||clip==='climb-down');
     const [playingStart,playingCount]=fallbackLadder?
      (clips.idle??[0,4]):[start,count];
+    if(adjusted){for(const b of bones)if(b)b.node.quaternion.copy(b.base);adjusted=false;}
     mixer.setTime((playingStart+clamp(progress)*(playingCount-1))/frameRate);
+    attackPose(clip,clamp(progress),armed==='hammer');
     if(fallbackLadder)climbingPose(clip,clamp(progress));
     if(transition){
      transition.elapsed+=dt;
